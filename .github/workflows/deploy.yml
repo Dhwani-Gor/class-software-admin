@@ -1,0 +1,76 @@
+name: Deploy to Hostinger VPS
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+      - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Deploy to VPS
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          CURRENT_BRANCH: ${{ github.head_ref || github.ref_name }} 
+        shell: bash
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          ssh -o StrictHostKeyChecking=no thunder@62.72.5.193 <<EOF
+            source ~/.bashrc
+            export CURRENT_BRANCH="$CURRENT_BRANCH"
+
+            cd
+            cd front/visayard-admin
+            
+            if [ ${CURRENT_BRANCH} == "main" ]; then
+              cd main/demo-ci-cd
+              ls -la
+              git checkout main
+              git pull origin main
+              npm install
+              npm run build
+              pm2 delete main
+              pm2 flush
+              PORT=3007 pm2 start npm --name "main" -- start
+              pm2 save
+            elif [ ${CURRENT_BRANCH} == "staging" ]; then
+              cd staging/demo-ci-cd
+              ls -la
+              git checkout staging
+              git pull origin staging
+              npm install
+              npm run build
+              pm2 delete staging
+              pm2 flush
+              PORT=3009 pm2 start npm --name "staging" -- start
+              pm2 save
+            elif [ ${CURRENT_BRANCH} == "dev" ]; then
+              cd dev/demo-ci-cd
+              ls -la
+              git checkout dev
+              git pull origin dev
+              npm install
+              npm run build
+              pm2 delete dev
+              pm2 flush
+              PORT=3008 pm2 start npm --name "dev" -- start
+              pm2 save           
+            else
+              exit 1
+            fi
+          EOF
