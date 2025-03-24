@@ -13,7 +13,7 @@ import CommonInput from "@/components/CommonInput";
 import CommonButton from "@/components/CommonButton";
 import { useDispatch } from "react-redux";
 import { login } from "@/redux/slice/authSlice";
-import { adminLogin } from "@/api";
+import { adminLogin, registerUser } from "@/api";
 import { toast } from "react-toastify";
 
 const MainWrapper = styled(Box)(({ }) => ({
@@ -30,8 +30,10 @@ const StyledCard = styled(Card)(({ theme }) => ({
 }));
 
 const validationSchema = yup.object().shape({
+  name: yup.string().required("Required"),
   email: yup.string().required("Required"),
   password: yup.string().required("Required"),
+  role: yup.string().required("Required"),
 });
 
 const Login = () => {
@@ -52,7 +54,7 @@ const Login = () => {
 
   const onSubmit = async (data) => {
     try {
-      const res = await adminLogin(data);
+      const res = await registerUser(data);
       if (!res?.response?.data.status)
         toast.error(res?.response?.data?.errorMessage);
       dispatch(
@@ -90,10 +92,24 @@ const Login = () => {
           color="textSecondary"
           mb={3}
         >
-          Please enter your login credentials to continue.
+          Please Register
         </Typography>
         <form onSubmit={handleSubmit(onSubmit)}>
           <Stack spacing={3} mt={4}>
+            <Controller
+              name="name"
+              control={control}
+              render={({ field }) => (
+                <CommonInput
+                  {...field}
+                  fullWidth
+                  label="Name"
+                  placeholder="Enter your name"
+                  error={Boolean(errors.name)}
+                  helperText={errors.name?.message}
+                />
+              )}
+            />
             <Controller
               name="email"
               control={control}
@@ -101,8 +117,8 @@ const Login = () => {
                 <CommonInput
                   {...field}
                   fullWidth
-                  label="Username"
-                  placeholder="Enter your username"
+                  label="Email"
+                  placeholder="Enter your email"
                   error={Boolean(errors.email)}
                   helperText={errors.email?.message}
                 />
@@ -123,11 +139,25 @@ const Login = () => {
                 />
               )}
             />
+            <Controller
+              name="role"
+              control={control}
+              render={({ field }) => (
+                <CommonInput
+                  {...field}
+                  fullWidth
+                  label="Role"
+                  placeholder="Enter your role"
+                  error={Boolean(errors.role)}
+                  helperText={errors.role?.message}
+                />
+              )}
+            />
           </Stack>
           <Box mt={4}>
             <CommonButton
               sx={{ textTransform: "uppercase" }}
-              text="login"
+              text="Register"
               isLoading={isSubmitting}
               variant="contained"
               fullWidth

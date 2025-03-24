@@ -39,7 +39,7 @@ const AuthWrapper = ({ children }) => {
     if (!isAuthenticated && currentPath !== "/login") {
       router.push("/login");
     } else if (isAuthenticated && currentPath === "/login") {
-      router.push("/dashboard");
+      router.push("/clients");
     } else if (isTokenValid) {
       setIsLoading(false);
     }

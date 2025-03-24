@@ -43,10 +43,19 @@ export const addCountry = async (payload) => {
   return result;
 };
 
+export const registerUser = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/api/users/signUp`, payload);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
 export const adminLogin = async (payload) => {
   let result;
   try {
-    result = await axiosInstance.post(`/admin/login`, payload);
+    result = await axiosInstance.post(`/api/users/login`, payload);
   } catch (error) {
     result = error;
   }

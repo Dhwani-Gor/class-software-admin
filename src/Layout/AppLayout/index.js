@@ -12,8 +12,7 @@ const AppLayout = ({ children }) => {
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <ThemeProvider>
-          {/* <AuthWrapper>{children}</AuthWrapper> */}
-          {children}
+          <AuthWrapper>{children}</AuthWrapper>
           <ToastContainer />
         </ThemeProvider>
       </PersistGate>
