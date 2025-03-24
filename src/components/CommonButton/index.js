@@ -17,11 +17,12 @@ const StyledButton = styled(Button)(({ theme }) => ({
 const CommonButton = ({
   isLoading = false,
   text = "Submit",
-  color = "default", 
+  color = "default",
   variant = "contained",
   onClick,
   sx = {},
   endIcon,
+  disabled,
   ...props
 }) => {
   const theme = useTheme();
@@ -37,21 +38,15 @@ const CommonButton = ({
     color: variant === "contained" ? "#ffffff" : colorMap[color],
     background:
       variant === "contained"
-        ? colorMap[color] || colorMap.default 
+        ? colorMap[color] || colorMap.default
         : "transparent",
-    border:
-      variant === "outlined"
-        ? `1px solid ${colorMap[color]}`
-        : "none",
+    border: variant === "outlined" ? `1px solid ${colorMap[color]}` : "none",
     "&:hover": {
       background:
         variant === "contained"
-          ? colorMap[color] || colorMap.default 
+          ? colorMap[color] || colorMap.default
           : "transparent",
-      border:
-        variant === "outlined"
-          ? `1px solid ${colorMap[color]}`
-          : "none",
+      border: variant === "outlined" ? `1px solid ${colorMap[color]}` : "none",
     },
     ...sx,
   };
@@ -61,7 +56,7 @@ const CommonButton = ({
       endIcon={endIcon}
       onClick={onClick}
       disableRipple
-      disabled={isLoading}
+      disabled={isLoading || disabled}
       variant={variant}
       {...props}
       sx={buttonStyles}

@@ -15,7 +15,6 @@ import {
   DialogContent,
   DialogActions,
   Button,
-
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
@@ -58,38 +57,45 @@ const Countries = () => {
 
   const fetchVisaListData = async (page, limit, searchQuery) => {
     setLoading(true);
-    await getVisaDetails(page, limit, searchQuery).then((res) => {
-      if (res?.data?.data?.visas?.length > 0) {
-        const flattenedData = res?.data?.data?.visas?.map((item) => ({
-          id: item?.id,
-          countryName: item?.basicDetails?.countryName || "-",
-          totalVisaCompleted: item?.basicDetails?.totalVisaCompleted || "-",
-          visaEntry: item?.visaDetails?.visaEntry || "-",
-          visaType: item?.visaDetails?.visaType || "-",
-          validityPeriod: item?.visaDetails?.validityPeriod || "-",
-          lengthOfStay: item?.visaDetails?.lengthOfStay || "-",
-          visaFee: item?.visaDetails?.visaFee || "-",
-          vizayardFee: item?.visaDetails?.vizayardFee || "-",
-          govtVisaFee: item?.visaDetails?.govtVisaFee || "-",
-        }));
-        const sortedData = flattenedData?.sort((a, b) => a?.id - b?.id);
+    await getVisaDetails(page, limit, searchQuery)
+      .then((res) => {
+        if (res?.data?.data?.visas?.length > 0) {
+          const flattenedData = res?.data?.data?.visas?.map((item) => ({
+            id: item?.id,
+            countryName: item?.basicDetails?.countryName || "-",
+            totalVisaCompleted: item?.basicDetails?.totalVisaCompleted || "-",
+            visaEntry: item?.visaDetails?.visaEntry || "-",
+            visaType: item?.visaDetails?.visaType || "-",
+            validityPeriod: item?.visaDetails?.validityPeriod || "-",
+            lengthOfStay: item?.visaDetails?.lengthOfStay || "-",
+            visaFee: item?.visaDetails?.visaFee || "-",
+            vizayardFee: item?.visaDetails?.vizayardFee || "-",
+            govtVisaFee: item?.visaDetails?.govtVisaFee || "-",
+          }));
+          const sortedData = flattenedData?.sort((a, b) => a?.id - b?.id);
 
-        setCountryLists(sortedData);
-        setTotalRows(res?.data?.data?.totalVisas);
-      } else {
-        setCountryLists([]);
-        setTotalRows(0)
-      }
-    }).catch((e) => {
-      console.log(e)
-    }).finally(() => {
-      setLoading(false);
-    });
+          setCountryLists(sortedData);
+          setTotalRows(res?.data?.data?.totalVisas);
+        } else {
+          setCountryLists([]);
+          setTotalRows(0);
+        }
+      })
+      .catch((e) => {
+        console.log(e);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
     if (page > 0 && limit > 0) {
-      fetchVisaListData(page, limit, debouncedSearch.trim() ? debouncedSearch : null);
+      fetchVisaListData(
+        page,
+        limit,
+        debouncedSearch.trim() ? debouncedSearch : null
+      );
     }
   }, [page, limit, debouncedSearch]);
 
@@ -134,12 +140,18 @@ const Countries = () => {
       flex: 1,
       renderCell: (params) => {
         return (
-          <Typography>{params?.api?.getRowIndexRelativeToVisibleRows(params.id) + 1}</Typography>
-        )
+          <Typography>
+            {params?.api?.getRowIndexRelativeToVisibleRows(params.id) + 1}
+          </Typography>
+        );
       },
     },
     { field: "countryName", headerName: "Country Name", flex: 1.5 },
-    { field: "totalVisaCompleted", headerName: "Total Visa Completed", flex: 1 },
+    {
+      field: "totalVisaCompleted",
+      headerName: "Total Visa Completed",
+      flex: 1,
+    },
     { field: "visaEntry", headerName: "Visa Entry", flex: 1 },
     { field: "visaType", headerName: "Visa Type", flex: 1 },
     { field: "validityPeriod", headerName: "Validity Period", flex: 1 },
@@ -177,7 +189,11 @@ const Countries = () => {
   return (
     <Layout>
       <CommonCard>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+        >
           <Typography variant="h4" fontWeight={700}>
             Staff / Inspectors
           </Typography>
@@ -187,7 +203,7 @@ const Countries = () => {
             variant="contained"
             onClick={() => {
               dispatch(clearCountry());
-              router.push("/countries/create");
+              router.push("/staff/create");
             }}
             endIcon={<AddIcon />}
           />
@@ -204,7 +220,12 @@ const Countries = () => {
         />
         <Box sx={{ width: "100%", mt: 4 }}>
           {loading ? (
-            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              height="300px"
+            >
               <CircularProgress />
             </Box>
           ) : countryLists.length > 0 ? (
@@ -250,8 +271,19 @@ const Countries = () => {
       <Dialog open={openDialog} onClose={handleCancelDelete}>
         <DialogTitle>Are you sure you want to delete this country?</DialogTitle>
         <DialogActions>
-          <Button onClick={handleCancelDelete} color="primary">Cancel</Button>
-          <Button onClick={handleConfirmDelete} sx={{ backgroundColor: "#ed2b1c", color: "white", fontWeight: "500" }}>Delete</Button>
+          <Button onClick={handleCancelDelete} color="primary">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            sx={{
+              backgroundColor: "#ed2b1c",
+              color: "white",
+              fontWeight: "500",
+            }}
+          >
+            Delete
+          </Button>
         </DialogActions>
       </Dialog>
 

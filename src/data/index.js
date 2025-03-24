@@ -8,6 +8,10 @@ export const sidemenu_items = [
     to: "/staff",
   },
   {
+    label: "Journal",
+    to: "/journal",
+  },
+  {
     label: "Reports",
     to: "/reports",
   },
@@ -19,4 +23,4 @@ export const sidemenu_items = [
     label: "Settings",
     to: "/settings",
   },
-]
+];

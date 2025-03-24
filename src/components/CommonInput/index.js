@@ -1,6 +1,6 @@
 import React from "react";
 // import OutlinedInput from "@mui/material/OutlinedInput";
-import  TextField  from "@mui/material/TextField";
+import TextField from "@mui/material/TextField";
 import InputLabel from "@mui/material/InputLabel";
 import FormHelperText from "@mui/material/FormHelperText";
 import Box from "@mui/material/Box";
@@ -23,7 +23,11 @@ const CommonInput = ({
     <Box {...containerProps}>
       {label && (
         <InputLabel
-          sx={{ mb: 1.5, fontWeight: "500", color: error ? "error.main" : "text.primary" }}
+          sx={{
+            mb: 1.5,
+            fontWeight: "500",
+            color: error ? "error.main" : "text.primary",
+          }}
           {...labelProps}
           htmlFor="common-input"
         >
@@ -33,10 +37,11 @@ const CommonInput = ({
       <TextField
         id="common-input"
         type={type}
-        value={value || ""} 
+        value={value || ""}
         onChange={onChange}
         placeholder={placeholder}
-        error={error} 
+        error={error}
+        fullWidth
         {...props}
         {...inputProps}
         sx={{
@@ -60,4 +65,4 @@ const CommonInput = ({
   );
 };
 
-export default CommonInput
+export default CommonInput;
