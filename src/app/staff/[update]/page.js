@@ -3,9 +3,9 @@ import React from "react";
 import Typography from "@mui/material/Typography";
 //relative path imports
 import Layout from "@/Layout";
-import AddVisaForm from "@/components/AddCountryForm";
 import { Stack } from "@mui/material";
 import CommonCard from "@/components/CommonCard";
+import AddInspectorForm from "@/components/AddInspectorForm";
 
 const UpdateCountry = ({ params }) => {
 
@@ -13,11 +13,11 @@ const UpdateCountry = ({ params }) => {
     <Layout>
       <CommonCard>
       <Typography variant="h6" fontWeight={"700"}>
-        Countries / Add Country
+        Staff / Inspectors
       </Typography>
       </CommonCard>
       <Stack>
-        <AddVisaForm mode="update" visaId={params?.update}/>
+        <AddInspectorForm mode="update" userId={params?.update}/>
       </Stack>
     </Layout>
   );

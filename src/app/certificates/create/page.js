@@ -12,7 +12,7 @@ const AddCountry = () => {
     <Layout>
       <CommonCard>
       <Typography variant="h6" fontWeight={"700"}>
-        Countries / Add Country
+        Staff / Inspectors
       </Typography>
       </CommonCard>
       <Stack>

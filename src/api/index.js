@@ -133,3 +133,59 @@ export const getParticularVisaApplicantDetails = async (id) => {
   }
   return result;
 };
+
+export const addInspectors = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/api/users`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const getUsersDetails = async (page, limit, search) => {
+  let result;
+  try {
+    result = await axiosInstance.get("/api/users", {
+      params: {
+        page: page,
+        limit: limit,
+        query: search,
+      },
+    });
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const deleteUser = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.delete(`/api/users/${payload.id}`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const getInspectorsDetails = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/users/${id}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const updateInspectorDetail = async (id, payload) => {
+  let result;
+  try {
+    result = await axiosInstance.put(`/api/users/${id}`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};

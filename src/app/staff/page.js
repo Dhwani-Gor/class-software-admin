@@ -24,7 +24,7 @@ import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import CommonInput from "@/components/CommonInput";
-import { deleteVisa, getVisaDetails } from "@/api";
+import { deleteUser, deleteVisa, getUsersDetails, getVisaDetails } from "@/api";
 import { useDispatch } from "react-redux";
 import { clearCountry } from "@/redux/slice/countrysSlice";
 
@@ -35,7 +35,7 @@ const Countries = () => {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState(""); // Debounced search state
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
-  const [countryLists, setCountryLists] = useState([]);
+  const [countryLists, setInspectorLists] = useState([]);
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [limit, setLimit] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
@@ -55,29 +55,24 @@ const Countries = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  const fetchVisaListData = async (page, limit, searchQuery) => {
+  const fetchUserListData = async (page, limit, searchQuery) => {
     setLoading(true);
-    await getVisaDetails(page, limit, searchQuery)
+    await getUsersDetails(page, limit, searchQuery)
       .then((res) => {
-        if (res?.data?.data?.visas?.length > 0) {
-          const flattenedData = res?.data?.data?.visas?.map((item) => ({
-            id: item?.id,
-            countryName: item?.basicDetails?.countryName || "-",
-            totalVisaCompleted: item?.basicDetails?.totalVisaCompleted || "-",
-            visaEntry: item?.visaDetails?.visaEntry || "-",
-            visaType: item?.visaDetails?.visaType || "-",
-            validityPeriod: item?.visaDetails?.validityPeriod || "-",
-            lengthOfStay: item?.visaDetails?.lengthOfStay || "-",
-            visaFee: item?.visaDetails?.visaFee || "-",
-            vizayardFee: item?.visaDetails?.vizayardFee || "-",
-            govtVisaFee: item?.visaDetails?.govtVisaFee || "-",
+        if (res?.data?.data?.length > 0) {
+          const flattenedData = res?.data?.data?.map((item) => ({
+            id: item?.id || "-",
+            companyName: item?.companyName || "-",
+            email: item?.email || "-",
+            inspectorDesignation: item?.inspectorDesignation || "-",
+            name: item?.name || "-",
           }));
           const sortedData = flattenedData?.sort((a, b) => a?.id - b?.id);
-
-          setCountryLists(sortedData);
+          
+          setInspectorLists(sortedData);
           setTotalRows(res?.data?.data?.totalVisas);
         } else {
-          setCountryLists([]);
+          setInspectorLists([]);
           setTotalRows(0);
         }
       })
@@ -91,7 +86,7 @@ const Countries = () => {
 
   useEffect(() => {
     if (page > 0 && limit > 0) {
-      fetchVisaListData(
+      fetchUserListData(
         page,
         limit,
         debouncedSearch.trim() ? debouncedSearch : null
@@ -112,14 +107,14 @@ const Countries = () => {
     setOpenDialog(false);
     if (!selectedVisaId) return;
     try {
-      const res = await deleteVisa({ id: selectedVisaId });
+      const res = await deleteUser({ id: selectedVisaId });
       if (res?.data?.message) {
         setSnackBar({ open: true, message: res.data.message });
       }
-      fetchVisaListData(page, limit, debouncedSearch);
+      fetchUserListData(page, limit, debouncedSearch);
     } catch (e) {
-      console.error("Error deleting visa:", e.response?.data || e.message);
-      setSnackBar({ open: true, message: "Failed to delete visa." });
+      console.error("Error deleting Inspectors:", e.response?.data || e.message);
+      setSnackBar({ open: true, message: "Failed to delete Inspectors." });
     }
   };
 
@@ -146,34 +141,29 @@ const Countries = () => {
         );
       },
     },
-    { field: "countryName", headerName: "Country Name", flex: 1.5 },
+    { field: "name", headerName: "Inspectors Name", flex: 1.5 },
     {
-      field: "totalVisaCompleted",
-      headerName: "Total Visa Completed",
+      field: "email",
+      headerName: "Email",
       flex: 1,
     },
-    { field: "visaEntry", headerName: "Visa Entry", flex: 1 },
-    { field: "visaType", headerName: "Visa Type", flex: 1 },
-    { field: "validityPeriod", headerName: "Validity Period", flex: 1 },
-    { field: "lengthOfStay", headerName: "Length of Stay", flex: 1 },
-    { field: "visaFee", headerName: "Visa Fee", flex: 1 },
-    { field: "vizayardFee", headerName: "Vizayard Fee", flex: 1 },
-    { field: "govtVisaFee", headerName: "Government Visa Fee", flex: 1 },
+    { field: "companyName", headerName: "Company Name", flex: 1 },
+    { field: "inspectorDesignation", headerName: "Inspector Designation", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
       width: 100,
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
-          <Tooltip title="Edit Country">
+          <Tooltip title="Edit Inspector">
             <IconButton
               color="primary"
-              onClick={() => router.push(`/countries/${params?.id}`)}
+              onClick={() => router.push(`/staff/${params?.id}`)}
             >
               <EditIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Delete Country">
+          <Tooltip title="Delete Inspector">
             <IconButton
               color="error"
               onClick={() => handleDeleteClick(params?.id)}
@@ -269,7 +259,7 @@ const Countries = () => {
       </CommonCard>
 
       <Dialog open={openDialog} onClose={handleCancelDelete}>
-        <DialogTitle>Are you sure you want to delete this country?</DialogTitle>
+        <DialogTitle>Are you sure you want to delete this Inspectors?</DialogTitle>
         <DialogActions>
           <Button onClick={handleCancelDelete} color="primary">
             Cancel
