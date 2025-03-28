@@ -29,22 +29,22 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { useRouter } from "next/navigation";
 
 const schema = yup.object().shape({
-  inspectorsName: yup.string().required("Inspector Name is required"),
-  inspectorEmail: yup.string().required("Email Name is required"),
-  inspectorPassword: yup.string().required("Password is required"),
+  clientName: yup.string().required("Client Name is required"),
+  clientEmail: yup.string().required("Email Name is required"),
+  clientPassword: yup.string().required("Password is required"),
   role: yup
     .number()
     .required("Role is required") // Validation message
     .oneOf([1, 2, 3], "Invalid role selected"),
   companyName: yup.string().required("Company Name is required"),
-  inspectorDesignation: yup
+  clientDesignation: yup
     .string()
-    .required("Inspector Designation is required"),
+    .required("Client Designation is required"),
 });
 
-const AddInspectorForm = ({
+const AddClientForm = ({
   mode = "create",
-  userId = null,
+  clientId = null,
   defaultValues = {},
 }) => {
   const [formData, setFormData] = useState({});
@@ -61,9 +61,9 @@ const AddInspectorForm = ({
   } = useForm({
     resolver: yupResolver(schema),
     defaultValues: defaultValues || {
-      inspectorsName: "",
-      inspectorEmail: "",
-      inspectorPassword: "",
+      clientName: "",
+      clientEmail: "",
+      clientPassword: "",
       role: "",
       companyName: "",
     },
@@ -90,29 +90,29 @@ const AddInspectorForm = ({
   }, [countryData]); */
 
   useEffect(() => {
-    if (mode !== "update" || !userId) return;
+    if (mode !== "update" || !clientId) return;
 
     const fetchUserDetails = async () => {
       try {
-        const res = await getInspectorsDetails(userId);
+        const res = await getInspectorsDetails(clientId);
         const data = res?.data?.data;
 
         if (!data) return;
 
         setFormData(data);
-        setValue("inspectorsName", data?.name);
+        setValue("clientName", data?.name);
         setValue("companyName", data?.companyName);
-        setValue("inspectorEmail", data?.email);
-        setValue("inspectorPassword", data?.password);
+        setValue("clientEmail", data?.email);
+        setValue("clientPassword", data?.password);
         setValue("role", parseInt(data?.roleId));
-        setValue("inspectorDesignation", data?.inspectorDesignation);
+        setValue("clientDesignation", data?.clientDesignation);
       } catch (error) {
         console.error("Error fetching visa details:", error);
       }
     };
 
     fetchUserDetails();
-  }, [mode, userId]);
+  }, [mode, clientId]);
 
   const snackbarClose = () => {
     setSnackBar({ open: false, message: "" });
@@ -130,11 +130,11 @@ const AddInspectorForm = ({
     //   setIsDataLoading(false);
     // }, 2000);
     let payload = {
-      name: data?.inspectorsName,
+      name: data?.clientName,
       roleId: data?.role,
-      email: data?.inspectorEmail,
-      password: data?.inspectorPassword,
-      inspectorDesignation: data?.inspectorDesignation,
+      email: data?.clientEmail,
+      password: data?.clientPassword,
+      clientDesignation: data?.clientDesignation,
       companyName: data?.companyName,
       // ...data,
     };
@@ -148,20 +148,20 @@ const AddInspectorForm = ({
           if (res?.status === 400) {
             setSnackBar({ open: true, message: res?.data.message });
           } else {
-            router.push("/staff/");
+            router.push("/clients/");
           }
         })
         .catch((error) => {
           console.log("error", error);
         });
       setIsDataLoading(false);
-    } else if (mode === "update" && userId) {
-      await updateInspectorDetail(userId, payload)
+    } else if (mode === "update" && clientId) {
+      await updateInspectorDetail(clientId, payload)
         .then((res) => {
           if (res?.status === 400) {
             setSnackBar({ open: true, message: res?.data.message });
           } else {
-            router.push("/staff/");
+            router.push("/clients/");
           }
         })
         .catch((error) => {
@@ -190,7 +190,7 @@ const AddInspectorForm = ({
                 <Grid2 container spacing={3}>
                   <Grid2 size={{ xs: 12 }}>
                     <Controller
-                      name="inspectorsName"
+                      name="clientName"
                       control={control}
                       render={({ field }) => {
                         return (
@@ -200,13 +200,13 @@ const AddInspectorForm = ({
                             variant="standard"
                             label={
                               <span>
-                                Inserpector Name{" "}
+                                Client Name{" "}
                                 <span style={{ color: "red" }}>*</span>
                               </span>
                             }
                             placeholder="Enter name"
-                            error={Boolean(errors.inspectorsName)}
-                            helperText={errors.inspectorsName?.message}
+                            error={Boolean(errors.clientName)}
+                            helperText={errors.clientName?.message}
                             InputProps={{
                               style: { color: "black" },
                             }}
@@ -218,7 +218,7 @@ const AddInspectorForm = ({
 
                   <Grid2 size={{ xs: 12 }}>
                     <Controller
-                      name="inspectorEmail"
+                      name="clientEmail"
                       control={control}
                       render={({ field }) => {
                         return (
@@ -232,8 +232,8 @@ const AddInspectorForm = ({
                               </span>
                             }
                             placeholder="Enter email"
-                            error={Boolean(errors.inspectorEmail)}
-                            helperText={errors.inspectorEmail?.message}
+                            error={Boolean(errors.clientEmail)}
+                            helperText={errors.clientEmail?.message}
                             InputProps={{
                               style: { color: "black" },
                             }}
@@ -245,7 +245,7 @@ const AddInspectorForm = ({
 
                   <Grid2 size={{ xs: 12 }}>
                     <Controller
-                      name="inspectorPassword"
+                      name="clientPassword"
                       control={control}
                       render={({ field }) => (
                         <CommonInput
@@ -258,8 +258,8 @@ const AddInspectorForm = ({
                             </span>
                           }
                           placeholder="Enter password"
-                          error={Boolean(errors.inspectorPassword)}
-                          helperText={errors.inspectorPassword?.message}
+                          error={Boolean(errors.clientPassword)}
+                          helperText={errors.clientPassword?.message}
                           type="password"
                           InputProps={{
                             style: { color: "black" },
@@ -354,7 +354,7 @@ const AddInspectorForm = ({
                   </Grid2>
                   <Grid2 size={{ xs: 12 }}>
                     <Controller
-                      name="inspectorDesignation"
+                      name="clientDesignation"
                       control={control}
                       render={({ field }) => (
                         <CommonInput
@@ -363,13 +363,13 @@ const AddInspectorForm = ({
                           variant="standard"
                           label={
                             <span>
-                              Inspector Designation{" "}
+                              Client Designation{" "}
                               <span style={{ color: "red" }}>*</span>
                             </span>
                           }
                           placeholder="Enter password"
-                          error={Boolean(errors.inspectorDesignation)}
-                          helperText={errors.inspectorDesignation?.message}
+                          error={Boolean(errors.clientDesignation)}
+                          helperText={errors.clientDesignation?.message}
                           InputProps={{
                             style: { color: "black" },
                           }}
@@ -413,4 +413,4 @@ const AddInspectorForm = ({
   );
 };
 
-export default AddInspectorForm;
+export default AddClientForm;

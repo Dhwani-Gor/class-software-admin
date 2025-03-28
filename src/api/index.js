@@ -183,7 +183,7 @@ export const getInspectorsDetails = async (id) => {
 export const updateInspectorDetail = async (id, payload) => {
   let result;
   try {
-    result = await axiosInstance.put(`/api/users/${id}`, payload);
+    result = await axiosInstance.patch(`/api/users/${id}`, payload);
   } catch (e) {
     result = e;
   }
