@@ -53,13 +53,14 @@ const Login = () => {
   const onSubmit = async (data) => {
     try {
       const res = await adminLogin(data);
-      if (!res?.response?.data.status)
-        toast.error(res?.response?.data?.errorMessage);
+      if (!res?.data?.data.status)
+        toast.error(res?.data?.data?.errorMessage);
+      
       dispatch(
         login({
-          email: res?.data?.data?.user?.email,
-          password: res?.data?.data?.user?.password,
-          token: res?.data?.data?.token,
+          email: res?.data?.data?.email,
+          password: res?.data?.data?.password,
+          token: res?.data?.data?.token,...res?.data?.data
         })
       );
       setSnackBar({ open: true, message: res?.data.status });
