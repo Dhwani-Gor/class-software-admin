@@ -26,7 +26,7 @@ const Reports = () => {
 
   return (
     <Layout>
-      <CommonCard>
+      <CommonCard sx={{ mt: 0 }}>
         <Stack
           direction="row"
           alignItems="center"

@@ -41,7 +41,7 @@ const GenerateReport = () => {
 
     return (
         <Box>
-            <CommonCard>
+            <CommonCard sx={{ mt: 0 }}>
                 <Typography variant="h4" fontWeight={700}>
                     Generate Journal
                 </Typography>

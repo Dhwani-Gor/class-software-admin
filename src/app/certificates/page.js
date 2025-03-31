@@ -176,7 +176,7 @@ const Countries = () => {
 
   return (
     <Layout>
-      <CommonCard>
+      <CommonCard sx={{ mt: 0 }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Typography variant="h4" fontWeight={700}>
             Certificates

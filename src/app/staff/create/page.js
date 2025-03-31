@@ -6,17 +6,19 @@ import Layout from "@/Layout";
 import { Stack } from "@mui/material";
 import CommonCard from "@/components/CommonCard";
 import AddInspectorForm from "@/components/AddInspectorForm";
+import AddClientInspectorCommonForm from "@/components/AddClientInspectorCommonForm";
 
 const AddCountry = () => {
   return (
     <Layout>
-      <CommonCard>
+      <CommonCard sx={{ mt: 0 }}>
       <Typography variant="h6" fontWeight={"700"}>
         Staff / Inspectors
       </Typography>
       </CommonCard>
       <Stack>
-        <AddInspectorForm mode="create"/>
+        {/* <AddInspectorForm mode="create"/> */}
+        <AddClientInspectorCommonForm mode="create" role="inspector" />
       </Stack>
     </Layout>
   );

@@ -7,7 +7,7 @@ import Layout from "@/Layout";
 const Reports = () => {
   return (
     <Layout>
-      <CommonCard>
+      <CommonCard sx={{ mt: 0 }}>
         <Typography variant="h4" fontWeight={700}>
           Reports
         </Typography>

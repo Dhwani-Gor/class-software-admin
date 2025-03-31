@@ -60,7 +60,7 @@ const Countries = () => {
     await getUsersDetails(page, limit, searchQuery)
       .then((res) => {
         if (res?.data?.data?.length > 0) {
-          const flattenedData = res?.data?.data?.map((item) => ({
+          const flattenedData = res?.data?.data?.filter((item) => item?.roleId === "2").map((item) => ({
             id: item?.id || "-",
             companyName: item?.companyName || "-",
             email: item?.email || "-",
@@ -70,7 +70,7 @@ const Countries = () => {
           const sortedData = flattenedData?.sort((a, b) => a?.id - b?.id);
           
           setInspectorLists(sortedData);
-          setTotalRows(res?.data?.data?.totalVisas);
+          setTotalRows(sortedData.length);
         } else {
           setInspectorLists([]);
           setTotalRows(0);
@@ -125,7 +125,7 @@ const Countries = () => {
 
   const handlePageChange = (event, value) => {
     setPage(value);
-    router.push(`/countries?page=${value}&limit=${limit}`);
+    router.push(`/staff?page=${value}&limit=${limit}`);
   };
 
   const columns = [
@@ -178,7 +178,7 @@ const Countries = () => {
 
   return (
     <Layout>
-      <CommonCard>
+      <CommonCard sx={{ mt: 0 }}>
         <Stack
           direction="row"
           alignItems="center"

@@ -24,7 +24,7 @@ import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import CommonInput from "@/components/CommonInput";
-import { deleteUser, deleteVisa, getUsersDetails, getVisaDetails } from "@/api";
+import { deleteUser, getUsersDetails } from "@/api";
 import { useDispatch } from "react-redux";
 import { clearCountry } from "@/redux/slice/countrysSlice";
 
@@ -60,7 +60,8 @@ const Clients = () => {
     await getUsersDetails(page, limit, searchQuery)
       .then((res) => {
         if (res?.data?.data?.length > 0) {
-          const flattenedData = res?.data?.data?.map((item) => ({
+          
+          const flattenedData = res?.data?.data?.filter((item) => item?.roleId === "3").map((item) => ({
             id: item?.id || "-",
             companyName: item?.companyName || "-",
             email: item?.email || "-",
@@ -70,7 +71,7 @@ const Clients = () => {
           const sortedData = flattenedData?.sort((a, b) => a?.id - b?.id);
           
           setInspectorLists(sortedData);
-          setTotalRows(res?.data?.data?.totalVisas);
+          setTotalRows(sortedData?.length);
         } else {
           setInspectorLists([]);
           setTotalRows(0);
@@ -113,8 +114,8 @@ const Clients = () => {
       }
       fetchUserListData(page, limit, debouncedSearch);
     } catch (e) {
-      console.error("Error deleting Inspectors:", e.response?.data || e.message);
-      setSnackBar({ open: true, message: "Failed to delete Inspectors." });
+      console.error("Error deleting Client:", e.response?.data || e.message);
+      setSnackBar({ open: true, message: "Failed to delete Client." });
     }
   };
 
@@ -125,7 +126,7 @@ const Clients = () => {
 
   const handlePageChange = (event, value) => {
     setPage(value);
-    router.push(`/countries?page=${value}&limit=${limit}`);
+    router.push(`/clients?page=${value}&limit=${limit}`);
   };
 
   const columns = [
@@ -155,7 +156,7 @@ const Clients = () => {
       width: 100,
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
-          <Tooltip title="Edit Inspector">
+          <Tooltip title="Edit Client">
             <IconButton
               color="primary"
               onClick={() => router.push(`/clients/${params?.id}`)}
@@ -163,7 +164,7 @@ const Clients = () => {
               <EditIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Delete Inspector">
+          <Tooltip title="Delete Client">
             <IconButton
               color="error"
               onClick={() => handleDeleteClick(params?.id)}
@@ -178,7 +179,7 @@ const Clients = () => {
 
   return (
     <Layout>
-      <CommonCard>
+      <CommonCard sx={{ mt: 0 }}>
         <Stack
           direction="row"
           alignItems="center"
@@ -259,7 +260,7 @@ const Clients = () => {
       </CommonCard>
 
       <Dialog open={openDialog} onClose={handleCancelDelete}>
-        <DialogTitle>Are you sure you want to delete this Inspectors?</DialogTitle>
+        <DialogTitle>Are you sure you want to delete this Client?</DialogTitle>
         <DialogActions>
           <Button onClick={handleCancelDelete} color="primary">
             Cancel
