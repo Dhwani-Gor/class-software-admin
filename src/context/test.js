@@ -52,26 +52,21 @@ const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (isAuthenticated && roleId) {
-      const isAllowedRoute = (allowedRoutes) => {
-        return allowedRoutes.some((route) => pathname.startsWith(route) || pathname.includes(route));
-      };
-  
       if (roleId === "1") {
-        if (!isAllowedRoute(allowedRoutesRole1)) {
-          router.replace(allowedRoutesRole1[0]);
-        }
+        if (!allowedRoutesRole1.includes(pathname)) {
+            router.replace(allowedRoutesRole1[0]);
+          }
       } else if (roleId === "2") {
-        if (!isAllowedRoute(allowedRoutesRole2)) {
-          router.replace(allowedRoutesRole2[0]);
-        }
+        if (!allowedRoutesRole2.includes(pathname)) {
+            router.replace(allowedRoutesRole2[0]);
+          }
       } else if (roleId === "3") {
-        if (!isAllowedRoute(allowedRoutesRole3)) {
-          router.replace(allowedRoutesRole3[0]);
-        }
+        if (!allowedRoutesRole3.includes(pathname)) {
+            router.replace(allowedRoutesRole3[0]);
+          }
       }
     }
-  }, [isAuthenticated, roleId, pathname, router]);
-  
+  }, [isAuthenticated, roleId, router]);
 
   const login = (data) => {
     // console.log("==> welcome", data);

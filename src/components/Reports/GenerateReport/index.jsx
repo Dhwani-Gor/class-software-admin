@@ -6,17 +6,17 @@ import CommonButton from "@/components/CommonButton";
 import { useRouter } from "next/navigation";
 
 const ship_data = [
-    { label: "Ship 1", value: "Ship 1" },
-    { label: "Ship 2", value: "Ship 2" },
-    { label: "Ship 3", value: "Ship 3" },
-    { label: "Ship 4", value: "Ship 4" },
+    { label: "Ship 1", value: "Ship1" },
+    { label: "Ship 2", value: "Ship2" },
+    { label: "Ship 3", value: "Ship3" },
+    { label: "Ship 4", value: "Ship4" },
 ];
 
 const client_data = [
-    { label: "Client 1", value: "Client 1" },
-    { label: "Client 2", value: "Client 2" },
-    { label: "Client 3", value: "Client 3" },
-    { label: "Client 4", value: "Client 4" },
+    { label: "Client 1", value: "Client1" },
+    { label: "Client 2", value: "Client2" },
+    { label: "Client 3", value: "Client3" },
+    { label: "Client 4", value: "Client4" },
 ];
 
 const GenerateReport = () => {

@@ -149,7 +149,6 @@ const Clients = () => {
       flex: 1,
     },
     { field: "companyName", headerName: "Company Name", flex: 1 },
-    { field: "inspectorDesignation", headerName: "Client Designation", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",

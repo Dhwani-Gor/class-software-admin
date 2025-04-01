@@ -124,7 +124,7 @@ const Countries = () => {
 
   const handlePageChange = (event, value) => {
     setPage(value);
-    router.push(`/countries?page=${value}&limit=${limit}`);
+    router.push(`/certificates?page=${value}&limit=${limit}`);
   };
 
   const columns = [
@@ -156,7 +156,7 @@ const Countries = () => {
           <Tooltip title="Edit Country">
             <IconButton
               color="primary"
-              onClick={() => router.push(`/countries/${params?.id}`)}
+              onClick={() => router.push(`/certificates/${params?.id}`)}
             >
               <EditIcon />
             </IconButton>
@@ -181,16 +181,16 @@ const Countries = () => {
           <Typography variant="h4" fontWeight={700}>
             Certificates
           </Typography>
-          <CommonButton
+          {/* <CommonButton
             sx={{ textTransform: "capitalize" }}
             text="Generate New certificate"
             variant="contained"
             onClick={() => {
               dispatch(clearCountry());
-              router.push("/countries/create");
+              router.push("/certificates/create");
             }}
             endIcon={<AddIcon />}
-          />
+          /> */}
         </Stack>
       </CommonCard>
 

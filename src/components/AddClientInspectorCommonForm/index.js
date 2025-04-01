@@ -31,10 +31,6 @@ const inspectorSchema = yup.object().shape({
   name: yup.string().required("Inspector Name is required"),
   mail: yup.string().required("Email is required"),
   password: yup.string().required("Password is required"),
-  role: yup
-    .number()
-    .required("Role is required")
-    .oneOf([1, 2, 3], "Invalid role selected"),
   inspectorDesignation: yup
     .string()
     .required("Inspector Designation is required"),
@@ -44,10 +40,6 @@ const clientSchema = yup.object().shape({
   name: yup.string().required("Client Name is required"),
   mail: yup.string().required("Email is required"),
   password: yup.string().required("Password is required"),
-  role: yup
-    .number()
-    .required("Role is required")
-    .oneOf([1, 2, 3], "Invalid role selected"),
   companyName: yup.string().required("Company Name is required"),
 });
 
@@ -87,7 +79,6 @@ const AddClientInspectorCommonForm = ({
       name: "",
       mail: "",
       password: "",
-      role: "",
       companyName: "",
     },
   });
@@ -102,7 +93,7 @@ const AddClientInspectorCommonForm = ({
           const data = res?.data?.data;
 
           if (!data) return;
-          console.log(data, "response data ==>");
+          // console.log(data, "response data ==>");
 
           setFormData(data);
 
@@ -110,7 +101,6 @@ const AddClientInspectorCommonForm = ({
           setValue("companyName", data?.companyName);
           setValue("mail", data?.email);
           setValue("password", data?.password);
-          setValue("role", parseInt(data?.roleId));
         } catch (error) {
           console.error("Error fetching client details:", error);
         }
@@ -127,7 +117,7 @@ const AddClientInspectorCommonForm = ({
           setValue("inspectorDesignation", data?.inspectorDesignation);
           setValue("mail", data?.email);
           setValue("password", data?.password);
-          setValue("role", parseInt(data?.roleId));
+          // setValue("role", parseInt(data?.roleId));
         } catch (error) {
           console.error("Error fetching client details:", error);
         }
@@ -152,7 +142,7 @@ const AddClientInspectorCommonForm = ({
     if(role === "client"){
        payload = {
         name: data?.name,
-        roleId: data?.role,
+        roleId: 3,
         email: data?.mail,
         password: data?.password,
         companyName: data?.companyName,
@@ -162,7 +152,7 @@ const AddClientInspectorCommonForm = ({
     else{
        payload = {
         name: data?.name,
-        roleId: data?.role,
+        roleId: 2,
         email: data?.mail,
         password: data?.password,
         inspectorDesignation: data?.inspectorDesignation,
@@ -306,7 +296,7 @@ const AddClientInspectorCommonForm = ({
                       )}
                     />
                   </Grid2>
-                  <Grid2 size={{ xs: 12 }}>
+                  {/* <Grid2 size={{ xs: 12 }}>
                     <Controller
                       name="role"
                       control={control}
@@ -363,7 +353,7 @@ const AddClientInspectorCommonForm = ({
                         </FormControl>
                       )}
                     />
-                  </Grid2>
+                  </Grid2> */}
                   {role === "client" ? (
                     <Grid2 size={{ xs: 12 }}>
                       <Controller
@@ -380,7 +370,7 @@ const AddClientInspectorCommonForm = ({
                                 <span style={{ color: "red" }}>*</span>
                               </span>
                             }
-                            placeholder="Enter password"
+                            placeholder="Enter company name"
                             error={Boolean(errors.companyName)}
                             helperText={errors.companyName?.message}
                             InputProps={{
@@ -406,7 +396,7 @@ const AddClientInspectorCommonForm = ({
                                 <span style={{ color: "red" }}>*</span>
                               </span>
                             }
-                            placeholder="Enter password"
+                            placeholder="Enter inspector designation"
                             error={Boolean(errors.inspectorDesignation)}
                             helperText={errors.inspectorDesignation?.message}
                             InputProps={{

@@ -12,7 +12,7 @@ const AddCountry = () => {
     <Layout>
       <CommonCard sx={{ mt: 0 }}>
       <Typography variant="h6" fontWeight={"700"}>
-        Staff / Inspectors
+        Certificates
       </Typography>
       </CommonCard>
       <Stack>

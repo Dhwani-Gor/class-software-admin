@@ -5,17 +5,14 @@ export const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_SERVER_URL,
 });
 
-const getToken = () => {
-  const state = store.getState();
-  return state.auth?.userInfo?.token;
-};
+
 
 //axios instance
 axiosInstance.interceptors.request.use(
   function (config) {
     try {
       config.headers["Content-Type"] = "application/json";
-      const token = getToken();
+      const token = localStorage.getItem("token")
 
       if (token) {
         config.headers["authorization"] = `Bearer ${token}`;
@@ -184,6 +181,17 @@ export const updateInspectorDetail = async (id, payload) => {
   let result;
   try {
     result = await axiosInstance.patch(`/api/users/${id}`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+
+export const generateInspection = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/api/inspections/generateInspection`, payload);
   } catch (e) {
     result = e;
   }
