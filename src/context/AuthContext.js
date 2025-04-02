@@ -51,6 +51,12 @@ const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    if (!isAuthenticated && !isLoading && pathname !== "/login") {
+      router.replace("/login");
+    }
+  }, [isAuthenticated, isLoading, pathname, router]);
+
+  useEffect(() => {
     if (isAuthenticated && roleId) {
       const isAllowedRoute = (allowedRoutes) => {
         return allowedRoutes.some((route) => pathname.startsWith(route) || pathname.includes(route));

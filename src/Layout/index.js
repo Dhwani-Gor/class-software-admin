@@ -115,7 +115,7 @@ const Layout = ({ children }) => {
                   justifyContent="space-between"
                   width="100%"
                 >
-                  <Typography> {userInfo?.userName}</Typography>
+                  <Typography> {userInfo?.name} Admin</Typography>
                 </Box>
               </MenuItem>
               <Divider />

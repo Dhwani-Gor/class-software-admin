@@ -27,21 +27,22 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useRouter } from "next/navigation";
 
-const inspectorSchema = yup.object().shape({
-  name: yup.string().required("Inspector Name is required"),
-  mail: yup.string().required("Email is required"),
-  password: yup.string().required("Password is required"),
-  inspectorDesignation: yup
-    .string()
-    .required("Inspector Designation is required"),
-});
+const inspectorSchema = (mode) =>
+  yup.object().shape({
+    name: yup.string().required("Inspector Name is required"),
+    mail: yup.string().required("Email is required"),
+    password: mode === "create" ? yup.string().required("Password is required") : yup.string().notRequired(),
+    inspectorDesignation: yup.string().required("Inspector Designation is required"),
+  });
 
-const clientSchema = yup.object().shape({
-  name: yup.string().required("Client Name is required"),
-  mail: yup.string().required("Email is required"),
-  password: yup.string().required("Password is required"),
-  companyName: yup.string().required("Company Name is required"),
-});
+const clientSchema = (mode) =>
+  yup.object().shape({
+    name: yup.string().required("Client Name is required"),
+    mail: yup.string().required("Email is required"),
+    password: mode === "create" ? yup.string().required("Password is required") : yup.string().notRequired(),
+    companyName: yup.string().required("Company Name is required"),
+  });
+
 
 const AddClientInspectorCommonForm = ({
   mode = "create",
@@ -65,7 +66,7 @@ const AddClientInspectorCommonForm = ({
   //     return role === "client" ? clientSchema : inspectorSchema;
   //   }, [role]);
 
-  const validationSchema = role === "client" ? clientSchema : inspectorSchema;
+  const validationSchema = role === "client" ? clientSchema(mode) : inspectorSchema(mode);
 
   const {
     control,
@@ -97,6 +98,7 @@ const AddClientInspectorCommonForm = ({
 
           setFormData(data);
 
+          setValue('id', data?.id)
           setValue("name", data?.name);
           setValue("companyName", data?.companyName);
           setValue("mail", data?.email);
@@ -110,9 +112,10 @@ const AddClientInspectorCommonForm = ({
           const data = res?.data?.data;
 
           if (!data) return;
+          
 
           setFormData(data);
-
+          setValue('id', data?.id)
           setValue("name", data?.name);
           setValue("inspectorDesignation", data?.inspectorDesignation);
           setValue("mail", data?.email);
@@ -127,56 +130,108 @@ const AddClientInspectorCommonForm = ({
     fetchUserDetails();
   }, [mode, userId, role, setValue]);
 
+  // const onSubmit = async (data) => {
+  //   // console.log(data, "data");
+
+  //   setIsDataLoading(true);
+  //   // Handle the submission logic here
+  //   // setTimeout(() => {
+  //   //   setSnackBar({ open: true, message: "Form submitted successfully!" });
+  //   //   setIsDataLoading(false);
+  //   // }, 2000);
+
+  //   let payload = {};
+
+  //   if(role === "client"){
+  //      payload = {
+  //       name: data?.name,
+  //       roleId: 3,
+  //       email: data?.mail,
+  //       password: data?.password,
+  //       companyName: data?.companyName,
+  //       // ...data,
+  //     };
+  //   }
+  //   else{
+  //      payload = {
+  //       name: data?.name,
+  //       roleId: 2,
+  //       email: data?.mail,
+  //       password: data?.password,
+  //       inspectorDesignation: data?.inspectorDesignation,
+  //       // ...data,
+  //     };
+  //   }
+
+  //   const redirectPath = role === "client" ? "/clients/" : "/staff/";
+
+  //   if (mode === "create") {
+  //     await addInspectors(payload)
+  //       .then((res) => {
+  //         console.log("res", res);
+  //         console.log("res 22", res?.response?.data?.message);
+  //         if (res?.status === 400) {
+  //           setSnackBar({ open: true, message: res?.data.message });
+  //         } else {
+  //           router.push(redirectPath);
+  //         }
+  //       })
+  //       .catch((error) => {
+  //         console.log("error", error);
+  //       });
+  //     setIsDataLoading(false);
+  //   } else if (mode === "update" && userId) {
+  //     await updateInspectorDetail(userId, payload)
+  //       .then((res) => {
+  //         if (res?.status === 400) {
+  //           setSnackBar({ open: true, message: res?.data.message });
+  //         } else {
+  //           router.push(redirectPath);
+  //         }
+  //       })
+  //       .catch((error) => {
+  //         console.log("error", error);
+  //       });
+  //     setIsDataLoading(false);
+  //   }
+  // };
+
+
   const onSubmit = async (data) => {
-    // console.log(data, "data");
-
+    console.log(data);
+    
     setIsDataLoading(true);
-    // Handle the submission logic here
-    // setTimeout(() => {
-    //   setSnackBar({ open: true, message: "Form submitted successfully!" });
-    //   setIsDataLoading(false);
-    // }, 2000);
-
-    let payload = {};
-
-    if(role === "client"){
-       payload = {
-        name: data?.name,
-        roleId: 3,
-        email: data?.mail,
-        password: data?.password,
-        companyName: data?.companyName,
-        // ...data,
-      };
+  
+    let payload = {
+      id : data.id ? data.id : null,
+      name: data?.name,
+      roleId: role === "client" ? 3 : 2,
+      email: data?.mail,
+    };
+  
+    if (role === "client") {
+      payload.companyName = data?.companyName;
+    } else {
+      payload.inspectorDesignation = data?.inspectorDesignation;
     }
-    else{
-       payload = {
-        name: data?.name,
-        roleId: 2,
-        email: data?.mail,
-        password: data?.password,
-        inspectorDesignation: data?.inspectorDesignation,
-        // ...data,
-      };
+  
+    // Only add password if it's a new user (create mode)
+    if (mode === "create") {
+      payload.password = data?.password;
     }
-
+  
     const redirectPath = role === "client" ? "/clients/" : "/staff/";
-
+  
     if (mode === "create") {
       await addInspectors(payload)
         .then((res) => {
-          console.log("res", res);
-          console.log("res 22", res?.response?.data?.message);
           if (res?.status === 400) {
             setSnackBar({ open: true, message: res?.data.message });
           } else {
             router.push(redirectPath);
           }
         })
-        .catch((error) => {
-          console.log("error", error);
-        });
-      setIsDataLoading(false);
+        .catch((error) => console.log("error", error));
     } else if (mode === "update" && userId) {
       await updateInspectorDetail(userId, payload)
         .then((res) => {
@@ -186,12 +241,13 @@ const AddClientInspectorCommonForm = ({
             router.push(redirectPath);
           }
         })
-        .catch((error) => {
-          console.log("error", error);
-        });
-      setIsDataLoading(false);
+        .catch((error) => console.log("error", error));
     }
+  
+    setIsDataLoading(false);
   };
+
+  
 
   const snackbarClose = () => {
     setSnackBar({ open: false, message: "" });
@@ -271,10 +327,13 @@ const AddClientInspectorCommonForm = ({
                     />
                   </Grid2>
 
+                  {
+                    mode != "update" &&
                   <Grid2 size={{ xs: 12 }}>
                     <Controller
                       name="password"
                       control={control}
+                      disabled = {mode === 'update'}
                       render={({ field }) => (
                         <CommonInput
                           {...field}
@@ -296,6 +355,7 @@ const AddClientInspectorCommonForm = ({
                       )}
                     />
                   </Grid2>
+}
                   {/* <Grid2 size={{ xs: 12 }}>
                     <Controller
                       name="role"

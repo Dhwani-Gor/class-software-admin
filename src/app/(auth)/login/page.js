@@ -55,7 +55,11 @@ const Login = () => {
   const onSubmit = async (data) => {
     try {
       const res = await adminLogin(data);
-      if (!res?.data?.data.status) toast.error(res?.data?.data?.errorMessage);
+      if (!res?.data?.data?.status) {
+        setSnackBar({ open: true, message: res?.response?.data?.message });
+      }
+
+      // if (!res?.data?.data.status) toast.error(res?.data?.data?.errorMessage);
       login(res?.data?.data);
       // dispatch(
       //   login({
@@ -66,8 +70,9 @@ const Login = () => {
       // );
       setSnackBar({ open: true, message: res?.data.status });
     } catch (err) {
-      console.log("error", err?.response);
-      toast.error(err?.response?.data?.errorMessage);
+      console.log("error", err);
+      // toast.error(err?.response?.data?.message);
+      setSnackBar({ open: true, message: response?.data?.message });
     }
   };
 

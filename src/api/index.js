@@ -197,3 +197,20 @@ export const generateInspection = async (payload) => {
   }
   return result;
 };
+
+
+export const getShipDetails = async (page, limit, search) => {
+  let result;
+  try {
+    result = await axiosInstance.get("/api/ships", {
+      params: {
+        page: page,
+        limit: limit,
+        query: search,
+      },
+    });
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
