@@ -189,13 +189,13 @@ const Clients = () => {
           </Typography>
           <CommonButton
             sx={{ textTransform: "capitalize" }}
-            text="Add new client"
+            text="Add client"
             variant="contained"
             onClick={() => {
               dispatch(clearCountry());
               router.push("/clients/create");
             }}
-            endIcon={<AddIcon />}
+            // endIcon={<AddIcon />}
           />
         </Stack>
       </CommonCard>

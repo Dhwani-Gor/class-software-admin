@@ -188,13 +188,13 @@ const Countries = () => {
           </Typography>
           <CommonButton
             sx={{ textTransform: "capitalize" }}
-            text="Add new Staff / Inspector"
+            text="Add Staff / Inspector"
             variant="contained"
             onClick={() => {
               dispatch(clearCountry());
               router.push("/staff/create");
             }}
-            endIcon={<AddIcon />}
+            // endIcon={<AddIcon />}
           />
         </Stack>
       </CommonCard>

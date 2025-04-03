@@ -155,22 +155,22 @@ const JournalEntryForm = ({ ship, client }) => {
     };
 
     try {
-      // Assuming generateInspection returns an ArrayBuffer (binary PDF)
       const res = await generateInspection(payload);
-      console.log("Binary response:", res);
-
-      // Ensure the response is an ArrayBuffer and handle it as a Blob
-      if (res instanceof ArrayBuffer) {
-        const blob = new Blob([res], { type: "application/pdf" });
-        const url = window.URL.createObjectURL(blob);
-        window.open(url, "_blank"); // Opens the PDF in a new tab
+      console.log("API Response:", res);
+    
+      // Ensure the response contains a valid URL
+      if (res?.data.status === "success" && res?.data?.url) {
+        window.open(res.data.url, "_blank"); // Opens the PDF in a new tab
         console.log("PDF opened successfully");
       } else {
-        throw new Error("Received data is not a valid ArrayBuffer");
+        throw new Error("Invalid response format or missing URL");
       }
     } catch (error) {
-      console.log("error", error); // Handle any errors here
+      console.error("Error:", error);
     }
+
+    
+    
 
     // console.log(payload, 'payload');
 

@@ -37,10 +37,10 @@ const Reports = () => {
           </Typography>
           <CommonButton
             sx={{ textTransform: "capitalize" }}
-            text="Generate New Journal"
+            text="Add Journal"
             variant="contained"
             onClick={() => router.push("/journal/generate-report")}
-            endIcon={<AddIcon />}
+            // endIcon={<AddIcon />}
           />
         </Stack>
       </CommonCard>
