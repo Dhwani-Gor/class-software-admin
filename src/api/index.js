@@ -5,17 +5,14 @@ export const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_SERVER_URL,
 });
 
-const getToken = () => {
-  const state = store.getState();
-  return state.auth?.userInfo?.token;
-};
+
 
 //axios instance
 axiosInstance.interceptors.request.use(
   function (config) {
     try {
       config.headers["Content-Type"] = "application/json";
-      const token = getToken();
+      const token = localStorage.getItem("token")
 
       if (token) {
         config.headers["authorization"] = `Bearer ${token}`;
@@ -128,6 +125,90 @@ export const getParticularVisaApplicantDetails = async (id) => {
   let result;
   try {
     result = await axiosInstance.get(`/visaApplication/get-visa-application/${id}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const addInspectors = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/api/users`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const getUsersDetails = async (page, limit, search) => {
+  let result;
+  try {
+    result = await axiosInstance.get("/api/users", {
+      params: {
+        page: page,
+        limit: limit,
+        query: search,
+      },
+    });
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const deleteUser = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.delete(`/api/users/${payload.id}`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const getInspectorsDetails = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/users/${id}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const updateInspectorDetail = async (id, payload) => {
+  let result;
+  try {
+    result = await axiosInstance.patch(`/api/users/${id}`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+
+export const generateInspection = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/api/inspections/generateInspection`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+
+export const getShipDetails = async (page, limit, search) => {
+  let result;
+  try {
+    result = await axiosInstance.get("/api/ships", {
+      params: {
+        page: page,
+        limit: limit,
+        query: search,
+      },
+    });
   } catch (error) {
     result = error;
   }

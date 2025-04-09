@@ -21,6 +21,7 @@ import { usePathname } from "next/navigation";
 import Logo from "../../public/assets/logo.svg";
 import Image from "next/image";
 import SidebarComponent from "./Sidebar";
+import { useAuth } from "@/hooks/useAuth";
 
 const MainContent = styled(Box)(({ theme }) => ({
   flexGrow: 1,
@@ -42,6 +43,7 @@ const Header = styled(AppBar)(({ theme }) => ({
 }));
 
 const Layout = ({ children }) => {
+  const { roleId,logout } = useAuth();
   const dispatch = useDispatch();
   const userInfo = useSelector((state) => state.auth.userInfo);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -58,6 +60,10 @@ const Layout = ({ children }) => {
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
+
+  const onLogout = () => {
+    logout()
+  }
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -109,11 +115,11 @@ const Layout = ({ children }) => {
                   justifyContent="space-between"
                   width="100%"
                 >
-                  <Typography> {userInfo?.userName}</Typography>
+                  <Typography> {userInfo?.name} Admin</Typography>
                 </Box>
               </MenuItem>
               <Divider />
-              <MenuItem onClick={() => dispatch(logout())}>
+              <MenuItem onClick={onLogout}>
                 <LogoutIcon sx={{ mr: 1 }} />
                 Logout
               </MenuItem>

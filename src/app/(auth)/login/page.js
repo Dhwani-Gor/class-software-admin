@@ -15,8 +15,9 @@ import { useDispatch } from "react-redux";
 import { login } from "@/redux/slice/authSlice";
 import { adminLogin } from "@/api";
 import { toast } from "react-toastify";
+import { useAuth } from "@/hooks/useAuth";
 
-const MainWrapper = styled(Box)(({ }) => ({
+const MainWrapper = styled(Box)(({}) => ({
   height: "100vh",
   display: "flex",
   justifyContent: "center",
@@ -35,7 +36,8 @@ const validationSchema = yup.object().shape({
 });
 
 const Login = () => {
-  const dispatch = useDispatch();
+  // const dispatch = useDispatch();
+  const { login } = useAuth();
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
   const {
     control,
@@ -53,19 +55,24 @@ const Login = () => {
   const onSubmit = async (data) => {
     try {
       const res = await adminLogin(data);
-      if (!res?.response?.data.status)
-        toast.error(res?.response?.data?.errorMessage);
-      dispatch(
-        login({
-          email: res?.data?.data?.user?.email,
-          password: res?.data?.data?.user?.password,
-          token: res?.data?.data?.token,
-        })
-      );
+      if (!res?.data?.data?.status) {
+        setSnackBar({ open: true, message: res?.response?.data?.message });
+      }
+
+      // if (!res?.data?.data.status) toast.error(res?.data?.data?.errorMessage);
+      login(res?.data?.data);
+      // dispatch(
+      //   login({
+      //     email: res?.data?.data?.email,
+      //     password: res?.data?.data?.password,
+      //     token: res?.data?.data?.token,...res?.data?.data
+      //   })
+      // );
       setSnackBar({ open: true, message: res?.data.status });
     } catch (err) {
-      console.log("error", err?.response);
-      toast.error(err?.response?.data?.errorMessage);
+      console.log("error", err);
+      // toast.error(err?.response?.data?.message);
+      setSnackBar({ open: true, message: response?.data?.message });
     }
   };
 

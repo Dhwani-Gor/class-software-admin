@@ -11,9 +11,9 @@ const UpdateCountry = ({ params }) => {
 
   return (
     <Layout>
-      <CommonCard>
+      <CommonCard sx={{ mt: 0 }}>
       <Typography variant="h6" fontWeight={"700"}>
-        Countries / Add Country
+        Certificates / Add Certificate
       </Typography>
       </CommonCard>
       <Stack>

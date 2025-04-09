@@ -16,8 +16,11 @@ const Reports = () => {
   const [countryLists, setCountryLists] = useState([]); // Dummy empty data
   const [columns] = useState([
     { field: "id", headerName: "ID", width: 90 },
-    { field: "name", headerName: "Name", flex: 1 },
-    { field: "position", headerName: "Position", flex: 1 },
+    { field: "clientName", headerName: "Client Name", flex: 1 },
+    { field: "shipName", headerName: "Ship Name", flex: 1 },
+    { field: "staffName", headerName: "Staff/INspector Name", flex: 1 },
+    { field: "createdAt", headerName: "Report Date", flex: 1 },
+
   ]); // Example column data
 
   const handleSearchChange = (event) => {
@@ -26,7 +29,7 @@ const Reports = () => {
 
   return (
     <Layout>
-      <CommonCard>
+      <CommonCard sx={{ mt: 0 }}>
         <Stack
           direction="row"
           alignItems="center"
@@ -37,10 +40,10 @@ const Reports = () => {
           </Typography>
           <CommonButton
             sx={{ textTransform: "capitalize" }}
-            text="Generate New Journal"
+            text="Add Journal"
             variant="contained"
-            onClick={() => router.push("/journal/generate-report")}
-            endIcon={<AddIcon />}
+            onClick={() => router.push("/journal/journal-entry")}
+            // endIcon={<AddIcon />}
           />
         </Stack>
       </CommonCard>

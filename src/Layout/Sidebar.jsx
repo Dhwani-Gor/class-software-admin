@@ -4,15 +4,13 @@ import {
   Drawer,
   List,
   ListItem,
-  ListItemIcon,
   ListItemText,
 } from "@mui/material";
 import { styled } from "@mui/system";
-import SpaceDashboardIcon from "@mui/icons-material/SpaceDashboard";
-import EventIcon from "@mui/icons-material/Event";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { sidemenu_items } from "@/data";
+import { useAuth } from "@/hooks/useAuth";
 
 const drawerWidth = 320;
 
@@ -29,12 +27,26 @@ const Sidebar = styled(Drawer)(({ theme }) => ({
 }));
 
 const SidebarComponent = ({ isSidebarOpen }) => {
+  const { roleId } = useAuth(); // Get roleId from context
   const pathName = usePathname();
   const [activeTab, setActiveTab] = useState(pathName);
 
-  const handleTabClick = (tab) => {
-    setActiveTab(tab);
+  // Define role-based filtering logic
+  const getFilteredMenuItems = () => {
+    if (roleId === "1") {
+      return sidemenu_items; // Show all items for roleId 1
+    } else if (roleId === "3") {
+      return sidemenu_items.filter(item =>
+        ["Reports", "Certificates", "Settings"].includes(item.label)
+      );
+    } else if (roleId === "2") {
+      return sidemenu_items.filter(item =>
+        ["Journal", "Reports", "Certificates", "Settings"].includes(item.label)
+      );
+    }
+    return [];
   };
+
   return (
     <Sidebar variant="persistent" open={isSidebarOpen}>
       <Box
@@ -47,7 +59,7 @@ const SidebarComponent = ({ isSidebarOpen }) => {
         }}
       >
         <List sx={{ pt: 5 }}>
-          {sidemenu_items.map((item, index) => (
+          {getFilteredMenuItems().map((item, index) => (
             <Link
               key={index}
               href={item.to}
@@ -72,7 +84,6 @@ const SidebarComponent = ({ isSidebarOpen }) => {
                     (item.to === pathName && pathName.startsWith(pathName))
                       ? "primary.contrastText"
                       : "text.primary",
-
                   borderRadius: "8px",
                   paddingLeft: "16px",
                   paddingRight: "16px",
@@ -82,7 +93,7 @@ const SidebarComponent = ({ isSidebarOpen }) => {
                   },
                   transition: "all 0.3s ease",
                 }}
-                onClick={() => handleTabClick(item.key)}
+                onClick={() => setActiveTab(item.to)}
               >
                 <ListItemText
                   primary={item.label}

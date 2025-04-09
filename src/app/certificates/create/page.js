@@ -10,9 +10,9 @@ import CommonCard from "@/components/CommonCard";
 const AddCountry = () => {
   return (
     <Layout>
-      <CommonCard>
+      <CommonCard sx={{ mt: 0 }}>
       <Typography variant="h6" fontWeight={"700"}>
-        Countries / Add Country
+        Certificates
       </Typography>
       </CommonCard>
       <Stack>

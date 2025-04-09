@@ -1,0 +1,115 @@
+"use client";
+import React, { createContext, useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { Box, CircularProgress } from "@mui/material";
+import { jwtDecode } from "jwt-decode";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+export const AuthContext = createContext();
+
+const AuthProvider = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [roleId, setRoleId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const pathname = usePathname()
+
+  const allowedRoutesRole1 = ["/clients","staff","/journal", "/reports", "/certificates", "/settings"]
+  const allowedRoutesRole2 = ["/journal", "/reports", "/certificates", "/settings"];
+  const allowedRoutesRole3 = ["/reports", "/certificates", "/settings"];
+
+  useEffect(() => {
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const storedRoleId =
+      typeof window !== "undefined" ? localStorage.getItem("roleId") : null;
+
+    if (token) {
+      try {
+        const decodedToken = jwtDecode(token);
+        const currentTime = Math.floor(Date.now() / 1000);
+
+        if (decodedToken.exp < currentTime) {
+          toast.error("Session expired! Please log in again.");
+          logout();
+        } else {
+          setIsAuthenticated(true);
+          setRoleId(storedRoleId);
+          setTimeout(() => {
+            toast.error("Session expired! Please log in again.");
+            logout();
+          }, (decodedToken.exp - currentTime) * 1000);
+        }
+      } catch (error) {
+        console.error("Invalid Token:", error);
+        toast.error("Invalid session! Please log in again.");
+        logout();
+      }
+    }
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated && roleId) {
+      if (roleId === "1") {
+        if (!allowedRoutesRole1.includes(pathname)) {
+            router.replace(allowedRoutesRole1[0]);
+          }
+      } else if (roleId === "2") {
+        if (!allowedRoutesRole2.includes(pathname)) {
+            router.replace(allowedRoutesRole2[0]);
+          }
+      } else if (roleId === "3") {
+        if (!allowedRoutesRole3.includes(pathname)) {
+            router.replace(allowedRoutesRole3[0]);
+          }
+      }
+    }
+  }, [isAuthenticated, roleId, router]);
+
+  const login = (data) => {
+    // console.log("==> welcome", data);
+    localStorage.setItem("token", data?.token);
+    localStorage.setItem("roleId", data?.roleId);
+    setIsAuthenticated(true);
+    setRoleId(data?.roleId);
+
+    // const decodedToken = jwtDecode(data?.token);
+    // const currentTime = Math.floor(Date.now() / 1000);
+    // setTimeout(() => {
+    //   toast.error("Session expired! Please log in again.");
+    //   logout();
+    // }, (decodedToken.exp - currentTime) * 1000);
+  };
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("roleId");
+    setIsAuthenticated(false);
+    setRoleId(null);
+    router.replace("/login");
+  };
+
+  return (
+    <AuthContext.Provider value={{ isAuthenticated, roleId, isLoading, login, logout }}>
+      <ToastContainer position="top-right" autoClose={3000} />
+      {isLoading ? (
+        <Box
+          sx={{
+            height: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      ) : (
+        children
+      )}
+    </AuthContext.Provider>
+  );
+};
+
+export default AuthProvider;

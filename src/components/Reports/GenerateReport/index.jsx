@@ -1,28 +1,31 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Typography, MenuItem, FormControl, Select } from "@mui/material";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import { useRouter } from "next/navigation";
+import { getShipDetails, getUsersDetails } from "@/api";
 
 const ship_data = [
-    { label: "Ship 1", value: "Ship 1" },
-    { label: "Ship 2", value: "Ship 2" },
-    { label: "Ship 3", value: "Ship 3" },
-    { label: "Ship 4", value: "Ship 4" },
+    { label: "Ship 1", value: "Ship1" },
+    { label: "Ship 2", value: "Ship2" },
+    { label: "Ship 3", value: "Ship3" },
+    { label: "Ship 4", value: "Ship4" },
 ];
 
 const client_data = [
-    { label: "Client 1", value: "Client 1" },
-    { label: "Client 2", value: "Client 2" },
-    { label: "Client 3", value: "Client 3" },
-    { label: "Client 4", value: "Client 4" },
+    { label: "Client 1", value: "Client1" },
+    { label: "Client 2", value: "Client2" },
+    { label: "Client 3", value: "Client3" },
+    { label: "Client 4", value: "Client4" },
 ];
 
 const GenerateReport = () => {
     const router = useRouter();
     const [selectedShip, setSelectedShip] = useState("");
     const [selectedClient, setSelectedClient] = useState("");
+     const [clientLists, setClientLists] = useState([]);
+     const [shipLists, setShipLists] = useState([]);
 
     const handleClientChange = (event) => {
         setSelectedClient(event.target.value);
@@ -33,6 +36,56 @@ const GenerateReport = () => {
         setSelectedShip(event.target.value);
     };
 
+    const fetchUserListData = async (page, limit, searchQuery) => {
+        try {
+          const res = await getUsersDetails(page, limit, searchQuery);
+      
+          if (res?.data?.data?.length > 0) {
+            const filteredData = res.data.data
+              .filter((item) => item.roleId === "3")
+              .map((item) => ({
+                value: item.id || "-",
+                label: item.name || "-",
+              }));
+      
+            const sortedData = filteredData.sort((a, b) => a.value - b.value);
+      
+            setClientLists(sortedData);
+          } else {
+            setClientLists([]);
+          }
+        } catch (error) {
+          console.error("Error fetching client list:", error);
+        }
+      };
+      
+      const fetchShipListData = async (page, limit, searchQuery) => {
+        try {
+          const res = await getShipDetails(page, limit, searchQuery);
+      
+          if (res?.data?.data?.length > 0) {
+            const formattedData = res.data.data.map((item) => ({
+              value: item.id || "-",
+              label: item.name || "-",
+            }));
+      
+            const sortedData = formattedData.sort((a, b) => a.value - b.value);
+      
+            setShipLists(sortedData);
+          } else {
+            setShipLists([]);
+          }
+        } catch (error) {
+          console.error("Error fetching ship list:", error);
+        }
+      };
+      
+      useEffect(() => {
+        fetchUserListData();
+        fetchShipListData();
+      }, []);
+      
+
     const manageReport = () => {
         router.push(
             `/journal/journal-entry?ship=${selectedShip}&client=${selectedClient}`
@@ -41,7 +94,7 @@ const GenerateReport = () => {
 
     return (
         <Box>
-            <CommonCard>
+            <CommonCard sx={{ mt: 0 }}>
                 <Typography variant="h4" fontWeight={700}>
                     Generate Journal
                 </Typography>
@@ -62,7 +115,7 @@ const GenerateReport = () => {
                                 <MenuItem value="" disabled>
                                     Select Client
                                 </MenuItem>
-                                {client_data.map((client) => (
+                                {clientLists.map((client) => (
                                     <MenuItem key={client.value} value={client.value}>
                                         {client.label}
                                     </MenuItem>
@@ -85,7 +138,7 @@ const GenerateReport = () => {
                                     <MenuItem value="" disabled>
                                         Select Ship
                                     </MenuItem>
-                                    {ship_data.map((ship) => (
+                                    {shipLists.map((ship) => (
                                         <MenuItem key={ship.value} value={ship.value}>
                                             {ship.label}
                                         </MenuItem>

@@ -5,23 +5,24 @@ import Typography from "@mui/material/Typography";
 import Layout from "@/Layout";
 import { Stack } from "@mui/material";
 import CommonCard from "@/components/CommonCard";
-import AddInspectorForm from "@/components/AddInspectorForm";
+import AddClientForm from "@/components/AddClientForm";
 import AddClientInspectorCommonForm from "@/components/AddClientInspectorCommonForm";
 
-const AddCountry = () => {
+const UpdateClient = ({ params }) => {
+
   return (
     <Layout>
       <CommonCard sx={{ mt: 0 }}>
       <Typography variant="h6" fontWeight={"700"}>
-        Staff / Inspectors
+        Clients
       </Typography>
       </CommonCard>
       <Stack>
-        {/* <AddInspectorForm mode="create"/> */}
-        <AddClientInspectorCommonForm mode="create" role="inspector" />
+        {/* <AddClientForm mode="update" clientId={params?.update}/> */}
+        <AddClientInspectorCommonForm mode="update" userId={params?.update}  role="client" />
       </Stack>
     </Layout>
   );
 };
 
-export default AddCountry;
+export default UpdateClient;
