@@ -7,6 +7,7 @@ import { Stack } from "@mui/material";
 import CommonCard from "@/components/CommonCard";
 import AddInspectorForm from "@/components/AddInspectorForm";
 import AddClientInspectorCommonForm from "@/components/AddClientInspectorCommonForm";
+import AddClientForm from "@/components/AddClientForm";
 
 const AddClient = () => {
   return (
@@ -18,7 +19,8 @@ const AddClient = () => {
       </CommonCard>
       <Stack>
         {/* <AddInspectorForm mode="create" /> */}
-        <AddClientInspectorCommonForm mode="create" role="client" />
+        {/* <AddClientInspectorCommonForm mode="create" role="client" /> */}
+        <AddClientForm/>
       </Stack>
     </Layout>
   );

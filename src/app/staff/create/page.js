@@ -17,8 +17,8 @@ const AddCountry = () => {
       </Typography>
       </CommonCard>
       <Stack>
-        {/* <AddInspectorForm mode="create"/> */}
-        <AddClientInspectorCommonForm mode="create" role="inspector" />
+        <AddInspectorForm mode="create"/>
+        {/* <AddClientInspectorCommonForm mode="create" role="inspector" /> */}
       </Stack>
     </Layout>
   );

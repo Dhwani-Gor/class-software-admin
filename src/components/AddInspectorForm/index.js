@@ -17,9 +17,12 @@ import {
   RadioGroup,
   Snackbar,
   Stack,
+  Typography,
 } from "@mui/material";
 // import SuccessModal from "./SuccessModal";
 import { useDispatch, useSelector } from "react-redux";
+import Checkbox from "@mui/material/Checkbox";
+
 import { addCountryInfos } from "@/redux/slice/countrysSlice";
 import { Controller, useForm } from "react-hook-form";
 import CommonInput from "../CommonInput";
@@ -27,19 +30,16 @@ import CommonButton from "../CommonButton";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useRouter } from "next/navigation";
+import { CheckBox } from "@mui/icons-material";
 
 const schema = yup.object().shape({
-  inspectorsName: yup.string().required("Inspector Name is required"),
-  inspectorEmail: yup.string().required("Email Name is required"),
-  inspectorPassword: yup.string().required("Password is required"),
-  role: yup
-    .number()
-    .required("Role is required") // Validation message
-    .oneOf([1, 2, 3], "Invalid role selected"),
-  companyName: yup.string().required("Company Name is required"),
-  inspectorDesignation: yup
+  name: yup.string().required("Name is required"),
+  userName: yup.string().required("User Name is required"),
+  password: yup.string().required("Password is required"),
+  confirmPassword: yup
     .string()
-    .required("Inspector Designation is required"),
+    .required("Confirm Password is required")
+    .oneOf([yup.ref("password")], "Passwords must match"),
 });
 
 const AddInspectorForm = ({
@@ -50,6 +50,8 @@ const AddInspectorForm = ({
   const [formData, setFormData] = useState({});
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
   const [isDataLoading, setIsDataLoading] = useState(false);
+  const [reportingRights, setReportingRights] = useState(false);
+  const [dataEntryRights, setDataEntryRights] = useState(false);
   const dispatch = useDispatch();
   const router = useRouter();
   const {
@@ -61,9 +63,10 @@ const AddInspectorForm = ({
   } = useForm({
     resolver: yupResolver(schema),
     defaultValues: defaultValues || {
-      inspectorsName: "",
-      inspectorEmail: "",
-      inspectorPassword: "",
+      name: "",
+      userName: "",
+      password: "",
+      confirmPassword: "",
       role: "",
       companyName: "",
     },
@@ -100,10 +103,10 @@ const AddInspectorForm = ({
         if (!data) return;
 
         setFormData(data);
-        setValue("inspectorsName", data?.name);
-        setValue("companyName", data?.companyName);
-        setValue("inspectorEmail", data?.email);
-        setValue("inspectorPassword", data?.password);
+        setValue("name", data?.name);
+        setValue("userName", data?.userName);
+        setValue("password", data?.password);
+        setValue("confirmPassword", data?.confirmPassword);
         setValue("role", parseInt(data?.roleId));
         setValue("inspectorDesignation", data?.inspectorDesignation);
       } catch (error) {
@@ -118,57 +121,72 @@ const AddInspectorForm = ({
     setSnackBar({ open: false, message: "" });
   };
 
+  const cancelBtn = () => {
+    router.push("/staff");
+  }
+
   const onSubmit = async (data) => {
     // console.log(data, "data");
 
     console.log("data", data);
 
-    setIsDataLoading(true);
+    let payload ={
+      ...data,
+      reportingRights : reportingRights,
+      dataEntryRights : dataEntryRights
+    }
+
+    console.log(payload, 'on submit payload');
+    
+
+    // setIsDataLoading(true);
     // Handle the submission logic here
     // setTimeout(() => {
     //   setSnackBar({ open: true, message: "Form submitted successfully!" });
     //   setIsDataLoading(false);
     // }, 2000);
-    let payload = {
-      name: data?.inspectorsName,
-      roleId: data?.role,
-      email: data?.inspectorEmail,
-      password: data?.inspectorPassword,
-      inspectorDesignation: data?.inspectorDesignation,
-      companyName: data?.companyName,
-      // ...data,
-    };
 
-    if (mode === "create") {
-      // const handleSubmitInspectors = async (payload) => {
-      await addInspectors(payload)
-        .then((res) => {
-          console.log("res", res);
-          console.log("res 22", res?.response?.data?.message);
-          if (res?.status === 400) {
-            setSnackBar({ open: true, message: res?.data.message });
-          } else {
-            router.push("/staff/");
-          }
-        })
-        .catch((error) => {
-          console.log("error", error);
-        });
-      setIsDataLoading(false);
-    } else if (mode === "update" && userId) {
-      await updateInspectorDetail(userId, payload)
-        .then((res) => {
-          if (res?.status === 400) {
-            setSnackBar({ open: true, message: res?.data.message });
-          } else {
-            router.push("/staff/");
-          }
-        })
-        .catch((error) => {
-          console.log("error", error);
-        });
-      setIsDataLoading(false);
-    }
+    // let payload = {
+    //   name: data?.name,
+    //   roleId: data?.role,
+    //   userName: data?.userName,
+    //   password: data?.password,
+    //   confirmPassword: data?.confirmPassword,
+    //   inspectorDesignation: data?.inspectorDesignation,
+    //   companyName: data?.companyName,
+    //   // ...data,
+    // };
+
+    // if (mode === "create") {
+    //   // const handleSubmitInspectors = async (payload) => {
+    //   await addInspectors(payload)
+    //     .then((res) => {
+    //       console.log("res", res);
+    //       console.log("res 22", res?.response?.data?.message);
+    //       if (res?.status === 400) {
+    //         setSnackBar({ open: true, message: res?.data.message });
+    //       } else {
+    //         router.push("/staff/");
+    //       }
+    //     })
+    //     .catch((error) => {
+    //       console.log("error", error);
+    //     });
+    //   setIsDataLoading(false);
+    // } else if (mode === "update" && userId) {
+    //   await updateInspectorDetail(userId, payload)
+    //     .then((res) => {
+    //       if (res?.status === 400) {
+    //         setSnackBar({ open: true, message: res?.data.message });
+    //       } else {
+    //         router.push("/staff/");
+    //       }
+    //     })
+    //     .catch((error) => {
+    //       console.log("error", error);
+    //     });
+    //   setIsDataLoading(false);
+    // }
   };
 
   return (
@@ -190,7 +208,7 @@ const AddInspectorForm = ({
                 <Grid2 container spacing={3}>
                   <Grid2 size={{ xs: 12 }}>
                     <Controller
-                      name="inspectorsName"
+                      name="name"
                       control={control}
                       render={({ field }) => {
                         return (
@@ -200,13 +218,13 @@ const AddInspectorForm = ({
                             variant="standard"
                             label={
                               <span>
-                                Inserpector Name{" "}
+                                Name{" "}
                                 <span style={{ color: "red" }}>*</span>
                               </span>
                             }
                             placeholder="Enter name"
-                            error={Boolean(errors.inspectorsName)}
-                            helperText={errors.inspectorsName?.message}
+                            error={Boolean(errors.name)}
+                            helperText={errors.name?.message}
                             InputProps={{
                               style: { color: "black" },
                             }}
@@ -218,7 +236,7 @@ const AddInspectorForm = ({
 
                   <Grid2 size={{ xs: 12 }}>
                     <Controller
-                      name="inspectorEmail"
+                      name="userName"
                       control={control}
                       render={({ field }) => {
                         return (
@@ -228,12 +246,12 @@ const AddInspectorForm = ({
                             variant="standard"
                             label={
                               <span>
-                                Email <span style={{ color: "red" }}>*</span>
+                                User Name <span style={{ color: "red" }}>*</span>
                               </span>
                             }
-                            placeholder="Enter email"
-                            error={Boolean(errors.inspectorEmail)}
-                            helperText={errors.inspectorEmail?.message}
+                            placeholder="Enter User Name"
+                            error={Boolean(errors.userName)}
+                            helperText={errors.userName?.message}
                             InputProps={{
                               style: { color: "black" },
                             }}
@@ -245,7 +263,7 @@ const AddInspectorForm = ({
 
                   <Grid2 size={{ xs: 12 }}>
                     <Controller
-                      name="inspectorPassword"
+                      name="password"
                       control={control}
                       render={({ field }) => (
                         <CommonInput
@@ -258,8 +276,8 @@ const AddInspectorForm = ({
                             </span>
                           }
                           placeholder="Enter password"
-                          error={Boolean(errors.inspectorPassword)}
-                          helperText={errors.inspectorPassword?.message}
+                          error={Boolean(errors.password)}
+                          helperText={errors.password?.message}
                           type="password"
                           InputProps={{
                             style: { color: "black" },
@@ -268,115 +286,61 @@ const AddInspectorForm = ({
                       )}
                     />
                   </Grid2>
+
                   <Grid2 size={{ xs: 12 }}>
                     <Controller
-                      name="role"
+                      name="confirmPassword"
                       control={control}
                       render={({ field }) => (
-                        <FormControl component="fieldset" fullWidth>
-                          <FormLabel
-                            component="legend"
-                            style={{ color: "black" }}
-                          >
-                            Role Id <span style={{ color: "red" }}>*</span>
-                          </FormLabel>
-                          <RadioGroup
-                            {...field}
-                            row
-                            aria-label="role"
-                            name="role"
-                            value={objRole[field.value] || ""}
-                            onChange={(e) => {
-                              const selectedValue = {
-                                admin: 1,
-                                staff: 2,
-                                customer: 3,
-                              }[e.target.value];
-                              field.onChange(selectedValue);
-                            }}
-                          >
-                            {["admin", "staff", "customer"].map((role) => (
-                              <FormControlLabel
-                                key={role}
-                                value={role}
-                                control={
-                                  <Radio
-                                    sx={{
-                                      "&.Mui-checked": {
-                                        color: "black",
-                                      },
-                                      "&:focus-within": {
-                                        outline: "none",
-                                      },
-                                    }}
-                                  />
-                                }
-                                label={
-                                  role.charAt(0).toUpperCase() + role.slice(1)
-                                }
-                              />
-                            ))}
-                          </RadioGroup>
-                          {Boolean(errors.role) && (
-                            <FormHelperText error>
-                              {errors.role?.message}
-                            </FormHelperText>
-                          )}
-                        </FormControl>
+                        <CommonInput
+                          {...field}
+                          fullWidth
+                          variant="standard"
+                          label={
+                            <span>
+                              Confirm Password <span style={{ color: "red" }}>*</span>
+                            </span>
+                          }
+                          placeholder="Enter confirm password"
+                          error={Boolean(errors.confirmPassword)}
+                          helperText={errors.confirmPassword?.message}
+                          type="password"
+                          InputProps={{
+                            style: { color: "black" },
+                          }}
+                        />
                       )}
                     />
                   </Grid2>
 
-                  <Grid2 size={{ xs: 12 }}>
-                    <Controller
-                      name="companyName"
-                      control={control}
-                      render={({ field }) => (
-                        <CommonInput
-                          {...field}
-                          fullWidth
-                          variant="standard"
-                          label={
-                            <span>
-                              Company Name{" "}
-                              <span style={{ color: "red" }}>*</span>
-                            </span>
-                          }
-                          placeholder="Enter password"
-                          error={Boolean(errors.companyName)}
-                          helperText={errors.companyName?.message}
-                          InputProps={{
-                            style: { color: "black" },
-                          }}
+                  <Grid2 xs={12}>
+                    <Stack >
+                      <Typography variant="p" component="p">Rights</Typography>
+                    </Stack>
+
+                  <Grid2 item xs={12}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                        checked={reportingRights}
+                        onChange={(e) => setReportingRights(e.target.checked)}
                         />
-                      )}
+                      }
+                      label="Reporting Rights"
+                      />
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={dataEntryRights}
+                          onChange={(e) => setDataEntryRights(e.target.checked)}
+                        />
+                      }
+                      label=" Data Entry rights"
                     />
                   </Grid2>
-                  <Grid2 size={{ xs: 12 }}>
-                    <Controller
-                      name="inspectorDesignation"
-                      control={control}
-                      render={({ field }) => (
-                        <CommonInput
-                          {...field}
-                          fullWidth
-                          variant="standard"
-                          label={
-                            <span>
-                              Inspector Designation{" "}
-                              <span style={{ color: "red" }}>*</span>
-                            </span>
-                          }
-                          placeholder="Enter password"
-                          error={Boolean(errors.inspectorDesignation)}
-                          helperText={errors.inspectorDesignation?.message}
-                          InputProps={{
-                            style: { color: "black" },
-                          }}
-                        />
-                      )}
-                    />
                   </Grid2>
+
+
                 </Grid2>
 
                 <Stack
@@ -389,6 +353,11 @@ const AddInspectorForm = ({
                     type="submit"
                     variant="contained"
                     text="Submit"
+                  />
+                  <CommonButton
+                    onClick={cancelBtn}
+                    variant="contained"
+                    text="Cancel"
                   />
                 </Stack>
               </form>
