@@ -52,6 +52,7 @@ const AddInspectorForm = ({
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [reportingRights, setReportingRights] = useState(false);
   const [dataEntryRights, setDataEntryRights] = useState(false);
+  const [journalRights, setJournalRights] = useState(false);
   const dispatch = useDispatch();
   const router = useRouter();
   const {
@@ -133,7 +134,8 @@ const AddInspectorForm = ({
     let payload ={
       ...data,
       reportingRights : reportingRights,
-      dataEntryRights : dataEntryRights
+      dataEntryRights : dataEntryRights,
+      journalRights : journalRights
     }
 
     console.log(payload, 'on submit payload');
@@ -336,6 +338,15 @@ const AddInspectorForm = ({
                         />
                       }
                       label=" Data Entry rights"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={journalRights}
+                          onChange={(e) => setJournalRights(e.target.checked)}
+                        />
+                      }
+                      label=" Journal Unlocking Rights"
                     />
                   </Grid2>
                   </Grid2>
