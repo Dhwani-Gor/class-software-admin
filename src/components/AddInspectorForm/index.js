@@ -5,25 +5,24 @@ import {
   getInspectorsDetails,
   updateInspectorDetail,
 } from "@/api";
-import {
-  CircularProgress,
-  FormControl,
-  FormControlLabel,
-  FormHelperText,
-  FormLabel,
-  Grid2,
-  Paper,
-  Radio,
-  RadioGroup,
-  Snackbar,
-  Stack,
-  Typography,
-} from "@mui/material";
+  import {
+    CircularProgress,
+    FormControl,
+    FormControlLabel,
+    FormHelperText,
+    FormLabel,
+    Grid2,
+    Paper,
+    Radio,
+    RadioGroup,
+    Snackbar,
+    Stack,
+    Typography,
+  } from "@mui/material";
 // import SuccessModal from "./SuccessModal";
 import { useDispatch, useSelector } from "react-redux";
 import Checkbox from "@mui/material/Checkbox";
 
-import { addCountryInfos } from "@/redux/slice/countrysSlice";
 import { Controller, useForm } from "react-hook-form";
 import CommonInput from "../CommonInput";
 import CommonButton from "../CommonButton";

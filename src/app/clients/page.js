@@ -1,23 +1,19 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Box,
-  Typography,
-  Tooltip,
-  IconButton,
-  Stack,
-  Snackbar,
-  Pagination,
-  CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-} from "@mui/material";
+import CircularProgress from "@mui/material/CircularProgress";
+import Pagination from '@mui/material/Pagination';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogTitle from '@mui/material/DialogTitle';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import Snackbar from "@mui/material/Snackbar";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 import { DataGrid } from "@mui/x-data-grid";
-import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import Layout from "@/Layout";
@@ -25,11 +21,8 @@ import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import CommonInput from "@/components/CommonInput";
 import { deleteUser, getUsersDetails } from "@/api";
-import { useDispatch } from "react-redux";
-import { clearCountry } from "@/redux/slice/countrysSlice";
 
 const Clients = () => {
-  const dispatch = useDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
@@ -192,10 +185,8 @@ const Clients = () => {
             text="Add client"
             variant="contained"
             onClick={() => {
-              dispatch(clearCountry());
               router.push("/clients/create");
             }}
-            // endIcon={<AddIcon />}
           />
         </Stack>
       </CommonCard>

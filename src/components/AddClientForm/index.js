@@ -1,33 +1,22 @@
 import React, { useEffect, useState } from "react";
-import Box from "@mui/material/Box";
-
-import {
-  CircularProgress,
-  FormControl,
-  FormControlLabel,
-  FormHelperText,
-  FormLabel,
-  Grid2,
-  Paper,
-  Radio,
-  RadioGroup,
-  Snackbar,
-  Stack,
-} from "@mui/material";
-import { useDispatch } from "react-redux";
-import Checkbox from "@mui/material/Checkbox";
-
+import { useRouter } from "next/navigation";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { Controller, useForm } from "react-hook-form";
+import * as yup from "yup";
+import { useDispatch } from "react-redux";
+import Paper from "@mui/material/Paper";
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Box from "@mui/material/Box";
+import Grid2 from "@mui/material/Grid2";
+import Snackbar from "@mui/material/Snackbar";
+import CircularProgress from "@mui/material/CircularProgress";
+import Stack from "@mui/material/Stack";
+import Checkbox from "@mui/material/Checkbox";
 import CommonInput from "../CommonInput";
 import CommonButton from "../CommonButton";
-import * as yup from "yup";
-import { yupResolver } from "@hookform/resolvers/yup";
-import { useRouter } from "next/navigation";
 
 const schema = yup.object().shape({
   shipName: yup.string().required("Ship Name is required"),
-  // imoNumber: yup.string().required("Imo Number is required"),
-  // classId: yup.string().required("Class Id is required"),
   owner: yup.object().shape({
     nameOfCompany: yup.string().required("Company Name is required"),
     completeAdress: yup.string().required("Complete Address is required"),
@@ -54,7 +43,6 @@ const schema = yup.object().shape({
       .required("Phone number is required")
       .matches(/^\d{10}$/, "Enter a valid 10-digit Indian phone number"),
     email: yup.string().required("Email is required").email("Invalid email"),
-    // tax: yup.string().required("TRN / VAT / GST No. is required"),
   }),
 });
 

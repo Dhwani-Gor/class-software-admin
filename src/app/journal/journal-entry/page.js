@@ -1,8 +1,8 @@
 "use client";
 import React from "react";
+import Typography from "@mui/material/Typography";
 import Layout from "@/Layout";
 import JournalEntryForm from "@/components/Reports/JournalEntry";
-import { Typography } from "@mui/material";
 import CommonCard from "@/components/CommonCard";
 
 const JournalEntry = () => {

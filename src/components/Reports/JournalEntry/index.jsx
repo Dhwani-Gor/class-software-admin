@@ -1,19 +1,24 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Box, FormControl, IconButton, MenuItem, Select, Stack, Typography } from "@mui/material";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import { useForm, Controller } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+// import autoTable from "jspdf-autotable";
+import IconButton from '@mui/material/IconButton';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import Select from '@mui/material/Select';
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-
 import Grid2 from "@mui/material/Grid2";
-import { useForm, Controller } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
 import CommonCard from "@/components/CommonCard";
 import CommonInput from "@/components/CommonInput";
 import CommonButton from "@/components/CommonButton";
@@ -23,7 +28,6 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ActivitiesModal from "../ActivitiesModal";
 import { generateInspection, getShipDetails, getUsersDetails } from "@/api";
 
-// Validation schema using Yup
 const schema = yup.object().shape({
   shipWork: yup.string().required("Ship name is required"),
   imoNumber: yup.string().required("IMO Number is required"),

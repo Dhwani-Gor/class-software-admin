@@ -1,20 +1,17 @@
 "use client";
 import React, { useState } from "react";
-import { Snackbar, styled } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
+import Snackbar from "@mui/material/Snackbar";
+import { styled } from "@mui/system";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-//relative path imports
 import CommonInput from "@/components/CommonInput";
 import CommonButton from "@/components/CommonButton";
-import { useDispatch } from "react-redux";
-import { login } from "@/redux/slice/authSlice";
 import { adminLogin } from "@/api";
-import { toast } from "react-toastify";
 import { useAuth } from "@/hooks/useAuth";
 
 const MainWrapper = styled(Box)(({}) => ({
@@ -31,12 +28,11 @@ const StyledCard = styled(Card)(({ theme }) => ({
 }));
 
 const validationSchema = yup.object().shape({
-  email: yup.string().required("Required"),
+  username: yup.string().required("Required"),
   password: yup.string().required("Required"),
 });
 
 const Login = () => {
-  // const dispatch = useDispatch();
   const { login } = useAuth();
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
   const {
@@ -58,20 +54,10 @@ const Login = () => {
       if (!res?.data?.data?.status) {
         setSnackBar({ open: true, message: res?.response?.data?.message });
       }
-
-      // if (!res?.data?.data.status) toast.error(res?.data?.data?.errorMessage);
       login(res?.data?.data);
-      // dispatch(
-      //   login({
-      //     email: res?.data?.data?.email,
-      //     password: res?.data?.data?.password,
-      //     token: res?.data?.data?.token,...res?.data?.data
-      //   })
-      // );
       setSnackBar({ open: true, message: res?.data.status });
     } catch (err) {
       console.log("error", err);
-      // toast.error(err?.response?.data?.message);
       setSnackBar({ open: true, message: response?.data?.message });
     }
   };
@@ -102,7 +88,7 @@ const Login = () => {
         <form onSubmit={handleSubmit(onSubmit)}>
           <Stack spacing={3} mt={4}>
             <Controller
-              name="email"
+              name="username"
               control={control}
               render={({ field }) => (
                 <CommonInput
@@ -110,8 +96,8 @@ const Login = () => {
                   fullWidth
                   label="Username"
                   placeholder="Enter your username"
-                  error={Boolean(errors.email)}
-                  helperText={errors.email?.message}
+                  error={Boolean(errors.username)}
+                  helperText={errors.username?.message}
                 />
               )}
             />

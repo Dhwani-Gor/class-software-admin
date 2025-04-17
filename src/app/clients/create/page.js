@@ -1,12 +1,9 @@
 "use client";
 import React from "react";
 import Typography from "@mui/material/Typography";
-//relative path imports
 import Layout from "@/Layout";
-import { Stack } from "@mui/material";
+import Stack from "@mui/material/Stack";
 import CommonCard from "@/components/CommonCard";
-import AddInspectorForm from "@/components/AddInspectorForm";
-import AddClientInspectorCommonForm from "@/components/AddClientInspectorCommonForm";
 import AddClientForm from "@/components/AddClientForm";
 
 const AddClient = () => {
@@ -18,9 +15,7 @@ const AddClient = () => {
         </Typography>
       </CommonCard>
       <Stack>
-        {/* <AddInspectorForm mode="create" /> */}
-        {/* <AddClientInspectorCommonForm mode="create" role="client" /> */}
-        <AddClientForm/>
+        <AddClientForm mode="create" />
       </Stack>
     </Layout>
   );

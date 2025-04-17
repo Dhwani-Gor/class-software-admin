@@ -1,8 +1,10 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Stack, Typography, CircularProgress } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import CircularProgress from "@mui/material/CircularProgress";
 import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
@@ -11,7 +13,7 @@ import CommonInput from "@/components/CommonInput";
 
 const Reports = () => {
   const router = useRouter();
-  const [search, setSearch] = useState(""); // State for search input
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [countryLists, setCountryLists] = useState([]); // Dummy empty data
   const [columns] = useState([
@@ -21,7 +23,7 @@ const Reports = () => {
     { field: "staffName", headerName: "Staff/INspector Name", flex: 1 },
     { field: "createdAt", headerName: "Report Date", flex: 1 },
 
-  ]); // Example column data
+  ]); 
 
   const handleSearchChange = (event) => {
     setSearch(event.target.value);
@@ -43,13 +45,11 @@ const Reports = () => {
             text="Add Journal"
             variant="contained"
             onClick={() => router.push("/journal/journal-entry")}
-            // endIcon={<AddIcon />}
           />
         </Stack>
       </CommonCard>
 
       <CommonCard>
-        {/* Search Input */}
         <CommonInput
           placeholder="Search Journal"
           fullWidth
@@ -58,7 +58,6 @@ const Reports = () => {
           sx={{ marginBottom: 2 }}
         />
 
-        {/* Data Grid */}
         <Box sx={{ width: "100%", mt: 4 }}>
           {loading ? (
             <Box
@@ -98,4 +97,3 @@ const Reports = () => {
 };
 
 export default Reports;
-``;

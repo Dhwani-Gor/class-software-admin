@@ -19,7 +19,7 @@ const UpdateCountry = ({ params }) => {
       </CommonCard>
       <Stack>
         {/* <AddInspectorForm mode="update" userId={params?.update}/> */}
-        <AddClientInspectorCommonForm mode="update" userId={params?.update}  role="inspector" />
+        <AddInspectorForm mode="update" userId={params?.update}  role="inspector" />
       </Stack>
     </Layout>
   );

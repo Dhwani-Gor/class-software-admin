@@ -26,7 +26,6 @@ import CommonButton from "@/components/CommonButton";
 import CommonInput from "@/components/CommonInput";
 import { deleteUser, deleteVisa, getUsersDetails, getVisaDetails } from "@/api";
 import { useDispatch } from "react-redux";
-import { clearCountry } from "@/redux/slice/countrysSlice";
 
 const Countries = () => {
   const dispatch = useDispatch();
@@ -191,7 +190,6 @@ const Countries = () => {
             text="Add Staff / Inspector"
             variant="contained"
             onClick={() => {
-              dispatch(clearCountry());
               router.push("/staff/create");
             }}
             // endIcon={<AddIcon />}

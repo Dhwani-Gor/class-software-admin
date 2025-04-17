@@ -1,20 +1,20 @@
 "use client";
 import React, { useState } from "react";
-import { Snackbar, styled } from "@mui/material";
+import { useDispatch } from "react-redux";
 import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { toast } from "react-toastify";
+import { styled } from "@mui/system";
+import Snackbar from "@mui/material/Snackbar";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-//relative path imports
 import CommonInput from "@/components/CommonInput";
 import CommonButton from "@/components/CommonButton";
-import { useDispatch } from "react-redux";
 import { login } from "@/redux/slice/authSlice";
-import { adminLogin, registerUser } from "@/api";
-import { toast } from "react-toastify";
+import { registerUser } from "@/api";
 
 const MainWrapper = styled(Box)(({ }) => ({
   height: "100vh",

@@ -1,12 +1,10 @@
 "use client";
 import React from "react";
 import Typography from "@mui/material/Typography";
-//relative path imports
 import Layout from "@/Layout";
-import { Stack } from "@mui/material";
+import Stack from "@mui/material/Stack";
 import CommonCard from "@/components/CommonCard";
 import AddClientForm from "@/components/AddClientForm";
-import AddClientInspectorCommonForm from "@/components/AddClientInspectorCommonForm";
 
 const UpdateClient = ({ params }) => {
 
@@ -18,8 +16,7 @@ const UpdateClient = ({ params }) => {
       </Typography>
       </CommonCard>
       <Stack>
-        {/* <AddClientForm mode="update" clientId={params?.update}/> */}
-        <AddClientInspectorCommonForm mode="update" userId={params?.update}  role="client" />
+        <AddClientForm mode="update" userId={params?.update}  role="client" />
       </Stack>
     </Layout>
   );
