@@ -12,8 +12,8 @@ export const sidemenu_items = [
     to: "/journal",
   },
   {
-    label: "Reports",
-    to: "/reports",
+    label: "Reporting",
+    to: "/reporting",
   },
   {
     label: "Certificates",

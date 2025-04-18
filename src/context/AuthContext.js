@@ -15,9 +15,9 @@ const AuthProvider = ({ children }) => {
   const router = useRouter();
   const pathname = usePathname()
 
-  const allowedRoutesRole1 = ["/clients","staff","/journal", "/reports", "/certificates", "/settings"]
-  const allowedRoutesRole2 = ["/journal", "/reports", "/certificates", "/settings"];
-  const allowedRoutesRole3 = ["/reports", "/certificates", "/settings"];
+  const allowedRoutesRole1 = ["/clients","staff","/journal", "/reporting", "/certificates", "/settings"]
+  const allowedRoutesRole2 = ["/journal", "/reporting", "/certificates", "/settings"];
+  const allowedRoutesRole3 = ["/reporting", "/certificates", "/settings"];
 
   useEffect(() => {
     const token =
