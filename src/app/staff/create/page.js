@@ -6,18 +6,25 @@ import Layout from "@/Layout";
 import { Stack } from "@mui/material";
 import CommonCard from "@/components/CommonCard";
 import AddInspectorForm from "@/components/AddInspectorForm";
-import AddClientInspectorCommonForm from "@/components/AddClientInspectorCommonForm";
+import { useRouter } from "next/navigation";
 
 const AddCountry = () => {
+  const router = useRouter();
+
   return (
     <Layout>
-      <CommonCard sx={{ mt: 0 }}>
-      <Typography variant="h6" fontWeight={"700"}>
-        Staff / Inspectors
-      </Typography>
+      <CommonCard sx={{ mt: 0, pl: 2 }}>
+        <Stack direction={'row'} alignItems={'center'} gap={2}>
+          <IconButton size="small" onClick={() => router.push('/staff')}>
+            <ArrowBack />
+          </IconButton>
+          <Typography variant="h6" fontWeight={"700"}>
+            Staff / Inspectors
+          </Typography>
+        </Stack>
       </CommonCard>
       <Stack>
-        <AddInspectorForm mode="create"/>
+        <AddInspectorForm mode="create" />
         {/* <AddClientInspectorCommonForm mode="create" role="inspector" /> */}
       </Stack>
     </Layout>

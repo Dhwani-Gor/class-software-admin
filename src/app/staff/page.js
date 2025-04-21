@@ -34,7 +34,7 @@ const Countries = () => {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState(""); // Debounced search state
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
-  const [countryLists, setInspectorLists] = useState([]);
+  const [inspectorsList, setInspectorLists] = useState([]);
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [limit, setLimit] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
@@ -59,15 +59,8 @@ const Countries = () => {
     await getUsersDetails(page, limit, searchQuery)
       .then((res) => {
         if (res?.data?.data?.length > 0) {
-          const flattenedData = res?.data?.data?.filter((item) => item?.roleId === "2").map((item) => ({
-            id: item?.id || "-",
-            companyName: item?.companyName || "-",
-            email: item?.email || "-",
-            inspectorDesignation: item?.inspectorDesignation || "-",
-            name: item?.name || "-",
-          }));
+          const flattenedData = res?.data?.data?.filter((item) => item?.roleId === "2")
           const sortedData = flattenedData?.sort((a, b) => a?.id - b?.id);
-          
           setInspectorLists(sortedData);
           setTotalRows(sortedData.length);
         } else {
@@ -130,23 +123,15 @@ const Countries = () => {
   const columns = [
     {
       field: "id",
-      headerName: "ID",
+      headerName: "Id",
       flex: 1,
-      renderCell: (params) => {
-        return (
-          <Typography>
-            {params?.api?.getRowIndexRelativeToVisibleRows(params.id) + 1}
-          </Typography>
-        );
-      },
     },
     { field: "name", headerName: "Inspectors Name", flex: 1.5 },
     {
-      field: "email",
-      headerName: "Email",
+      field: "username",
+      headerName: "User name",
       flex: 1,
     },
-    { field: "inspectorDesignation", headerName: "Inspector Designation", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
@@ -215,9 +200,9 @@ const Countries = () => {
             >
               <CircularProgress />
             </Box>
-          ) : countryLists.length > 0 ? (
+          ) : inspectorsList.length > 0 ? (
             <DataGrid
-              rows={countryLists}
+              rows={inspectorsList}
               columns={columns}
               loading={loading}
               pagination={false}

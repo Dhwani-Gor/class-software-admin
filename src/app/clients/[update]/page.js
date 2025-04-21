@@ -5,18 +5,27 @@ import Layout from "@/Layout";
 import Stack from "@mui/material/Stack";
 import CommonCard from "@/components/CommonCard";
 import AddClientForm from "@/components/AddClientForm";
+import { IconButton } from "@mui/material";
+import { ArrowBack } from "@mui/icons-material";
+import { useRouter } from "next/navigation";
 
 const UpdateClient = ({ params }) => {
+  const router = useRouter();
 
   return (
     <Layout>
-      <CommonCard sx={{ mt: 0 }}>
-      <Typography variant="h6" fontWeight={"700"}>
-        Clients
-      </Typography>
+      <CommonCard sx={{ mt: 0, pl: 2 }}>
+        <Stack direction={'row'} alignItems={'center'} gap={2}>
+          <IconButton size="small" onClick={() => router.push('/clients')}>
+            <ArrowBack />
+          </IconButton>
+          <Typography variant="h6" fontWeight={"700"}>
+            Clients
+          </Typography>
+        </Stack>
       </CommonCard>
       <Stack>
-        <AddClientForm mode="update" userId={params?.update}  role="client" />
+        <AddClientForm mode="update" clientId={params?.update} role="client" />
       </Stack>
     </Layout>
   );

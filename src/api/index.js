@@ -131,7 +131,7 @@ export const getParticularVisaApplicantDetails = async (id) => {
   return result;
 };
 
-export const addInspectors = async (payload) => {
+export const createInspector = async (payload) => {
   let result;
   try {
     result = await axiosInstance.post(`/api/users`, payload);
@@ -211,6 +211,46 @@ export const getShipDetails = async (page, limit, search) => {
     });
   } catch (error) {
     result = error;
+  }
+  return result;
+};
+
+export const getAllClients = async () => {
+  let result;
+  try {
+    result = await axiosInstance.get("/api/clients");
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const getSpecificClient = async (clientId) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/clients/${clientId}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const createClient = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/api/clients`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const updateClient = async (clientId, payload) => {
+  let result;
+  try {
+    result = await axiosInstance.patch(`/api/clients/${clientId}`, payload);
+  } catch (e) {
+    result = e;
   }
   return result;
 };

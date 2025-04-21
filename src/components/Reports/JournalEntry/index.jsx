@@ -47,7 +47,7 @@ const JournalEntryForm = () => {
   const [selectedClient, setSelectedClient] = useState("");
    const [clientLists, setClientLists] = useState([]);
    const [shipLists, setShipLists] = useState([]);
-   const [isShowForm , setIsShowForm] = useState(false);
+   const [isShowForm , setIsShowForm] = useState(true);
      const [loading, setLoading] = useState(false);
 
   const handleOpenModal = () => {
@@ -528,17 +528,19 @@ const JournalEntryForm = () => {
                     <TableHead sx={{ backgroundColor: "lightgray" }}>
                       <TableRow>
                         <TableCell>SL No.</TableCell>
-                        <TableCell align="right">Date</TableCell>
-                        <TableCell align="right">Time from</TableCell>
-                        <TableCell align="right">Time to</TableCell>
+                        <TableCell>Type of survey/Inspection</TableCell>
+                        <TableCell>Initial of surveyors</TableCell>
+                        <TableCell align="right">
+                          Actions
+                        </TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {activitiesList.map((visit, index) => (
                         <TableRow key={visit.id}>
                           <TableCell>{index + 1}</TableCell>
-                          <TableCell align="right">{visit.survey}</TableCell>
-                          <TableCell align="right">{visit.surveyors}</TableCell>
+                          <TableCell>{visit.survey}</TableCell>
+                          <TableCell>{visit.surveyors}</TableCell>
                           <TableCell align="right">
                             <IconButton
                               onClick={() => handleEditActivity(visit)}

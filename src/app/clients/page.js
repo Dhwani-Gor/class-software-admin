@@ -20,7 +20,8 @@ import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import CommonInput from "@/components/CommonInput";
-import { deleteUser, getUsersDetails } from "@/api";
+import { deleteUser, getAllClients, getUsersDetails } from "@/api";
+import { toast } from "react-toastify";
 
 const Clients = () => {
   const router = useRouter();
@@ -28,7 +29,7 @@ const Clients = () => {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState(""); // Debounced search state
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
-  const [countryLists, setInspectorLists] = useState([]);
+  const [clientsList, setClientsList] = useState([]);
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [limit, setLimit] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
@@ -48,45 +49,26 @@ const Clients = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  const fetchUserListData = async (page, limit, searchQuery) => {
-    setLoading(true);
-    await getUsersDetails(page, limit, searchQuery)
-      .then((res) => {
-        if (res?.data?.data?.length > 0) {
-          
-          const flattenedData = res?.data?.data?.filter((item) => item?.roleId === "3").map((item) => ({
-            id: item?.id || "-",
-            companyName: item?.companyName || "-",
-            email: item?.email || "-",
-            inspectorDesignation: item?.inspectorDesignation || "-",
-            name: item?.name || "-",
-          }));
-          const sortedData = flattenedData?.sort((a, b) => a?.id - b?.id);
-          
-          setInspectorLists(sortedData);
-          setTotalRows(sortedData?.length);
-        } else {
-          setInspectorLists([]);
-          setTotalRows(0);
-        }
-      })
-      .catch((e) => {
-        console.log(e);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+  const fetchClients = async (page, limit, searchQuery) => {
+    try {
+      setLoading(true);
+      const result = await getAllClients();
+      if (result?.status === 200) {
+        setClientsList(result.data.data)
+      } else {
+        toast.error("Something went wrong ! Please try again after some time")
+      }
+
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error)
+    }
   };
 
   useEffect(() => {
-    if (page > 0 && limit > 0) {
-      fetchUserListData(
-        page,
-        limit,
-        debouncedSearch.trim() ? debouncedSearch : null
-      );
-    }
-  }, [page, limit, debouncedSearch]);
+    fetchClients();
+  }, []);
 
   const handleSearchChange = (event) => {
     setSearch(event.target.value);
@@ -105,7 +87,7 @@ const Clients = () => {
       if (res?.data?.message) {
         setSnackBar({ open: true, message: res.data.message });
       }
-      fetchUserListData(page, limit, debouncedSearch);
+      fetchClients();
     } catch (e) {
       console.error("Error deleting Client:", e.response?.data || e.message);
       setSnackBar({ open: true, message: "Failed to delete Client." });
@@ -125,23 +107,16 @@ const Clients = () => {
   const columns = [
     {
       field: "id",
-      headerName: "ID",
+      headerName: "Id",
       flex: 1,
-      renderCell: (params) => {
-        return (
-          <Typography>
-            {params?.api?.getRowIndexRelativeToVisibleRows(params.id) + 1}
-          </Typography>
-        );
-      },
     },
-    { field: "name", headerName: "Client Name", flex: 1.5 },
+    { field: "shipName", headerName: "Ship Name", flex: 1.5 },
+    { field: "imoNumber", headerName: "IMO Number", flex: 1 },
     {
-      field: "email",
-      headerName: "Email",
+      field: "classId",
+      headerName: "Class Id",
       flex: 1,
     },
-    { field: "companyName", headerName: "Company Name", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
@@ -209,9 +184,9 @@ const Clients = () => {
             >
               <CircularProgress />
             </Box>
-          ) : countryLists.length > 0 ? (
+          ) : clientsList.length > 0 ? (
             <DataGrid
-              rows={countryLists}
+              rows={clientsList}
               columns={columns}
               loading={loading}
               pagination={false}
