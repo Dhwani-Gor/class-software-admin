@@ -435,7 +435,7 @@ const AddClientForm = ({
                 direction="row"
                 justifyContent="flex-start"
               >
-                <CommonButton type="submit" variant="contained" text="Submit" />
+                <CommonButton type="submit" variant="contained" text="Save" />
                 <CommonButton onClick={cancelBtn} variant="contained" text="Cancel" />
 
               </Stack>

@@ -152,12 +152,11 @@ const JournalEntryForm = () => {
   };
 
   const handleClientChange = (event) => {
+    const { shipName, classId, imoNumber } = event.target.value;
     setSelectedClient(event.target.value);
-    setSelectedShip("");
-  };
-
-  const handleShipChange = (event) => {
-    setSelectedShip(event.target.value);
+    setValue("shipWork", shipName);
+    setValue("classId", classId);
+    setValue("imoNumber", imoNumber);
   };
 
   const fetchUserListData = async (page, limit, searchQuery) => {
@@ -235,6 +234,7 @@ const JournalEntryForm = () => {
   const {
     control,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(schema),
@@ -317,7 +317,7 @@ const JournalEntryForm = () => {
                     Select the ship / Work
                   </MenuItem>
                   {clientsList.map((client) => (
-                    <MenuItem key={client.id} value={client.shipName}>
+                    <MenuItem key={client.id} value={client}>
                       {client.shipName}
                     </MenuItem>
                   ))}
@@ -605,7 +605,11 @@ const JournalEntryForm = () => {
 
           <Box mt={2}>
             <CommonCard>
-              <CommonButton onClick={() => setOpenDialog(true)} text="Save" />
+              <CommonButton
+                type="submit"
+                // onClick={() => setOpenDialog(true)}
+                text="Save"
+              />
             </CommonCard>
           </Box>
         </form>

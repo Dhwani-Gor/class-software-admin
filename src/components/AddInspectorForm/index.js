@@ -326,7 +326,7 @@ const AddInspectorForm = ({
                   <CommonButton
                     type="submit"
                     variant="contained"
-                    text="Submit"
+                    text="Save"
                   />
                   <CommonButton
                     onClick={cancelBtn}
