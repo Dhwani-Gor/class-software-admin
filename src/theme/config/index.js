@@ -1,11 +1,11 @@
 import { DarkSpacesTheme } from "../schemas/DarkSpacesTheme";
 import { LightSpacesTheme } from "../schemas/LightSpacesTheme";
 
-const themeMap = {
-  light: LightSpacesTheme,
-  dark: DarkSpacesTheme,
-};
+// const themeMap = {
+//   light: LightSpacesTheme,
+//   dark: DarkSpacesTheme,
+// };
 
 export const themeCreator = (theme) => {
-  return themeMap[theme];
+  return LightSpacesTheme;
 };

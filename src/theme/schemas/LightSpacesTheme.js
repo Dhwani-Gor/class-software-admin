@@ -135,5 +135,12 @@ export const LightSpacesTheme = createTheme({
         },
       },
     },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          maxWidth: 'unset'
+        },
+      },
+    },
   },
 });

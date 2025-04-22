@@ -5,10 +5,10 @@ import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 // import autoTable from "jspdf-autotable";
-import IconButton from '@mui/material/IconButton';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import Select from '@mui/material/Select';
+import IconButton from "@mui/material/IconButton";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import Select from "@mui/material/Select";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -26,7 +26,22 @@ import VisitModal from "../VisitModal";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ActivitiesModal from "../ActivitiesModal";
-import { generateInspection, getShipDetails, getUsersDetails } from "@/api";
+import {
+  generateInspection,
+  getAllClients,
+  getShipDetails,
+  getUsersDetails,
+} from "@/api";
+import {
+  CircularProgress,
+  Divider,
+  FormControlLabel,
+  FormHelperText,
+  FormLabel,
+  Radio,
+  RadioGroup,
+} from "@mui/material";
+import CommonConfirmationDialog from "@/components/Dialogs/CommonConfirmationDialog";
 
 const schema = yup.object().shape({
   shipWork: yup.string().required("Ship name is required"),
@@ -34,25 +49,46 @@ const schema = yup.object().shape({
   classId: yup.string().required("Class ID is required"),
   requestedBy: yup.string().required("Requested By is required"),
   date: yup.date().required("Date is required").typeError("required"),
+  type: yup.string().required("Type of survey must be selected"),
 });
+
+const journalTypeOptions = [
+  "New Entry",
+  "Periodical",
+  "Component Survey",
+  "Miscellaneous Survey",
+];
 
 const JournalEntryForm = () => {
   const [visitList, setVisitList] = useState([]);
   const [openModal, setOpenModal] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
   const [editVisit, setEditVisit] = useState(null);
   const [activitiesList, setActivitiesList] = useState([]);
+  const [clientsList, setClientsList] = useState([]);
   const [openActivityModal, setOpenActivityModal] = useState(false);
   const [editActivity, setEditActivity] = useState(null);
   const [selectedShip, setSelectedShip] = useState("");
   const [selectedClient, setSelectedClient] = useState("");
-   const [clientLists, setClientLists] = useState([]);
-   const [shipLists, setShipLists] = useState([]);
-   const [isShowForm , setIsShowForm] = useState(true);
-     const [loading, setLoading] = useState(false);
+  const [clientLists, setClientLists] = useState([]);
+  const [shipLists, setShipLists] = useState([]);
+  const [isShowForm, setIsShowForm] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleOpenModal = () => {
     setEditVisit(null);
     setOpenModal(true);
+  };
+
+  const onLastVisitConfirmation = (response) => {
+    if (response) {
+      // freezeJournal()
+      console.log("journalFreezed");
+      setOpenDialog(false);
+    } else {
+      setOpenDialog(false);
+      handleSubmit(onSubmit);
+    }
   };
 
   const handleCloseModal = () => setOpenModal(false);
@@ -115,70 +151,86 @@ const JournalEntryForm = () => {
     setVisitList(activitiesList.filter((activity) => activity.id !== id));
   };
 
-  
-      const handleClientChange = (event) => {
-          setSelectedClient(event.target.value);
-          setSelectedShip("");
-      };
-  
-      const handleShipChange = (event) => {
-          setSelectedShip(event.target.value);
-      };
-  
-      const fetchUserListData = async (page, limit, searchQuery) => {
-          try {
-            const res = await getUsersDetails(page, limit, searchQuery);
-            setLoading(true);
-            if (res?.data?.data?.length > 0) {
-              const filteredData = res.data.data
-                .filter((item) => item.roleId === "3")
-                .map((item) => ({
-                  value: item.id || "-",
-                  label: item.name || "-",
-                }));
-        
-              const sortedData = filteredData.sort((a, b) => a.value - b.value);
-        
-              setClientLists(sortedData);
-                setLoading(false);
-            } else {
-              setClientLists([]);
-            }
-          } catch (error) {
-            console.error("Error fetching client list:", error);
-          }
-          
-        };
-        
-        const fetchShipListData = async (page, limit, searchQuery) => {
-          try {
-            const res = await getShipDetails(page, limit, searchQuery);
-            if (res?.data?.data?.length > 0) {
-              const formattedData = res.data.data.map((item) => ({
-                value: item.id || "-",
-                label: item.name || "-",
-              }));
-        
-              const sortedData = formattedData.sort((a, b) => a.value - b.value);
-        
-              setShipLists(sortedData);
-            } else {
-              setShipLists([]);
-            }
-          } catch (error) {
-            console.error("Error fetching ship list:", error);
-          }
-        };
-        
-        useEffect(() => {
-          fetchUserListData();
-          fetchShipListData();
-        }, []);
+  const handleClientChange = (event) => {
+    setSelectedClient(event.target.value);
+    setSelectedShip("");
+  };
 
-        const showForm = () => {
-          setIsShowForm(true);
-        }
+  const handleShipChange = (event) => {
+    setSelectedShip(event.target.value);
+  };
 
+  const fetchUserListData = async (page, limit, searchQuery) => {
+    try {
+      const res = await getUsersDetails(page, limit, searchQuery);
+      setLoading(true);
+      if (res?.data?.data?.length > 0) {
+        const filteredData = res.data.data
+          .filter((item) => item.roleId === "3")
+          .map((item) => ({
+            value: item.id || "-",
+            label: item.name || "-",
+          }));
+
+        const sortedData = filteredData.sort((a, b) => a.value - b.value);
+
+        setClientLists(sortedData);
+        setLoading(false);
+      } else {
+        setClientLists([]);
+      }
+    } catch (error) {
+      console.error("Error fetching client list:", error);
+    }
+  };
+
+  const fetchShipListData = async (page, limit, searchQuery) => {
+    try {
+      const res = await getShipDetails(page, limit, searchQuery);
+      if (res?.data?.data?.length > 0) {
+        const formattedData = res.data.data.map((item) => ({
+          value: item.id || "-",
+          label: item.name || "-",
+        }));
+
+        const sortedData = formattedData.sort((a, b) => a.value - b.value);
+
+        setShipLists(sortedData);
+      } else {
+        setShipLists([]);
+      }
+    } catch (error) {
+      console.error("Error fetching ship list:", error);
+    }
+  };
+
+  const fetchClients = async () => {
+    try {
+      setLoading(true);
+      const result = await getAllClients();
+      if (result?.status === 200) {
+        setClientsList(result.data.data);
+        console.log(result.data.data);
+      } else {
+        toast.error("Something went wrong ! Please try again after some time");
+      }
+
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchClients();
+    fetchUserListData();
+    fetchShipListData();
+  }, []);
+
+  const showForm = () => {
+    setIsShowForm(true);
+  };
 
   const {
     control,
@@ -192,109 +244,49 @@ const JournalEntryForm = () => {
       classId: "",
       requestedBy: "",
       date: "",
+      type: "",
     },
   });
 
   const onSubmit = async (data) => {
-    const doc = new jsPDF();
+    console.log("226 ===>", data);
+    // const doc = new jsPDF();
 
-    doc.setFontSize(18);
-    doc.text("Survey Report", 14, 20);
+    // doc.setFontSize(18);
+    // doc.text("Survey Report", 14, 20);
 
-    doc.setFontSize(12);
-    doc.text("General Information:", 14, 30);
+    // doc.setFontSize(12);
+    // doc.text("General Information:", 14, 30);
 
-    // const generalData = [
-    //   ["Ship Name", selectedShip],
-    //   ["Client Name", selectedClient],
-    //   ["Class ID", data.classId || "N/A"],
-    //   ["IMO Number", data.imoNumber || "N/A"],
-    //   ["Requested By", data.requestedBy || "N/A"],
-    //   ["Ship Work", data.shipWork || "N/A"],
-    //   ["Date", data.date ? new Date(data.date).toDateString() : "N/A"],
-    // ];
+    // let payload = {
+    //   userId: 3,
+    //   shipId: 1,
+    //   reportId: 1,
+    //   journalEntry: {
+    //     basic_details: {
+    //       ship_name: "asd",
+    //       imo_no: "asd1212",
+    //       class_id_no: "asd12",
+    //       requested_by: "qwe",
+    //       date: "asdqw",
+    //     },
+    //   },
+    // };
 
-    let payload = {
-      userId: 3,
-      shipId: 1,
-      reportId: 1,
-      journalEntry: {
-        basic_details: {
-          ship_name: "asd",
-          imo_no: "asd1212",
-          class_id_no: "asd12",
-          requested_by: "qwe",
-          date: "asdqw",
-        },
-      },
-    };
+    // try {
+    //   const res = await generateInspection(payload);
+    //   console.log("API Response:", res);
 
-    try {
-      const res = await generateInspection(payload);
-      console.log("API Response:", res);
-    
-      // Ensure the response contains a valid URL
-      if (res?.data.status === "success" && res?.data?.url) {
-        window.open(res.data.url, "_blank"); // Opens the PDF in a new tab
-        console.log("PDF opened successfully");
-      } else {
-        throw new Error("Invalid response format or missing URL");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-    }
-
-    
-    
-
-    // console.log(payload, 'payload');
-
-    // autoTable(doc, {
-    //   startY: 35,
-    //   body: generalData,
-    //   theme: "grid",
-    //   styles: { fontSize: 10 },
-    // });
-
-    // let nextY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 45;
-
-    // doc.text("Visit List:", 14, nextY);
-
-    // if (visitList?.length) {
-    //   autoTable(doc, {
-    //     startY: nextY + 5,
-    //     head: [["Date", "Location", "Time From", "Time To"]],
-    //     body: visitList.map((item) => [
-    //       item.date || "N/A",
-    //       item.location || "N/A",
-    //       item.timeFrom || "N/A",
-    //       item.timeTo || "N/A",
-    //     ]),
-    //     theme: "striped",
-    //   });
-    //   nextY = doc.lastAutoTable.finalY + 10;
-    // } else {
-    //   doc.text("No visit data available", 14, nextY + 5);
-    //   nextY += 15;
+    //   // Ensure the response contains a valid URL
+    //   if (res?.data.status === "success" && res?.data?.url) {
+    //     window.open(res.data.url, "_blank"); // Opens the PDF in a new tab
+    //     console.log("PDF opened successfully");
+    //   } else {
+    //     throw new Error("Invalid response format or missing URL");
+    //   }
+    // } catch (error) {
+    //   console.error("Error:", error);
     // }
-
-    // doc.text("Activities List:", 14, nextY);
-
-    // if (activitiesList?.length) {
-    //   autoTable(doc, {
-    //     startY: nextY + 5,
-    //     head: [["Survey", "Surveyors"]],
-    //     body: activitiesList.map((item) => [
-    //       item.survey || "N/A",
-    //       item.surveyors || "N/A",
-    //     ]),
-    //     theme: "striped",
-    //   });
-    // } else {
-    //   doc.text("No activities data available", 14, nextY + 5);
-    // }
-
-    // doc.save("Survey Report.pdf");
   };
 
   return (
@@ -314,7 +306,7 @@ const JournalEntryForm = () => {
             <Box>
               <FormControl fullWidth sx={{ maxWidth: 300 }}>
                 <Typography variant="body1" mb={1}>
-                  Select Client
+                  Select the ship / Work
                 </Typography>
                 <Select
                   value={selectedClient}
@@ -322,18 +314,18 @@ const JournalEntryForm = () => {
                   displayEmpty
                 >
                   <MenuItem value="" disabled>
-                    Select Client
+                    Select the ship / Work
                   </MenuItem>
-                  {clientLists.map((client) => (
-                    <MenuItem key={client.value} value={client.value}>
-                      {client.label}
+                  {clientsList.map((client) => (
+                    <MenuItem key={client.id} value={client.shipName}>
+                      {client.shipName}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Box>
 
-            {selectedClient && (
+            {/* {selectedClient && (
               <Box mt={2}>
                 <FormControl fullWidth sx={{ maxWidth: 300 }}>
                   <Typography variant="body1" mb={1}>
@@ -355,9 +347,9 @@ const JournalEntryForm = () => {
                   </Select>
                 </FormControl>
               </Box>
-            )}
+            )} */}
 
-            {selectedShip && selectedClient && (
+            {selectedClient && (
               <CommonButton onClick={showForm} sx={{ marginTop: 3 }} />
             )}
           </CommonCard>
@@ -366,6 +358,57 @@ const JournalEntryForm = () => {
       {isShowForm && (
         <form onSubmit={handleSubmit(onSubmit)}>
           <CommonCard>
+            <Box>
+              <Typography fontSize={"18px"} fontWeight={"600"}>
+                Type of Journal
+              </Typography>
+              <Stack>
+                <Controller
+                  name="type"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControl component="fieldset" fullWidth>
+                      <RadioGroup
+                        {...field}
+                        row
+                        aria-label="type"
+                        name="type"
+                        value={field.value}
+                        onChange={(e) => {
+                          field.onChange(e.target.value);
+                        }}
+                      >
+                        {journalTypeOptions.map((type) => (
+                          <FormControlLabel
+                            key={type}
+                            value={type}
+                            control={
+                              <Radio
+                                sx={{
+                                  "&.Mui-checked": {
+                                    color: "black",
+                                  },
+                                  "&:focus-within": {
+                                    outline: "none",
+                                  },
+                                }}
+                              />
+                            }
+                            label={type.charAt(0).toUpperCase() + type.slice(1)}
+                          />
+                        ))}
+                      </RadioGroup>
+                      {Boolean(errors.type) && (
+                        <FormHelperText error>
+                          {errors.type?.message}
+                        </FormHelperText>
+                      )}
+                    </FormControl>
+                  )}
+                />
+              </Stack>
+              <Divider sx={{ my: 3 }} />
+            </Box>
             <Grid2 container spacing={2}>
               <Grid2 size={{ md: 4 }}>
                 <Controller
@@ -530,9 +573,7 @@ const JournalEntryForm = () => {
                         <TableCell>SL No.</TableCell>
                         <TableCell>Type of survey/Inspection</TableCell>
                         <TableCell>Initial of surveyors</TableCell>
-                        <TableCell align="right">
-                          Actions
-                        </TableCell>
+                        <TableCell align="right">Actions</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -564,11 +605,17 @@ const JournalEntryForm = () => {
 
           <Box mt={2}>
             <CommonCard>
-              <CommonButton type="submit">Submit</CommonButton>
+              <CommonButton onClick={() => setOpenDialog(true)} text="Save" />
             </CommonCard>
           </Box>
         </form>
       )}
+      <CommonConfirmationDialog
+        open={openDialog}
+        onCancel={() => onLastVisitConfirmation(false)}
+        onConfirm={() => onLastVisitConfirmation(true)}
+        title="Please confirm if this is your last Visit ?"
+      />
       <VisitModal
         open={openModal}
         onClose={handleCloseModal}

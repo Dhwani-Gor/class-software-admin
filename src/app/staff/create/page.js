@@ -3,12 +3,13 @@ import React from "react";
 import Typography from "@mui/material/Typography";
 //relative path imports
 import Layout from "@/Layout";
-import { Stack } from "@mui/material";
+import { IconButton, Stack } from "@mui/material";
 import CommonCard from "@/components/CommonCard";
 import AddInspectorForm from "@/components/AddInspectorForm";
 import { useRouter } from "next/navigation";
+import { ArrowBack } from "@mui/icons-material";
 
-const AddCountry = () => {
+const AddStaff = () => {
   const router = useRouter();
 
   return (
@@ -31,4 +32,4 @@ const AddCountry = () => {
   );
 };
 
-export default AddCountry;
+export default AddStaff;

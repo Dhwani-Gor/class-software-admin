@@ -21,9 +21,16 @@ import IconButton from "@mui/material/IconButton";
 import DescriptionIcon from "@mui/icons-material/Description";
 import TextareaAutosize from "@mui/material/TextareaAutosize";
 import Grid2 from "@mui/material/Grid2";
+import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
+import { useRouter } from "next/navigation";
+import { getAllClients } from "@/api";
+import { toast } from "react-toastify";
 
 const ReportingForm = () => {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [clientsList, setClientsList] = useState([]);
+  const [fullScreenRemarksVisible, setFullScreenRemarksVisible] = useState(null);
   const [selectedShip, setSelectedShip] = useState("");
   const [selectedReportNumber, setSelectedReportNumber] = useState("");
   const [selectCertificate, setSelectCertificate] = useState("");
@@ -114,7 +121,7 @@ const ReportingForm = () => {
     setShowTable(true);
   };
 
-  const handleGenerateReport = () => {};
+  const handleGenerateReport = () => { };
 
   const handleStatusChange = (id, value) => {
     setTableData((prevData) =>
@@ -128,7 +135,7 @@ const ReportingForm = () => {
     const row = tableData.find((item) => item.id === id);
 
     // Check if max length is defined and enforce it
-    if (row.maxLength && value.length > row.maxLength) {
+    if (row && row.maxLength && value.length > row.maxLength) {
       return;
     }
 
@@ -140,8 +147,8 @@ const ReportingForm = () => {
   };
 
   const handleReportClick = (row) => {
-    console.log("Report clicked for row:", row);
-    setShowForm(true);
+    router.push('#reportDetails')
+    setShowForm(row);
   };
 
   const onSubmit = (data) => {
@@ -157,6 +164,28 @@ const ReportingForm = () => {
     }
     return null;
   };
+
+    const fetchClients = async () => {
+      try {
+        setLoading(true);
+        const result = await getAllClients();
+        if (result?.status === 200) {
+          setClientsList(result.data.data)
+          console.log(result.data.data);
+        } else {
+          toast.error("Something went wrong ! Please try again after some time")
+        }
+  
+        setLoading(false);
+      } catch (error) {
+        setLoading(false);
+        toast.error(error)
+      }
+    };
+  
+    useEffect(() => {
+      fetchClients();
+    }, []);
 
   return (
     <Box mt={2}>
@@ -188,9 +217,9 @@ const ReportingForm = () => {
                   <MenuItem value="" disabled>
                     Select the ship / Work
                   </MenuItem>
-                  {shipList.map((client) => (
-                    <MenuItem key={client.value} value={client.value}>
-                      {client.label}
+                  {clientsList.map((client) => (
+                    <MenuItem key={client.id} value={client.shipName}>
+                      {client.shipName}
                     </MenuItem>
                   ))}
                 </Select>
@@ -235,10 +264,6 @@ const ReportingForm = () => {
       {showTable && (
         <Box component="form" onSubmit={handleSubmit(onSubmit)}>
           <CommonCard sx={{ mt: 2 }}>
-            {/* <Typography variant="h6" fontWeight={700} mb={2}>
-              Report Details
-            </Typography> */}
-            {/* <TableContainer component={Paper}> */}
             <TableContainer>
               <Table sx={{ minWidth: 650 }} aria-label="report details table">
                 <TableHead>
@@ -291,6 +316,7 @@ const ReportingForm = () => {
                             <>
                               <TextareaAutosize
                                 {...field}
+                                value={row.remarks}
                                 minRows={2}
                                 placeholder="Enter remarks"
                                 style={{
@@ -300,6 +326,10 @@ const ReportingForm = () => {
                                   fontSize: "inherit",
                                   border: "1px solid #ccc",
                                   borderRadius: "4px",
+                                }}
+                                onFocus={(event) => {
+                                  event.target.blur();
+                                  setFullScreenRemarksVisible(row);
                                 }}
                                 maxLength={row.maxLength || undefined}
                                 onChange={(e) => {
@@ -326,137 +356,150 @@ const ReportingForm = () => {
                 </TableBody>
               </Table>
             </TableContainer>
-            {/* <Box mt={3} display="flex" justifyContent="flex-start">
-              <CommonButton type="submit" text="Generate Report" />
-            </Box> */}
           </CommonCard>
         </Box>
       )}
 
       {showForm && (
-        <CommonCard sx={{ mt: 2 }}>
-          <Grid2 container spacing={2}>
-            <Grid2 item size={{ md: 3 }}>
-              <Controller
-                name="typesOfSurvey"
-                control={control}
-                render={({ field }) => (
-                  <CommonInput
-                    {...field}
-                    label="Type of Survey"
-                    placeholder="Type of Survey"
-                    error={!!errors.typesOfSurvey}
-                    helperText={errors.typesOfSurvey?.message}
-                  />
-                )}
-              />
-            </Grid2>
-            <Grid2 item size={{ md: 9 }}>
-              <FormControl fullWidth sx={{ maxWidth: 255 }}>
-                <Typography variant="body1" mb={1.5}>
-                  Type Of Certificate
-                </Typography>
-                <Select
-                  value={selectCertificate}
-                  onChange={handleCertificate}
-                  displayEmpty
-                >
-                  <MenuItem value="" disabled>
-                    Select certificate
-                  </MenuItem>
-                  {certificateList.map((report) => (
-                    <MenuItem key={report.value} value={report.value}>
-                      {report.label}
+        <Box id="reportDetails">
+          <CommonCard sx={{ mt: 2 }}>
+            <Typography fontSize={'18px'} fontWeight={'600'} mb={2}>Report Details for {showForm?.activityName}</Typography>
+            <Grid2 container spacing={2}>
+              <Grid2 item size={{ md: 3 }}>
+                <Controller
+                  name="typesOfSurvey"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      label="Type of Survey"
+                      placeholder="Type of Survey"
+                      error={!!errors.typesOfSurvey}
+                      helperText={errors.typesOfSurvey?.message}
+                    />
+                  )}
+                />
+              </Grid2>
+              <Grid2 item size={{ md: 9 }}>
+                <FormControl fullWidth sx={{ maxWidth: 255 }}>
+                  <Typography variant="body1" mb={1.5}>
+                    Type Of Certificate
+                  </Typography>
+                  <Select
+                    value={selectCertificate}
+                    onChange={handleCertificate}
+                    displayEmpty
+                  >
+                    <MenuItem value="" disabled>
+                      Select certificate
                     </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                    {certificateList.map((report) => (
+                      <MenuItem key={report.value} value={report.value}>
+                        {report.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid2>
+              <Grid2 size={{ md: 3 }}>
+                <Controller
+                  name="issuancedate"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label="Issuance date"
+                      error={!!errors.issuancedate}
+                      helperText={errors.issuancedate?.message}
+                    />
+                  )}
+                />
+              </Grid2>
+              <Grid2 size={{ md: 3 }}>
+                <Controller
+                  name="validitydate"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label="Validity date"
+                      error={!!errors.validitydate}
+                      helperText={errors.validitydate?.message}
+                    />
+                  )}
+                />
+              </Grid2>
+              <Grid2 size={{ md: 3 }}>
+                <Controller
+                  name="surveydate"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label="Survey date"
+                      error={!!errors.surveydate}
+                      helperText={errors.surveydate?.message}
+                    />
+                  )}
+                />
+              </Grid2>
+              <Grid2 size={{ md: 3 }}>
+                <Controller
+                  name="endorsementdate"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label="Endorsement date"
+                      error={!!errors.endorsementdate}
+                      helperText={errors.endorsementdate?.message}
+                    />
+                  )}
+                />
+              </Grid2>
+              <Grid2 item size={{ md: 3 }}>
+                <Controller
+                  name="issuedBy"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      label="Endorsed / Issued By"
+                      placeholder="Endorsed / Issued By"
+                      error={!!errors.issuedBy}
+                      helperText={errors.issuedBy?.message}
+                    />
+                  )}
+                />
+              </Grid2>
             </Grid2>
-            <Grid2 size={{ md: 3 }}>
-              <Controller
-                name="issuancedate"
-                control={control}
-                render={({ field }) => (
-                  <CommonInput
-                    {...field}
-                    type="date"
-                    label="Issuance date"
-                    error={!!errors.issuancedate}
-                    helperText={errors.issuancedate?.message}
-                  />
-                )}
+            <Box>
+              <CommonButton
+                onClick={handleGenerateReport}
+                sx={{ marginTop: 3 }}
+                text="Generate Report"
               />
-            </Grid2>
-            <Grid2 size={{ md: 3 }}>
-              <Controller
-                name="validitydate"
-                control={control}
-                render={({ field }) => (
-                  <CommonInput
-                    {...field}
-                    type="date"
-                    label="Validity date"
-                    error={!!errors.validitydate}
-                    helperText={errors.validitydate?.message}
-                  />
-                )}
-              />
-            </Grid2>
-            <Grid2 size={{ md: 3 }}>
-              <Controller
-                name="surveydate"
-                control={control}
-                render={({ field }) => (
-                  <CommonInput
-                    {...field}
-                    type="date"
-                    label="Survey date"
-                    error={!!errors.surveydate}
-                    helperText={errors.surveydate?.message}
-                  />
-                )}
-              />
-            </Grid2>
-            <Grid2 size={{ md: 3 }}>
-              <Controller
-                name="endorsementdate"
-                control={control}
-                render={({ field }) => (
-                  <CommonInput
-                    {...field}
-                    type="date"
-                    label="Endorsement date"
-                    error={!!errors.endorsementdate}
-                    helperText={errors.endorsementdate?.message}
-                  />
-                )}
-              />
-            </Grid2>
-            <Grid2 item size={{ md: 3 }}>
-              <Controller
-                name="issuedBy"
-                control={control}
-                render={({ field }) => (
-                  <CommonInput
-                    {...field}
-                    label="Endorsed / Issued By"
-                    placeholder="Endorsed / Issued By"
-                    error={!!errors.issuedBy}
-                    helperText={errors.issuedBy?.message}
-                  />
-                )}
-              />
-            </Grid2>
-          </Grid2>
-          <Box>
-            <CommonButton
-              onClick={handleGenerateReport}
-              sx={{ marginTop: 3 }}
-              text="Generate Report"
-            />
-          </Box>
-        </CommonCard>
+            </Box>
+          </CommonCard>
+        </Box>
       )}
+      <FullScreenRemarksDialog
+        open={fullScreenRemarksVisible}
+        onCancel={() => setFullScreenRemarksVisible(null)}
+        onConfirm={(value) => {
+          if (fullScreenRemarksVisible && typeof fullScreenRemarksVisible === 'object') {
+            handleRemarksChange(fullScreenRemarksVisible.id, value);
+          }
+          setFullScreenRemarksVisible(null);
+        }}
+        title={fullScreenRemarksVisible && typeof fullScreenRemarksVisible === 'object' 
+          ? `Remarks for ${fullScreenRemarksVisible.activityName}` 
+          : "Remarks"}
+      />
     </Box>
   );
 };

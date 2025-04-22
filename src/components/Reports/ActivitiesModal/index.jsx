@@ -36,9 +36,9 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues }) => {
     };
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+        <Dialog open={open} onClose={onClose}>
             <DialogTitle>{defaultValues ? "Edit Activity" : "Add Activity"}</DialogTitle>
-            <DialogContent>
+            <DialogContent sx={{minWidth: '50vw'}}>
                 <Grid2 container spacing={2} sx={{ mt: 1 }}>
                     <Grid2 size={{ xs: 12 }}>
                         <Controller

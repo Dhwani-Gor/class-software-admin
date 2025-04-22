@@ -3,7 +3,8 @@ import React from "react";
 import { Button, CircularProgress, styled, useTheme } from "@mui/material";
 
 const StyledButton = styled(Button)(({ theme }) => ({
-  padding: theme.spacing(1.5),
+  paddingBlock: theme.spacing(1),
+  paddingInline: theme.spacing(3),
   borderRadius: "8px",
   fontSize: "1rem",
   fontWeight: "bold",
