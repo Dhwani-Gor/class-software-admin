@@ -254,3 +254,23 @@ export const updateClient = async (clientId, payload) => {
   }
   return result;
 };
+
+export const searchowner_detail = async (searchQuery) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/search/ownerDetails?search=${searchQuery}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const getClientHistory = async (clientId) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/clients/${clientId}/history`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};

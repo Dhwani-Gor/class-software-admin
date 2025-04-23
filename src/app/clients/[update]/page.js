@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Typography from "@mui/material/Typography";
 import Layout from "@/Layout";
 import Stack from "@mui/material/Stack";
@@ -8,9 +8,37 @@ import AddClientForm from "@/components/AddClientForm";
 import { IconButton } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
+import CommonButton from "@/components/CommonButton";
+import EditingReasonDialog from "@/components/Dialogs/EditingReasonDialog";
+import EditHistoryDialog from "@/components/Dialogs/EditHistoryDialog";
+import { getClientHistory } from "@/api";
+import { toast } from "react-toastify";
 
 const UpdateClient = ({ params }) => {
   const router = useRouter();
+  const [editHistoryDialog, setEditHistoryDialog] = useState(false);
+  const [isEditDialogVisible, setIsEditDialogVisible] = useState(false);
+  const [editingAllowed, setEditingAllowed] = useState(false);
+  const [changeHistory, setChangeHistory] = useState([]);
+
+  const fetchClientsHistory = async () => {
+    try {
+      const result = await getClientHistory(params?.update);
+      if (result?.status === 200) {
+        console.log('27 ===>', result.data.data)
+        setChangeHistory(result.data.data)
+      } else {
+        // toast.error("Something went wrong ! Please try again after some time")
+      }
+
+    } catch (error) {
+      toast.error(error)
+    }
+  }
+
+  useEffect(() => {
+    fetchClientsHistory();
+  }, [])
 
   return (
     <Layout>
@@ -22,11 +50,28 @@ const UpdateClient = ({ params }) => {
           <Typography variant="h6" fontWeight={"700"}>
             Clients
           </Typography>
+          <CommonButton sx={{ ml: 'auto' }} variant="outlined" text="Edit History" onClick={() => setEditHistoryDialog(true)} />
+          <CommonButton text="Edit" variant="outlined" color="secondary" onClick={() => setIsEditDialogVisible(true)} />
         </Stack>
       </CommonCard>
       <Stack>
-        <AddClientForm mode="update" clientId={params?.update} role="client" />
+        <AddClientForm editingAllowed={editingAllowed} mode="update" clientId={params?.update} role="client" />
       </Stack>
+      {isEditDialogVisible && (
+        <EditingReasonDialog
+          open={isEditDialogVisible}
+          onCancel={() => setIsEditDialogVisible(false)}
+          onConfirm={() => setEditingAllowed(true) | setIsEditDialogVisible(false)}
+          title="Please mention the Reason of Updating Client Details to continue Editing."
+        />
+      )}
+      {editHistoryDialog && (
+        <EditHistoryDialog
+          open={editHistoryDialog}
+          changeHistory={changeHistory}
+          onCancel={() => setEditHistoryDialog(false)}
+        />
+      )}
     </Layout>
   );
 };

@@ -13,14 +13,16 @@ import Snackbar from "@mui/material/Snackbar";
 import CircularProgress from "@mui/material/CircularProgress";
 import Stack from "@mui/material/Stack";
 import Checkbox from "@mui/material/Checkbox";
+import Autocomplete from "@mui/material/Autocomplete";
+import TextField from "@mui/material/TextField";
 import CommonInput from "../CommonInput";
 import CommonButton from "../CommonButton";
-import { createClient, getSpecificClient, updateClient } from "@/api";
+import { createClient, getSpecificClient, searchowner_detail, updateClient } from "@/api";
 
 const schema = yup.object().shape({
   shipName: yup.string().required("Ship Name is required"),
-  ownerDetails: yup.object().shape({
-    nameOfCompany: yup.string().required("Company Name is required"),
+  owner_detail: yup.object().shape({
+    companyName: yup.string().required("Company Name is required"),
     companyAddress: yup.string().required("Complete Address is required"),
     phoneNumber: yup
       .string()
@@ -28,8 +30,8 @@ const schema = yup.object().shape({
       .matches(/^\d{10}$/, "Enter a valid 10-digit Indian phone number"),
     email: yup.string().required("Email is required").email("Invalid email"),
   }),
-  managerDetails: yup.object().shape({
-    nameOfCompany: yup.string().required("Company Name is required"),
+  manager_detail: yup.object().shape({
+    companyName: yup.string().required("Company Name is required"),
     companyAddress: yup.string().required("Complete Address is required"),
     phoneNumber: yup
       .string()
@@ -37,8 +39,8 @@ const schema = yup.object().shape({
       .matches(/^\d{10}$/, "Enter a valid 10-digit Indian phone number"),
     email: yup.string().required("Email is required").email("Invalid email"),
   }),
-  invoicingDetails: yup.object().shape({
-    nameOfCompany: yup.string().required("Company Name is required"),
+  invoicing_detail: yup.object().shape({
+    companyName: yup.string().required("Company Name is required"),
     companyAddress: yup.string().required("Complete Address is required"),
     phoneNumber: yup
       .string()
@@ -52,6 +54,7 @@ const AddClientForm = ({
   mode = "create",
   clientId = null,
   defaultValues = {},
+  editingAllowed = true,
 }) => {
   const [loading, setLoading] = useState(false);
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
@@ -59,6 +62,9 @@ const AddClientForm = ({
   const [isManagerSameAsOwner, setIsManagerSameAsOwner] = useState(false);
   const [isInvoiceSameAsOwner, setIsInvoiceSameAsOwner] = useState(false);
   const [isInvoiceSameAsManager, setIsInvoiceSameAsManager] = useState(false);
+  const [ownerOptions, setOwnerOptions] = useState([]);
+  const [ownerInputValue, setOwnerInputValue] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
   const dispatch = useDispatch();
   const router = useRouter();
@@ -77,20 +83,20 @@ const AddClientForm = ({
       shipName: "",
       imoNumber: "",
       classId: "",
-      ownerDetails: {
-        nameOfCompany: "",
+      owner_detail: {
+        companyName: "",
         companyAddress: "",
         phoneNumber: "",
         email: "",
       },
-      managerDetails: {
-        nameOfCompany: "",
+      manager_detail: {
+        companyName: "",
         companyAddress: "",
         phoneNumber: "",
         email: "",
       },
-      invoicingDetails: {
-        nameOfCompany: "",
+      invoicing_detail: {
+        companyName: "",
         companyAddress: "",
         phoneNumber: "",
         email: "",
@@ -101,41 +107,39 @@ const AddClientForm = ({
   });
 
   useEffect(() => {
-    const ownerDetails = getValues("ownerDetails");
-    const managerDetails = getValues("managerDetails");
+    const owner_detail = getValues("owner_detail");
+    const manager_detail = getValues("manager_detail");
 
     if (isManagerSameAsOwner) {
-      setValue("managerDetails", { ...ownerDetails });
-      clearErrors('managerDetails.companyAddress');
-      clearErrors("managerDetails.email")
-      clearErrors("managerDetails.nameOfCompany")
-      clearErrors('managerDetails.phoneNumber')
+      setValue("manager_detail", { ...owner_detail });
+      clearErrors('manager_detail.companyAddress');
+      clearErrors("manager_detail.email")
+      clearErrors("manager_detail.companyName")
+      clearErrors('manager_detail.phoneNumber')
     }
 
     if (isInvoiceSameAsOwner) {
-      setValue("invoicingDetails", {
-        ...ownerDetails,
-        gstNo: getValues("invoicingDetails.gstNo"),
+      setValue("invoicing_detail", {
+        ...owner_detail,
+        gstNo: getValues("invoicing_detail.gstNo"),
       });
-      clearErrors('invoicingDetails');
-      clearErrors('invoicingDetails.companyAddress');
-      clearErrors("invoicingDetails.email")
-      clearErrors("invoicingDetails.nameOfCompany")
-      clearErrors('invoicingDetails.phoneNumber')
-
+      clearErrors('invoicing_detail');
+      clearErrors('invoicing_detail.companyAddress');
+      clearErrors("invoicing_detail.email")
+      clearErrors("invoicing_detail.companyName")
+      clearErrors('invoicing_detail.phoneNumber')
     }
 
     if (isInvoiceSameAsManager) {
-      setValue("invoicingDetails", {
-        ...managerDetails,
-        gstNo: getValues("invoicingDetails.gstNo"),
+      setValue("invoicing_detail", {
+        ...manager_detail,
+        gstNo: getValues("invoicing_detail.gstNo"),
       });
-      clearErrors('invoicingDetails');
-      clearErrors('invoicingDetails.companyAddress');
-      clearErrors("invoicingDetails.email")
-      clearErrors("invoicingDetails.nameOfCompany")
-      clearErrors('invoicingDetails.phoneNumber')
-
+      clearErrors('invoicing_detail');
+      clearErrors('invoicing_detail.companyAddress');
+      clearErrors("invoicing_detail.email")
+      clearErrors("invoicing_detail.companyName")
+      clearErrors('invoicing_detail.phoneNumber')
     }
 
   }, [isManagerSameAsOwner, isInvoiceSameAsOwner, isInvoiceSameAsManager]);
@@ -145,7 +149,9 @@ const AddClientForm = ({
       setLoading(true);
       const result = await getSpecificClient(clientId);
       if (result?.status === 200) {
+        console.log('151 ===>',result.data.data)
         reset(result.data.data)
+        setOwnerInputValue(result.data.data.owner_detail.companyName || '');
       } else {
         toast.error("Something went wrong ! Please try again after some time")
       }
@@ -161,7 +167,41 @@ const AddClientForm = ({
     if (clientId) {
       fetchClient();
     }
-  }, [clientId])
+  }, [clientId]);
+
+  // Handle search for owner company details
+  const handleOwnerSearch = async (searchQuery) => {
+    if (!searchQuery || searchQuery.trim() === '') {
+      setOwnerOptions([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const result = await searchowner_detail(searchQuery);
+      if (result?.status === 200 && result?.data) {
+        setOwnerOptions(result.data.data || []);
+      } else {
+        setOwnerOptions([]);
+      }
+    } catch (error) {
+      console.error("Error searching owner details:", error);
+      setOwnerOptions([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounce search function
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (ownerInputValue) {
+        handleOwnerSearch(ownerInputValue);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [ownerInputValue]);
 
   const snackbarClose = () => {
     setSnackBar({ open: false, message: "" });
@@ -173,7 +213,7 @@ const AddClientForm = ({
         const res = await updateClient(clientId, data);
 
         if (res?.data.status === "success" && res?.data?.url) {
-          toast.success("Client created successfully");
+          toast.success("Client updated successfully");
         } else {
           throw new Error("Invalid response format or missing URL");
         }
@@ -198,23 +238,79 @@ const AddClientForm = ({
   //Common section renderer
   const renderContactSection = (sectionKey) => (
     <Stack gap={2}>
-
-      <Controller
-        name={`${sectionKey}.nameOfCompany`}
-        control={control}
-        render={({ field }) => (
-          <CommonInput
-            {...field}
-            fullWidth
-            variant="standard"
-            label="Company Name *"
-            placeholder="Company Name"
-            error={Boolean(errors?.[sectionKey]?.nameOfCompany)}
-            helperText={errors?.[sectionKey]?.nameOfCompany?.message}
-
-          />
-        )}
-      />
+      {sectionKey === "owner_detail" ? (
+        <Controller
+          name={`${sectionKey}.companyName`}
+          control={control}
+          render={({ field }) => (
+            <Autocomplete
+              freeSolo
+              options={ownerOptions}
+              loading={isSearching}
+              inputValue={ownerInputValue}
+              disabled={!editingAllowed}
+              onInputChange={(event, newInputValue) => {
+                setOwnerInputValue(newInputValue);
+              }}
+              onChange={(event, newValue) => {
+                if (typeof newValue === 'string') {
+                  field.onChange(newValue);
+                } else if (newValue && newValue.name) {
+                  // Assuming the API returns objects with a name property
+                  field.onChange(newValue.name);
+                } else {
+                  field.onChange('');
+                }
+              }}
+              getOptionLabel={(option) => {
+                // Value selected with enter, right from the input
+                if (typeof option === 'string') {
+                  return option;
+                }
+                // Regular option
+                return option.name || '';
+              }}
+              renderInput={(params) => (
+                <CommonInput
+                  {...params}
+                  variant="standard"
+                  label="Company Name *"
+                  placeholder="Company Name"
+                  disabled={!editingAllowed}
+                  error={Boolean(errors?.owner_detail?.companyName)}
+                  helperText={errors?.owner_detail?.companyName?.message}
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {isSearching ? <CircularProgress color="inherit" size={20} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+            />
+          )}
+        />
+      ) : (
+        <Controller
+          name={`${sectionKey}.companyName`}
+          control={control}
+          render={({ field }) => (
+            <CommonInput
+              {...field}
+              fullWidth
+              variant="standard"
+              label="Company Name *"
+              placeholder="Company Name"
+              disabled={!editingAllowed}
+              error={Boolean(errors?.[sectionKey]?.companyName)}
+              helperText={errors?.[sectionKey]?.companyName?.message}
+            />
+          )}
+        />
+      )}
       <Controller
         name={`${sectionKey}.companyAddress`}
         control={control}
@@ -225,6 +321,7 @@ const AddClientForm = ({
             variant="standard"
             label="Complete Address *"
             placeholder="Enter Complete Address"
+            disabled={!editingAllowed}
             error={Boolean(errors?.[sectionKey]?.companyAddress)}
             helperText={errors?.[sectionKey]?.companyAddress?.message}
           />
@@ -241,6 +338,7 @@ const AddClientForm = ({
             type="text"
             label="Phone Number *"
             placeholder="Enter Phone Number"
+            disabled={!editingAllowed}
             error={Boolean(errors?.[sectionKey]?.phoneNumber)}
             helperText={errors?.[sectionKey]?.phoneNumber?.message}
             inputProps={{
@@ -249,6 +347,7 @@ const AddClientForm = ({
               maxLength: 10
             }}
             onChange={(e) => {
+              if (!editingAllowed) return;
               const onlyDigits = e.target.value.replace(/\D/g, "").slice(0, 10);
               field.onChange(onlyDigits);
             }}
@@ -266,14 +365,15 @@ const AddClientForm = ({
             type="email"
             label="Email *"
             placeholder="Enter Email Address"
+            disabled={!editingAllowed}
             error={Boolean(errors?.[sectionKey]?.email)}
             helperText={errors?.[sectionKey]?.email?.message}
           />
         )}
       />
-      {sectionKey == "invoicingDetails" ? (
+      {sectionKey == "invoicing_detail" ? (
         <Controller
-          name="invoicingDetails.gstNo"
+          name="invoicing_detail.gstNo"
           control={control}
           render={({ field }) => (
             <CommonInput
@@ -282,8 +382,9 @@ const AddClientForm = ({
               variant="standard"
               label="TRN / VAT / GST No."
               placeholder="Enter TRN / VAT / GST No."
-              error={Boolean(errors?.invoicingDetails?.gstNo)}
-              helperText={errors?.invoicingDetails?.gstNo?.message}
+              disabled={!editingAllowed}
+              error={Boolean(errors?.invoicing_detail?.gstNo)}
+              helperText={errors?.invoicing_detail?.gstNo?.message}
             />
           )}
         />
@@ -318,6 +419,7 @@ const AddClientForm = ({
                         variant="standard"
                         label="Ship Name *"
                         placeholder="Enter Ship Name"
+                        disabled={!editingAllowed}
                         error={Boolean(errors?.shipName)}
                         helperText={errors?.shipName?.message}
                       />
@@ -335,6 +437,7 @@ const AddClientForm = ({
                         variant="standard"
                         label="IMO Number"
                         placeholder="Enter IMO Number"
+                        disabled={!editingAllowed}
                         error={Boolean(errors?.imoNumber)}
                         helperText={errors?.imoNumber?.message}
                       />
@@ -352,6 +455,7 @@ const AddClientForm = ({
                         variant="standard"
                         label="Class ID"
                         placeholder="Enter Class ID"
+                        disabled={!editingAllowed}
                         error={Boolean(errors?.classId)}
                         helperText={errors?.classId?.message}
                       />
@@ -360,14 +464,11 @@ const AddClientForm = ({
                 </Grid2>
               </Grid2>
 
-
               <Grid2 container spacing={4}>
-
                 {/* Owners Details  */}
                 <Grid2 size={{ xs: 4 }}>
                   <h3 style={{ marginBottom: "10px" }}>Owner's Detail</h3>
-
-                  {renderContactSection("ownerDetails")}
+                  {renderContactSection("owner_detail")}
                 </Grid2>
 
                 {/* Manager's Details  */}
@@ -377,14 +478,17 @@ const AddClientForm = ({
                     control={
                       <Checkbox
                         checked={isManagerSameAsOwner}
-                        onChange={(e) =>
-                          setIsManagerSameAsOwner(e.target.checked)
-                        }
+                        onChange={(e) => {
+                          if (editingAllowed) {
+                            setIsManagerSameAsOwner(e.target.checked);
+                          }
+                        }}
+                        disabled={!editingAllowed}
                       />
                     }
                     label="Same as Owner"
                   />
-                  {renderContactSection("managerDetails", isManagerSameAsOwner)}
+                  {renderContactSection("manager_detail", isManagerSameAsOwner)}
                 </Grid2>
 
                 {/* Invoicing Details  */}
@@ -397,10 +501,12 @@ const AddClientForm = ({
                         <Checkbox
                           checked={isInvoiceSameAsOwner}
                           onChange={(e) => {
+                            if (!editingAllowed) return;
                             const checked = e.target.checked;
                             setIsInvoiceSameAsOwner(checked);
                             if (checked) setIsInvoiceSameAsManager(false);
                           }}
+                          disabled={!editingAllowed}
                         />
                       }
                       label="Same as Owner"
@@ -412,10 +518,12 @@ const AddClientForm = ({
                         <Checkbox
                           checked={isInvoiceSameAsManager}
                           onChange={(e) => {
+                            if (!editingAllowed) return;
                             const checked = e.target.checked;
                             setIsInvoiceSameAsManager(checked);
                             if (checked) setIsInvoiceSameAsOwner(false);
                           }}
+                          disabled={!editingAllowed}
                         />
                       }
                       label="Same as Manager"
@@ -423,7 +531,7 @@ const AddClientForm = ({
                   </Stack>
 
                   {renderContactSection(
-                    "invoicingDetails",
+                    "invoicing_detail",
                     isInvoiceSameAsOwner
                   )}
                 </Grid2>
@@ -435,9 +543,15 @@ const AddClientForm = ({
                 direction="row"
                 justifyContent="flex-start"
               >
-                <CommonButton type="submit" variant="contained" text="Save" />
-                <CommonButton onClick={cancelBtn} variant="contained" text="Cancel" />
-
+                {editingAllowed && (
+                  <>
+                    <CommonButton type="submit" variant="contained" text="Save" />
+                    <CommonButton onClick={cancelBtn} variant="contained" text="Cancel" />
+                  </>
+                )}
+                {!editingAllowed && (
+                  <CommonButton onClick={cancelBtn} variant="contained" text="Back" />
+                )}
               </Stack>
             </form>
 
