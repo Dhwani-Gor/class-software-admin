@@ -4,7 +4,6 @@ import jsPDF from "jspdf";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-// import autoTable from "jspdf-autotable";
 import IconButton from "@mui/material/IconButton";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
@@ -29,6 +28,7 @@ import ActivitiesModal from "../ActivitiesModal";
 import {
   generateInspection,
   getAllClients,
+  getJournal,
   getShipDetails,
   getUsersDetails,
 } from "@/api";
@@ -42,6 +42,9 @@ import {
   RadioGroup,
 } from "@mui/material";
 import CommonConfirmationDialog from "@/components/Dialogs/CommonConfirmationDialog";
+import moment from "moment";
+import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
 
 const schema = yup.object().shape({
   shipWork: yup.string().required("Ship name is required"),
@@ -53,13 +56,22 @@ const schema = yup.object().shape({
 });
 
 const journalTypeOptions = [
-  "New Entry",
-  "Periodical",
-  "Component Survey",
-  "Miscellaneous Survey",
+  { id: "new_entry", value: "new_entry", label: "New Entry" },
+  { id: "periodical", value: "periodical", label: "Periodical" },
+  {
+    id: "component_survey",
+    value: "component_survey",
+    label: "Component Survey",
+  },
+  {
+    id: "miscellaneous_survey",
+    value: "miscellaneous_survey",
+    label: "Miscellaneous Survey",
+  },
 ];
 
-const JournalEntryForm = () => {
+const JournalEntryForm = ({ journalId = null }) => {
+  const { userInfo } = useSelector((state) => state.auth);
   const [visitList, setVisitList] = useState([]);
   const [openModal, setOpenModal] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
@@ -68,12 +80,28 @@ const JournalEntryForm = () => {
   const [clientsList, setClientsList] = useState([]);
   const [openActivityModal, setOpenActivityModal] = useState(false);
   const [editActivity, setEditActivity] = useState(null);
-  const [selectedShip, setSelectedShip] = useState("");
   const [selectedClient, setSelectedClient] = useState("");
-  const [clientLists, setClientLists] = useState([]);
-  const [shipLists, setShipLists] = useState([]);
   const [isShowForm, setIsShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [journalData, setJournalData] = useState(null);
+
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    reset,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      shipWork: "",
+      imoNumber: "",
+      classId: "",
+      requestedBy: "",
+      date: "",
+      type: "",
+    },
+  });
 
   const handleOpenModal = () => {
     setEditVisit(null);
@@ -139,7 +167,7 @@ const JournalEntryForm = () => {
         { id: Date.now(), ...activityData },
       ]);
     }
-    setOpenModal(false);
+    setOpenActivityModal(false);
   };
 
   const handleEditActivity = (activity) => {
@@ -148,7 +176,7 @@ const JournalEntryForm = () => {
   };
 
   const handleActivityDelete = (id) => {
-    setVisitList(activitiesList.filter((activity) => activity.id !== id));
+    setActivitiesList(activitiesList.filter((activity) => activity.id !== id));
   };
 
   const handleClientChange = (event) => {
@@ -159,61 +187,15 @@ const JournalEntryForm = () => {
     setValue("imoNumber", imoNumber);
   };
 
-  const fetchUserListData = async (page, limit, searchQuery) => {
-    try {
-      const res = await getUsersDetails(page, limit, searchQuery);
-      setLoading(true);
-      if (res?.data?.data?.length > 0) {
-        const filteredData = res.data.data
-          .filter((item) => item.roleId === "3")
-          .map((item) => ({
-            value: item.id || "-",
-            label: item.name || "-",
-          }));
-
-        const sortedData = filteredData.sort((a, b) => a.value - b.value);
-
-        setClientLists(sortedData);
-        setLoading(false);
-      } else {
-        setClientLists([]);
-      }
-    } catch (error) {
-      console.error("Error fetching client list:", error);
-    }
-  };
-
-  const fetchShipListData = async (page, limit, searchQuery) => {
-    try {
-      const res = await getShipDetails(page, limit, searchQuery);
-      if (res?.data?.data?.length > 0) {
-        const formattedData = res.data.data.map((item) => ({
-          value: item.id || "-",
-          label: item.name || "-",
-        }));
-
-        const sortedData = formattedData.sort((a, b) => a.value - b.value);
-
-        setShipLists(sortedData);
-      } else {
-        setShipLists([]);
-      }
-    } catch (error) {
-      console.error("Error fetching ship list:", error);
-    }
-  };
-
   const fetchClients = async () => {
     try {
       setLoading(true);
       const result = await getAllClients();
       if (result?.status === 200) {
         setClientsList(result.data.data);
-        console.log(result.data.data);
       } else {
         toast.error("Something went wrong ! Please try again after some time");
       }
-
       setLoading(false);
     } catch (error) {
       setLoading(false);
@@ -221,72 +203,93 @@ const JournalEntryForm = () => {
     }
   };
 
+  const fetchJournal = async () => {
+    try {
+      setLoading(true);
+      const result = await getJournal(journalId);
+      if (result?.status === 200) {
+        const journalData = result.data.data;
+        setJournalData(journalData);
+        
+        // Set the form values
+        setValue("shipWork", journalData.client.shipName);
+        setValue("imoNumber", journalData.client.imoNumber);
+        setValue("classId", journalData.client.classId);
+        setValue("requestedBy", journalData.requestedBy);
+        setValue("date", moment(journalData.date).format("YYYY-MM-DD"));
+        setValue("type", journalData.journalType);
+        
+        // Set the client
+        setSelectedClient({
+          id: journalData.clientId,
+          shipName: journalData.client.shipName,
+          imoNumber: journalData.client.imoNumber,
+          classId: journalData.client.classId
+        });
+        
+        // Set visit details and activities if they exist
+        if (journalData.visitDetails && journalData.visitDetails.length > 0) {
+          setVisitList(journalData.visitDetails);
+        }
+        
+        if (journalData.activities && journalData.activities.length > 0) {
+          setActivitiesList(journalData.activities);
+        }
+        
+        // Show the form for editing
+        setIsShowForm(true);
+      } else {
+        toast.error("Something went wrong ! Please try again after some time");
+      }
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error.message || "Failed to fetch journal data");
+    }
+  };
+
   useEffect(() => {
     fetchClients();
-    fetchUserListData();
-    fetchShipListData();
   }, []);
+
+  useEffect(() => {
+    if (journalId) {
+      fetchJournal();
+    }
+  }, [journalId]);
 
   const showForm = () => {
     setIsShowForm(true);
   };
 
-  const {
-    control,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-  } = useForm({
-    resolver: yupResolver(schema),
-    defaultValues: {
-      shipWork: "",
-      imoNumber: "",
-      classId: "",
-      requestedBy: "",
-      date: "",
-      type: "",
-    },
-  });
-
   const onSubmit = async (data) => {
-    console.log("226 ===>", data);
-    // const doc = new jsPDF();
+    try {
+      const payload = {
+        userId: userInfo?.id,
+        clientId: selectedClient?.id,
+        journalType: data.type,
+        requestedBy: data.requestedBy,
+        date: moment(data.date).toISOString(),
+        isLocked: false,
+        visitDetails: visitList,
+        activities: activitiesList,
+      };
+      
+      // If editing existing journal, add the journal ID
+      if (journalId) {
+        payload.id = journalId;
+      }
 
-    // doc.setFontSize(18);
-    // doc.text("Survey Report", 14, 20);
+      const res = await generateInspection(payload);
 
-    // doc.setFontSize(12);
-    // doc.text("General Information:", 14, 30);
-
-    // let payload = {
-    //   userId: 3,
-    //   shipId: 1,
-    //   reportId: 1,
-    //   journalEntry: {
-    //     basic_details: {
-    //       ship_name: "asd",
-    //       imo_no: "asd1212",
-    //       class_id_no: "asd12",
-    //       requested_by: "qwe",
-    //       date: "asdqw",
-    //     },
-    //   },
-    // };
-
-    // try {
-    //   const res = await generateInspection(payload);
-    //   console.log("API Response:", res);
-
-    //   // Ensure the response contains a valid URL
-    //   if (res?.data.status === "success" && res?.data?.url) {
-    //     window.open(res.data.url, "_blank"); // Opens the PDF in a new tab
-    //     console.log("PDF opened successfully");
-    //   } else {
-    //     throw new Error("Invalid response format or missing URL");
-    //   }
-    // } catch (error) {
-    //   console.error("Error:", error);
-    // }
+      if (res?.data.status === "success") {
+        toast.success(journalId ? "Journal updated successfully" : "Journal created successfully");
+      } else {
+        throw new Error("Something went wrong");
+      }
+    } catch (error) {
+      toast.error("Error saving journal: " + (error.message || "Unknown error"));
+    }
   };
 
   return (
@@ -301,61 +304,40 @@ const JournalEntryForm = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <Box mt={3}>
-          <CommonCard>
-            <Box>
-              <FormControl fullWidth sx={{ maxWidth: 300 }}>
-                <Typography variant="body1" mb={1}>
-                  Select the ship / Work
-                </Typography>
-                <Select
-                  value={selectedClient}
-                  onChange={handleClientChange}
-                  displayEmpty
-                >
-                  <MenuItem value="" disabled>
-                    Select the ship / Work
-                  </MenuItem>
-                  {clientsList.map((client) => (
-                    <MenuItem key={client.id} value={client}>
-                      {client.shipName}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-
-            {/* {selectedClient && (
-              <Box mt={2}>
+        !journalId && !isShowForm && (
+          <Box mt={3}>
+            <CommonCard>
+              <Box>
                 <FormControl fullWidth sx={{ maxWidth: 300 }}>
                   <Typography variant="body1" mb={1}>
-                    Select Ship
+                    Select the ship / Work
                   </Typography>
                   <Select
-                    value={selectedShip}
-                    onChange={handleShipChange}
+                    value={selectedClient}
+                    onChange={handleClientChange}
                     displayEmpty
                   >
                     <MenuItem value="" disabled>
-                      Select Ship
+                      Select the ship / Work
                     </MenuItem>
-                    {shipLists.map((ship) => (
-                      <MenuItem key={ship.value} value={ship.value}>
-                        {ship.label}
+                    {clientsList.map((client) => (
+                      <MenuItem key={client.id} value={client}>
+                        {client.shipName}
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
               </Box>
-            )} */}
 
-            {selectedClient && (
-              <CommonButton onClick={showForm} sx={{ marginTop: 3 }} />
-            )}
-          </CommonCard>
-        </Box>
+              {selectedClient && (
+                <CommonButton onClick={showForm} sx={{ marginTop: 3 }} />
+              )}
+            </CommonCard>
+          </Box>
+        )
       )}
-      {isShowForm && (
+      
+      {(isShowForm || journalId) && (
         <form onSubmit={handleSubmit(onSubmit)}>
           <CommonCard>
             <Box>
@@ -380,8 +362,8 @@ const JournalEntryForm = () => {
                       >
                         {journalTypeOptions.map((type) => (
                           <FormControlLabel
-                            key={type}
-                            value={type}
+                            key={type.id}
+                            value={type.value}
                             control={
                               <Radio
                                 sx={{
@@ -394,7 +376,7 @@ const JournalEntryForm = () => {
                                 }}
                               />
                             }
-                            label={type.charAt(0).toUpperCase() + type.slice(1)}
+                            label={type.label}
                           />
                         ))}
                       </RadioGroup>
@@ -560,7 +542,7 @@ const JournalEntryForm = () => {
                 </Typography>
                 <CommonButton
                   sx={{ fontSize: "14px" }}
-                  text="Add Activitiy"
+                  text="Add Activity"
                   onClick={handleOpenActivityModal}
                 />
               </Stack>
@@ -577,19 +559,19 @@ const JournalEntryForm = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {activitiesList.map((visit, index) => (
-                        <TableRow key={visit.id}>
+                      {activitiesList.map((activity, index) => (
+                        <TableRow key={activity.id}>
                           <TableCell>{index + 1}</TableCell>
-                          <TableCell>{visit.survey}</TableCell>
-                          <TableCell>{visit.surveyors}</TableCell>
+                          <TableCell>{activity.typeOfSurvey}</TableCell>
+                          <TableCell>{activity.initialOfSurveyors}</TableCell>
                           <TableCell align="right">
                             <IconButton
-                              onClick={() => handleEditActivity(visit)}
+                              onClick={() => handleEditActivity(activity)}
                             >
                               <EditIcon />
                             </IconButton>
                             <IconButton
-                              onClick={() => handleActivityDelete(visit.id)}
+                              onClick={() => handleActivityDelete(activity.id)}
                             >
                               <DeleteIcon />
                             </IconButton>
@@ -607,8 +589,7 @@ const JournalEntryForm = () => {
             <CommonCard>
               <CommonButton
                 type="submit"
-                // onClick={() => setOpenDialog(true)}
-                text="Save"
+                text={journalId ? "Update" : "Save"}
               />
             </CommonCard>
           </Box>

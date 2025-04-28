@@ -8,7 +8,7 @@ import { IconButton, Stack } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 
-const JournalEntry = () => {
+const JournalEntry = ({ params }) => {
   const router = useRouter();
 
   return (
@@ -19,11 +19,11 @@ const JournalEntry = () => {
             <ArrowBack />
           </IconButton>
           <Typography variant="h6" fontWeight={"700"}>
-          Journal Entry
+            Journal Entry
           </Typography>
         </Stack>
       </CommonCard>
-      <JournalEntryForm  />
+      <JournalEntryForm journalId={params.update} />
     </Layout>
   );
 };
