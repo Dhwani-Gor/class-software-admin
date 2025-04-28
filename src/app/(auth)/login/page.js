@@ -13,6 +13,8 @@ import CommonInput from "@/components/CommonInput";
 import CommonButton from "@/components/CommonButton";
 import { adminLogin } from "@/api";
 import { useAuth } from "@/hooks/useAuth";
+import { useDispatch } from "react-redux";
+import { saveUserInfo } from "@/redux/slice/authSlice";
 
 const MainWrapper = styled(Box)(({}) => ({
   height: "100vh",
@@ -34,6 +36,7 @@ const validationSchema = yup.object().shape({
 
 const Login = () => {
   const { login } = useAuth();
+  const dispatch = useDispatch();
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
   const {
     control,
@@ -54,6 +57,7 @@ const Login = () => {
       if (!res?.data?.data?.status) {
         setSnackBar({ open: true, message: res?.response?.data?.message });
       }
+      dispatch(saveUserInfo(res?.data?.data))
       login(res?.data?.data);
       setSnackBar({ open: true, message: res?.data.status });
     } catch (err) {

@@ -187,11 +187,30 @@ export const updateInspectorDetail = async (id, payload) => {
   return result;
 };
 
+export const getAllJournals = async () => {
+  let result;
+  try {
+    result = await axiosInstance.get("/api/journals");
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const getJournal = async (journalId) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/journals/${journalId}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
 
 export const generateInspection = async (payload) => {
   let result;
   try {
-    result = await axiosInstance.post(`/api/inspections/generateInspection`, payload);
+    result = await axiosInstance.post(`/api/journals`, payload);
   } catch (e) {
     result = e;
   }
@@ -249,6 +268,16 @@ export const updateClient = async (clientId, payload) => {
   let result;
   try {
     result = await axiosInstance.patch(`/api/clients/${clientId}`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const deleteClient = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.delete(`/api/clients/${payload.id}`);
   } catch (e) {
     result = e;
   }

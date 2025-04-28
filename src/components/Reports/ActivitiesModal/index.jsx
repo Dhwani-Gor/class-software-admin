@@ -10,8 +10,8 @@ import CommonButton from '@/components/CommonButton';
 
 // Validation Schema
 const activitySchema = yup.object().shape({
-    survey: yup.string().required("Required"),
-    surveyors: yup.string().required("Required"),
+    typeOfSurvey: yup.string().required("Required"),
+    initialOfSurveyors: yup.string().required("Required"),
 });
 
 const ActivitiesModal = ({ open, onClose, onSave, defaultValues }) => {
@@ -22,11 +22,11 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues }) => {
         reset
     } = useForm({
         resolver: yupResolver(activitySchema),
-        defaultValues: { survey: '', surveyors: '' }
+        defaultValues: { typeOfSurvey: '', initialOfSurveyors: '' }
     });
 
     useEffect(() => {
-        reset(defaultValues || { survey: '', surveyors: '' });
+        reset(defaultValues || { typeOfSurvey: '', initialOfSurveyors: '' });
     }, [defaultValues, reset]);
 
     const onSubmit = (data) => {
@@ -42,19 +42,19 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues }) => {
                 <Grid2 container spacing={2} sx={{ mt: 1 }}>
                     <Grid2 size={{ xs: 12 }}>
                         <Controller
-                            name="survey"
+                            name="typeOfSurvey"
                             control={control}
                             render={({ field }) => (
-                                <CommonInput {...field} label="Type of survey/Inspection" error={!!errors.survey} helperText={errors.survey?.message} />
+                                <CommonInput {...field} label="Type of survey/Inspection" error={!!errors.typeOfSurvey} helperText={errors.typeOfSurvey?.message} />
                             )}
                         />
                     </Grid2>
                     <Grid2 size={{ xs: 12 }}>
                         <Controller
-                            name="surveyors"
+                            name="initialOfSurveyors"
                             control={control}
                             render={({ field }) => (
-                                <CommonInput {...field} label="Initial of surveyors" error={!!errors.surveyors} helperText={errors.surveyors?.message} />
+                                <CommonInput {...field} label="Initial of surveyors" error={!!errors.initialOfSurveyors} helperText={errors.surveyors?.message} />
                             )}
                         />
                     </Grid2>

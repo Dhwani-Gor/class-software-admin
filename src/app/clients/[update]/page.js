@@ -20,6 +20,7 @@ const UpdateClient = ({ params }) => {
   const [isEditDialogVisible, setIsEditDialogVisible] = useState(false);
   const [editingAllowed, setEditingAllowed] = useState(false);
   const [changeHistory, setChangeHistory] = useState([]);
+  const [editReason, setEditReason] = useState('');
 
   const fetchClientsHistory = async () => {
     try {
@@ -55,13 +56,17 @@ const UpdateClient = ({ params }) => {
         </Stack>
       </CommonCard>
       <Stack>
-        <AddClientForm editingAllowed={editingAllowed} mode="update" clientId={params?.update} role="client" />
+        <AddClientForm editReason={editReason} editingAllowed={editingAllowed} mode="update" clientId={params?.update} role="client" />
       </Stack>
       {isEditDialogVisible && (
         <EditingReasonDialog
           open={isEditDialogVisible}
           onCancel={() => setIsEditDialogVisible(false)}
-          onConfirm={() => setEditingAllowed(true) | setIsEditDialogVisible(false)}
+          onConfirm={(value) => {
+            setEditingAllowed(true);
+            setIsEditDialogVisible(false);
+            setEditReason(value)
+          }}
           title="Please mention the Reason of Updating Client Details to continue Editing."
         />
       )}
