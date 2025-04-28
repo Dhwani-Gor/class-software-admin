@@ -57,13 +57,13 @@ const Login = () => {
       const res = await registerUser(data);
       if (!res?.response?.data.status)
         toast.error(res?.response?.data?.errorMessage);
-      // dispatch(
-      //   login({
-      //     email: res?.data?.data?.user?.email,
-      //     password: res?.data?.data?.user?.password,
-      //     token: res?.data?.data?.token,
-      //   })
-      // );
+      dispatch(
+        login({
+          email: res?.data?.data?.user?.email,
+          password: res?.data?.data?.user?.password,
+          token: res?.data?.data?.token,
+        })
+      );
       setSnackBar({ open: true, message: res?.data.status });
     } catch (err) {
       console.log("error", err?.response);

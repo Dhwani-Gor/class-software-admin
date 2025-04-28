@@ -21,8 +21,8 @@ import { createClient, getSpecificClient, searchowner_detail, updateClient } fro
 
 const schema = yup.object().shape({
   shipName: yup.string().required("Ship Name is required"),
-  ownerDetails: yup.object().shape({
-    nameOfCompany: yup.string().required("Company Name is required"),
+  owner_detail: yup.object().shape({
+    companyName: yup.string().required("Company Name is required"),
     companyAddress: yup.string().required("Complete Address is required"),
     phoneNumber: yup
       .string()
@@ -30,8 +30,8 @@ const schema = yup.object().shape({
       .matches(/^\d{10}$/, "Enter a valid 10-digit Indian phone number"),
     email: yup.string().required("Email is required").email("Invalid email"),
   }),
-  managerDetails: yup.object().shape({
-    nameOfCompany: yup.string().required("Company Name is required"),
+  manager_detail: yup.object().shape({
+    companyName: yup.string().required("Company Name is required"),
     companyAddress: yup.string().required("Complete Address is required"),
     phoneNumber: yup
       .string()
@@ -39,8 +39,8 @@ const schema = yup.object().shape({
       .matches(/^\d{10}$/, "Enter a valid 10-digit Indian phone number"),
     email: yup.string().required("Email is required").email("Invalid email"),
   }),
-  invoicingDetails: yup.object().shape({
-    nameOfCompany: yup.string().required("Company Name is required"),
+  invoicing_detail: yup.object().shape({
+    companyName: yup.string().required("Company Name is required"),
     companyAddress: yup.string().required("Complete Address is required"),
     phoneNumber: yup
       .string()
@@ -55,7 +55,6 @@ const AddClientForm = ({
   clientId = null,
   defaultValues = {},
   editingAllowed = true,
-  editReason = ''
 }) => {
   const [loading, setLoading] = useState(false);
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
@@ -66,10 +65,6 @@ const AddClientForm = ({
   const [ownerOptions, setOwnerOptions] = useState([]);
   const [ownerInputValue, setOwnerInputValue] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  
-  // Flags to track manual edits
-  const [manuallyEditedManager, setManuallyEditedManager] = useState(false);
-  const [manuallyEditedInvoice, setManuallyEditedInvoice] = useState(false);
 
   const dispatch = useDispatch();
   const router = useRouter();
@@ -82,28 +77,26 @@ const AddClientForm = ({
     getValues,
     clearErrors,
     reset,
-    watch,
-    trigger,
   } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
       shipName: "",
       imoNumber: "",
       classId: "",
-      ownerDetails: {
-        nameOfCompany: "",
+      owner_detail: {
+        companyName: "",
         companyAddress: "",
         phoneNumber: "",
         email: "",
       },
-      managerDetails: {
-        nameOfCompany: "",
+      manager_detail: {
+        companyName: "",
         companyAddress: "",
         phoneNumber: "",
         email: "",
       },
-      invoicingDetails: {
-        nameOfCompany: "",
+      invoicing_detail: {
+        companyName: "",
         companyAddress: "",
         phoneNumber: "",
         email: "",
@@ -113,90 +106,60 @@ const AddClientForm = ({
     },
   });
 
-  // Copy values when checkboxes are checked
   useEffect(() => {
-    const ownerDetails = getValues("ownerDetails");
-    const managerDetails = getValues("managerDetails");
+    const owner_detail = getValues("owner_detail");
+    const manager_detail = getValues("manager_detail");
 
-    if (isManagerSameAsOwner && ownerDetails) {
-      setValue("managerDetails", { ...ownerDetails });
-      clearErrors('managerDetails.companyAddress');
-      clearErrors("managerDetails.email");
-      clearErrors("managerDetails.nameOfCompany");
-      clearErrors('managerDetails.phoneNumber');
-      setManuallyEditedManager(false); // Reset flag when auto-copying
+    if (isManagerSameAsOwner) {
+      setValue("manager_detail", { ...owner_detail });
+      clearErrors('manager_detail.companyAddress');
+      clearErrors("manager_detail.email")
+      clearErrors("manager_detail.companyName")
+      clearErrors('manager_detail.phoneNumber')
     }
 
-    if (isInvoiceSameAsOwner && ownerDetails) {
-      setValue("invoicingDetails", {
-        ...ownerDetails,
-        gstNo: getValues("invoicingDetails.gstNo") || "",
+    if (isInvoiceSameAsOwner) {
+      setValue("invoicing_detail", {
+        ...owner_detail,
+        gstNo: getValues("invoicing_detail.gstNo"),
       });
-      clearErrors('invoicingDetails');
-      clearErrors('invoicingDetails.companyAddress');
-      clearErrors("invoicingDetails.email");
-      clearErrors("invoicingDetails.nameOfCompany");
-      clearErrors('invoicingDetails.phoneNumber');
-      setManuallyEditedInvoice(false); // Reset flag when auto-copying
+      clearErrors('invoicing_detail');
+      clearErrors('invoicing_detail.companyAddress');
+      clearErrors("invoicing_detail.email")
+      clearErrors("invoicing_detail.companyName")
+      clearErrors('invoicing_detail.phoneNumber')
     }
 
-    if (isInvoiceSameAsManager && managerDetails) {
-      setValue("invoicingDetails", {
-        ...managerDetails,
-        gstNo: getValues("invoicingDetails.gstNo") || "",
+    if (isInvoiceSameAsManager) {
+      setValue("invoicing_detail", {
+        ...manager_detail,
+        gstNo: getValues("invoicing_detail.gstNo"),
       });
-      clearErrors('invoicingDetails');
-      clearErrors('invoicingDetails.companyAddress');
-      clearErrors("invoicingDetails.email");
-      clearErrors("invoicingDetails.nameOfCompany");
-      clearErrors('invoicingDetails.phoneNumber');
-      setManuallyEditedInvoice(false); // Reset flag when auto-copying
+      clearErrors('invoicing_detail');
+      clearErrors('invoicing_detail.companyAddress');
+      clearErrors("invoicing_detail.email")
+      clearErrors("invoicing_detail.companyName")
+      clearErrors('invoicing_detail.phoneNumber')
     }
-  }, [isManagerSameAsOwner, isInvoiceSameAsOwner, isInvoiceSameAsManager, setValue, getValues, clearErrors]);
 
-  // Watch for changes in the owner's details to update copied fields
-  const ownerDetail = watch("ownerDetails");
-  useEffect(() => {
-    // Only copy if the checkbox is checked and we're not in manual edit mode
-    if (isManagerSameAsOwner && !manuallyEditedManager && ownerDetail) {
-      setValue("managerDetails", { ...ownerDetail });
-    }
-    
-    if (isInvoiceSameAsOwner && !manuallyEditedInvoice && ownerDetail) {
-      setValue("invoicingDetails", {
-        ...ownerDetail,
-        gstNo: getValues("invoicingDetails.gstNo") || "",
-      });
-    }
-  }, [ownerDetail, isManagerSameAsOwner, isInvoiceSameAsOwner, setValue, getValues, manuallyEditedManager, manuallyEditedInvoice]);
-
-  // Watch for changes in the manager's details to update invoicing if needed
-  const managerDetail = watch("managerDetails");
-  useEffect(() => {
-    // Only copy if the checkbox is checked and we're not in manual edit mode
-    if (isInvoiceSameAsManager && !manuallyEditedInvoice && managerDetail) {
-      setValue("invoicingDetails", {
-        ...managerDetail,
-        gstNo: getValues("invoicingDetails.gstNo") || "",
-      });
-    }
-  }, [managerDetail, isInvoiceSameAsManager, setValue, getValues, manuallyEditedInvoice]);
+  }, [isManagerSameAsOwner, isInvoiceSameAsOwner, isInvoiceSameAsManager]);
 
   const fetchClient = async () => {
     try {
-      setIsDataLoading(true);
+      setLoading(true);
       const result = await getSpecificClient(clientId);
-      if (result?.status === 200 && result.data?.data) {
-        reset(result.data.data);
-        setOwnerInputValue(result.data.data.ownerDetails?.nameOfCompany || '');
+      if (result?.status === 200) {
+        console.log('151 ===>',result.data.data)
+        reset(result.data.data)
+        setOwnerInputValue(result.data.data.owner_detail.companyName || '');
       } else {
-        toast.error("Something went wrong! Please try again after some time");
+        toast.error("Something went wrong ! Please try again after some time")
       }
+
+      setLoading(false);
     } catch (error) {
-      console.error("Error fetching client:", error);
-      toast.error("Error fetching client data");
-    } finally {
-      setIsDataLoading(false);
+      setLoading(false);
+      toast.error(error)
     }
   };
 
@@ -245,207 +208,109 @@ const AddClientForm = ({
   };
 
   const onSubmit = async (data) => {
-    // Add debug logging to verify form data
-    console.log("Submitting form with data:", data);
-    console.log("Owner company:", data.ownerDetails?.nameOfCompany);
-    console.log("Manager company:", data.managerDetails?.nameOfCompany);
-    console.log("Invoicing company:", data.invoicingDetails?.nameOfCompany);
-    
-    // Ensure all required data is present
-    if (!data.ownerDetails || !data.managerDetails || !data.invoicingDetails) {
-      toast.error("Missing required details. Please fill all required fields.");
-      return;
-    }
-    
     try {
-      setLoading(true);
-      let res;
-      
-      // Prepare the payload with the correct structure
-      const payload = {
-        shipName: data.shipName,
-        imoNumber: data.imoNumber || "",
-        classId: data.classId || "",
-        ownerDetails: {
-          nameOfCompany: data.ownerDetails.nameOfCompany,
-          companyAddress: data.ownerDetails.companyAddress,
-          phoneNumber: data.ownerDetails.phoneNumber,
-          email: data.ownerDetails.email,
-        },
-        managerDetails: {
-          nameOfCompany: data.managerDetails.nameOfCompany,
-          companyAddress: data.managerDetails.companyAddress,
-          phoneNumber: data.managerDetails.phoneNumber,
-          email: data.managerDetails.email,
-        },
-        invoicingDetails: {
-          nameOfCompany: data.invoicingDetails.nameOfCompany,
-          companyAddress: data.invoicingDetails.companyAddress,
-          phoneNumber: data.invoicingDetails.phoneNumber,
-          email: data.invoicingDetails.email,
-          gstNo: data.invoicingDetails.gstNo || "",
-        }
-      };
-      
       if (clientId) {
-        res = await updateClient(clientId, {...payload, message: editReason});
+        const res = await updateClient(clientId, data);
+
+        if (res?.data.status === "success" && res?.data?.url) {
+          toast.success("Client updated successfully");
+        } else {
+          throw new Error("Invalid response format or missing URL");
+        }
       } else {
-        res = await createClient(payload);
-      }
-  
-      if (res?.data?.status === "success" && res?.data?.url) {
-        toast.success(clientId ? "Client updated successfully" : "Client created successfully");
-        router.push('/clients');
-      } else if (res?.response?.data?.status === "error") {
-        toast.error(res?.response?.data?.message);
+        const res = await createClient(data);
+
+        if (res?.data.status === "success" && res?.data?.url) {
+          toast.success("Client created successfully");
+        } else {
+          throw new Error("Invalid response format or missing URL");
+        }
       }
     } catch (error) {
-      console.error("Error submitting form:", error);
-      if (error.response && error.response.data && error.response.data.message) {
-        toast.error(error.response.data.message);
-      } else {
-        toast.error("An unexpected error occurred. Please try again later.");
-      }
-    } finally {
-      setLoading(false);
+      console.error("Error:", error);
     }
   };
-
+  
   const cancelBtn = () => {
     router.push("/clients");
   }
 
-  // Helper function to create change handler for manual edits
-  const createManualEditHandler = (sectionKey) => {
-    return () => {
-      if (sectionKey === "managerDetails" && isManagerSameAsOwner) {
-        setIsManagerSameAsOwner(false);
-        setManuallyEditedManager(true);
-      } else if (sectionKey === "invoicingDetails") {
-        if (isInvoiceSameAsOwner) {
-          setIsInvoiceSameAsOwner(false);
-          setManuallyEditedInvoice(true);
-        }
-        if (isInvoiceSameAsManager) {
-          setIsInvoiceSameAsManager(false);
-          setManuallyEditedInvoice(true);
-        }
-      }
-    };
-  };
-
-  // Fixed Autocomplete component for owner's company name
-  const renderOwnerCompanyField = () => (
-    <Controller
-      name="ownerDetails.nameOfCompany"
-      control={control}
-      render={({ field }) => (
-        <Autocomplete
-          freeSolo
-          options={ownerOptions}
-          loading={isSearching}
-          value={field.value || ""}
-          inputValue={ownerInputValue}
-          disabled={!editingAllowed}
-          onInputChange={(event, newInputValue) => {
-            setOwnerInputValue(newInputValue);
-            
-            // Directly update the form value when typing
-            if (newInputValue) {
-              field.onChange(newInputValue);
-            }
-          }}
-          onChange={(event, newValue) => {
-            if (typeof newValue === 'string') {
-              field.onChange(newValue);
-            } else if (newValue && newValue.nameOfCompany) {
-              field.onChange(newValue.nameOfCompany);
-
-              // Update other owner fields
-              setValue('ownerDetails.companyAddress', newValue.companyAddress || '');
-              setValue('ownerDetails.phoneNumber', newValue.phoneNumber || '');
-              setValue('ownerDetails.email', newValue.email || '');
-              
-              // If checkboxes are checked, propagate the changes
-              if (isManagerSameAsOwner) {
-                setValue('managerDetails.nameOfCompany', newValue.nameOfCompany || '');
-                setValue('managerDetails.companyAddress', newValue.companyAddress || '');
-                setValue('managerDetails.phoneNumber', newValue.phoneNumber || '');
-                setValue('managerDetails.email', newValue.email || '');
-              }
-              
-              if (isInvoiceSameAsOwner) {
-                setValue('invoicingDetails.nameOfCompany', newValue.nameOfCompany || '');
-                setValue('invoicingDetails.companyAddress', newValue.companyAddress || '');
-                setValue('invoicingDetails.phoneNumber', newValue.phoneNumber || '');
-                setValue('invoicingDetails.email', newValue.email || '');
-              }
-            } else if (newValue === null) {
-              // Handle clearing the field
-              field.onChange('');
-            }
-          }}
-          getOptionLabel={(option) => {
-            // Value selected with enter, right from the input
-            if (typeof option === 'string') {
-              return option;
-            }
-            return option?.nameOfCompany || '';
-          }}
-          renderInput={(params) => (
+  //Common section renderer
+  const renderContactSection = (sectionKey) => (
+    <Stack gap={2}>
+      {sectionKey === "owner_detail" ? (
+        <Controller
+          name={`${sectionKey}.companyName`}
+          control={control}
+          render={({ field }) => (
+            <Autocomplete
+              freeSolo
+              options={ownerOptions}
+              loading={isSearching}
+              inputValue={ownerInputValue}
+              disabled={!editingAllowed}
+              onInputChange={(event, newInputValue) => {
+                setOwnerInputValue(newInputValue);
+              }}
+              onChange={(event, newValue) => {
+                if (typeof newValue === 'string') {
+                  field.onChange(newValue);
+                } else if (newValue && newValue.name) {
+                  // Assuming the API returns objects with a name property
+                  field.onChange(newValue.name);
+                } else {
+                  field.onChange('');
+                }
+              }}
+              getOptionLabel={(option) => {
+                // Value selected with enter, right from the input
+                if (typeof option === 'string') {
+                  return option;
+                }
+                // Regular option
+                return option.name || '';
+              }}
+              renderInput={(params) => (
+                <CommonInput
+                  {...params}
+                  variant="standard"
+                  label="Company Name *"
+                  placeholder="Company Name"
+                  disabled={!editingAllowed}
+                  error={Boolean(errors?.owner_detail?.companyName)}
+                  helperText={errors?.owner_detail?.companyName?.message}
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {isSearching ? <CircularProgress color="inherit" size={20} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+            />
+          )}
+        />
+      ) : (
+        <Controller
+          name={`${sectionKey}.companyName`}
+          control={control}
+          render={({ field }) => (
             <CommonInput
-              {...params}
+              {...field}
+              fullWidth
               variant="standard"
               label="Company Name *"
               placeholder="Company Name"
               disabled={!editingAllowed}
-              error={Boolean(errors?.ownerDetails?.nameOfCompany)}
-              helperText={errors?.ownerDetails?.nameOfCompany?.message}
-              InputProps={{
-                ...params.InputProps,
-                endAdornment: (
-                  <>
-                    {isSearching ? <CircularProgress color="inherit" size={20} /> : null}
-                    {params.InputProps.endAdornment}
-                  </>
-                ),
-              }}
+              error={Boolean(errors?.[sectionKey]?.companyName)}
+              helperText={errors?.[sectionKey]?.companyName?.message}
             />
           )}
         />
       )}
-    />
-  );
-
-  // Common section renderer
-  const renderContactSection = (sectionKey) => (
-    <Stack gap={2}>
-      {sectionKey === "ownerDetails" 
-        ? renderOwnerCompanyField()
-        : (
-          <Controller
-            name={`${sectionKey}.nameOfCompany`}
-            control={control}
-            render={({ field }) => (
-              <CommonInput
-                {...field}
-                fullWidth
-                variant="standard"
-                label="Company Name *"
-                placeholder="Company Name"
-                disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) || 
-                          (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
-                error={Boolean(errors?.[sectionKey]?.nameOfCompany)}
-                helperText={errors?.[sectionKey]?.nameOfCompany?.message}
-                onChange={(e) => {
-                  field.onChange(e.target.value);
-                  createManualEditHandler(sectionKey)();
-                }}
-              />
-            )}
-          />
-        )
-      }
       <Controller
         name={`${sectionKey}.companyAddress`}
         control={control}
@@ -456,14 +321,9 @@ const AddClientForm = ({
             variant="standard"
             label="Complete Address *"
             placeholder="Enter Complete Address"
-            disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) || 
-                      (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
+            disabled={!editingAllowed}
             error={Boolean(errors?.[sectionKey]?.companyAddress)}
             helperText={errors?.[sectionKey]?.companyAddress?.message}
-            onChange={(e) => {
-              field.onChange(e.target.value);
-              createManualEditHandler(sectionKey)();
-            }}
           />
         )}
       />
@@ -478,8 +338,7 @@ const AddClientForm = ({
             type="text"
             label="Phone Number *"
             placeholder="Enter Phone Number"
-            disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) || 
-                      (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
+            disabled={!editingAllowed}
             error={Boolean(errors?.[sectionKey]?.phoneNumber)}
             helperText={errors?.[sectionKey]?.phoneNumber?.message}
             inputProps={{
@@ -491,7 +350,6 @@ const AddClientForm = ({
               if (!editingAllowed) return;
               const onlyDigits = e.target.value.replace(/\D/g, "").slice(0, 10);
               field.onChange(onlyDigits);
-              createManualEditHandler(sectionKey)();
             }}
           />
         )}
@@ -507,20 +365,15 @@ const AddClientForm = ({
             type="email"
             label="Email *"
             placeholder="Enter Email Address"
-            disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) || 
-                      (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
+            disabled={!editingAllowed}
             error={Boolean(errors?.[sectionKey]?.email)}
             helperText={errors?.[sectionKey]?.email?.message}
-            onChange={(e) => {
-              field.onChange(e.target.value);
-              createManualEditHandler(sectionKey)();
-            }}
           />
         )}
       />
-      {sectionKey === "invoicingDetails" ? (
+      {sectionKey == "invoicing_detail" ? (
         <Controller
-          name="invoicingDetails.gstNo"
+          name="invoicing_detail.gstNo"
           control={control}
           render={({ field }) => (
             <CommonInput
@@ -530,9 +383,8 @@ const AddClientForm = ({
               label="TRN / VAT / GST No."
               placeholder="Enter TRN / VAT / GST No."
               disabled={!editingAllowed}
-              error={Boolean(errors?.invoicingDetails?.gstNo)}
-              helperText={errors?.invoicingDetails?.gstNo?.message}
-              onChange={(e) => field.onChange(e.target.value)}
+              error={Boolean(errors?.invoicing_detail?.gstNo)}
+              helperText={errors?.invoicing_detail?.gstNo?.message}
             />
           )}
         />
@@ -570,7 +422,6 @@ const AddClientForm = ({
                         disabled={!editingAllowed}
                         error={Boolean(errors?.shipName)}
                         helperText={errors?.shipName?.message}
-                        onChange={(e) => field.onChange(e.target.value)}
                       />
                     )}
                   />
@@ -589,7 +440,6 @@ const AddClientForm = ({
                         disabled={!editingAllowed}
                         error={Boolean(errors?.imoNumber)}
                         helperText={errors?.imoNumber?.message}
-                        onChange={(e) => field.onChange(e.target.value)}
                       />
                     )}
                   />
@@ -608,7 +458,6 @@ const AddClientForm = ({
                         disabled={!editingAllowed}
                         error={Boolean(errors?.classId)}
                         helperText={errors?.classId?.message}
-                        onChange={(e) => field.onChange(e.target.value)}
                       />
                     )}
                   />
@@ -619,7 +468,7 @@ const AddClientForm = ({
                 {/* Owners Details  */}
                 <Grid2 size={{ xs: 4 }}>
                   <h3 style={{ marginBottom: "10px" }}>Owner's Detail</h3>
-                  {renderContactSection("ownerDetails")}
+                  {renderContactSection("owner_detail")}
                 </Grid2>
 
                 {/* Manager's Details  */}
@@ -631,22 +480,7 @@ const AddClientForm = ({
                         checked={isManagerSameAsOwner}
                         onChange={(e) => {
                           if (editingAllowed) {
-                            const checked = e.target.checked;
-                            setIsManagerSameAsOwner(checked);
-                            if (checked) {
-                              // Immediately copy the values
-                              const currentOwnerDetails = getValues("ownerDetails");
-                              setValue("managerDetails", {
-                                nameOfCompany: currentOwnerDetails.nameOfCompany || "",
-                                companyAddress: currentOwnerDetails.companyAddress || "",
-                                phoneNumber: currentOwnerDetails.phoneNumber || "",
-                                email: currentOwnerDetails.email || ""
-                              });
-                              setManuallyEditedManager(false);
-                              
-                              // Clear any errors
-                              clearErrors("managerDetails");
-                            }
+                            setIsManagerSameAsOwner(e.target.checked);
                           }
                         }}
                         disabled={!editingAllowed}
@@ -654,7 +488,7 @@ const AddClientForm = ({
                     }
                     label="Same as Owner"
                   />
-                  {renderContactSection("managerDetails")}
+                  {renderContactSection("manager_detail", isManagerSameAsOwner)}
                 </Grid2>
 
                 {/* Invoicing Details  */}
@@ -670,22 +504,7 @@ const AddClientForm = ({
                             if (!editingAllowed) return;
                             const checked = e.target.checked;
                             setIsInvoiceSameAsOwner(checked);
-                            if (checked) {
-                              // Immediately copy the values
-                              const currentOwnerDetails = getValues("ownerDetails");
-                              setValue("invoicingDetails", {
-                                nameOfCompany: currentOwnerDetails.nameOfCompany || "",
-                                companyAddress: currentOwnerDetails.companyAddress || "",
-                                phoneNumber: currentOwnerDetails.phoneNumber || "",
-                                email: currentOwnerDetails.email || "",
-                                gstNo: getValues("invoicingDetails.gstNo") || "",
-                              });
-                              setIsInvoiceSameAsManager(false);
-                              setManuallyEditedInvoice(false);
-                              
-                              // Clear any errors
-                              clearErrors("invoicingDetails");
-                            }
+                            if (checked) setIsInvoiceSameAsManager(false);
                           }}
                           disabled={!editingAllowed}
                         />
@@ -702,22 +521,7 @@ const AddClientForm = ({
                             if (!editingAllowed) return;
                             const checked = e.target.checked;
                             setIsInvoiceSameAsManager(checked);
-                            if (checked) {
-                              // Immediately copy the values
-                              const currentManagerDetails = getValues("managerDetails");
-                              setValue("invoicingDetails", {
-                                nameOfCompany: currentManagerDetails.nameOfCompany || "",
-                                companyAddress: currentManagerDetails.companyAddress || "",
-                                phoneNumber: currentManagerDetails.phoneNumber || "",
-                                email: currentManagerDetails.email || "",
-                                gstNo: getValues("invoicingDetails.gstNo") || "",
-                              });
-                              setIsInvoiceSameAsOwner(false);
-                              setManuallyEditedInvoice(false);
-                              
-                              // Clear any errors
-                              clearErrors("invoicingDetails");
-                            }
+                            if (checked) setIsInvoiceSameAsOwner(false);
                           }}
                           disabled={!editingAllowed}
                         />
@@ -726,7 +530,10 @@ const AddClientForm = ({
                     />
                   </Stack>
 
-                  {renderContactSection("invoicingDetails")}
+                  {renderContactSection(
+                    "invoicing_detail",
+                    isInvoiceSameAsOwner
+                  )}
                 </Grid2>
               </Grid2>
 
@@ -738,15 +545,8 @@ const AddClientForm = ({
               >
                 {editingAllowed && (
                   <>
-                    <CommonButton 
-                      type="submit"
-
-                      variant="contained" 
-                      text="Save" 
-                      disabled={loading}
-                      startIcon={loading ? <CircularProgress size={20} /> : null}
-                    />
-                    <CommonButton onClick={cancelBtn} variant="contained" text="Cancel" disabled={loading} />
+                    <CommonButton type="submit" variant="contained" text="Save" />
+                    <CommonButton onClick={cancelBtn} variant="contained" text="Cancel" />
                   </>
                 )}
                 {!editingAllowed && (

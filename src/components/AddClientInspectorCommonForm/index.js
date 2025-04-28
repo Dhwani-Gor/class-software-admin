@@ -40,7 +40,7 @@ const clientSchema = (mode) =>
     name: yup.string().required("Client Name is required"),
     mail: yup.string().required("Email is required"),
     password: mode === "create" ? yup.string().required("Password is required") : yup.string().notRequired(),
-    nameOfCompany: yup.string().required("Company Name is required"),
+    companyName: yup.string().required("Company Name is required"),
   });
 
 
@@ -80,7 +80,7 @@ const AddClientInspectorCommonForm = ({
       name: "",
       mail: "",
       password: "",
-      nameOfCompany: "",
+      companyName: "",
     },
   });
 
@@ -100,7 +100,7 @@ const AddClientInspectorCommonForm = ({
 
           setValue('id', data?.id)
           setValue("name", data?.name);
-          setValue("nameOfCompany", data?.nameOfCompany);
+          setValue("companyName", data?.companyName);
           setValue("mail", data?.email);
           setValue("password", data?.password);
         } catch (error) {
@@ -148,7 +148,7 @@ const AddClientInspectorCommonForm = ({
   //       roleId: 3,
   //       email: data?.mail,
   //       password: data?.password,
-  //       nameOfCompany: data?.nameOfCompany,
+  //       companyName: data?.companyName,
   //       // ...data,
   //     };
   //   }
@@ -210,7 +210,7 @@ const AddClientInspectorCommonForm = ({
     };
   
     if (role === "client") {
-      payload.nameOfCompany = data?.nameOfCompany;
+      payload.companyName = data?.companyName;
     } else {
       payload.inspectorDesignation = data?.inspectorDesignation;
     }
@@ -417,7 +417,7 @@ const AddClientInspectorCommonForm = ({
                   {role === "client" ? (
                     <Grid2 size={{ xs: 12 }}>
                       <Controller
-                        name="nameOfCompany"
+                        name="companyName"
                         control={control}
                         render={({ field }) => (
                           <CommonInput
@@ -431,8 +431,8 @@ const AddClientInspectorCommonForm = ({
                               </span>
                             }
                             placeholder="Enter company name"
-                            error={Boolean(errors.nameOfCompany)}
-                            helperText={errors.nameOfCompany?.message}
+                            error={Boolean(errors.companyName)}
+                            helperText={errors.companyName?.message}
                             InputProps={{
                               style: { color: "black" },
                             }}

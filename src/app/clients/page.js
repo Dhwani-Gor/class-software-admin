@@ -20,7 +20,7 @@ import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import CommonInput from "@/components/CommonInput";
-import { deleteClient, deleteUser, getAllClients, getUsersDetails } from "@/api";
+import { deleteUser, getAllClients, getUsersDetails } from "@/api";
 import { toast } from "react-toastify";
 
 const Clients = () => {
@@ -35,7 +35,7 @@ const Clients = () => {
   const [totalRows, setTotalRows] = useState(0);
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
-  const [selectedClient, setSelectedClientId] = useState(null);
+  const [selectedVisaId, setSelectedVisaId] = useState(null);
 
   const snackbarClose = () => {
     setSnackBar({ open: false, message: "" });
@@ -74,16 +74,16 @@ const Clients = () => {
     setSearch(event.target.value);
   };
 
-  const handleDeleteClick = (clientId) => {
-    setSelectedClientId(clientId);
+  const handleDeleteClick = (visaId) => {
+    setSelectedVisaId(visaId);
     setOpenDialog(true);
   };
 
   const handleConfirmDelete = async () => {
     setOpenDialog(false);
-    if (!selectedClient) return;
+    if (!selectedVisaId) return;
     try {
-      const res = await deleteClient({ id: selectedClient });
+      const res = await deleteUser({ id: selectedVisaId });
       if (res?.data?.message) {
         setSnackBar({ open: true, message: res.data.message });
       }
@@ -95,7 +95,7 @@ const Clients = () => {
   };
 
   const handleCancelDelete = () => {
-    setSelectedClientId(null);
+    setSelectedVisaId(null);
     setOpenDialog(false);
   };
 
