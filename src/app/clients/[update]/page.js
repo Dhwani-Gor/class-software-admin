@@ -13,6 +13,7 @@ import EditingReasonDialog from "@/components/Dialogs/EditingReasonDialog";
 import EditHistoryDialog from "@/components/Dialogs/EditHistoryDialog";
 import { getClientHistory } from "@/api";
 import { toast } from "react-toastify";
+import { transformData } from "@/utils/helper";
 
 const UpdateClient = ({ params }) => {
   const router = useRouter();
@@ -26,8 +27,8 @@ const UpdateClient = ({ params }) => {
     try {
       const result = await getClientHistory(params?.update);
       if (result?.status === 200) {
-        console.log('27 ===>', result.data.data)
-        setChangeHistory(result.data.data)
+        const newData = transformData(result.data.data);
+        setChangeHistory(newData)
       } else {
         // toast.error("Something went wrong ! Please try again after some time")
       }

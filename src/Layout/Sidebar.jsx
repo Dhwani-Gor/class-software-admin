@@ -1,11 +1,5 @@
 import React, { useState } from "react";
-import {
-  Box,
-  Drawer,
-  List,
-  ListItem,
-  ListItemText,
-} from "@mui/material";
+import { Box, Drawer, List, ListItem, ListItemText } from "@mui/material";
 import { styled } from "@mui/system";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -36,12 +30,12 @@ const SidebarComponent = ({ isSidebarOpen }) => {
     if (roleId === "1") {
       return sidemenu_items; // Show all items for roleId 1
     } else if (roleId === "3") {
-      return sidemenu_items.filter(item =>
-        ["Reports", "Certificates", "Settings"].includes(item.label)
+      return sidemenu_items.filter((item) =>
+        ["Reporting", "Certificates", "Settings"].includes(item.label)
       );
     } else if (roleId === "2") {
-      return sidemenu_items.filter(item =>
-        ["Journal", "Reports", "Certificates", "Settings"].includes(item.label)
+      return sidemenu_items.filter((item) =>
+        ["Journal", "Reporting", "Certificates", "Settings"].includes(item.label)
       );
     }
     return [];

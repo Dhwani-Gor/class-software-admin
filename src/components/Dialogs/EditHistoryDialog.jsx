@@ -88,7 +88,7 @@ const AuditTrail = ({ changeHistory }) => {
                     sx={{ mr: 1, color: "primary.main" }}
                   />
                   <Typography variant="subtitle2">
-                    {getSectionTitle(change.changeType)} Updated
+                    {change.message}
                   </Typography>
                 </Box>
 
