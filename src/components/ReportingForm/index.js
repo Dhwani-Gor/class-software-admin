@@ -23,7 +23,7 @@ import TextareaAutosize from "@mui/material/TextareaAutosize";
 import Grid2 from "@mui/material/Grid2";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
 import { useRouter } from "next/navigation";
-import { getAllClients, getAllJournals } from "@/api";
+import { createReportDetail, getAllClients, getAllJournals } from "@/api";
 import { toast } from "react-toastify";
 
 const ReportingForm = () => {
@@ -38,12 +38,14 @@ const ReportingForm = () => {
   const [showTable, setShowTable] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [tableData, setTableData] = useState([]);
+  const [selectedRow, setSelectedRow] = useState(null);
 
   console.log('42 ===>', tableData);
 
   const {
     control,
     handleSubmit,
+    getValues,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -92,7 +94,44 @@ const ReportingForm = () => {
     setShowTable(true);
   };
 
-  const handleGenerateReport = () => { };
+  const generateReport = async (payload) => {
+    try {
+      setLoading(true);
+      const result = await createReportDetail(payload);
+      if (result?.status === 200) {
+        toast.success("Report generated successfully.")
+      } else {
+        toast.error("Something went wrong ! Please try again after some time")
+      }
+
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error)
+    }
+  };
+
+  const handleGenerateReport = () => {
+    const values = getValues();
+
+    const formatDate = (date) => {
+      return date ? new Date(date).toISOString() : null;
+    };
+
+    const payload = {
+      activityId: selectedRow,
+      typeOfSurvey: values.typesOfSurvey || null,
+      typeOfCertificate: selectCertificate || null,
+      issuanceDate: values.issuancedate ? formatDate(values.issuancedate) : null,
+      validityDate: values.validitydate ? formatDate(values.validitydate) : null,
+      surveyDate: values.surveydate ? formatDate(values.surveydate) : null,
+      endorsementDate: values.endorsementdate ? formatDate(values.endorsementdate) : null,
+      issuedBy: values.issuedBy || null
+    };
+    console.log(payload,'payload')
+
+    generateReport(payload);
+   };
 
   const handleStatusChange = (id, value) => {
     setTableData((prevData) =>
@@ -120,6 +159,7 @@ const ReportingForm = () => {
   const handleReportClick = (row) => {
     router.push('#reportDetails')
     setShowForm(row);
+    setSelectedRow(row?.id);
   };
 
   const onSubmit = (data) => {
