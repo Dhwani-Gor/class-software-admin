@@ -188,7 +188,9 @@ const AddClientForm = ({
       const result = await getSpecificClient(clientId);
       if (result?.status === 200 && result.data?.data) {
         reset(result.data.data);
-        setOwnerInputValue(result.data.data.ownerDetails?.nameOfCompany || '');
+        setOwnerInputValue(result.data.data.ownerDetails?.companyName || '');
+        setValue('managerDetails.nameOfCompany', result.data.data.managerDetails?.companyName || '');
+        setValue('invoicingDetails.nameOfCompany', result.data.data.invoicingDetails?.companyName || '');
       } else {
         toast.error("Something went wrong! Please try again after some time");
       }
@@ -217,7 +219,13 @@ const AddClientForm = ({
     try {
       const result = await searchowner_detail(searchQuery);
       if (result?.status === 200 && result?.data) {
-        setOwnerOptions(result.data.data || []);
+        setOwnerOptions(
+          (result.data.data || []).map((item) => ({
+            label: item.companyName,
+            value: item.companyName,
+            ...item,
+          }))
+        );
       } else {
         setOwnerOptions([]);
       }
@@ -293,7 +301,7 @@ const AddClientForm = ({
         res = await createClient(payload);
       }
   
-      if (res?.data?.status === "success" && res?.data?.url) {
+      if (res?.data?.status === "success") {
         toast.success(clientId ? "Client updated successfully" : "Client created successfully");
         router.push('/clients');
       } else if (res?.response?.data?.status === "error") {
@@ -358,8 +366,8 @@ const AddClientForm = ({
           onChange={(event, newValue) => {
             if (typeof newValue === 'string') {
               field.onChange(newValue);
-            } else if (newValue && newValue.nameOfCompany) {
-              field.onChange(newValue.nameOfCompany);
+            } else if (newValue && newValue.label) {
+              field.onChange(newValue.value);
 
               // Update other owner fields
               setValue('ownerDetails.companyAddress', newValue.companyAddress || '');
@@ -386,12 +394,17 @@ const AddClientForm = ({
             }
           }}
           getOptionLabel={(option) => {
-            // Value selected with enter, right from the input
-            if (typeof option === 'string') {
-              return option;
-            }
-            return option?.nameOfCompany || '';
+            if (typeof option === 'string') return option;
+            return option.label || '';
           }}
+          
+          // getOptionLabel={(option) => {
+          //   // Value selected with enter, right from the input
+          //   if (typeof option === 'string') {
+          //     return option;
+          //   }
+          //   return option?.nameOfCompany || '';
+          // }}
           renderInput={(params) => (
             <CommonInput
               {...params}
