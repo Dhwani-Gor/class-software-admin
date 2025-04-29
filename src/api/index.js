@@ -187,10 +187,19 @@ export const updateInspectorDetail = async (id, payload) => {
   return result;
 };
 
-export const getAllJournals = async () => {
+
+export const getAllJournals = async (filterKey, filterValue) => {
   let result;
   try {
-    result = await axiosInstance.get("/api/journals");
+    // Create params object only if parameters are provided
+    const params = {};
+    if (filterKey !== undefined) params.filterKey = filterKey;
+    if (filterValue !== undefined) params.filterValue = filterValue;
+    
+    // Only include params object if it's not empty
+    const config = Object.keys(params).length > 0 ? { params } : undefined;
+    
+    result = await axiosInstance.get("/api/journals", config);
   } catch (error) {
     result = error;
   }
