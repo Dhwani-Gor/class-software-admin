@@ -26,12 +26,20 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ActivitiesModal from "../ActivitiesModal";
 import {
+  createActivity,
+  deleteActivity,
   generateInspection,
   getAllClients,
   getJournal,
   getShipDetails,
   getUsersDetails,
+  updateActivity,
   updateInspection,
+  getAllActivities,
+  createVisitDetails,
+  updateVisitDetails,
+  deleteVisitDetails,
+  getAllVisitDetails
 } from "@/api";
 import {
   CircularProgress,
@@ -46,6 +54,7 @@ import CommonConfirmationDialog from "@/components/Dialogs/CommonConfirmationDia
 import moment from "moment";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 const schema = yup.object().shape({
   shipWork: yup.string().required("Ship name is required"),
@@ -72,6 +81,7 @@ const journalTypeOptions = [
 ];
 
 const JournalEntryForm = ({ journalId = null }) => {
+  const router =useRouter();
   const { userInfo } = useSelector((state) => state.auth);
   const [visitList, setVisitList] = useState([]);
   const [openModal, setOpenModal] = useState(false);
@@ -126,18 +136,115 @@ const JournalEntryForm = ({ journalId = null }) => {
 
   const handleCloseModal = () => setOpenModal(false);
 
+  const getAllVisitData= async (journalId) => {
+    try {
+      setLoading(true);
+      const result = await getAllVisitDetails('journalId', journalId);
+      if (result?.data?.status === "success") {
+        setVisitList(result?.data?.data);
+      } else {
+        toast.error("Something went wrong ! Please try again after some time");
+      }
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error);
+    }
+  };
+
+  const addVisitData = async (payolad) => {
+    try {
+      setLoading(true);
+      const result = await createVisitDetails(payolad);
+      if (result?.data?.status === "success") {
+        setVisitList([
+          ...visitList,
+          result?.data?.data,
+        ]);
+        toast.success("Visit Details added successfully.")
+      } else {
+        toast.error("Something went wrong ! Please try again after some time");
+      }
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error);
+    }
+  };
+
+  const updateVisitData = async (payolad, journalId) => {
+    try {
+      setLoading(true);
+      const result = await updateVisitDetails(payolad, journalId);
+      if (result?.data?.status === "success") {
+        toast.success("Visit details updated successfully.")
+        setVisitList(
+          visitList.map((activity) =>
+            activity.id === result?.data?.data.id
+              ? { ...activity, ...result?.data?.data }
+              : activity
+          )
+        );
+      } else {
+        toast.error("Something went wrong ! Please try again after some time");
+      }
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error);
+    }
+  };
+
+  const deleteVisitData = async (activityId) => {
+    try {
+      setLoading(true);
+      const result = await deleteVisitDetails(activityId);
+      if (result?.status === 204) {
+        toast.success("Visit Details delete successfully.")
+        getAllVisitData(journalId)
+      } else {
+        toast.error("Something went wrong ! Please try again after some time");
+      }
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error);
+    }
+  };
+
   const handleSaveVisit = (visitData) => {
     if (isJournalLocked) return;
-    if (editVisit) {
-      setVisitList(
-        visitList.map((visit) =>
-          visit.id === editVisit.id
-            ? { ...visit, ...visitData, id: editVisit.id }
-            : visit
-        )
-      );
-    } else {
-      setVisitList([...visitList, { id: Date.now(), ...visitData }]);
+    if(journalId){
+      if (editVisit) {
+        const payload = {
+          journalId : visitData.journalId,
+          location : visitData.location,
+          timeFrom : visitData.timeFrom,
+          timeTo: visitData.timeTo,
+          date : visitData.date
+         }
+        console.log(payload, "edit visit data")
+        updateVisitData(payload,visitData.id)
+      } else {
+        const payload = {
+          journalId : journalId,
+          ...visitData
+         }
+        addVisitData(payload);
+      }
+    }
+    else{
+      if (editVisit) {
+        setVisitList(
+          visitList.map((visit) =>
+            visit.id === editVisit.id
+              ? { ...visit, ...visitData, id: editVisit.id }
+              : visit
+          )
+        );
+      } else {
+        setVisitList([...visitList, { id: Date.now(), ...visitData }]);
+      }
     }
     setOpenModal(false);
   };
@@ -150,7 +257,9 @@ const JournalEntryForm = ({ journalId = null }) => {
 
   const handleDelete = (id) => {
     if (isJournalLocked) return;
-    setVisitList(visitList.filter((visit) => visit.id !== id));
+    deleteVisitData(id);
+    console.log('delete visit details')
+    // setVisitList(visitList.filter((visit) => visit.id !== id));
   };
 
   const handleOpenActivityModal = () => {
@@ -161,21 +270,115 @@ const JournalEntryForm = ({ journalId = null }) => {
 
   const handleCloseActivityModal = () => setOpenActivityModal(false);
 
+  const updateActivities = async (payolad, journalId) => {
+    try {
+      setLoading(true);
+      const result = await updateActivity(payolad, journalId);
+      if (result?.data?.status === "success") {
+        toast.success("Activities updated successfully.")
+        setActivitiesList(
+          activitiesList.map((activity) =>
+            activity.id === result?.data?.data.id
+              ? { ...activity, ...result?.data?.data }
+              : activity
+          )
+        );
+      } else {
+        toast.error("Something went wrong ! Please try again after some time");
+      }
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error);
+    }
+  };
+
+  const getAllActivity = async (journalId) => {
+    try {
+      setLoading(true);
+      const result = await getAllActivities('journalId', journalId);
+      if (result?.data?.status === "success") {
+        setActivitiesList(result?.data?.data);
+      } else {
+        toast.error("Something went wrong ! Please try again after some time");
+      }
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error);
+    }
+  };
+
+  const addActivities = async (payolad) => {
+    try {
+      setLoading(true);
+      const result = await createActivity(payolad);
+      if (result?.data?.status === "success") {
+        setActivitiesList([
+          ...activitiesList,
+          result?.data?.data,
+        ]);
+        toast.success("Activities added successfully.")
+      } else {
+        toast.error("Something went wrong ! Please try again after some time");
+      }
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error);
+    }
+  };
+  const deleteActivities = async (activityId) => {
+    try {
+      setLoading(true);
+      const result = await deleteActivity(activityId);
+      if (result?.status === 204) {
+        toast.success("Activities delete successfully.")
+        getAllActivity(journalId)
+      } else {
+        toast.error("Something went wrong ! Please try again after some time");
+      }
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error);
+    }
+  };
+
   const handleSaveActivity = (activityData) => {
     if (isJournalLocked) return;
-    if (editActivity) {
-      setActivitiesList(
-        activitiesList.map((activity) =>
-          activity.id === editActivity.id
-            ? { ...activity, ...activityData, id: editActivity.id }
-            : activity
-        )
-      );
-    } else {
-      setActivitiesList([
-        ...activitiesList,
-        { id: Date.now(), ...activityData },
-      ]);
+    if(journalId){
+      if (editActivity) {
+        const payload = {
+         journalId : activityData.journalId,
+         typeOfSurvey : activityData.typeOfSurvey,
+         initialOfSurveyors : activityData.initialOfSurveyors,
+        }
+        updateActivities(payload,activityData.id)
+       }
+       else {
+        const payload = {
+          journalId : journalId,
+          ...activityData
+         }
+        addActivities(payload);
+       }
+    }
+    else{
+      if (editActivity) {
+        setActivitiesList(
+          activitiesList.map((activity) =>
+            activity.id === editActivity.id
+              ? { ...activity, ...activityData, id: editActivity.id }
+              : activity
+          )
+        );
+      } else {
+        setActivitiesList([
+          ...activitiesList,
+          { id: Date.now(), ...activityData },
+        ]);
+      }
     }
     setOpenActivityModal(false);
   };
@@ -188,7 +391,8 @@ const JournalEntryForm = ({ journalId = null }) => {
 
   const handleActivityDelete = (id) => {
     if (isJournalLocked) return;
-    setActivitiesList(activitiesList.filter((activity) => activity.id !== id));
+    deleteActivities(id)
+    // setActivitiesList(activitiesList.filter((activity) => activity.id !== id));
   };
 
   const handleClientChange = (event) => {
@@ -296,6 +500,7 @@ const JournalEntryForm = ({ journalId = null }) => {
         const res = await updateInspection(payload, journalId);
         if (res?.data.status === "success") {
           toast.success("Journal updated successfully");
+          router.push("/journal")
         } else {
           throw new Error("Something went wrong");
         }
@@ -304,6 +509,7 @@ const JournalEntryForm = ({ journalId = null }) => {
 
         if (res?.data.status === "success") {
           toast.success("Journal created successfully");
+          router.push("/journal")
         } else {
           throw new Error("Something went wrong");
         }

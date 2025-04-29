@@ -352,12 +352,81 @@ export const updateActivity = async (payload, journalId) => {
   return result;
 };
 
-export const deleteSctivity = async (journalId) => {
+export const deleteActivity = async (activityId) => {
   let result;
   try {
-    result = await axiosInstance.delete(`/api/activities/${journalId}`);
+    result = await axiosInstance.delete(`/api/activities/${activityId}`);
   } catch (e) {
     result = e;
+  }
+  return result;
+};
+
+
+export const getAllActivities = async (filterKey, filterValue) => {
+  let result;
+  try {
+    // Create params object only if parameters are provided
+    const params = {};
+    if (filterKey !== undefined) params.filterKey = filterKey;
+    if (filterValue !== undefined) params.filterValue = filterValue;
+    
+    // Only include params object if it's not empty
+    const config = Object.keys(params).length > 0 ? { params } : undefined;
+    
+    result = await axiosInstance.get("/api/activities", config);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+
+export const createVisitDetails = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/api/visitDetails`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const updateVisitDetails = async (payload, journalId) => {
+  let result;
+  try {
+    result = await axiosInstance.patch(`/api/visitDetails/${journalId}`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const deleteVisitDetails = async (activityId) => {
+  let result;
+  try {
+    result = await axiosInstance.delete(`/api/visitDetails/${activityId}`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+
+export const getAllVisitDetails = async (filterKey, filterValue) => {
+  let result;
+  try {
+    // Create params object only if parameters are provided
+    const params = {};
+    if (filterKey !== undefined) params.filterKey = filterKey;
+    if (filterValue !== undefined) params.filterValue = filterValue;
+    
+    // Only include params object if it's not empty
+    const config = Object.keys(params).length > 0 ? { params } : undefined;
+    
+    result = await axiosInstance.get("/api/visitDetails", config);
+  } catch (error) {
+    result = error;
   }
   return result;
 };
