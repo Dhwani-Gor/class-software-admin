@@ -312,3 +312,43 @@ export const getClientHistory = async (clientId) => {
   }
   return result;
 };
+
+export const createReportDetail = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/api/reportDetails`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const createActivity = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/api/activities`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const updateActivity = async (payload, journalId) => {
+  let result;
+  try {
+    result = await axiosInstance.patch(`/api/activities/${journalId}`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const deleteSctivity = async (journalId) => {
+  let result;
+  try {
+    result = await axiosInstance.delete(`/api/activities/${journalId}`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
