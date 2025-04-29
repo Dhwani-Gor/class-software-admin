@@ -46,6 +46,7 @@ import CommonConfirmationDialog from "@/components/Dialogs/CommonConfirmationDia
 import moment from "moment";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 const schema = yup.object().shape({
   shipWork: yup.string().required("Ship name is required"),
@@ -72,6 +73,7 @@ const journalTypeOptions = [
 ];
 
 const JournalEntryForm = ({ journalId = null }) => {
+  const router = useRouter();
   const { userInfo } = useSelector((state) => state.auth);
   const [visitList, setVisitList] = useState([]);
   const [openModal, setOpenModal] = useState(false);
@@ -296,6 +298,7 @@ const JournalEntryForm = ({ journalId = null }) => {
         const res = await updateInspection(payload, journalId);
         if (res?.data.status === "success") {
           toast.success("Journal updated successfully");
+          router.push('/journal')
         } else {
           throw new Error("Something went wrong");
         }
@@ -304,6 +307,7 @@ const JournalEntryForm = ({ journalId = null }) => {
 
         if (res?.data.status === "success") {
           toast.success("Journal created successfully");
+          router.push('/journal')
         } else {
           throw new Error("Something went wrong");
         }
