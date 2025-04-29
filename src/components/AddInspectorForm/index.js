@@ -31,6 +31,7 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useRouter } from "next/navigation";
 import { CheckBox } from "@mui/icons-material";
+import { toast } from "react-toastify";
 
 const schema = yup.object().shape({
   name: yup.string().required("Name is required"),
@@ -112,16 +113,20 @@ const AddInspectorForm = ({
       if (userId) {
         const res = await updateInspectorDetail(userId, data);
 
-        if (res?.data.status === "success" && res?.data?.url) {
-          toast.success("Client created successfully");
+        console.log('115 ===>',res)
+
+        if (res.data.status === "success") {
+          toast.success("Inspector updated successfully");
+          router.push('/staff')
         } else {
           throw new Error("Invalid response format or missing URL");
         }
       } else {
         const res = await createInspector({ ...data, roleId: 2 });
 
-        if (res?.data.status === "success" && res?.data?.url) {
-          toast.success("Client created successfully");
+        if (res?.data.status === "success") {
+          toast.success("Inspector created successfully");
+          router.push('/staff')
         } else {
           throw new Error("Invalid response format or missing URL");
         }

@@ -14,6 +14,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import CommonInput from "@/components/CommonInput";
 import { getAllJournals } from "@/api";
 import { IconButton, Tooltip } from "@mui/material";
+import moment from "moment";
 
 const Reports = () => {
   const router = useRouter();
@@ -31,7 +32,9 @@ const Reports = () => {
       },
     },
     { field: "journalTypeId", headerName: "Report Number", flex: 1 },
-    { field: "createdAt", headerName: "Report Date", flex: 1 },
+    { field: "createdAt", headerName: "Report Date", flex: 1, renderCell: (params) => {
+      return moment(params.createdAt).format('DD/MM/YYYY hh:mm A')
+    } },
     {
       field: "actions",
       headerName: "Actions",

@@ -226,6 +226,15 @@ export const generateInspection = async (payload) => {
   return result;
 };
 
+export const updateInspection = async (payload, journalId) => {
+  let result;
+  try {
+    result = await axiosInstance.patch(`/api/journals/${journalId}`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
 
 export const getShipDetails = async (page, limit, search) => {
   let result;
