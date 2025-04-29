@@ -23,51 +23,23 @@ import TextareaAutosize from "@mui/material/TextareaAutosize";
 import Grid2 from "@mui/material/Grid2";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
 import { useRouter } from "next/navigation";
-import { getAllClients } from "@/api";
+import { getAllClients, getAllJournals } from "@/api";
 import { toast } from "react-toastify";
 
 const ReportingForm = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [clientsList, setClientsList] = useState([]);
+  const [journals, setJournals] = useState([]);
   const [fullScreenRemarksVisible, setFullScreenRemarksVisible] = useState(null);
-  const [selectedShip, setSelectedShip] = useState("");
-  const [selectedReportNumber, setSelectedReportNumber] = useState("");
+  const [selectedShip, setSelectedShip] = useState({ id: "", shipName: "" });
+  const [selectedReportNumber, setSelectedReportNumber] = useState({ journalTypeId: "", index: null });
   const [selectCertificate, setSelectCertificate] = useState("");
   const [showTable, setShowTable] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [tableData, setTableData] = useState([
-    {
-      id: 1,
-      serialNo: "1",
-      activityName: "activity 1",
-      status: "",
-      remarks: "",
-    },
-    {
-      id: 2,
-      serialNo: "2",
-      activityName: "activity 2",
-      status: "",
-      remarks: "",
-    },
-    {
-      id: 3,
-      serialNo: "3",
-      activityName: "activity 3",
-      status: "",
-      remarks: "",
-      maxLength: 1000,
-    },
-    {
-      id: 4,
-      serialNo: "4",
-      activityName: "activity 4",
-      status: "",
-      remarks: "",
-      maxLength: 1000,
-    },
-  ]);
+  const [tableData, setTableData] = useState([]);
+
+  console.log('42 ===>', tableData);
 
   const {
     control,
@@ -80,22 +52,8 @@ const ReportingForm = () => {
   });
 
   const statusOptions = [
-    { value: "completed", label: "Completed" },
-    { value: "partheld", label: "Part held" },
-  ];
-
-  const shipList = [
-    { value: "1", label: "ship 1" },
-    { value: "2", label: "ship 2" },
-    { value: "3", label: "ship 3" },
-    { value: "4", label: "ship 4" },
-  ];
-
-  const ReportNumberList = [
-    { value: "CC25N001", label: "CC25N001" },
-    { value: "CC25P001", label: "CC25P001" },
-    { value: "CC25C001", label: "CC25C001" },
-    { value: "CC25M001", label: "CC25M001" },
+    { value: "Completed", label: "Completed" },
+    { value: "Partheld", label: "Part held" },
   ];
 
   const certificateList = [
@@ -106,11 +64,24 @@ const ReportingForm = () => {
   ];
 
   const handleClientChange = (event) => {
-    setSelectedShip(event.target.value);
-  };
+    const selectedId = event.target.value;
+    const selectedClient = clientsList.find(client => client.id === selectedId);
 
+    setSelectedShip({
+      id: selectedId,
+      shipName: selectedClient ? selectedClient.shipName : ""
+    });
+  };
   const handleReportNumber = (event) => {
-    setSelectedReportNumber(event.target.value);
+    const selectedJournalTypeId = event.target.value;
+    const selectedIndex = journals.findIndex(journal => journal.journalTypeId === selectedJournalTypeId);
+
+    setSelectedReportNumber({
+      journalTypeId: selectedJournalTypeId,
+      index: selectedIndex !== -1 ? selectedIndex : null
+    });
+
+    setTableData(journals[selectedIndex]?.activities)
   };
 
   const handleCertificate = (event) => {
@@ -165,27 +136,49 @@ const ReportingForm = () => {
     return null;
   };
 
-    const fetchClients = async () => {
-      try {
-        setLoading(true);
-        const result = await getAllClients();
-        if (result?.status === 200) {
-          setClientsList(result.data.data)
-          console.log(result.data.data);
-        } else {
-          toast.error("Something went wrong ! Please try again after some time")
-        }
-  
-        setLoading(false);
-      } catch (error) {
-        setLoading(false);
-        toast.error(error)
+  const fetchClients = async () => {
+    try {
+      setLoading(true);
+      const result = await getAllClients();
+      if (result?.status === 200) {
+        setClientsList(result.data.data)
+      } else {
+        toast.error("Something went wrong ! Please try again after some time")
       }
-    };
-  
-    useEffect(() => {
-      fetchClients();
-    }, []);
+
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error)
+    }
+  };
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
+
+  const fetchAllJournals = async () => {
+    try {
+      setLoading(true);
+      const result = await getAllJournals('clientId', selectedShip.id);
+      if (result?.status === 200) {
+        setJournals(result.data.data)
+      } else {
+        toast.error("Something went wrong ! Please try again after some time")
+      }
+
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error)
+    }
+  };
+
+  useEffect(() => {
+    if (selectedShip.id) {
+      fetchAllJournals();
+    }
+  }, [selectedShip.id]);
 
   return (
     <Box mt={2}>
@@ -210,7 +203,7 @@ const ReportingForm = () => {
                   Select the ship / Work
                 </Typography>
                 <Select
-                  value={selectedShip}
+                  value={selectedShip.id || ""}
                   onChange={handleClientChange}
                   displayEmpty
                 >
@@ -218,7 +211,7 @@ const ReportingForm = () => {
                     Select the ship / Work
                   </MenuItem>
                   {clientsList.map((client) => (
-                    <MenuItem key={client.id} value={client.shipName}>
+                    <MenuItem key={client.id} value={client.id}>
                       {client.shipName}
                     </MenuItem>
                   ))}
@@ -226,23 +219,26 @@ const ReportingForm = () => {
               </FormControl>
             </Box>
 
-            {selectedShip && (
+            {selectedShip.id && (
               <Box mt={2}>
                 <FormControl fullWidth sx={{ maxWidth: 300 }}>
                   <Typography variant="body1" mb={1}>
                     Select Report Number
                   </Typography>
                   <Select
-                    value={selectedReportNumber}
+                    value={selectedReportNumber.journalTypeId || ""}
                     onChange={handleReportNumber}
                     displayEmpty
                   >
-                    <MenuItem value="" disabled>
-                      Select Report
-                    </MenuItem>
-                    {ReportNumberList.map((report) => (
-                      <MenuItem key={report.value} value={report.value}>
-                        {report.label}
+                    {journals.length > 0 ?
+                      <MenuItem value="" disabled>
+                        Select Report
+                      </MenuItem> :
+                      <MenuItem disabled>No Journals found for this Client</MenuItem>
+                    }
+                    {journals.map((report, index) => (
+                      <MenuItem key={index} value={report.journalTypeId}>
+                        {report.journalTypeId}
                       </MenuItem>
                     ))}
                   </Select>
@@ -250,11 +246,11 @@ const ReportingForm = () => {
               </Box>
             )}
 
-            {selectedShip && selectedReportNumber && (
+            {selectedShip.id && selectedReportNumber.journalTypeId && (
               <CommonButton
                 onClick={handleShowTable}
                 sx={{ marginTop: 3 }}
-                text="Submit"
+                text="Continue"
               />
             )}
           </Box>
@@ -274,19 +270,19 @@ const ReportingForm = () => {
                     </TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Remarks</TableCell>
-                    <TableCell sx={{ fontWeight: "bold" }}>Report</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>Activity Details</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {tableData.map((row) => (
+                  {tableData.map((row, index) => (
                     <TableRow
                       key={row.id}
                       sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                     >
                       <TableCell component="th" scope="row">
-                        {row.serialNo}
+                        {index + 1}
                       </TableCell>
-                      <TableCell>{row.activityName}</TableCell>
+                      <TableCell>{row.typeOfSurvey}</TableCell>
                       <TableCell>
                         <FormControl fullWidth size="small">
                           <Select
@@ -481,7 +477,7 @@ const ReportingForm = () => {
               <CommonButton
                 onClick={handleGenerateReport}
                 sx={{ marginTop: 3 }}
-                text="Generate Report"
+                text="Save"
               />
             </Box>
           </CommonCard>
@@ -496,8 +492,8 @@ const ReportingForm = () => {
           }
           setFullScreenRemarksVisible(null);
         }}
-        title={fullScreenRemarksVisible && typeof fullScreenRemarksVisible === 'object' 
-          ? `Remarks for ${fullScreenRemarksVisible.activityName}` 
+        title={fullScreenRemarksVisible && typeof fullScreenRemarksVisible === 'object'
+          ? `Remarks for ${fullScreenRemarksVisible.activityName}`
           : "Remarks"}
       />
     </Box>
