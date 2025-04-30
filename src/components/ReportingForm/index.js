@@ -304,7 +304,7 @@ const ReportingForm = () => {
               <Table sx={{ minWidth: 650 }} aria-label="report details table">
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: "bold" }}>Serial No</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>ID</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>
                       Activity Name
                     </TableCell>
@@ -320,7 +320,7 @@ const ReportingForm = () => {
                       sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                     >
                       <TableCell component="th" scope="row">
-                        {index + 1}
+                        {row.id}
                       </TableCell>
                       <TableCell>{row.typeOfSurvey}</TableCell>
                       <TableCell>
@@ -399,7 +399,7 @@ const ReportingForm = () => {
       {showForm && (
         <Box id="reportDetails">
           <CommonCard sx={{ mt: 2 }}>
-            <Typography fontSize={'18px'} fontWeight={'600'} mb={2}>Report Details for {showForm?.activityName}</Typography>
+            <Typography fontSize={'18px'} fontWeight={'600'} mb={2}>Report Details for {selectedRow}</Typography>
             <Grid2 container spacing={2}>
               <Grid2 item size={{ md: 3 }}>
                 <Controller

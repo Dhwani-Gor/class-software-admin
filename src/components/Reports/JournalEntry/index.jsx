@@ -81,7 +81,7 @@ const journalTypeOptions = [
 ];
 
 const JournalEntryForm = ({ journalId = null }) => {
-  const router =useRouter();
+  const router = useRouter();
   const { userInfo } = useSelector((state) => state.auth);
   const [visitList, setVisitList] = useState([]);
   const [openModal, setOpenModal] = useState(false);
@@ -500,7 +500,7 @@ const JournalEntryForm = ({ journalId = null }) => {
         const res = await updateInspection(payload, journalId);
         if (res?.data.status === "success") {
           toast.success("Journal updated successfully");
-          router.push("/journal")
+          router.push('/journal')
         } else {
           throw new Error("Something went wrong");
         }
@@ -509,7 +509,7 @@ const JournalEntryForm = ({ journalId = null }) => {
 
         if (res?.data.status === "success") {
           toast.success("Journal created successfully");
-          router.push("/journal")
+          router.push('/journal')
         } else {
           throw new Error("Something went wrong");
         }
