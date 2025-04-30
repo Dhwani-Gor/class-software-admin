@@ -1,11 +1,10 @@
-name: Deploy to Hostinger VPS
+name: Deploy to Hostinger VPS - 2
 
 on:
   push:
     branches:
       - main
-      - staging
-      - dev
+      - development
 
 jobs:
   deploy:
@@ -23,52 +22,42 @@ jobs:
       - name: Deploy to VPS
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          CURRENT_BRANCH: ${{ github.head_ref || github.ref_name }} 
+          CURRENT_BRANCH: ${{ github.head_ref || github.ref_name }}
         shell: bash
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-          ssh -o StrictHostKeyChecking=no thunder@62.72.5.193 <<EOF
+          ssh -o StrictHostKeyChecking=no root@89.116.34.232 <<EOF
             source ~/.bashrc
             export CURRENT_BRANCH="$CURRENT_BRANCH"
 
             cd
-            cd front/visayard-admin
+            cd front/class-software-admin
             
             if [ ${CURRENT_BRANCH} == "main" ]; then
-              cd main/demo-ci-cd
               ls -la
               git checkout main
               git pull origin main
-              npm install
+              cp .env.main .env
+              cat .env
+              npm install --legacy-peer-deps
               npm run build
-              pm2 delete main
+              pm2 delete class-software-admin-main
               pm2 flush
-              PORT=3007 pm2 start npm --name "main" -- start
+              PORT=3013 pm2 start npm --name "class-software-admin-main" -- start
               pm2 save
-            elif [ ${CURRENT_BRANCH} == "staging" ]; then
-              cd staging/demo-ci-cd
+            elif [ ${CURRENT_BRANCH} == "development" ]; then
               ls -la
-              git checkout staging
-              git pull origin staging
-              npm install
+              git checkout development
+              git pull origin development
+              cat .env
+              npm install --legacy-peer-deps
               npm run build
-              pm2 delete staging
+              pm2 delete class-software-admin-development
               pm2 flush
-              PORT=3009 pm2 start npm --name "staging" -- start
-              pm2 save
-            elif [ ${CURRENT_BRANCH} == "dev" ]; then
-              cd dev/demo-ci-cd
-              ls -la
-              git checkout dev
-              git pull origin dev
-              npm install
-              npm run build
-              pm2 delete dev
-              pm2 flush
-              PORT=3008 pm2 start npm --name "dev" -- start
+              PORT=3014 pm2 start npm --name "class-software-admin-development" -- start
               pm2 save           
             else
               exit 1
