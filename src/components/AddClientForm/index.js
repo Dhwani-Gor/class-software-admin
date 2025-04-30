@@ -189,6 +189,7 @@ const AddClientForm = ({
       if (result?.status === 200 && result.data?.data) {
         reset(result.data.data);
         setOwnerInputValue(result.data.data.ownerDetails?.companyName || '');
+        setValue("ownerDetails.nameOfCompany",result.data.data.ownerDetails?.companyName || '');
         setValue('managerDetails.nameOfCompany', result.data.data.managerDetails?.companyName || '');
         setValue('invoicingDetails.nameOfCompany', result.data.data.invoicingDetails?.companyName || '');
       } else {
