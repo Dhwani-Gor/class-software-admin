@@ -1,71 +1,156 @@
-"use client"
-import React, { useEffect, } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Grid2 } from '@mui/material';
-import { useForm, Controller } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
-import CommonInput from '@/components/CommonInput';
-import CommonButton from '@/components/CommonButton';
-
+"use client";
+import React, { useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid2,
+  Autocomplete,
+  TextField,
+  CircularProgress,
+} from "@mui/material";
+import { useForm, Controller } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import CommonInput from "@/components/CommonInput";
+import CommonButton from "@/components/CommonButton";
+import { TYPE_OF_SURVEYS } from "@/data";
 
 // Validation Schema
 const activitySchema = yup.object().shape({
-    typeOfSurvey: yup.string().required("Required"),
-    initialOfSurveyors: yup.string().required("Required"),
+  typeOfSurvey: yup.string().required("Required"),
+  initialOfSurveyors: yup.string().required("Required"),
 });
 
 const ActivitiesModal = ({ open, onClose, onSave, defaultValues }) => {
-    const {
-        control,
-        handleSubmit,
-        formState: { errors },
-        reset
-    } = useForm({
-        resolver: yupResolver(activitySchema),
-        defaultValues: { typeOfSurvey: '', initialOfSurveyors: '' }
-    });
+  const [surveyInputValue, setSurveyInputValue] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
 
-    useEffect(() => {
-        reset(defaultValues || { typeOfSurvey: '', initialOfSurveyors: '' });
-    }, [defaultValues, reset]);
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: yupResolver(activitySchema),
+    defaultValues: { typeOfSurvey: "", initialOfSurveyors: "" },
+  });
 
-    const onSubmit = (data) => {
-        onSave(data);
-        reset();
-        onClose();
-    };
+  useEffect(() => {
+    reset(defaultValues || { typeOfSurvey: "", initialOfSurveyors: "" });
 
-    return (
-        <Dialog open={open} onClose={onClose}>
-            <DialogTitle>{defaultValues ? "Edit Activity" : "Add Activity"}</DialogTitle>
-            <DialogContent sx={{minWidth: '50vw'}}>
-                <Grid2 container spacing={2} sx={{ mt: 1 }}>
-                    <Grid2 size={{ xs: 12 }}>
-                        <Controller
-                            name="typeOfSurvey"
-                            control={control}
-                            render={({ field }) => (
-                                <CommonInput {...field} label="Type of survey/Inspection" error={!!errors.typeOfSurvey} helperText={errors.typeOfSurvey?.message} />
-                            )}
-                        />
-                    </Grid2>
-                    <Grid2 size={{ xs: 12 }}>
-                        <Controller
-                            name="initialOfSurveyors"
-                            control={control}
-                            render={({ field }) => (
-                                <CommonInput {...field} label="Initial of surveyors" error={!!errors.initialOfSurveyors} helperText={errors.surveyors?.message} />
-                            )}
-                        />
-                    </Grid2>
-                </Grid2>
-            </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 2 }}>
-                <CommonButton text="Cancel" onClick={onClose} variant="outlined" />
-                <CommonButton text={defaultValues ? "Update " : "Add"} onClick={handleSubmit(onSubmit)} />
-            </DialogActions>
-        </Dialog>
-    );
+    // Initialize the input value if defaultValues has typeOfSurvey
+    if (defaultValues?.typeOfSurvey) {
+      const surveyOption = TYPE_OF_SURVEYS.find(
+        (option) => option.value === defaultValues.typeOfSurvey
+      );
+      setSurveyInputValue(surveyOption?.label || defaultValues.typeOfSurvey);
+    }
+  }, [defaultValues, reset]);
+
+  const onSubmit = (data) => {
+    onSave(data);
+    reset();
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <DialogTitle>
+        {defaultValues ? "Edit Activity" : "Add Activity"}
+      </DialogTitle>
+      <DialogContent sx={{ minWidth: "50vw" }}>
+        <Grid2 container spacing={2} sx={{ mt: 1 }}>
+          <Grid2 size={{ xs: 12 }}>
+            <Controller
+              name="typeOfSurvey"
+              control={control}
+              render={({ field }) => (
+                <Autocomplete
+                  id="type-of-survey-autocomplete"
+                  options={TYPE_OF_SURVEYS}
+                  inputValue={surveyInputValue}
+                  onInputChange={(event, newInputValue) => {
+                    setSurveyInputValue(newInputValue);
+
+                    // Directly update the form value when typing
+                    if (newInputValue) {
+                      setIsSearching(true);
+                    } else {
+                      setIsSearching(false);
+                    }
+                  }}
+                  onChange={(event, newValue) => {
+                    setIsSearching(false);
+                    if (typeof newValue === "string") {
+                      field.onChange(newValue);
+                    } else if (newValue && newValue.value) {
+                      field.onChange(newValue.value);
+                    } else if (newValue === null) {
+                      // Handle clearing the field
+                      field.onChange("");
+                    }
+                  }}
+                  getOptionLabel={(option) => {
+                    if (typeof option === "string") return option;
+                    return option.label || "";
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Type of Survey"
+                      error={!!errors.typeOfSurvey}
+                      helperText={errors.typeOfSurvey?.message}
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <React.Fragment>
+                            {isSearching ? (
+                              <CircularProgress color="inherit" size={20} />
+                            ) : null}
+                            {params.InputProps.endAdornment}
+                          </React.Fragment>
+                        ),
+                      }}
+                    />
+                  )}
+                />
+              )}
+            />
+          </Grid2>
+          <Grid2 size={{ xs: 12 }}>
+            <Controller
+              name="initialOfSurveyors"
+              control={control}
+              render={({ field }) => (
+                <CommonInput
+                  id="initial-of-surveyors"
+                  label="Initial of Surveyors"
+                  error={!!errors.initialOfSurveyors}
+                  helperText={errors.initialOfSurveyors?.message}
+                  {...field}
+                />
+              )}
+            />
+          </Grid2>
+        </Grid2>
+      </DialogContent>
+      <DialogActions>
+        <CommonButton
+          onClick={onClose}
+          color="secondary"
+          text="Cancel"
+          variant="outlined"
+        />
+        <CommonButton
+          onClick={handleSubmit(onSubmit)}
+          color="primary"
+          text={defaultValues ? "Update " : "Add"}
+        />
+      </DialogActions>
+    </Dialog>
+  );
 };
 
-export default ActivitiesModal
+export default ActivitiesModal;

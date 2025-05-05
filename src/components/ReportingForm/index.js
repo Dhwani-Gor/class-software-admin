@@ -25,6 +25,7 @@ import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
 import { useRouter } from "next/navigation";
 import { createReportDetail, getAllClients, getAllJournals } from "@/api";
 import { toast } from "react-toastify";
+import { TYPE_OF_SURVEYS } from "@/data";
 
 const ReportingForm = () => {
   const router = useRouter();
@@ -46,6 +47,7 @@ const ReportingForm = () => {
     control,
     handleSubmit,
     getValues,
+    setValue,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -159,6 +161,7 @@ const ReportingForm = () => {
   const handleReportClick = (row) => {
     router.push('#reportDetails')
     setShowForm(row);
+    setValue('typesOfSurvey', getSurveyTitle(row.typeOfSurvey));
     setSelectedRow(row?.id);
   };
 
@@ -219,6 +222,10 @@ const ReportingForm = () => {
       fetchAllJournals();
     }
   }, [selectedShip.id]);
+
+  const getSurveyTitle = (val) => {
+    return TYPE_OF_SURVEYS.find(ele => ele.value === val)?.label || val;
+  }
 
   return (
     <Box mt={2}>
@@ -322,7 +329,7 @@ const ReportingForm = () => {
                       <TableCell component="th" scope="row">
                         {row.id}
                       </TableCell>
-                      <TableCell>{row.typeOfSurvey}</TableCell>
+                      <TableCell>{getSurveyTitle(row.typeOfSurvey)}</TableCell>
                       <TableCell>
                         <FormControl fullWidth size="small">
                           <Select
@@ -408,6 +415,7 @@ const ReportingForm = () => {
                   render={({ field }) => (
                     <CommonInput
                       {...field}
+                      disabled
                       label="Type of Survey"
                       placeholder="Type of Survey"
                       error={!!errors.typesOfSurvey}

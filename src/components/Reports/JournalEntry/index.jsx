@@ -376,7 +376,7 @@ const JournalEntryForm = ({ journalId = null }) => {
       } else {
         setActivitiesList([
           ...activitiesList,
-          { id: Date.now(), ...activityData },
+          { ...activityData },
         ]);
       }
     }
