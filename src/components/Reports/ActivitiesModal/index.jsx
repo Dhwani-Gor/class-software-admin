@@ -15,7 +15,6 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import CommonInput from "@/components/CommonInput";
 import CommonButton from "@/components/CommonButton";
-import { TYPE_OF_SURVEYS } from "@/data";
 
 // Validation Schema
 const activitySchema = yup.object().shape({
@@ -23,7 +22,7 @@ const activitySchema = yup.object().shape({
   initialOfSurveyors: yup.string().required("Required"),
 });
 
-const ActivitiesModal = ({ open, onClose, onSave, defaultValues }) => {
+const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes }) => {
   const [surveyInputValue, setSurveyInputValue] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
@@ -41,19 +40,25 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues }) => {
     reset(defaultValues || { typeOfSurvey: "", initialOfSurveyors: "" });
 
     // Initialize the input value if defaultValues has typeOfSurvey
-    if (defaultValues?.typeOfSurvey) {
-      const surveyOption = TYPE_OF_SURVEYS.find(
-        (option) => option.value === defaultValues.typeOfSurvey
+    if (defaultValues?.typeOfSurvey && surveyTypes?.length) {
+      const surveyOption = surveyTypes.find(
+        (option) => option.id === defaultValues.typeOfSurvey
       );
-      setSurveyInputValue(surveyOption?.label || defaultValues.typeOfSurvey);
+      setSurveyInputValue(surveyOption?.name || "");
     }
-  }, [defaultValues, reset]);
+  }, [defaultValues, reset, surveyTypes]);
 
   const onSubmit = (data) => {
     onSave(data);
     reset();
     onClose();
   };
+
+  // Transform surveyTypes for Autocomplete
+  const surveyOptions = surveyTypes?.map(survey => ({
+    label: survey.name,
+    value: survey.id,
+  })) || [];
 
   return (
     <Dialog open={open} onClose={onClose}>
@@ -69,7 +74,7 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues }) => {
               render={({ field }) => (
                 <Autocomplete
                   id="type-of-survey-autocomplete"
-                  options={TYPE_OF_SURVEYS}
+                  options={surveyOptions}
                   inputValue={surveyInputValue}
                   onInputChange={(event, newInputValue) => {
                     setSurveyInputValue(newInputValue);
@@ -146,7 +151,7 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues }) => {
         <CommonButton
           onClick={handleSubmit(onSubmit)}
           color="primary"
-          text={defaultValues ? "Update " : "Add"}
+          text={defaultValues ? "Update" : "Add"}
         />
       </DialogActions>
     </Dialog>

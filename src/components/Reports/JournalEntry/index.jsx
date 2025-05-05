@@ -39,7 +39,8 @@ import {
   createVisitDetails,
   updateVisitDetails,
   deleteVisitDetails,
-  getAllVisitDetails
+  getAllVisitDetails,
+  getSurveyTypes
 } from "@/api";
 import {
   CircularProgress,
@@ -97,6 +98,9 @@ const JournalEntryForm = ({ journalId = null }) => {
   const [journalData, setJournalData] = useState(null);
   const [formData, setFormData] = useState(null);
   const [isJournalLocked, setIsJournalLocked] = useState(false);
+  const [surveyTypes,setSurveyTypes] = useState([])
+
+  console.log('101 ===>', activitiesList);
 
   const {
     control,
@@ -419,6 +423,25 @@ const JournalEntryForm = ({ journalId = null }) => {
     }
   };
 
+  const fetchSurveyTypes = async () => {
+    try {
+      setLoading(true);
+      const result = await getSurveyTypes();
+      // if (result?.status === 200) {
+        setSurveyTypes(result.data.data);
+      // } else {
+        // toast.error("Something went wrong ! Please try again after some time");
+      // }
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error);
+    }
+  };
+
+  console.log("surveyTypes===>",surveyTypes);
+  
+
   const fetchJournal = async () => {
     try {
       setLoading(true);
@@ -469,6 +492,7 @@ const JournalEntryForm = ({ journalId = null }) => {
 
   useEffect(() => {
     fetchClients();
+    fetchSurveyTypes();
   }, []);
 
   useEffect(() => {
@@ -898,6 +922,7 @@ const JournalEntryForm = ({ journalId = null }) => {
         defaultValues={editVisit}
       />
       <ActivitiesModal
+        surveyTypes={surveyTypes}
         open={openActivityModal}
         onClose={handleCloseActivityModal}
         onSave={handleSaveActivity}

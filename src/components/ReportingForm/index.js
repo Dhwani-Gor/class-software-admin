@@ -62,8 +62,8 @@ const ReportingForm = () => {
 
   const certificateList = [
     { value: "interim", label: "Interim" },
-    { value: "shortterm", label: "Short Term" },
-    { value: "fullterm", label: "Full Term" },
+    { value: "short_term", label: "Short Term" },
+    { value: "full_term", label: "Full Term" },
     { value: "extended", label: "Extended" },
   ];
 
@@ -102,6 +102,7 @@ const ReportingForm = () => {
       const result = await createReportDetail(payload);
       if (result?.status === 200) {
         toast.success("Report generated successfully.")
+        showForm(false);
       } else {
         toast.error("Something went wrong ! Please try again after some time")
       }

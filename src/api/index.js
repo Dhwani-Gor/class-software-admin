@@ -430,3 +430,13 @@ export const getAllVisitDetails = async (filterKey, filterValue) => {
   }
   return result;
 };
+
+export const getSurveyTypes = async () => {
+  let result;
+  try {
+    result = await axiosInstance.get("/api/activities/surveyTypes");
+  } catch (error) {
+    result = ertror;
+  }
+  return result;
+};
