@@ -4,7 +4,7 @@ import { Box, Typography, MenuItem, FormControl, Select } from "@mui/material";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import { useRouter } from "next/navigation";
-import { getShipDetails, getUsersDetails } from "@/api";
+import { getAllUsers, getShipDetails } from "@/api";
 
 const ship_data = [
     { label: "Ship 1", value: "Ship1" },
@@ -38,7 +38,7 @@ const GenerateReport = () => {
 
     const fetchUserListData = async (page, limit, searchQuery) => {
         try {
-          const res = await getUsersDetails(page, limit, searchQuery);
+          const res = await getAllUsers(page, limit, searchQuery);
       
           if (res?.data?.data?.length > 0) {
             const filteredData = res.data.data

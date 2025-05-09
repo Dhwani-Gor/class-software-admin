@@ -50,7 +50,7 @@ const schema = yup.object().shape({
   }),
 });
 
-const AddClientForm = ({
+const AddSurveyType = ({
   mode = "create",
   clientId = null,
   defaultValues = {},
@@ -66,7 +66,7 @@ const AddClientForm = ({
   const [ownerOptions, setOwnerOptions] = useState([]);
   const [ownerInputValue, setOwnerInputValue] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  
+
   // Flags to track manual edits
   const [manuallyEditedManager, setManuallyEditedManager] = useState(false);
   const [manuallyEditedInvoice, setManuallyEditedInvoice] = useState(false);
@@ -90,6 +90,18 @@ const AddClientForm = ({
       shipName: "",
       imoNumber: "",
       classId: "",
+      flag:  "",
+      portOfRegistry: "",
+      classSign: "",
+      grossTonnage: "",
+      netTonnage: "",
+      lengthM: "",
+      breadthmldM: "",
+      depthmldM: "",
+      draught: "",
+      shipBuilder: "",
+      countryOfBuild: "",
+      yearOfBuild: "",
       ownerDetails: {
         nameOfCompany: "",
         companyAddress: "",
@@ -161,7 +173,7 @@ const AddClientForm = ({
     if (isManagerSameAsOwner && !manuallyEditedManager && ownerDetail) {
       setValue("managerDetails", { ...ownerDetail });
     }
-    
+
     if (isInvoiceSameAsOwner && !manuallyEditedInvoice && ownerDetail) {
       setValue("invoicingDetails", {
         ...ownerDetail,
@@ -189,7 +201,7 @@ const AddClientForm = ({
       if (result?.status === 200 && result.data?.data) {
         reset(result.data.data);
         setOwnerInputValue(result.data.data.ownerDetails?.companyName || '');
-        setValue("ownerDetails.nameOfCompany",result.data.data.ownerDetails?.companyName || '');
+        setValue("ownerDetails.nameOfCompany", result.data.data.ownerDetails?.companyName || '');
         setValue('managerDetails.nameOfCompany', result.data.data.managerDetails?.companyName || '');
         setValue('invoicingDetails.nameOfCompany', result.data.data.invoicingDetails?.companyName || '');
       } else {
@@ -259,17 +271,17 @@ const AddClientForm = ({
     console.log("Owner company:", data.ownerDetails?.nameOfCompany);
     console.log("Manager company:", data.managerDetails?.nameOfCompany);
     console.log("Invoicing company:", data.invoicingDetails?.nameOfCompany);
-    
+
     // Ensure all required data is present
     if (!data.ownerDetails || !data.managerDetails || !data.invoicingDetails) {
       toast.error("Missing required details. Please fill all required fields.");
       return;
     }
-    
+
     try {
       setLoading(true);
       let res;
-      
+
       // Prepare the payload with the correct structure
       const payload = {
         shipName: data.shipName,
@@ -295,13 +307,13 @@ const AddClientForm = ({
           gstNo: data.invoicingDetails.gstNo || "",
         }
       };
-      
+
       if (clientId) {
-        res = await updateClient(clientId, {...payload, message: editReason});
+        res = await updateClient(clientId, { ...payload, message: editReason });
       } else {
         res = await createClient(payload);
       }
-  
+
       if (res?.data?.status === "success") {
         toast.success(clientId ? "Client updated successfully" : "Client created successfully");
         router.push('/clients');
@@ -358,7 +370,7 @@ const AddClientForm = ({
           disabled={!editingAllowed}
           onInputChange={(event, newInputValue) => {
             setOwnerInputValue(newInputValue);
-            
+
             // Directly update the form value when typing
             if (newInputValue) {
               field.onChange(newInputValue);
@@ -374,7 +386,7 @@ const AddClientForm = ({
               setValue('ownerDetails.companyAddress', newValue.companyAddress || '');
               setValue('ownerDetails.phoneNumber', newValue.phoneNumber || '');
               setValue('ownerDetails.email', newValue.email || '');
-              
+
               // If checkboxes are checked, propagate the changes
               if (isManagerSameAsOwner) {
                 setValue('managerDetails.nameOfCompany', newValue.nameOfCompany || '');
@@ -382,7 +394,7 @@ const AddClientForm = ({
                 setValue('managerDetails.phoneNumber', newValue.phoneNumber || '');
                 setValue('managerDetails.email', newValue.email || '');
               }
-              
+
               if (isInvoiceSameAsOwner) {
                 setValue('invoicingDetails.nameOfCompany', newValue.nameOfCompany || '');
                 setValue('invoicingDetails.companyAddress', newValue.companyAddress || '');
@@ -398,7 +410,7 @@ const AddClientForm = ({
             if (typeof option === 'string') return option;
             return option.label || '';
           }}
-          
+
           // getOptionLabel={(option) => {
           //   // Value selected with enter, right from the input
           //   if (typeof option === 'string') {
@@ -434,7 +446,7 @@ const AddClientForm = ({
   // Common section renderer
   const renderContactSection = (sectionKey) => (
     <Stack gap={2}>
-      {sectionKey === "ownerDetails" 
+      {sectionKey === "ownerDetails"
         ? renderOwnerCompanyField()
         : (
           <Controller
@@ -447,8 +459,8 @@ const AddClientForm = ({
                 variant="standard"
                 label="Company Name *"
                 placeholder="Company Name"
-                disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) || 
-                          (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
+                disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) ||
+                  (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
                 error={Boolean(errors?.[sectionKey]?.nameOfCompany)}
                 helperText={errors?.[sectionKey]?.nameOfCompany?.message}
                 onChange={(e) => {
@@ -470,8 +482,8 @@ const AddClientForm = ({
             variant="standard"
             label="Complete Address *"
             placeholder="Enter Complete Address"
-            disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) || 
-                      (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
+            disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) ||
+              (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
             error={Boolean(errors?.[sectionKey]?.companyAddress)}
             helperText={errors?.[sectionKey]?.companyAddress?.message}
             onChange={(e) => {
@@ -492,8 +504,8 @@ const AddClientForm = ({
             type="text"
             label="Phone Number *"
             placeholder="Enter Phone Number"
-            disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) || 
-                      (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
+            disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) ||
+              (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
             error={Boolean(errors?.[sectionKey]?.phoneNumber)}
             helperText={errors?.[sectionKey]?.phoneNumber?.message}
             inputProps={{
@@ -521,8 +533,8 @@ const AddClientForm = ({
             type="email"
             label="Email *"
             placeholder="Enter Email Address"
-            disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) || 
-                      (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
+            disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) ||
+              (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
             error={Boolean(errors?.[sectionKey]?.email)}
             helperText={errors?.[sectionKey]?.email?.message}
             onChange={(e) => {
@@ -627,6 +639,222 @@ const AddClientForm = ({
                     )}
                   />
                 </Grid2>
+
+                <Grid2 size={{ xs: 4 }}>
+                  <Controller
+                    name="flag"
+                    control={control}
+                    render={({ field }) => (
+                      <CommonInput
+                        {...field}
+                        fullWidth
+                        variant="standard"
+                        label="Flag"
+                        placeholder="Enter Flag"
+                        disabled={!editingAllowed}
+                        error={Boolean(errors?.flag)}
+                        helperText={errors?.flag?.message}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                </Grid2>
+                <Grid2 size={{ xs: 4 }}>
+                  <Controller
+                    name="portOfRegistry"
+                    control={control}
+                    render={({ field }) => (
+                      <CommonInput
+                        {...field}
+                        fullWidth
+                        variant="standard"
+                        label="Port of Registry"
+                        placeholder="Enter Port of Registry"
+                        disabled={!editingAllowed}
+                        error={Boolean(errors?.portOfRegistry)}
+                        helperText={errors?.portOfRegistry?.message}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                </Grid2>
+                <Grid2 size={{ xs: 4 }}>
+                  <Controller
+                    name="classSign"
+                    control={control}
+                    render={({ field }) => (
+                      <CommonInput
+                        {...field}
+                        fullWidth
+                        variant="standard"
+                        label="Class Sign"
+                        placeholder="Enter Class Sign"
+                        disabled={!editingAllowed}
+                        error={Boolean(errors?.classSign)}
+                        helperText={errors?.classSign?.message}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                </Grid2>
+                <Grid2 size={{ xs: 4 }}>
+                  <Controller
+                    name="grossTonnage"
+                    control={control}
+                    render={({ field }) => (
+                      <CommonInput
+                        {...field}
+                        fullWidth
+                        variant="standard"
+                        type="number"
+                        label="Gross Tonnage"
+                        placeholder="Enter Gross Tonnage"
+                        disabled={!editingAllowed}
+                        error={Boolean(errors?.grossTonnage)}
+                        helperText={errors?.grossTonnage?.message}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                </Grid2>
+                <Grid2 size={{ xs: 4 }}>
+                  <Controller
+                    name="netTonnage"
+                    control={control}
+                    render={({ field }) => (
+                      <CommonInput
+                        {...field}
+                        fullWidth
+                        variant="standard"
+                        type="number"
+                        label="Net Tonnage"
+                        placeholder="Enter Net Tonnage"
+                        disabled={!editingAllowed}
+                        error={Boolean(errors?.netTonnage)}
+                        helperText={errors?.netTonnage?.message}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                </Grid2>
+                <Grid2 size={{ xs: 4 }}>
+                  <Controller
+                    name="lengthM"
+                    control={control}
+                    render={({ field }) => (
+                      <CommonInput
+                        {...field}
+                        fullWidth
+                        variant="standard"
+                        type="number"
+                        label="Length (m)"
+                        placeholder="Enter Length (m)"
+                        disabled={!editingAllowed}
+                        error={Boolean(errors?.lengthM)}
+                        helperText={errors?.lengthM?.message}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                </Grid2>
+                <Grid2 size={{ xs: 4 }}>
+                  <Controller
+                    name="breadthmldM"
+                    control={control}
+                    render={({ field }) => (
+                      <CommonInput
+                        {...field}
+                        fullWidth
+                        variant="standard"
+                        type="number"
+                        label="Breadthmld (m)"
+                        placeholder="Enter Breadthmld (m)"
+                        disabled={!editingAllowed}
+                        error={Boolean(errors?.breadthmldM)}
+                        helperText={errors?.breadthmldM?.message}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                </Grid2>
+                <Grid2 size={{ xs: 4 }}>
+                  <Controller
+                    name="draught"
+                    control={control}
+                    render={({ field }) => (
+                      <CommonInput
+                        {...field}
+                        fullWidth
+                        variant="standard"
+                        type="number"
+                        label="Draught"
+                        placeholder="Enter Draught"
+                        disabled={!editingAllowed}
+                        error={Boolean(errors?.depthmldM)}
+                        helperText={errors?.depthmldM?.message}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                </Grid2>
+                <Grid2 size={{ xs: 4 }}>
+                  <Controller
+                    name="shipBuilder"
+                    control={control}
+                    render={({ field }) => (
+                      <CommonInput
+                        {...field}
+                        fullWidth
+                        variant="standard"
+                        label="Ship Builder"
+                        placeholder="Enter Ship Builder"
+                        disabled={!editingAllowed}
+                        error={Boolean(errors?.depthmldM)}
+                        helperText={errors?.depthmldM?.message}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                </Grid2>
+                <Grid2 size={{ xs: 4 }}>
+                  <Controller
+                    name="countryOfBuild"
+                    control={control}
+                    render={({ field }) => (
+                      <CommonInput
+                        {...field}
+                        fullWidth
+                        variant="standard"
+                        label="Country of Build"
+                        placeholder="Enter Country of Build"
+                        disabled={!editingAllowed}
+                        error={Boolean(errors?.depthmldM)}
+                        helperText={errors?.depthmldM?.message}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                </Grid2>
+                <Grid2 size={{ xs: 4 }}>
+                  <Controller
+                    name="yearOfBuild"
+                    control={control}
+                    render={({ field }) => (
+                      <CommonInput
+                        {...field}
+                        fullWidth
+                        variant="standard"
+                        type="number"
+                        label="Year of Build"
+                        placeholder="Enter Year of Build"
+                        disabled={!editingAllowed}
+                        error={Boolean(errors?.depthmldM)}
+                        helperText={errors?.depthmldM?.message}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                </Grid2>
               </Grid2>
 
               <Grid2 container spacing={4}>
@@ -657,7 +885,7 @@ const AddClientForm = ({
                                 email: currentOwnerDetails.email || ""
                               });
                               setManuallyEditedManager(false);
-                              
+
                               // Clear any errors
                               clearErrors("managerDetails");
                             }
@@ -696,7 +924,7 @@ const AddClientForm = ({
                               });
                               setIsInvoiceSameAsManager(false);
                               setManuallyEditedInvoice(false);
-                              
+
                               // Clear any errors
                               clearErrors("invoicingDetails");
                             }
@@ -728,7 +956,7 @@ const AddClientForm = ({
                               });
                               setIsInvoiceSameAsOwner(false);
                               setManuallyEditedInvoice(false);
-                              
+
                               // Clear any errors
                               clearErrors("invoicingDetails");
                             }
@@ -752,11 +980,11 @@ const AddClientForm = ({
               >
                 {editingAllowed && (
                   <>
-                    <CommonButton 
+                    <CommonButton
                       type="submit"
 
-                      variant="contained" 
-                      text="Save" 
+                      variant="contained"
+                      text="Save"
                       disabled={loading}
                       startIcon={loading ? <CircularProgress size={20} /> : null}
                     />
@@ -784,4 +1012,4 @@ const AddClientForm = ({
   );
 };
 
-export default AddClientForm;
+export default AddSurveyType;

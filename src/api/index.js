@@ -141,10 +141,10 @@ export const createInspector = async (payload) => {
   return result;
 };
 
-export const getUsersDetails = async (page, limit, search) => {
+export const getAllUsers = async (page, limit, search, isActiveUsers = true) => {
   let result;
   try {
-    result = await axiosInstance.get("/api/users", {
+    result = await axiosInstance.get(`/api/users?filterKey=isActive&filterValue=${isActiveUsers}`, {
       params: {
         page: page,
         limit: limit,
@@ -434,9 +434,102 @@ export const getAllVisitDetails = async (filterKey, filterValue) => {
 export const getSurveyTypes = async () => {
   let result;
   try {
-    result = await axiosInstance.get("/api/activities/surveyTypes");
+    result = await axiosInstance.get("/api/surveyTypes");
   } catch (error) {
     result = ertror;
+  }
+  return result;
+};
+
+// Survey Types API functions
+
+export const createSurveyType = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/api/surveyTypes`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const updateSurveyType = async (id, payload) => {
+  let result;
+  try {
+    result = await axiosInstance.patch(`/api/surveyTypes/${id}`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const getSurveyTypeDetails = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/surveyTypes/${id}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const getReports = async () => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/reports`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+// Document API functions
+export const getAllDocuments = async () => {
+  let result;
+  try {
+    result = await axiosInstance.get("/api/reports");
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const getDocumentDetails = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/reports/${id}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const createDocument = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/api/reports`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const updateDocument = async (id, payload) => {
+  let result;
+  try {
+    result = await axiosInstance.patch(`/api/reports/${id}`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const deleteDocument = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.delete(`/api/reports/${payload.id}`);
+  } catch (e) {
+    result = e;
   }
   return result;
 };

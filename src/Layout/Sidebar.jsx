@@ -31,11 +31,11 @@ const SidebarComponent = ({ isSidebarOpen }) => {
       return sidemenu_items; // Show all items for roleId 1
     } else if (roleId === "3") {
       return sidemenu_items.filter((item) =>
-        ["Reporting", "Certificates", "Settings"].includes(item.label)
+        ["Reporting", "Issued Documents", "Settings"].includes(item.label)
       );
     } else if (roleId === "2") {
       return sidemenu_items.filter((item) =>
-        ["Journal", "Reporting", "Certificates", "Settings"].includes(item.label)
+        ["Journal", "Reporting", "Issued Documents", "Survey Types", "Documents", "Settings"].includes(item.label)
       );
     }
     return [];

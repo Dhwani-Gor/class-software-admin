@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useDispatch } from "react-redux";
 import CircularProgress from "@mui/material/CircularProgress";
 import Pagination from '@mui/material/Pagination';
 import Dialog from '@mui/material/Dialog';
@@ -14,36 +13,32 @@ import Snackbar from "@mui/material/Snackbar";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import Chip from "@mui/material/Chip";
 import { DataGrid } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
+import CommonButton from "@/components/CommonButton";
 import CommonInput from "@/components/CommonInput";
-import { deleteVisa, getVisaDetails } from "@/api";
-import { Chip } from "@mui/material";
+import { deleteDocument, getAllDocuments } from "@/api";
+import { toast } from "react-toastify";
 
-const Countries = () => {
-  const dispatch = useDispatch();
+const Documents = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState(""); // Debounced search state
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
-  const [countryLists, setCountryLists] = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [filteredDocuments, setFilteredDocuments] = useState([]);
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [limit, setLimit] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
-  const [selectedVisaId, setSelectedVisaId] = useState(null);
+  const [selectedDocument, setSelectedDocument] = useState(null);
   const [selectedFilter, setSelectedFilter] = useState("all"); // 'all', 'reports', or 'certificates'
-
-
-  const handleFilterChange = (newFilter) => {
-    setSelectedFilter(newFilter);
-    setPage(1);
-  };
 
   const snackbarClose = () => {
     setSnackBar({ open: false, message: "" });
@@ -57,112 +52,119 @@ const Countries = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  const fetchVisaListData = async (page, limit, searchQuery) => {
-    setLoading(true);
-    await getVisaDetails(page, limit, searchQuery).then((res) => {
-      if (res?.data?.data?.visas?.length > 0) {
-        const flattenedData = res?.data?.data?.visas?.map((item) => ({
-          id: item?.id,
-          countryName: item?.basicDetails?.countryName || "-",
-          totalVisaCompleted: item?.basicDetails?.totalVisaCompleted || "-",
-          visaEntry: item?.visaDetails?.visaEntry || "-",
-          visaType: item?.visaDetails?.visaType || "-",
-          validityPeriod: item?.visaDetails?.validityPeriod || "-",
-          lengthOfStay: item?.visaDetails?.lengthOfStay || "-",
-          visaFee: item?.visaDetails?.visaFee || "-",
-          vizayardFee: item?.visaDetails?.vizayardFee || "-",
-          govtVisaFee: item?.visaDetails?.govtVisaFee || "-",
-        }));
-        const sortedData = flattenedData?.sort((a, b) => a?.id - b?.id);
-
-        setCountryLists(sortedData);
-        setTotalRows(res?.data?.data?.totalVisas);
+  const fetchAllDocuments = async () => {
+    try {
+      setLoading(true);
+      const result = await getAllDocuments();
+      if (result?.status === 200) {
+        console.log('Documents data:', result.data.data);
+        const docs = result.data.data;
+        setDocuments(docs);
+        applyFilters(docs, selectedFilter);
+        setTotalRows(docs.length);
       } else {
-        setCountryLists([]);
-        setTotalRows(0)
+        toast.error("Something went wrong! Please try again after some time");
       }
-    }).catch((e) => {
-      console.log(e)
-    }).finally(() => {
       setLoading(false);
-    });
+    } catch (error) {
+      setLoading(false);
+      toast.error(error);
+    }
   };
 
   useEffect(() => {
-    if (page > 0 && limit > 0) {
-      fetchVisaListData(page, limit, debouncedSearch.trim() ? debouncedSearch : null);
+    fetchAllDocuments();
+  }, []);
+
+  // Apply filters based on selected chip and search text
+  const applyFilters = (docs, filter) => {
+    let filtered = [...docs];
+    
+    // Filter by search text
+    if (debouncedSearch) {
+      filtered = filtered.filter(doc => 
+        doc.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+      );
     }
-  }, [page, limit, debouncedSearch]);
+
+    // Filter by document type (Reports = odd index, Certificates = even index)
+    if (filter === "reports") {
+      filtered = filtered.filter((_, index) => index % 2 !== 0); // Odd indexed
+    } else if (filter === "certificates") {
+      filtered = filtered.filter((_, index) => index % 2 === 0); // Even indexed
+    }
+
+    setFilteredDocuments(filtered);
+    setTotalRows(filtered.length);
+  };
+
+  // Update filters when search changes
+  useEffect(() => {
+    applyFilters(documents, selectedFilter);
+  }, [debouncedSearch, selectedFilter]);
 
   const handleSearchChange = (event) => {
     setSearch(event.target.value);
   };
 
-  const handleDeleteClick = (visaId) => {
-    setSelectedVisaId(visaId);
+  const handleFilterChange = (newFilter) => {
+    setSelectedFilter(newFilter);
+    setPage(1);
+  };
+
+  const handleDeleteClick = (documentId) => {
+    setSelectedDocument(documentId);
     setOpenDialog(true);
   };
 
   const handleConfirmDelete = async () => {
     setOpenDialog(false);
-    if (!selectedVisaId) return;
+    if (!selectedDocument) return;
     try {
-      const res = await deleteVisa({ id: selectedVisaId });
+      const res = await deleteDocument({ id: selectedDocument });
       if (res?.data?.message) {
         setSnackBar({ open: true, message: res.data.message });
       }
-      fetchVisaListData(page, limit, debouncedSearch);
+      fetchAllDocuments();
     } catch (e) {
-      console.error("Error deleting visa:", e.response?.data || e.message);
-      setSnackBar({ open: true, message: "Failed to delete visa." });
+      console.error("Error deleting Document:", e.response?.data || e.message);
+      setSnackBar({ open: true, message: "Failed to delete Document." });
     }
   };
 
   const handleCancelDelete = () => {
-    setSelectedVisaId(null);
+    setSelectedDocument(null);
     setOpenDialog(false);
   };
 
   const handlePageChange = (event, value) => {
     setPage(value);
-    router.push(`/certificates?page=${value}&limit=${limit}`);
+    router.push(`/documents?page=${value}&limit=${limit}`);
   };
 
   const columns = [
     {
       field: "id",
-      headerName: "ID",
+      headerName: "Id",
       flex: 1,
-      renderCell: (params) => {
-        return (
-          <Typography>{params?.api?.getRowIndexRelativeToVisibleRows(params.id) + 1}</Typography>
-        )
-      },
     },
-    { field: "countryName", headerName: "Country Name", flex: 1.5 },
-    { field: "totalVisaCompleted", headerName: "Total Visa Completed", flex: 1 },
-    { field: "visaEntry", headerName: "Visa Entry", flex: 1 },
-    { field: "visaType", headerName: "Visa Type", flex: 1 },
-    { field: "validityPeriod", headerName: "Validity Period", flex: 1 },
-    { field: "lengthOfStay", headerName: "Length of Stay", flex: 1 },
-    { field: "visaFee", headerName: "Visa Fee", flex: 1 },
-    { field: "vizayardFee", headerName: "Vizayard Fee", flex: 1 },
-    { field: "govtVisaFee", headerName: "Government Visa Fee", flex: 1 },
+    { field: "name", headerName: "Document Name", flex: 1.5 },
+    { field: "type", headerName: "Document Type", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
       width: 100,
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
-          <Tooltip title="Edit Country">
+          <Tooltip title="Edit Document">
             <IconButton
               color="primary"
-              onClick={() => router.push(`/certificates/${params?.id}`)}
+              onClick={() => router.push(`/documents/${params?.id}`)}
             >
               <EditIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Delete Country">
+          <Tooltip title="Delete Document">
             <IconButton
               color="error"
               onClick={() => handleDeleteClick(params?.id)}
@@ -175,61 +177,69 @@ const Countries = () => {
     },
   ];
 
+  // Calculate pagination
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + limit;
+  const paginatedDocuments = filteredDocuments.slice(startIndex, endIndex);
+
   return (
     <Layout>
       <CommonCard sx={{ mt: 0 }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+        >
           <Typography variant="h4" fontWeight={700}>
-            Issued Documents
+            Documents
           </Typography>
-          {/* <CommonButton
+          <CommonButton
             sx={{ textTransform: "capitalize" }}
-            text="Generate New certificate"
+            text="Add Document"
             variant="contained"
             onClick={() => {
-              dispatch(clearCountry());
-              router.push("/certificates/create");
+              router.push("/documents/create");
             }}
-            endIcon={<AddIcon />}
-          /> */}
+          />
         </Stack>
       </CommonCard>
 
       <CommonCard>
-      <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-        <Chip
-          label="All"
-          color={selectedFilter === "all" ? "primary" : "default"}
-          onClick={() => handleFilterChange("all")}
-          clickable
-          sx={{
-            fontWeight: selectedFilter === "all" ? 600 : 400,
-            px: 2
-          }}
-        />
-        <Chip
-          label="Reports"
-          color={selectedFilter === "reports" ? "primary" : "default"}
-          onClick={() => handleFilterChange("reports")}
-          clickable
-          sx={{
-            fontWeight: selectedFilter === "reports" ? 600 : 400,
-            px: 2
-          }}
-        />
-        <Chip
-          label="Certificates"
-          color={selectedFilter === "certificates" ? "primary" : "default"}
-          onClick={() => handleFilterChange("certificates")}
-          clickable
-          sx={{
-            fontWeight: selectedFilter === "certificates" ? 600 : 400,
-            px: 2
-          }}
-        />
-      </Stack>
+        <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+          <Chip 
+            label="All" 
+            color={selectedFilter === "all" ? "primary" : "default"}
+            onClick={() => handleFilterChange("all")}
+            clickable
+            sx={{ 
+              fontWeight: selectedFilter === "all" ? 600 : 400,
+              px: 2
+            }}
+          />
+          <Chip 
+            label="Reports" 
+            color={selectedFilter === "reports" ? "primary" : "default"}
+            onClick={() => handleFilterChange("reports")}
+            clickable
+            sx={{ 
+              fontWeight: selectedFilter === "reports" ? 600 : 400,
+              px: 2
+            }}
+          />
+          <Chip 
+            label="Certificates" 
+            color={selectedFilter === "certificates" ? "primary" : "default"}
+            onClick={() => handleFilterChange("certificates")}
+            clickable
+            sx={{ 
+              fontWeight: selectedFilter === "certificates" ? 600 : 400,
+              px: 2
+            }}
+          />
+        </Stack>
+        
         <CommonInput
-          placeholder="Search Document by name"
+          placeholder="Search Documents"
           fullWidth
           value={search}
           onChange={handleSearchChange}
@@ -237,12 +247,17 @@ const Countries = () => {
         />
         <Box sx={{ width: "100%", mt: 4 }}>
           {loading ? (
-            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              height="300px"
+            >
               <CircularProgress />
             </Box>
-          ) : countryLists.length > 0 ? (
+          ) : filteredDocuments.length > 0 ? (
             <DataGrid
-              rows={countryLists}
+              rows={paginatedDocuments}
               columns={columns}
               loading={loading}
               pagination={false}
@@ -281,10 +296,21 @@ const Countries = () => {
       </CommonCard>
 
       <Dialog open={openDialog} onClose={handleCancelDelete}>
-        <DialogTitle>Are you sure you want to delete this country?</DialogTitle>
+        <DialogTitle>Are you sure you want to delete this Document?</DialogTitle>
         <DialogActions>
-          <Button onClick={handleCancelDelete} color="primary">Cancel</Button>
-          <Button onClick={handleConfirmDelete} sx={{ backgroundColor: "#ed2b1c", color: "white", fontWeight: "500" }}>Delete</Button>
+          <Button onClick={handleCancelDelete} color="primary">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            sx={{
+              backgroundColor: "#ed2b1c",
+              color: "white",
+              fontWeight: "500",
+            }}
+          >
+            Delete
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -304,4 +330,4 @@ const Countries = () => {
   );
 };
 
-export default Countries;
+export default Documents;

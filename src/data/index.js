@@ -16,8 +16,16 @@ export const sidemenu_items = [
     to: "/reporting",
   },
   {
-    label: "Certificates",
+    label: "Issued Documents",
     to: "/certificates",
+  },
+  {
+    label: "Survey Types",
+    to: "/survey-types",
+  },
+  {
+    label: "Documents",
+    to: "/documents",
   },
   {
     label: "Settings",

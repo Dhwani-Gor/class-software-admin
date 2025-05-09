@@ -24,7 +24,7 @@ import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import CommonInput from "@/components/CommonInput";
-import { deleteUser, deleteVisa, getUsersDetails, getVisaDetails } from "@/api";
+import { deleteUser, deleteVisa, getAllUsers, getVisaDetails } from "@/api";
 import { useDispatch } from "react-redux";
 
 const Countries = () => {
@@ -56,7 +56,7 @@ const Countries = () => {
 
   const fetchUserListData = async (page, limit, searchQuery) => {
     setLoading(true);
-    await getUsersDetails(page, limit, searchQuery)
+    await getAllUsers(page, limit, searchQuery)
       .then((res) => {
         if (res?.data?.data?.length > 0) {
           const flattenedData = res?.data?.data?.filter((item) => item?.roleId === "2")

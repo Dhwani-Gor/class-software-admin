@@ -15,7 +15,7 @@ const AuthProvider = ({ children }) => {
   const router = useRouter();
   const pathname = usePathname()
 
-  const allowedRoutesRole1 = ["/clients","staff","/journal", "/reporting", "/certificates", "/settings"]
+  const allowedRoutesRole1 = ["/clients","staff","/journal", "/reporting", "/certificates", "/survey-types", "/documents", "/settings"]
   const allowedRoutesRole2 = ["/journal", "/reporting", "/certificates", "/settings"];
   const allowedRoutesRole3 = ["/reporting", "/certificates", "/settings"];
 

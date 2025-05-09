@@ -20,16 +20,16 @@ import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import CommonInput from "@/components/CommonInput";
-import { deleteClient, getAllClients } from "@/api";
+import { deleteClient, deleteUser, getAllClients, getSurveyTypes, getUsersDetails } from "@/api";
 import { toast } from "react-toastify";
 
-const Clients = () => {
+const SurveyTypes = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState(""); // Debounced search state
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
-  const [clientsList, setClientsList] = useState([]);
+  const [surveyTypes, setSurveyTypes] = useState([]);
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [limit, setLimit] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
@@ -49,12 +49,13 @@ const Clients = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  const fetchClients = async (page, limit, searchQuery) => {
+  const fetchAllSurveyTypes = async (page, limit, searchQuery) => {
     try {
       setLoading(true);
-      const result = await getAllClients();
+      const result = await getSurveyTypes();
       if (result?.status === 200) {
-        setClientsList(result.data.data)
+        console.log('57 ===>', result.data.data);
+        setSurveyTypes(result.data.data)
       } else {
         toast.error("Something went wrong ! Please try again after some time")
       }
@@ -67,7 +68,7 @@ const Clients = () => {
   };
 
   useEffect(() => {
-    fetchClients();
+    fetchAllSurveyTypes();
   }, []);
 
   const handleSearchChange = (event) => {
@@ -110,13 +111,8 @@ const Clients = () => {
       headerName: "Id",
       flex: 1,
     },
-    { field: "shipName", headerName: "Ship Name", flex: 1.5 },
-    { field: "imoNumber", headerName: "IMO Number", flex: 1 },
-    {
-      field: "classId",
-      headerName: "Class Id",
-      flex: 1,
-    },
+    { field: "name", headerName: "Survey Tpe", flex: 1.5 },
+    { field: "abbreviation", headerName: "Abbreviation", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",
@@ -126,7 +122,7 @@ const Clients = () => {
           <Tooltip title="Edit Client">
             <IconButton
               color="primary"
-              onClick={() => router.push(`/clients/${params?.id}`)}
+              onClick={() => router.push(`/survey-types/${params?.id}`)}
             >
               <EditIcon />
             </IconButton>
@@ -153,14 +149,14 @@ const Clients = () => {
           justifyContent="space-between"
         >
           <Typography variant="h4" fontWeight={700}>
-            Clients
+            Survey Types
           </Typography>
           <CommonButton
             sx={{ textTransform: "capitalize" }}
-            text="Add client"
+            text="Add Survey Type"
             variant="contained"
             onClick={() => {
-              router.push("/clients/create");
+              router.push("/survey-types/create");
             }}
           />
         </Stack>
@@ -168,7 +164,7 @@ const Clients = () => {
 
       <CommonCard>
         <CommonInput
-          placeholder="Search Clients"
+          placeholder="Search Survey Types"
           fullWidth
           value={search}
           onChange={handleSearchChange}
@@ -184,9 +180,9 @@ const Clients = () => {
             >
               <CircularProgress />
             </Box>
-          ) : clientsList.length > 0 ? (
+          ) : surveyTypes.length > 0 ? (
             <DataGrid
-              rows={clientsList}
+              rows={surveyTypes}
               columns={columns}
               loading={loading}
               pagination={false}
@@ -225,7 +221,7 @@ const Clients = () => {
       </CommonCard>
 
       <Dialog open={openDialog} onClose={handleCancelDelete}>
-        <DialogTitle>Are you sure you want to delete this Client?</DialogTitle>
+        <DialogTitle>Are you sure you want to delete this Survey Type?</DialogTitle>
         <DialogActions>
           <Button onClick={handleCancelDelete} color="primary">
             Cancel
@@ -259,4 +255,4 @@ const Clients = () => {
   );
 };
 
-export default Clients;
+export default SurveyTypes;
