@@ -20,6 +20,11 @@ axiosInstance.interceptors.request.use(
       /*  if (config.data instanceof FormData) {
          config.headers["Content-Type"] = "multipart/form-data";
        } */
+       if (config.data instanceof FormData) {
+        config.headers["Content-Type"] = "multipart/form-data";
+      } else {
+        config.headers["Content-Type"] = "application/json";
+      }
       return config;
     } catch (error) {
       return Promise.reject(error);
@@ -457,6 +462,17 @@ export const updateSurveyType = async (id, payload) => {
   let result;
   try {
     result = await axiosInstance.patch(`/api/surveyTypes/${id}`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+
+export const deleteSurveyType = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.delete(`/api/surveyTypes/${payload.id}`);
   } catch (e) {
     result = e;
   }

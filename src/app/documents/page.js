@@ -89,9 +89,10 @@ const Documents = () => {
 
     // Filter by document type (Reports = odd index, Certificates = even index)
     if (filter === "reports") {
-      filtered = filtered.filter((_, index) => index % 2 !== 0); // Odd indexed
+      console.log(filtered , "filtered ==>")
+      filtered = filtered.filter((document, index) => document.type === "report"); // Odd indexed
     } else if (filter === "certificates") {
-      filtered = filtered.filter((_, index) => index % 2 === 0); // Even indexed
+      filtered = filtered.filter((document, index) => document.type === "certificate"); // Even indexed
     }
 
     setFilteredDocuments(filtered);

@@ -5,10 +5,26 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import CircularProgress from "@mui/material/CircularProgress";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import Typography from "@mui/material/Typography";
+import Select from "@mui/material/Select";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { toast } from "react-toastify";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import { createDocument, getDocumentDetails, updateDocument } from "@/api";
+
+const documentValidityType = [
+  { value: "interim", label: "Interim" },
+  { value: "short_term", label: "Short Term" },
+  { value: "full_term", label: "Full Term" },
+];
+
+const documentType = [
+  { value: "certificate", label: "certificate" },
+  { value: "report", label: "report" },
+];
 
 const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
   const router = useRouter();
@@ -16,11 +32,32 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
   const [formValues, setFormValues] = useState({
     name: "",
     type: "",
+    validity : "",
+    document: null,
   });
   const [errors, setErrors] = useState({
     name: false,
     type: false,
+    validity : "",
+    document: false,
   });
+
+const handleSelectChange = (e) => {
+  const { name, value } = e.target;
+  setFormValues((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+
+  // Clear error on change
+  if (errors[name]) {
+    setErrors((prev) => ({
+      ...prev,
+      [name]: false,
+    }));
+  }
+};
+
 
   useEffect(() => {
     if (mode === "update" && documentId) {
@@ -37,6 +74,8 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
         setFormValues({
           name: documentData.name || "",
           type: documentData.type || "",
+          validity : documentData.validity || "",
+          document : documentData.document || "",
         });
       } else {
         toast.error("Error fetching document details");
@@ -68,6 +107,8 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
     const newErrors = {
       name: !formValues.name.trim(),
       type: !formValues.type.trim(),
+      validity : !formValues.validity.trim(),
+      document: !formValues.document,
     };
 
     setErrors(newErrors);
@@ -86,7 +127,17 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
       let response;
 
       if (mode === "create") {
-        response = await createDocument(formValues);
+        console.log("form values", formValues)
+        const formData = new FormData();
+        formData.append('name', formValues.name);
+        formData.append('type', formValues.type);
+        formData.append('validity', formValues.validity);
+  if (formValues.document instanceof File) {
+    formData.append("document", formValues.document);
+  }
+
+        console.log("formData ==>", [...formData.entries()])
+        response = await createDocument(formData);
       } else {
         // Include edit reason in the payload for update
         const payload = {
@@ -146,7 +197,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
             required
           />
 
-          <TextField
+          {/* <TextField
             fullWidth
             label="Document Type"
             name="type"
@@ -155,7 +206,127 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
             error={errors.type}
             helperText={errors.type ? "Document type is required" : ""}
             required
-          />
+          /> */}
+
+          <FormControl fullWidth error={errors.type}>
+            <Select
+              name="type"
+              value={formValues.type}
+              onChange={handleSelectChange}
+              displayEmpty
+            >
+              <MenuItem value="" disabled>
+                Select Document Type *
+              </MenuItem>
+              {documentType.map((document) => (
+                <MenuItem key={document.value} value={document.value}>
+                  {document.label}
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.type && (
+              <Typography
+                variant="caption"
+                color="error"
+                mt={"3px"}
+                marginInline={"14px"}
+              >
+                Document type is required
+              </Typography>
+            )}
+          </FormControl>
+
+          <FormControl fullWidth error={errors.validity}>
+            <Select
+              name="validity"
+              value={formValues.validity}
+              onChange={handleSelectChange}
+              displayEmpty
+            >
+              <MenuItem value="" disabled>
+                Select Document Validity Type *
+              </MenuItem>
+              {documentValidityType.map((document) => (
+                <MenuItem key={document.value} value={document.value}>
+                  {document.label}
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.validity && (
+              <Typography
+                variant="caption"
+                color="error"
+                mt={"3px"}
+                marginInline={"14px"}
+              >
+                Document Validity Type is required
+              </Typography>
+            )}
+          </FormControl>
+
+          <FormControl fullWidth error={errors.document}>
+            <Box
+              component="label"
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                border: "1px solid",
+                borderColor: errors.document ? "error.main" : "grey.700",
+                borderRadius: "6px",
+                p: 1.5,
+                color: "text.secondary",
+                cursor: "pointer",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <CloudUploadIcon />
+                <Typography variant="body2">
+                  {formValues.document
+                    ? formValues.document.name
+                    : "Drag files or browse to upload"}
+                </Typography>
+              </Box>
+
+              <CommonButton
+                text="Upload"
+                component="span"
+                variant="contained"
+                sx={{
+                  borderRadius: "20px",
+                  padding: "10px 15px",
+                  fontSize: "14px",
+                }}
+              >
+                Choose document
+              </CommonButton>
+
+              <input
+                type="file"
+                hidden
+                accept=".doc,.docx"
+                onChange={(e) => {
+                  const document = e.target.files[0];
+                  setFormValues((prev) => ({
+                    ...prev,
+                    document,
+                  }));
+                  if (errors.document) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      document: false,
+                    }));
+                  }
+                }}
+              />
+            </Box>
+
+            {errors.document && (
+              <Typography variant="caption" color="error" mt={1}>
+                document is required
+              </Typography>
+            )}
+          </FormControl>
 
           <Stack
             direction="row"
@@ -169,7 +340,9 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
               onClick={() => router.push("/documents")}
             />
             <CommonButton
-              text={loading ? "Saving..." : mode === "create" ? "Create" : "Update"}
+              text={
+                loading ? "Saving..." : mode === "create" ? "Create" : "Update"
+              }
               type="submit"
               variant="contained"
               disabled={loading}
