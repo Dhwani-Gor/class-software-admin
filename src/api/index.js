@@ -337,6 +337,16 @@ export const createReportDetail = async (payload) => {
   return result;
 };
 
+export const updateReportDetail = async (reportId, payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/api/reportDetails/${reportId}`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
 export const createActivity = async (payload) => {
   let result;
   try {

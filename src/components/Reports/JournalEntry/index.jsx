@@ -867,7 +867,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                       <TableRow>
                         <TableCell>SL No.</TableCell>
                         <TableCell>Type of survey/Inspection</TableCell>
-                        <TableCell>Initial of surveyors</TableCell>
+                        {/* <TableCell>Initial of surveyors</TableCell> */}
                         {!isJournalLocked && <TableCell align="right">Actions</TableCell>}
                       </TableRow>
                     </TableHead>
@@ -875,8 +875,8 @@ const JournalEntryForm = ({ journalId = null }) => {
                       {activitiesList.map((activity, index) => (
                         <TableRow key={activity.id}>
                           <TableCell>{index + 1}</TableCell>
-                          <TableCell>{activity.typeOfSurvey}</TableCell>
-                          <TableCell>{activity.initialOfSurveyors}</TableCell>
+                          <TableCell>{activity.surveyTypes.name}</TableCell>
+                          {/* <TableCell>{activity.initialOfSurveyors}</TableCell> */}
                           {!isJournalLocked && (
                             <TableCell align="right">
                               <IconButton
