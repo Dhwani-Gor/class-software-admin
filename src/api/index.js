@@ -549,3 +549,17 @@ export const deleteDocument = async (payload) => {
   }
   return result;
 };
+
+export const searchUnloCodes = async (query) => {
+  let result;
+  try {
+    result = await axiosInstance.get('/api/unloCodes/search', {
+      params: {
+        query: query
+      }
+    });
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
