@@ -231,7 +231,11 @@ const JournalEntryForm = ({ journalId = null }) => {
       } else {
         const payload = {
           journalId : journalId,
-          ...visitData
+          location :  `${visitData.location.nameOfDiacritics} (${visitData.location.name}, ${visitData.location.country})`,
+          timeFrom : visitData.timeFrom,
+          timeTo: visitData.timeTo,
+          date : visitData.date,
+          initialOfSurveyors : visitData.initialOfSurveyors,
          }
         addVisitData(payload);
       }
