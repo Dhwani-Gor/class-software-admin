@@ -90,7 +90,7 @@ const AddSurveyType = ({
       shipName: "",
       imoNumber: "",
       classId: "",
-      flag:  "",
+      flag: "",
       portOfRegistry: "",
       classSign: "",
       grossTonnage: "",
@@ -287,6 +287,18 @@ const AddSurveyType = ({
         shipName: data.shipName,
         imoNumber: data.imoNumber || "",
         classId: data.classId || "",
+        flag: data.flag || "",
+        portOfRegistry: data.portOfRegistry || "",
+        classSign: data.classSign || "",
+        grossTonnage: data.grossTonnage || "",
+        netTonnage: data.netTonnage || "",
+        lengthM: data.lengthM || "",
+        breadthmldM: data.breadthmldM || "",
+        depthmldM: data.depthmldM || "",
+        draught: data.draught || "",
+        shipBuilder: data.shipBuilder || "",
+        countryOfBuild: data.countryOfBuild || "",
+        yearOfBuild: data.yearOfBuild || "",
         ownerDetails: {
           nameOfCompany: data.ownerDetails.nameOfCompany,
           companyAddress: data.ownerDetails.companyAddress,
@@ -767,11 +779,31 @@ const AddSurveyType = ({
                         fullWidth
                         variant="standard"
                         type="number"
-                        label="Breadthmld (m)"
+                        label="Breadthmld. (m)"
                         placeholder="Enter Breadthmld (m)"
                         disabled={!editingAllowed}
                         error={Boolean(errors?.breadthmldM)}
                         helperText={errors?.breadthmldM?.message}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                </Grid2>
+                <Grid2 size={{ xs: 4 }}>
+                  <Controller
+                    name="depthmldM"
+                    control={control}
+                    render={({ field }) => (
+                      <CommonInput
+                        {...field}
+                        fullWidth
+                        variant="standard"
+                        type="number"
+                        label="Depthmld. (m)"
+                        placeholder="Enter Breadthmld (m)"
+                        disabled={!editingAllowed}
+                        error={Boolean(errors?.depthmldM)}
+                        helperText={errors?.depthmldM?.message}
                         onChange={(e) => field.onChange(e.target.value)}
                       />
                     )}
@@ -786,12 +818,11 @@ const AddSurveyType = ({
                         {...field}
                         fullWidth
                         variant="standard"
-                        type="number"
                         label="Draught"
                         placeholder="Enter Draught"
                         disabled={!editingAllowed}
-                        error={Boolean(errors?.depthmldM)}
-                        helperText={errors?.depthmldM?.message}
+                        error={Boolean(errors?.draught)}
+                        helperText={errors?.draught?.message}
                         onChange={(e) => field.onChange(e.target.value)}
                       />
                     )}
@@ -809,8 +840,8 @@ const AddSurveyType = ({
                         label="Ship Builder"
                         placeholder="Enter Ship Builder"
                         disabled={!editingAllowed}
-                        error={Boolean(errors?.depthmldM)}
-                        helperText={errors?.depthmldM?.message}
+                        error={Boolean(errors?.shipBuilder)}
+                        helperText={errors?.shipBuilder?.message}
                         onChange={(e) => field.onChange(e.target.value)}
                       />
                     )}
@@ -828,8 +859,8 @@ const AddSurveyType = ({
                         label="Country of Build"
                         placeholder="Enter Country of Build"
                         disabled={!editingAllowed}
-                        error={Boolean(errors?.depthmldM)}
-                        helperText={errors?.depthmldM?.message}
+                        error={Boolean(errors?.countryOfBuild)}
+                        helperText={errors?.countryOfBuild?.message}
                         onChange={(e) => field.onChange(e.target.value)}
                       />
                     )}
@@ -848,8 +879,8 @@ const AddSurveyType = ({
                         label="Year of Build"
                         placeholder="Enter Year of Build"
                         disabled={!editingAllowed}
-                        error={Boolean(errors?.depthmldM)}
-                        helperText={errors?.depthmldM?.message}
+                        error={Boolean(errors?.yearOfBuild)}
+                        helperText={errors?.yearOfBuild?.message}
                         onChange={(e) => field.onChange(e.target.value)}
                       />
                     )}
