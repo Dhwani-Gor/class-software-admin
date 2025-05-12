@@ -19,13 +19,139 @@ import Paper from "@mui/material/Paper";
 import CommonInput from "@/components/CommonInput";
 import IconButton from "@mui/material/IconButton";
 import DescriptionIcon from "@mui/icons-material/Description";
+import AttachmentIcon from "@mui/icons-material/Attachment";
+import DeleteIcon from "@mui/icons-material/Delete";
 import TextareaAutosize from "@mui/material/TextareaAutosize";
 import Grid2 from "@mui/material/Grid2";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
 import { useRouter } from "next/navigation";
 import { createReportDetail, getAllClients, getAllJournals } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
+
+// New component for Document Upload Dialog
+const DocumentUploadDialog = ({
+  open,
+  onClose,
+  onUpload,
+  selectedDocuments,
+  onRemoveDocument
+}) => {
+  const [documents, setDocuments] = useState([]);
+
+  const handleFileChange = (event) => {
+    if (event.target.files) {
+      const newFiles = Array.from(event.target.files);
+      const validFiles = newFiles.filter(file =>
+        ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'video/mp4', 'video/mpeg'].includes(file.type)
+      );
+      setDocuments(prev => [...prev, ...validFiles]);
+    }
+  };
+
+  const handleUpload = () => {
+    onUpload(documents);
+    setDocuments([]);
+    onClose();
+  };
+
+  const handleRemoveDocument = (index) => {
+    setDocuments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const renderFileIcon = (file) => {
+    const fileType = file.type.split('/')[0];
+    const fileName = file.name;
+
+    switch (fileType) {
+      case 'image':
+        return '🖼️';
+      case 'application':
+        return '📄';
+      case 'video':
+        return '🎥';
+      default:
+        return '📁';
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <DialogTitle>Upload Documents</DialogTitle>
+      <DialogContent sx={{ minWidth: "50vw" }}>
+        <Box>
+          <input
+            type="file"
+            multiple
+            accept="image/jpeg,image/png,image/gif,application/pdf,video/mp4,video/mpeg"
+            onChange={handleFileChange}
+            style={{ margin: '16px 0' }}
+          />
+
+          {/* Newly selected documents */}
+          {documents.length > 0 && (
+            <Box mt={2}>
+              <Typography variant="subtitle1">New Documents:</Typography>
+              {documents.map((file, index) => (
+                <Box
+                  key={index}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  mb={1}
+                >
+                  <Typography>
+                    {renderFileIcon(file)} {file.name}
+                  </Typography>
+                  <IconButton onClick={() => handleRemoveDocument(index)} size="small">
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              ))}
+            </Box>
+          )}
+
+          {/* Previously uploaded documents */}
+          {selectedDocuments && selectedDocuments.length > 0 && (
+            <Box mt={2}>
+              <Typography variant="subtitle1">Existing Documents:</Typography>
+              {selectedDocuments.map((doc, index) => (
+                <Box
+                  key={index}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  mb={1}
+                >
+                  <Typography>
+                    {renderFileIcon(doc)} {doc.name}
+                  </Typography>
+                  <IconButton onClick={() => onRemoveDocument(index)} size="small">
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button
+          onClick={handleUpload}
+          disabled={documents.length === 0}
+        >
+          Upload
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
 
 const ReportingForm = () => {
   const router = useRouter();
@@ -41,7 +167,9 @@ const ReportingForm = () => {
   const [tableData, setTableData] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);
 
-  console.log('42 ===>', tableData);
+  // New state for document uploads
+  const [documentUploadDialogOpen, setDocumentUploadDialogOpen] = useState(false);
+  const [currentRowForDocuments, setCurrentRowForDocuments] = useState(null);
 
   const {
     control,
@@ -100,7 +228,7 @@ const ReportingForm = () => {
     try {
       setLoading(true);
       const result = await createReportDetail(payload);
-      if (result?.status === 200) {
+      if (result?.status === 'success') {
         toast.success("Report generated successfully.")
         showForm(false);
       } else {
@@ -122,19 +250,20 @@ const ReportingForm = () => {
     };
 
     const payload = {
-      activityId: selectedRow,
+      activityId: selectedRow?.id,
       typeOfSurvey: values.typesOfSurvey || null,
       typeOfCertificate: selectCertificate || null,
       issuanceDate: values.issuancedate ? formatDate(values.issuancedate) : null,
       validityDate: values.validitydate ? formatDate(values.validitydate) : null,
       surveyDate: values.surveydate ? formatDate(values.surveydate) : null,
       endorsementDate: values.endorsementdate ? formatDate(values.endorsementdate) : null,
-      issuedBy: values.issuedBy || null
+      issuedBy: values.issuedBy || null,
+      place: values.place || null
     };
-    console.log(payload,'payload')
+    console.log(payload, 'payload')
 
     generateReport(payload);
-   };
+  };
 
   const handleStatusChange = (id, value) => {
     setTableData((prevData) =>
@@ -162,8 +291,8 @@ const ReportingForm = () => {
   const handleReportClick = (row) => {
     router.push('#reportDetails')
     setShowForm(row);
-    setValue('typesOfSurvey', getSurveyTitle(row.typeOfSurvey));
-    setSelectedRow(row?.id);
+    setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
+    setSelectedRow(row);
   };
 
   const onSubmit = (data) => {
@@ -227,6 +356,39 @@ const ReportingForm = () => {
   const getSurveyTitle = (val) => {
     return TYPE_OF_SURVEYS.find(ele => ele.value === val)?.label || val;
   }
+
+  const handleDocumentUpload = (rowId, documents) => {
+    setTableData((prevData) =>
+      prevData.map((item) =>
+        item.id === rowId
+          ? {
+            ...item,
+            attachments: item.attachments
+              ? [...item.attachments, ...documents]
+              : documents
+          }
+          : item
+      )
+    );
+  };
+
+  const handleRemoveDocument = (rowId, documentIndex) => {
+    setTableData((prevData) =>
+      prevData.map((item) =>
+        item.id === rowId
+          ? {
+            ...item,
+            attachments: item.attachments.filter((_, index) => index !== documentIndex)
+          }
+          : item
+      )
+    );
+  };
+
+  const openDocumentUpload = (row) => {
+    setCurrentRowForDocuments(row);
+    setDocumentUploadDialogOpen(true);
+  };
 
   return (
     <Box mt={2}>
@@ -318,6 +480,7 @@ const ReportingForm = () => {
                     </TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Remarks</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>Attachments</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Activity Details</TableCell>
                   </TableRow>
                 </TableHead>
@@ -330,7 +493,7 @@ const ReportingForm = () => {
                       <TableCell component="th" scope="row">
                         {row.id}
                       </TableCell>
-                      <TableCell>{getSurveyTitle(row.typeOfSurvey)}</TableCell>
+                      <TableCell>{getSurveyTitle(row.surveyTypes.name)}</TableCell>
                       <TableCell>
                         <FormControl fullWidth size="small">
                           <Select
@@ -388,6 +551,25 @@ const ReportingForm = () => {
                       <TableCell align="center">
                         <IconButton
                           color="primary"
+                          onClick={() => openDocumentUpload(row)}
+                          size="small"
+                          aria-label="upload attachments"
+                        >
+                          <AttachmentIcon />
+                          {row.attachments && row.attachments.length > 0 && (
+                            <Typography
+                              variant="caption"
+                              color="primary"
+                              sx={{ marginLeft: 1 }}
+                            >
+                              {row.attachments.length}
+                            </Typography>
+                          )}
+                        </IconButton>
+                      </TableCell>
+                      <TableCell align="center">
+                        <IconButton
+                          color="primary"
                           onClick={() => handleReportClick(row)}
                           size="small"
                           aria-label="view report"
@@ -407,7 +589,7 @@ const ReportingForm = () => {
       {showForm && (
         <Box id="reportDetails">
           <CommonCard sx={{ mt: 2 }}>
-            <Typography fontSize={'18px'} fontWeight={'600'} mb={2}>Report Details for {selectedRow}</Typography>
+            <Typography fontSize={'18px'} fontWeight={'600'} mt={2} mb={4}>Report Details for {selectedRow.surveyTypes?.name}</Typography>
             <Grid2 container spacing={2}>
               <Grid2 item size={{ md: 3 }}>
                 <Controller
@@ -521,6 +703,21 @@ const ReportingForm = () => {
                   )}
                 />
               </Grid2>
+              <Grid2 item size={{ md: 3 }}>
+                <Controller
+                  name="place"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      label="Place of Activity"
+                      placeholder="Enter place name"
+                      error={!!errors.issuedBy}
+                      helperText={errors.issuedBy?.message}
+                    />
+                  )}
+                />
+              </Grid2>
             </Grid2>
             <Box>
               <CommonButton
@@ -532,6 +729,21 @@ const ReportingForm = () => {
           </CommonCard>
         </Box>
       )}
+      <DocumentUploadDialog
+        open={documentUploadDialogOpen}
+        onClose={() => setDocumentUploadDialogOpen(false)}
+        onUpload={(documents) => {
+          if (currentRowForDocuments) {
+            handleDocumentUpload(currentRowForDocuments.id, documents);
+          }
+        }}
+        selectedDocuments={currentRowForDocuments?.attachments || []}
+        onRemoveDocument={(index) => {
+          if (currentRowForDocuments) {
+            handleRemoveDocument(currentRowForDocuments.id, index);
+          }
+        }}
+      />
       <FullScreenRemarksDialog
         open={fullScreenRemarksVisible}
         onCancel={() => setFullScreenRemarksVisible(null)}
