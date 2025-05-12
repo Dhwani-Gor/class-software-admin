@@ -99,7 +99,7 @@ const JournalEntryForm = ({ journalId = null }) => {
   const [isJournalLocked, setIsJournalLocked] = useState(false);
   const [surveyTypes,setSurveyTypes] = useState([])
 
-  console.log('101 ===>', activitiesList);
+  // console.log('101 ===>', activitiesList);
 
   const {
     control,
@@ -226,7 +226,7 @@ const JournalEntryForm = ({ journalId = null }) => {
           timeTo: visitData.timeTo,
           date : visitData.date
          }
-        console.log(payload, "edit visit data")
+        // console.log(payload, "edit visit data")
         updateVisitData(payload,visitData.id)
       } else {
         const payload = {
@@ -250,11 +250,27 @@ const JournalEntryForm = ({ journalId = null }) => {
           )
         );
       } else {
-        setVisitList([...visitList, { id: Date.now(), ...visitData }]);
+        console.log(visitData, "add visitdata without journalid")
+
+           const formattedVisitData = {
+      date: visitData.date,
+      timeFrom: visitData.timeFrom,
+      timeTo: visitData.timeTo,
+      // Format location similar to the format used with journalId
+      location: visitData.location.nameOfDiacritics 
+        ? `${visitData.location.nameOfDiacritics} (${visitData.location.name}, ${visitData.location.country})`
+        : visitData.location,
+      // Ensure surveyors is in the correct format for display
+      surveyors: Array.isArray(visitData.initialOfSurveyors) 
+        ? visitData.initialOfSurveyors.map(surveyor => ({ name: surveyor }))
+        : []
+    };
+        setVisitList([...visitList, { id: Date.now(), ...formattedVisitData }]);
       }
     }
     setOpenModal(false);
   };
+
 
   const handleEdit = (visit) => {
     if (isJournalLocked) return;
@@ -265,7 +281,7 @@ const JournalEntryForm = ({ journalId = null }) => {
   const handleDelete = (id) => {
     if (isJournalLocked) return;
     deleteVisitData(id);
-    console.log('delete visit details')
+    // console.log('delete visit details')
     // setVisitList(visitList.filter((visit) => visit.id !== id));
   };
 
@@ -277,30 +293,7 @@ const JournalEntryForm = ({ journalId = null }) => {
 
   const handleCloseActivityModal = () => setOpenActivityModal(false);
 
-  const updateActivities = async (payolad, journalId) => {
-    try {
-      setLoading(true);
-      const result = await updateActivity(payolad, journalId);
-      if (result?.data?.status === "success") {
-        toast.success("Activities updated successfully.")
-        setActivitiesList(
-          activitiesList.map((activity) =>
-            activity.id === result?.data?.data.id
-              ? { ...activity, ...result?.data?.data }
-              : activity
-          )
-        );
-      } else {
-        toast.error("Something went wrong ! Please try again after some time");
-      }
-      setLoading(false);
-    } catch (error) {
-      setLoading(false);
-      toast.error(error);
-    }
-  };
-
-  const getAllActivity = async (journalId) => {
+    const getAllActivity = async (journalId) => {
     try {
       setLoading(true);
       const result = await getAllActivities('journalId', journalId);
@@ -316,15 +309,41 @@ const JournalEntryForm = ({ journalId = null }) => {
     }
   };
 
+  const updateActivities = async (payolad, journalId) => {
+    try {
+      setLoading(true);
+      const result = await updateActivity(payolad, journalId);
+      if (result?.data?.status === "success") {
+        toast.success("Activities updated successfully.")
+        getAllActivity(result?.data?.data?.journalId);
+        // setActivitiesList(
+        //   activitiesList.map((activity) =>
+        //     activity.id === result?.data?.data.id
+        //       ? { ...activity, ...result?.data?.data }
+        //       : activity
+        //   )
+        // );
+      } else {
+        toast.error("Something went wrong ! Please try again after some time");
+      }
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error);
+    }
+  };
+
+
   const addActivities = async (payolad) => {
     try {
       setLoading(true);
       const result = await createActivity(payolad);
       if (result?.data?.status === "success") {
-        setActivitiesList([
-          ...activitiesList,
-          result?.data?.data,
-        ]);
+        getAllActivity(journalId);
+        // setActivitiesList([
+        //   ...activitiesList,
+        //   result?.data?.data,
+        // ]);
         toast.success("Activities added successfully.")
       } else {
         toast.error("Something went wrong ! Please try again after some time");
@@ -336,19 +355,27 @@ const JournalEntryForm = ({ journalId = null }) => {
     }
   };
   const deleteActivities = async (activityId) => {
-    try {
-      setLoading(true);
-      const result = await deleteActivity(activityId);
-      if (result?.status === 204) {
-        toast.success("Activities delete successfully.")
-        getAllActivity(journalId)
-      } else {
-        toast.error("Something went wrong ! Please try again after some time");
+    console.log(activityId, "activityId")
+    if(activityId){
+      try {
+        setLoading(true);
+        const result = await deleteActivity(activityId);
+        if (result?.status === 204) {
+          toast.success("Activities delete successfully.")
+          getAllActivity(journalId)
+        } else {
+          toast.error("Something went wrong ! Please try again after some time");
+        }
+        setLoading(false);
+      } catch (error) {
+        setLoading(false);
+        toast.error(error);
       }
-      setLoading(false);
-    } catch (error) {
-      setLoading(false);
-      toast.error(error);
+    }
+    else {
+      setActivitiesList(
+  activitiesList.filter((activity) => activity.id !== activityId)
+);
     }
   };
 
@@ -362,8 +389,10 @@ const JournalEntryForm = ({ journalId = null }) => {
          initialOfSurveyors : activityData.initialOfSurveyors,
         }
         updateActivities(payload,activityData.id)
+        
        }
        else {
+        console.log(activityData, "activityData")
         const payload = {
           journalId : journalId,
           ...activityData
@@ -387,6 +416,7 @@ const JournalEntryForm = ({ journalId = null }) => {
         ]);
       }
     }
+
     setOpenActivityModal(false);
   };
 
@@ -442,7 +472,6 @@ const JournalEntryForm = ({ journalId = null }) => {
     }
   };
 
-  console.log("surveyTypes===>",surveyTypes);
   
 
   const fetchJournal = async () => {
@@ -472,14 +501,6 @@ const JournalEntryForm = ({ journalId = null }) => {
           classId: journalData.client.classId,
         });
 
-        // Set visit details and activities if they exist
-        if (journalData.visitDetails && journalData.visitDetails.length > 0) {
-          setVisitList(journalData.visitDetails);
-        }
-
-        if (journalData.activities && journalData.activities.length > 0) {
-          setActivitiesList(journalData.activities);
-        }
 
         // Show the form for editing
         setIsShowForm(true);
@@ -501,6 +522,8 @@ const JournalEntryForm = ({ journalId = null }) => {
   useEffect(() => {
     if (journalId) {
       fetchJournal();
+      getAllVisitData(journalId);
+      getAllActivity(journalId);
     }
   }, [journalId]);
 
@@ -614,13 +637,18 @@ const JournalEntryForm = ({ journalId = null }) => {
           <CommonCard>
             {isJournalLocked && (
               <Box mb={2} pb={2} borderBottom="1px solid #e0e0e0">
-                <Typography 
-                  fontSize="16px" 
-                  fontWeight="500" 
-                  color="error" 
-                  sx={{ backgroundColor: "rgba(255,0,0,0.05)", p: 2, borderRadius: 1 }}
+                <Typography
+                  fontSize="16px"
+                  fontWeight="500"
+                  color="error"
+                  sx={{
+                    backgroundColor: "rgba(255,0,0,0.05)",
+                    p: 2,
+                    borderRadius: 1,
+                  }}
                 >
-                  Journal is Locked. You don't have sufficient rights to Edit this Journal, please contact Admin
+                  Journal is Locked. You don't have sufficient rights to Edit
+                  this Journal, please contact Admin
                 </Typography>
               </Box>
             )}
@@ -812,7 +840,12 @@ const JournalEntryForm = ({ journalId = null }) => {
                         <TableCell align="right">Time from</TableCell>
                         <TableCell align="right">Time to</TableCell>
                         <TableCell align="right">Location</TableCell>
-                        {!isJournalLocked && <TableCell align="right">Actions</TableCell>}
+                        <TableCell align="right">
+                          Initial Of Surveyors
+                        </TableCell>
+                        {!isJournalLocked && (
+                          <TableCell align="right">Actions</TableCell>
+                        )}
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -823,12 +856,17 @@ const JournalEntryForm = ({ journalId = null }) => {
                           <TableCell align="right">{visit.timeFrom}</TableCell>
                           <TableCell align="right">{visit.timeTo}</TableCell>
                           <TableCell align="right">{visit.location}</TableCell>
+                          <TableCell align="right">
+  {visit?.surveyors.map(s => s.name).join(", ")}
+                          </TableCell>
                           {!isJournalLocked && (
                             <TableCell align="right">
                               <IconButton onClick={() => handleEdit(visit)}>
                                 <EditIcon />
                               </IconButton>
-                              <IconButton onClick={() => handleDelete(visit.id)}>
+                              <IconButton
+                                onClick={() => handleDelete(visit.id)}
+                              >
                                 <DeleteIcon />
                               </IconButton>
                             </TableCell>
@@ -868,14 +906,16 @@ const JournalEntryForm = ({ journalId = null }) => {
                         <TableCell>SL No.</TableCell>
                         <TableCell>Type of survey/Inspection</TableCell>
                         {/* <TableCell>Initial of surveyors</TableCell> */}
-                        {!isJournalLocked && <TableCell align="right">Actions</TableCell>}
+                        {!isJournalLocked && (
+                          <TableCell align="right">Actions</TableCell>
+                        )}
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {activitiesList.map((activity, index) => (
                         <TableRow key={activity.id}>
                           <TableCell>{index + 1}</TableCell>
-                          <TableCell>{activity.surveyTypes.name}</TableCell>
+                          <TableCell>{activity.surveyTypes?.name}</TableCell>
                           {/* <TableCell>{activity.initialOfSurveyors}</TableCell> */}
                           {!isJournalLocked && (
                             <TableCell align="right">
@@ -885,7 +925,9 @@ const JournalEntryForm = ({ journalId = null }) => {
                                 <EditIcon />
                               </IconButton>
                               <IconButton
-                                onClick={() => handleActivityDelete(activity.id)}
+                                onClick={() =>
+                                  handleActivityDelete(activity.id)
+                                }
                               >
                                 <DeleteIcon />
                               </IconButton>

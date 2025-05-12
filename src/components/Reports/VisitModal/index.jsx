@@ -55,17 +55,22 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
     },
   });
 
-  useEffect(() => {
-    reset(
-      defaultValues || {
-        date: "",
-        timeFrom: "",
-        timeTo: "",
-        location: null,
-        initialOfSurveyors: [],
-      }
-    );
-  }, [defaultValues, reset]);
+
+useEffect(() => {
+  if (defaultValues) {
+    reset({
+      ...defaultValues,
+      location: null, 
+      initialOfSurveyors: [], 
+    });
+
+    if (defaultValues.surveyors?.length && surveyors.length) {
+      const surveyorIds = defaultValues.surveyors.map((s) => s.id);
+      setValue("initialOfSurveyors", surveyorIds);
+    }
+  }
+}, [defaultValues, locationOptions, surveyors, reset, setValue]);
+
 
   const onCloseModal = () => {
     reset();

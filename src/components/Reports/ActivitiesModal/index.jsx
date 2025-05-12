@@ -27,6 +27,7 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes }) 
   const {
     control,
     handleSubmit,
+    setValue,
     formState: { errors },
     reset,
   } = useForm({
@@ -34,17 +35,24 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes }) 
     defaultValues: { typeOfSurvey: "" },
   });
 
+  // console.log(defaultValues?.surveyTypes , "defaultValues ==>" , surveyTypes)
+
   useEffect(() => {
     reset(defaultValues || { typeOfSurvey: "" });
 
-    // Initialize the input value if defaultValues has typeOfSurvey
-    if (defaultValues?.typeOfSurvey && surveyTypes?.length) {
+    if (defaultValues?.surveyTypes && surveyTypes?.length) {
       const surveyOption = surveyTypes.find(
-        (option) => option.id === defaultValues.typeOfSurvey
+        (option) => option.id === defaultValues.surveyTypes.id
       );
-      setSurveyInputValue(surveyOption?.name || "");
+
+      if (surveyOption) {
+        setSurveyInputValue(surveyOption.name);
+        
+        setValue("typeOfSurvey", surveyOption.id);
+      }
     }
-  }, [defaultValues, reset, surveyTypes]);
+  }, [defaultValues, reset, surveyTypes, setValue]);
+
 
   const onSubmit = (data) => {
     onSave(data);
@@ -74,6 +82,7 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes }) 
                   id="type-of-survey-autocomplete"
                   options={surveyOptions}
                   inputValue={surveyInputValue}
+                  value={surveyOptions.find(option => option.value === field.value) || null}
                   onInputChange={(event, newInputValue) => {
                     setSurveyInputValue(newInputValue);
 
