@@ -20,7 +20,7 @@ import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import CommonInput from "@/components/CommonInput";
-import { deleteClient, deleteUser, getAllClients, getSurveyTypes, getUsersDetails } from "@/api";
+import {deleteSurveyType,getSurveyTypes } from "@/api";
 import { toast } from "react-toastify";
 
 const SurveyTypes = () => {
@@ -84,14 +84,14 @@ const SurveyTypes = () => {
     setOpenDialog(false);
     if (!selectedClient) return;
     try {
-      const res = await deleteClient({ id: selectedClient });
+      const res = await deleteSurveyType({ id: selectedClient });
       if (res?.data?.message) {
         setSnackBar({ open: true, message: res.data.message });
       }
-      fetchClients();
+      fetchAllSurveyTypes();
     } catch (e) {
-      console.error("Error deleting Client:", e.response?.data || e.message);
-      setSnackBar({ open: true, message: "Failed to delete Client." });
+      console.error("Error deleting Survey Type:", e.response?.data || e.message);
+      setSnackBar({ open: true, message: "Failed to delete Survey Type." });
     }
   };
 

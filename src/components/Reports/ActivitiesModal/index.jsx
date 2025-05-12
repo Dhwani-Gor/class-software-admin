@@ -13,13 +13,11 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import CommonInput from "@/components/CommonInput";
 import CommonButton from "@/components/CommonButton";
 
 // Validation Schema
 const activitySchema = yup.object().shape({
   typeOfSurvey: yup.string().required("Required"),
-  initialOfSurveyors: yup.string().required("Required"),
 });
 
 const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes }) => {
@@ -33,11 +31,11 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes }) 
     reset,
   } = useForm({
     resolver: yupResolver(activitySchema),
-    defaultValues: { typeOfSurvey: "", initialOfSurveyors: "" },
+    defaultValues: { typeOfSurvey: "" },
   });
 
   useEffect(() => {
-    reset(defaultValues || { typeOfSurvey: "", initialOfSurveyors: "" });
+    reset(defaultValues || { typeOfSurvey: "" });
 
     // Initialize the input value if defaultValues has typeOfSurvey
     if (defaultValues?.typeOfSurvey && surveyTypes?.length) {
@@ -124,21 +122,7 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes }) 
               )}
             />
           </Grid2>
-          <Grid2 size={{ xs: 12 }}>
-            <Controller
-              name="initialOfSurveyors"
-              control={control}
-              render={({ field }) => (
-                <CommonInput
-                  id="initial-of-surveyors"
-                  label="Initial of Surveyors"
-                  error={!!errors.initialOfSurveyors}
-                  helperText={errors.initialOfSurveyors?.message}
-                  {...field}
-                />
-              )}
-            />
-          </Grid2>
+
         </Grid2>
       </DialogContent>
       <DialogActions>
