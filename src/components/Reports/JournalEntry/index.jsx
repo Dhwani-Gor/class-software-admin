@@ -97,7 +97,8 @@ const JournalEntryForm = ({ journalId = null }) => {
   const [journalData, setJournalData] = useState(null);
   const [formData, setFormData] = useState(null);
   const [isJournalLocked, setIsJournalLocked] = useState(false);
-  const [surveyTypes,setSurveyTypes] = useState([])
+  const [surveyTypes,setSurveyTypes] = useState([]);
+    const [surveyors, setSurveyors] = useState([]);
 
   // console.log('101 ===>', activitiesList);
 
@@ -250,21 +251,20 @@ const JournalEntryForm = ({ journalId = null }) => {
           )
         );
       } else {
-        console.log(visitData, "add visitdata without journalid")
+        const formattedVisitData = {
+          date: visitData.date,
+          timeFrom: visitData.timeFrom,
+          timeTo: visitData.timeTo,
+          location: visitData.location.nameOfDiacritics
+            ? `${visitData.location.nameOfDiacritics} (${visitData.location.name}, ${visitData.location.country})`
+            : visitData.location,
+          initialOfSurveyors: visitData.initialOfSurveyors,
+          surveyors: visitData.initialOfSurveyors.map((id) => {
+            const match = surveyors.find((s) => s.id === id);
+            return match ? { name: match.name } : { name: id };
+          }),
+        };
 
-           const formattedVisitData = {
-      date: visitData.date,
-      timeFrom: visitData.timeFrom,
-      timeTo: visitData.timeTo,
-      // Format location similar to the format used with journalId
-      location: visitData.location.nameOfDiacritics 
-        ? `${visitData.location.nameOfDiacritics} (${visitData.location.name}, ${visitData.location.country})`
-        : visitData.location,
-      // Ensure surveyors is in the correct format for display
-      surveyors: Array.isArray(visitData.initialOfSurveyors) 
-        ? visitData.initialOfSurveyors.map(surveyor => ({ name: surveyor }))
-        : []
-    };
         setVisitList([...visitList, { id: Date.now(), ...formattedVisitData }]);
       }
     }
@@ -354,12 +354,11 @@ const JournalEntryForm = ({ journalId = null }) => {
       toast.error(error);
     }
   };
-  const deleteActivities = async (activityId) => {
-    console.log(activityId, "activityId")
-    if(activityId){
+  const deleteActivities = async (activity) => {
+    if(activity.id){
       try {
         setLoading(true);
-        const result = await deleteActivity(activityId);
+        const result = await deleteActivity(activity.id);
         if (result?.status === 204) {
           toast.success("Activities delete successfully.")
           getAllActivity(journalId)
@@ -374,45 +373,58 @@ const JournalEntryForm = ({ journalId = null }) => {
     }
     else {
       setActivitiesList(
-  activitiesList.filter((activity) => activity.id !== activityId)
+  activitiesList.filter((list) => list.typeOfSurvey !== activity.typeOfSurvey)
 );
     }
   };
 
+
   const handleSaveActivity = (activityData) => {
     if (isJournalLocked) return;
-    if(journalId){
+    if (journalId) {
       if (editActivity) {
         const payload = {
-         journalId : activityData.journalId,
-         typeOfSurvey : activityData.typeOfSurvey,
-         initialOfSurveyors : activityData.initialOfSurveyors,
-        }
-        updateActivities(payload,activityData.id)
-        
-       }
-       else {
-        console.log(activityData, "activityData")
+          journalId: activityData.journalId,
+          typeOfSurvey: activityData.typeOfSurvey,
+          initialOfSurveyors: activityData.initialOfSurveyors,
+        };
+        updateActivities(payload, activityData.id);
+      } else {
+        console.log(activityData, "activityData");
         const payload = {
-          journalId : journalId,
-          ...activityData
-         }
+          journalId: journalId,
+          ...activityData,
+        };
         addActivities(payload);
-       }
-    }
-    else{
+      }
+    } else {
+      const survey = surveyTypes.find(
+        (s) => s.id === activityData.typeOfSurvey
+      );
       if (editActivity) {
         setActivitiesList(
           activitiesList.map((activity) =>
-            activity.id === editActivity.id
-              ? { ...activity, ...activityData, id: editActivity.id }
+            activity.surveyTypes.name === editActivity.surveyTypes.name
+              ? {
+                  ...activity,
+                  ...activityData,
+                  id: editActivity.id,
+                  surveyTypes: {
+                    name: survey.name,
+                  },
+                }
               : activity
           )
         );
       } else {
         setActivitiesList([
           ...activitiesList,
-          { ...activityData },
+          {
+            ...activityData,
+            surveyTypes: {
+              name: survey.name,
+            },
+          },
         ]);
       }
     }
@@ -420,15 +432,17 @@ const JournalEntryForm = ({ journalId = null }) => {
     setOpenActivityModal(false);
   };
 
+  // console.log(activitiesList, "activitiesList ==>")
+
   const handleEditActivity = (activity) => {
     if (isJournalLocked) return;
     setEditActivity(activity);
     setOpenActivityModal(true);
   };
 
-  const handleActivityDelete = (id) => {
+  const handleActivityDelete = (activity) => {
     if (isJournalLocked) return;
-    deleteActivities(id)
+    deleteActivities(activity)
     // setActivitiesList(activitiesList.filter((activity) => activity.id !== id));
   };
 
@@ -472,7 +486,20 @@ const JournalEntryForm = ({ journalId = null }) => {
     }
   };
 
-  
+    const fetchSurveyors = async () => {
+      try {
+        const res = await getAllUsers();
+        if (res?.data?.data) {
+          const flattenedData = res?.data?.data?.filter(
+            (item) => item?.roleId === "2"
+          );
+          const sortedData = flattenedData?.sort((a, b) => a?.id - b?.id);
+          setSurveyors(sortedData);
+        }
+      } catch (error) {
+        console.error("Error fetching Surveyors:", error);
+      } 
+    };
 
   const fetchJournal = async () => {
     try {
@@ -517,6 +544,7 @@ const JournalEntryForm = ({ journalId = null }) => {
   useEffect(() => {
     fetchClients();
     fetchSurveyTypes();
+    fetchSurveyors();
   }, []);
 
   useEffect(() => {
@@ -857,7 +885,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                           <TableCell align="right">{visit.timeTo}</TableCell>
                           <TableCell align="right">{visit.location}</TableCell>
                           <TableCell align="right">
-  {visit?.surveyors.map(s => s.name).join(", ")}
+  {visit?.surveyors?.map(s => s.name).join(", ")}
                           </TableCell>
                           {!isJournalLocked && (
                             <TableCell align="right">
@@ -926,7 +954,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                               </IconButton>
                               <IconButton
                                 onClick={() =>
-                                  handleActivityDelete(activity.id)
+                                  handleActivityDelete(activity)
                                 }
                               >
                                 <DeleteIcon />
