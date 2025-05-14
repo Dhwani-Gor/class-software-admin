@@ -573,3 +573,30 @@ export const searchUnloCodes = async (query) => {
   }
   return result;
 };
+
+
+export const getAllActivityReportDetails = async (filterKey, filterValue) => {
+  let result;
+  try {
+    const params = {};
+    if (filterKey !== undefined) params.filterKey = filterKey;
+    if (filterValue !== undefined) params.filterValue = filterValue;
+    
+    const config = Object.keys(params).length > 0 ? { params } : undefined;
+    
+    result = await axiosInstance.get("/api/reportDetails", config);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const getSelectedActivityReportDetails = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/reportDetails/${id}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
