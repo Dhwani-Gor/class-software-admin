@@ -754,7 +754,7 @@ const ReportingForm = () => {
           setFullScreenRemarksVisible(null);
         }}
         title={fullScreenRemarksVisible && typeof fullScreenRemarksVisible === 'object'
-          ? `Remarks for ${fullScreenRemarksVisible.activityName}`
+          ? `Remarks for ${fullScreenRemarksVisible.surveyTypes.name}`
           : "Remarks"}
       />
     </Box>
