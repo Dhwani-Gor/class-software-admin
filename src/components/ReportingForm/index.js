@@ -297,12 +297,29 @@ const ReportingForm = () => {
   const handleFullReportGeneration = async () => {
     try {
       console.log('278 ===>', reportDetails);
+
       const result = await generateFullReport({
         reportDetailId: reportDetails?.id
       })
-      console.log('279 ===>', result);
+      if (result?.data.data) {
+        setLoading(true);
+        const link = document.createElement('a');
+        link.href = result.data.data;
+        link.download = 'report.docx';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setLoading(false);
+      }
+      console.log('280 ===>', result.data.data);
+      if (result?.data?.status === 'success') {
+        toast.success("Report generated successfully.")
+        showForm(false);
+      } else {
+        toast.error("Something went wrong ! Please try again after some time")
+      }
+      console.log('279 ===>', result.data.data);
     } catch (error) {
-
     }
   }
 
@@ -860,6 +877,7 @@ const ReportingForm = () => {
                 onClick={handleFullReportGeneration}
                 sx={{ marginTop: 3 }}
                 text="Generate Full Report"
+                isLoading={loading}
               />
             </Stack>
           </CommonCard>
