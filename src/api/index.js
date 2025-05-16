@@ -573,3 +573,14 @@ export const searchUnloCodes = async (query) => {
   }
   return result;
 };
+
+export const updateActivityDetails = async (id, payload) => {
+  let result;
+  try {
+    result = await axiosInstance.patch(`/api/activities/${id}`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+  
