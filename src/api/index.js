@@ -340,7 +340,7 @@ export const createReportDetail = async (payload) => {
 export const updateReportDetail = async (reportId, payload) => {
   let result;
   try {
-    result = await axiosInstance.post(`/api/reportDetails/${reportId}`, payload);
+    result = await axiosInstance.patch(`/api/reportDetails/${reportId}`, payload);
   } catch (e) {
     result = e;
   }
@@ -607,6 +607,16 @@ export const getSelectedActivityReportDetails = async (id) => {
     result = await axiosInstance.get(`/api/reportDetails/${id}`);
   } catch (error) {
     result = error;
+  }
+  return result;
+};
+
+export const generateFullReport = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/api/reportDetails/generateReport`, payload);
+  } catch (e) {
+    result = e;
   }
   return result;
 };

@@ -30,12 +30,13 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
 import { useRouter } from "next/navigation";
-import { createReportDetail, getAllActivityReportDetails, getAllClients, getAllJournals, getSelectedActivityReportDetails } from "@/api";
+import { createReportDetail, generateFullReport, getAllActivityReportDetails, getAllClients, getAllJournals, getSelectedActivityReportDetails, updateReportDetail } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { updateActivityDetails } from "@/api";
 import { getAllActivities } from "@/api";
 import moment from "moment";
+import { Stack } from "@mui/material";
 
 // New component for Document Upload Dialog
 const DocumentUploadDialog = ({
@@ -167,6 +168,7 @@ const ReportingForm = () => {
   const [selectCertificate, setSelectCertificate] = useState("");
   const [showTable, setShowTable] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [reportDetails, setReportDetails] = useState();
   const [tableData, setTableData] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);
   const [journalId, setjournalId] = useState(null);
@@ -247,6 +249,25 @@ const ReportingForm = () => {
     }
   };
 
+  const updateReport = async (payload) => {
+    try {
+      setLoading(true);
+      const result = await updateReportDetail(reportDetails?.id, payload);
+      console.log('258 ===>', result);
+      if (result?.data?.status === 'success') {
+        toast.success("Report updated successfully.")
+        showForm(false);
+      } else {
+        toast.error("Something went wrong ! Please try again after some time")
+      }
+
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error)
+    }
+  };
+
   const handleGenerateReport = () => {
     const values = getValues();
 
@@ -265,10 +286,25 @@ const ReportingForm = () => {
       issuedBy: values.issuedBy || null,
       place: values.place || null
     };
-    console.log(payload, 'payload')
 
-    generateReport(payload);
+    if (reportDetails) {
+      updateReport(payload)
+    } else {
+      generateReport(payload);
+    }
   };
+
+  const handleFullReportGeneration = async () => {
+    try {
+      console.log('278 ===>', reportDetails);
+      const result = await generateFullReport({
+        reportDetailId: reportDetails?.id
+      })
+      console.log('279 ===>', result);
+    } catch (error) {
+
+    }
+  }
 
   const handleStatusChange = async (id, value) => {
     setTableData((prevData) =>
@@ -319,6 +355,7 @@ const ReportingForm = () => {
       setLoading(true);
       const result = await getSelectedActivityReportDetails(row?.id);
       if (result?.data?.status === "success") {
+        setReportDetails(result?.data?.data);
         router.push('#reportDetails');
         const reportData = result?.data?.data;
         setShowForm(true);
@@ -332,7 +369,6 @@ const ReportingForm = () => {
         setValue('issuedBy', reportData?.issuedBy ? reportData?.issuedBy : "");
         setValue('place', reportData?.place ? reportData?.place : "");
       } else {
-        // toast.error("Something went wrong! Please try again after some time");
         const reportData = result?.data?.data;
         setShowForm(true);
         setSelectedRow(row);
@@ -428,14 +464,9 @@ const ReportingForm = () => {
       )
     );
     const formData = new FormData();
-
     documents.forEach((doc, index) => {
-
       formData.append("attachments", doc);
-
     });
-
-
 
     try {
       const response = await updateActivityDetails(rowId, formData);
@@ -818,13 +849,19 @@ const ReportingForm = () => {
                 />
               </Grid2>
             </Grid2>
-            <Box>
+            <Stack direction="row" gap={'20px'}>
               <CommonButton
                 onClick={handleGenerateReport}
                 sx={{ marginTop: 3 }}
                 text="Save"
               />
-            </Box>
+              <CommonButton
+                disabled={!reportDetails}
+                onClick={handleFullReportGeneration}
+                sx={{ marginTop: 3 }}
+                text="Generate Full Report"
+              />
+            </Stack>
           </CommonCard>
         </Box>
       )}
