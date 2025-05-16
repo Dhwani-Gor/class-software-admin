@@ -860,7 +860,7 @@ const ReportingForm = () => {
                   render={({ field }) => (
                     <CommonInput
                       {...field}
-                      label="Place of Activity"
+                      label="Place of Issuance"
                       placeholder="Enter place name"
                       error={!!errors.place}
                       helperText={errors.place?.message}
