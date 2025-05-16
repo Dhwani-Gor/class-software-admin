@@ -46,7 +46,7 @@ const DocumentUploadDialog = ({
   onRemoveDocument
 }) => {
   const [documents, setDocuments] = useState([]);
-
+  console.log(selectedDocuments, "selectedDocuments")
   const handleFileChange = (event) => {
     if (event.target.files) {
       const newFiles = Array.from(event.target.files);
@@ -132,11 +132,11 @@ const DocumentUploadDialog = ({
                   mb={1}
                 >
                   <Typography>
-                    {renderFileIcon(doc)} {doc.name}
+                    {renderFileIcon(doc)} {doc.fileName}
                   </Typography>
-                  <IconButton onClick={() => onRemoveDocument(index)} size="small">
+                  {/* <IconButton onClick={() => onRemoveDocument(index)} size="small">
                     <DeleteIcon fontSize="small" />
-                  </IconButton>
+                  </IconButton> */}
                 </Box>
               ))}
             </Box>
@@ -170,8 +170,6 @@ const ReportingForm = () => {
   const [tableData, setTableData] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);
   const [journalId, setjournalId] = useState(null);
-  const [activitiesList, setActivitiesList] = useState([]);
-
   // New state for document uploads
   const [documentUploadDialogOpen, setDocumentUploadDialogOpen] = useState(false);
   const [currentRowForDocuments, setCurrentRowForDocuments] = useState(null);
@@ -317,42 +315,42 @@ const ReportingForm = () => {
 
 
   const handleReportClick = async (row) => {
-  try {
-    setLoading(true);
-    const result = await getSelectedActivityReportDetails(row?.id);
-    if (result?.data?.status === "success") {
-      router.push('#reportDetails');
-      const reportData = result?.data?.data;
-      setShowForm(true);
-      setSelectedRow(row);
-      setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
-      setSelectCertificate(reportData?.typeOfCertificate ? reportData?.typeOfCertificate : "");
-      setValue('issuancedate',  reportData?.issuanceDate ? moment(reportData?.issuanceDate).format("YYYY-MM-DD") : '');
-      setValue('validitydate', reportData?.validityDate ?  moment(reportData?.validityDate).format("YYYY-MM-DD") : '');
-      setValue('surveydate', reportData?.surveyDate ? moment(reportData?.surveyDate).format("YYYY-MM-DD") : "");
-      setValue('endorsementdate', reportData?.endorsementDate ? moment(reportData?.endorsementDate).format("YYYY-MM-DD") : "");
-      setValue('issuedBy', reportData?.issuedBy ? reportData?.issuedBy : "");
-      setValue('place',reportData?.place ? reportData?.place : "");
-    } else {
-      // toast.error("Something went wrong! Please try again after some time");
-            const reportData = result?.data?.data;
-      setShowForm(true);
-      setSelectedRow(row);
-      setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
-      setSelectCertificate(reportData?.typeOfCertificate ? reportData?.typeOfCertificate : "");
-      setValue('issuancedate',  reportData?.issuanceDate ? moment(reportData?.issuanceDate).format("YYYY-MM-DD") : '');
-      setValue('validitydate', reportData?.validityDate ?  moment(reportData?.validityDate).format("YYYY-MM-DD") : '');
-      setValue('surveydate', reportData?.surveyDate ? moment(reportData?.surveyDate).format("YYYY-MM-DD") : "");
-      setValue('endorsementdate', reportData?.endorsementDate ? moment(reportData?.endorsementDate).format("YYYY-MM-DD") : "");
-      setValue('issuedBy', reportData?.issuedBy ? reportData?.issuedBy : "");
-      setValue('place',reportData?.place ? reportData?.place : "");
+    try {
+      setLoading(true);
+      const result = await getSelectedActivityReportDetails(row?.id);
+      if (result?.data?.status === "success") {
+        router.push('#reportDetails');
+        const reportData = result?.data?.data;
+        setShowForm(true);
+        setSelectedRow(row);
+        setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
+        setSelectCertificate(reportData?.typeOfCertificate ? reportData?.typeOfCertificate : "");
+        setValue('issuancedate', reportData?.issuanceDate ? moment(reportData?.issuanceDate).format("YYYY-MM-DD") : '');
+        setValue('validitydate', reportData?.validityDate ? moment(reportData?.validityDate).format("YYYY-MM-DD") : '');
+        setValue('surveydate', reportData?.surveyDate ? moment(reportData?.surveyDate).format("YYYY-MM-DD") : "");
+        setValue('endorsementdate', reportData?.endorsementDate ? moment(reportData?.endorsementDate).format("YYYY-MM-DD") : "");
+        setValue('issuedBy', reportData?.issuedBy ? reportData?.issuedBy : "");
+        setValue('place', reportData?.place ? reportData?.place : "");
+      } else {
+        // toast.error("Something went wrong! Please try again after some time");
+        const reportData = result?.data?.data;
+        setShowForm(true);
+        setSelectedRow(row);
+        setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
+        setSelectCertificate(reportData?.typeOfCertificate ? reportData?.typeOfCertificate : "");
+        setValue('issuancedate', reportData?.issuanceDate ? moment(reportData?.issuanceDate).format("YYYY-MM-DD") : '');
+        setValue('validitydate', reportData?.validityDate ? moment(reportData?.validityDate).format("YYYY-MM-DD") : '');
+        setValue('surveydate', reportData?.surveyDate ? moment(reportData?.surveyDate).format("YYYY-MM-DD") : "");
+        setValue('endorsementdate', reportData?.endorsementDate ? moment(reportData?.endorsementDate).format("YYYY-MM-DD") : "");
+        setValue('issuedBy', reportData?.issuedBy ? reportData?.issuedBy : "");
+        setValue('place', reportData?.place ? reportData?.place : "");
+      }
+    } catch (error) {
+      toast.error(error);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    toast.error(error);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const onSubmit = (data) => {
     console.log("Form submitted:", data);
@@ -440,25 +438,15 @@ const ReportingForm = () => {
 
 
     try {
-
       const response = await updateActivityDetails(rowId, formData);
-
       if (response?.data?.status === "success") {
-
         toast.success("Documents uploaded successfully.");
-
       } else {
-
         toast.error("Something went wrong! Please try again after some time");
-
       }
-
     } catch (err) {
-
       toast.error("Upload failed. Please check your internet or file format.");
-
       console.error(err);
-
     }
   };
 
@@ -485,7 +473,7 @@ const ReportingForm = () => {
       setLoading(true);
       const result = await getAllActivities('journalId', id);
       if (result?.data?.status === "success") {
-        setActivitiesList(result?.data?.data);
+        setTableData(result?.data?.data);
       } else {
         toast.error("Something went wrong ! Please try again after some time");
       }
@@ -596,25 +584,19 @@ const ReportingForm = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {tableData.map((row, index) => {
-                    const fallbackRow = activitiesList?.[index] || {};
-                    const mergedRow = {
-                      ...fallbackRow,
-                      ...row,
-                    };
-                    return (
+                  {tableData.map((row, index) => (
                     <TableRow
-                      key={mergedRow.id}
+                      key={row.id}
                       sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                     >
                       <TableCell component="th" scope="row">
-                        {mergedRow.id}
+                        {row.id}
                       </TableCell>
-                      <TableCell>{getSurveyTitle(mergedRow.surveyTypes.name)}</TableCell>
+                      <TableCell>{getSurveyTitle(row.surveyTypes.name)}</TableCell>
                       <TableCell>
                         <FormControl fullWidth size="small">
                           <Select
-                            value={mergedRow.status}
+                            value={row.status}
                             onChange={(e) =>
                               handleStatusChange(row.id, e.target.value)
                             }
@@ -633,14 +615,14 @@ const ReportingForm = () => {
                       </TableCell>
                       <TableCell>
                         <Controller
-                            name={`remarks-${mergedRow.id}`}
-                            control={control}
-                            defaultValue={mergedRow.remarks}
-                            render={({ field }) => (
+                          name={`remarks-${row.id}`}
+                          control={control}
+                          defaultValue={row.remarks}
+                          render={({ field }) => (
                             <>
                               <TextareaAutosize
                                 {...field}
-                                value={mergedRow.remarks}
+                                value={row.remarks}
                                 minRows={2}
                                 placeholder="Enter remarks"
                                 style={{
@@ -653,12 +635,12 @@ const ReportingForm = () => {
                                 }}
                                 onFocus={(event) => {
                                   event.target.blur();
-                                  setFullScreenRemarksVisible(mergedRow);
+                                  setFullScreenRemarksVisible(row);
                                 }}
-                                maxLength={mergedRow.maxLength || undefined}
+                                maxLength={row.maxLength || undefined}
                                 onChange={(e) => {
                                   field.onChange(e);
-                                  handleRemarksChange(mergedRow.id, e.target.value);
+                                  handleRemarksChange(row.id, e.target.value);
                                 }}
                               />
                             </>
@@ -668,18 +650,18 @@ const ReportingForm = () => {
                       <TableCell align="center">
                         <IconButton
                           color="primary"
-                          onClick={() => openDocumentUpload(mergedRow)}
+                          onClick={() => openDocumentUpload(row)}
                           size="small"
                           aria-label="upload attachments"
                         >
                           <AttachmentIcon />
-                          {mergedRow.attachments && mergedRow.attachments.length > 0 && (
+                          {row.attachments && row.attachments.length > 0 && (
                             <Typography
                               variant="caption"
                               color="primary"
                               sx={{ marginLeft: 1 }}
                             >
-                              {mergedRow.attachments.length}
+                              {row.attachments.length}
                             </Typography>
                           )}
                         </IconButton>
@@ -695,7 +677,7 @@ const ReportingForm = () => {
                         </IconButton>
                       </TableCell>
                     </TableRow>
-                  )})}
+                  ))}
                 </TableBody>
               </Table>
             </TableContainer>
