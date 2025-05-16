@@ -126,7 +126,7 @@ const Countries = () => {
       headerName: "Id",
       flex: 1,
     },
-    { field: "name", headerName: "Inspectors Name", flex: 1.5 },
+    { field: "name", headerName: "Staff / Inspector Name", flex: 1.5 },
     {
       field: "username",
       headerName: "User name",
