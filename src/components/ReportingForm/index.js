@@ -235,7 +235,8 @@ const ReportingForm = () => {
     try {
       setLoading(true);
       const result = await createReportDetail(payload);
-      if (result?.status === 'success') {
+      if (result?.data?.status === 'success') {
+        setReportDetails(result?.data?.data);
         toast.success("Report generated successfully.")
         showForm(false);
       } else {
@@ -253,8 +254,8 @@ const ReportingForm = () => {
     try {
       setLoading(true);
       const result = await updateReportDetail(reportDetails?.id, payload);
-      console.log('258 ===>', result);
       if (result?.data?.status === 'success') {
+        setReportDetails(result?.data?.data);
         toast.success("Report updated successfully.")
         showForm(false);
       } else {
@@ -283,7 +284,7 @@ const ReportingForm = () => {
       validityDate: values.validitydate ? formatDate(values.validitydate) : null,
       surveyDate: values.surveydate ? formatDate(values.surveydate) : null,
       endorsementDate: values.endorsementdate ? formatDate(values.endorsementdate) : null,
-      issuedBy: values.issuedBy || null,
+      issuedBy: Number(values.issuedBy) || null,
       place: values.place || null
     };
 
@@ -371,10 +372,12 @@ const ReportingForm = () => {
     try {
       setLoading(true);
       const result = await getSelectedActivityReportDetails(row?.id);
+      console.log('375 ===>', result);
       if (result?.data?.status === "success") {
-        setReportDetails(result?.data?.data);
+        setReportDetails(result?.data?.data[0]);
         router.push('#reportDetails');
-        const reportData = result?.data?.data;
+        const reportData = result?.data?.data[0];
+        console.log(reportData)
         setShowForm(true);
         setSelectedRow(row);
         setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
@@ -386,7 +389,7 @@ const ReportingForm = () => {
         setValue('issuedBy', reportData?.issuedBy ? reportData?.issuedBy : "");
         setValue('place', reportData?.place ? reportData?.place : "");
       } else {
-        const reportData = result?.data?.data;
+        const reportData = result?.data?.data[0];
         setShowForm(true);
         setSelectedRow(row);
         setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
@@ -873,7 +876,6 @@ const ReportingForm = () => {
                 text="Save"
               />
               <CommonButton
-                disabled={!reportDetails}
                 onClick={handleFullReportGeneration}
                 sx={{ marginTop: 3 }}
                 text="Generate Full Report"

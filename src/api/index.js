@@ -604,7 +604,7 @@ export const getAllActivityReportDetails = async (filterKey, filterValue) => {
 export const getSelectedActivityReportDetails = async (id) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/reportDetails/${id}`);
+    result = await axiosInstance.get(`/api/reportDetails?filterKey=activityId&filterValue=${id}`);
   } catch (error) {
     result = error;
   }
