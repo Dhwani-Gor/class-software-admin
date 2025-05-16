@@ -30,11 +30,12 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
 import { useRouter } from "next/navigation";
-import { createReportDetail, getAllClients, getAllJournals } from "@/api";
+import { createReportDetail, getAllActivityReportDetails, getAllClients, getAllJournals, getSelectedActivityReportDetails } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { updateActivityDetails } from "@/api";
 import { getAllActivities } from "@/api";
+import moment from "moment";
 
 // New component for Document Upload Dialog
 const DocumentUploadDialog = ({
@@ -67,8 +68,8 @@ const DocumentUploadDialog = ({
   };
 
   const renderFileIcon = (file) => {
-    const fileType = file.type.split('/')[0];
-    const fileName = file.name;
+    const fileType = file?.type?.split('/')[0];
+    // const fileName = file.name;
 
     switch (fileType) {
       case 'image':
@@ -314,12 +315,44 @@ const ReportingForm = () => {
     }
   };
 
-  const handleReportClick = (row) => {
-    router.push('#reportDetails')
-    setShowForm(row);
-    setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
-    setSelectedRow(row);
-  };
+
+  const handleReportClick = async (row) => {
+  try {
+    setLoading(true);
+    const result = await getSelectedActivityReportDetails(row?.id);
+    if (result?.data?.status === "success") {
+      router.push('#reportDetails');
+      const reportData = result?.data?.data;
+      setShowForm(true);
+      setSelectedRow(row);
+      setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
+      setSelectCertificate(reportData?.typeOfCertificate ? reportData?.typeOfCertificate : "");
+      setValue('issuancedate',  reportData?.issuanceDate ? moment(reportData?.issuanceDate).format("YYYY-MM-DD") : '');
+      setValue('validitydate', reportData?.validityDate ?  moment(reportData?.validityDate).format("YYYY-MM-DD") : '');
+      setValue('surveydate', reportData?.surveyDate ? moment(reportData?.surveyDate).format("YYYY-MM-DD") : "");
+      setValue('endorsementdate', reportData?.endorsementDate ? moment(reportData?.endorsementDate).format("YYYY-MM-DD") : "");
+      setValue('issuedBy', reportData?.issuedBy ? reportData?.issuedBy : "");
+      setValue('place',reportData?.place ? reportData?.place : "");
+    } else {
+      // toast.error("Something went wrong! Please try again after some time");
+            const reportData = result?.data?.data;
+      setShowForm(true);
+      setSelectedRow(row);
+      setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
+      setSelectCertificate(reportData?.typeOfCertificate ? reportData?.typeOfCertificate : "");
+      setValue('issuancedate',  reportData?.issuanceDate ? moment(reportData?.issuanceDate).format("YYYY-MM-DD") : '');
+      setValue('validitydate', reportData?.validityDate ?  moment(reportData?.validityDate).format("YYYY-MM-DD") : '');
+      setValue('surveydate', reportData?.surveyDate ? moment(reportData?.surveyDate).format("YYYY-MM-DD") : "");
+      setValue('endorsementdate', reportData?.endorsementDate ? moment(reportData?.endorsementDate).format("YYYY-MM-DD") : "");
+      setValue('issuedBy', reportData?.issuedBy ? reportData?.issuedBy : "");
+      setValue('place',reportData?.place ? reportData?.place : "");
+    }
+  } catch (error) {
+    toast.error(error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const onSubmit = (data) => {
     console.log("Form submitted:", data);
@@ -796,8 +829,8 @@ const ReportingForm = () => {
                       {...field}
                       label="Place of Activity"
                       placeholder="Enter place name"
-                      error={!!errors.issuedBy}
-                      helperText={errors.issuedBy?.message}
+                      error={!!errors.place}
+                      helperText={errors.place?.message}
                     />
                   )}
                 />

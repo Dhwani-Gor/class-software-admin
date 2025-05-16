@@ -18,9 +18,36 @@ import TextField from "@mui/material/TextField";
 import CommonInput from "../CommonInput";
 import CommonButton from "../CommonButton";
 import { createClient, getSpecificClient, searchowner_detail, updateClient } from "@/api";
+import { Accordion, AccordionDetails, AccordionSummary, Typography } from "@mui/material";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const schema = yup.object().shape({
   shipName: yup.string().required("Ship Name is required"),
+  imoNumber: yup.string().required("IMO number is required"),
+  classId: yup.string().required("Class Id is required"),// 
+  flag: yup.string().required("Flag is required"),
+  portOfRegistry: yup.string().required("Port of Registry is required"),
+  grossTonnage: yup.string().required("Gross Tonnage is required"),
+  netTonnage: yup.string().required("Net Tonnage is required"),
+  lengthOfShip: yup.string().required("Length of Ship is required"),
+  shipBuilder: yup.string().required("Ship Builder is required"),
+  countryOfBuild: yup.string().required("Country of Build is required"),
+  dateOfBuild: yup.string().required("Date of Build is required"),
+  keelLaidDate: yup.string(),
+  callSign: yup.string().required("Call Sign is required"),
+  officialNo: yup.string().required("Official Number is required"),
+  deadweight: yup
+    .number()
+    .required("Dead weight is required"),
+  dateOfModification: yup.string(),
+  typeOfShip: yup.string().required("Type of Ship required"),
+  dateOfBuildingContract: yup.string(),
+  dateOfDelivery: yup.string().required("Date of Delivery required"),
+  areaOfOperation: yup.string(),
+  carryingCapacity: yup.string(),
+  hullNotation: yup.string(),
+  machineryNotation: yup.string(),
+  descriptiveNotation: yup.string(),
   ownerDetails: yup.object().shape({
     nameOfCompany: yup.string().required("Company Name is required"),
     companyAddress: yup.string().required("Complete Address is required"),
@@ -92,16 +119,25 @@ const AddSurveyType = ({
       classId: "",
       flag: "",
       portOfRegistry: "",
-      classSign: "",
       grossTonnage: "",
       netTonnage: "",
-      lengthM: "",
-      breadthmldM: "",
-      depthmldM: "",
-      draught: "",
+      lengthOfShip: "",
       shipBuilder: "",
       countryOfBuild: "",
-      yearOfBuild: "",
+      dateOfBuild: "",
+      keelLaidDate: "",
+      callSign: "",
+      officialNo: "",
+      deadweight: "",
+      dateOfModification: "",
+      typeOfShip: "",
+      dateOfBuildingContract: "",
+      dateOfDelivery: "",
+      areaOfOperation: "",
+      carryingCapacity: "",
+      hullNotation: "",
+      machineryNotation: "",
+      descriptiveNotation: "",
       ownerDetails: {
         nameOfCompany: "",
         companyAddress: "",
@@ -136,7 +172,7 @@ const AddSurveyType = ({
       clearErrors("managerDetails.email");
       clearErrors("managerDetails.nameOfCompany");
       clearErrors('managerDetails.phoneNumber');
-      setManuallyEditedManager(false); // Reset flag when auto-copying
+      setManuallyEditedManager(false);
     }
 
     if (isInvoiceSameAsOwner && ownerDetails) {
@@ -149,7 +185,7 @@ const AddSurveyType = ({
       clearErrors("invoicingDetails.email");
       clearErrors("invoicingDetails.nameOfCompany");
       clearErrors('invoicingDetails.phoneNumber');
-      setManuallyEditedInvoice(false); // Reset flag when auto-copying
+      setManuallyEditedInvoice(false);
     }
 
     if (isInvoiceSameAsManager && managerDetails) {
@@ -162,14 +198,12 @@ const AddSurveyType = ({
       clearErrors("invoicingDetails.email");
       clearErrors("invoicingDetails.nameOfCompany");
       clearErrors('invoicingDetails.phoneNumber');
-      setManuallyEditedInvoice(false); // Reset flag when auto-copying
+      setManuallyEditedInvoice(false);
     }
   }, [isManagerSameAsOwner, isInvoiceSameAsOwner, isInvoiceSameAsManager, setValue, getValues, clearErrors]);
 
-  // Watch for changes in the owner's details to update copied fields
   const ownerDetail = watch("ownerDetails");
   useEffect(() => {
-    // Only copy if the checkbox is checked and we're not in manual edit mode
     if (isManagerSameAsOwner && !manuallyEditedManager && ownerDetail) {
       setValue("managerDetails", { ...ownerDetail });
     }
@@ -182,10 +216,8 @@ const AddSurveyType = ({
     }
   }, [ownerDetail, isManagerSameAsOwner, isInvoiceSameAsOwner, setValue, getValues, manuallyEditedManager, manuallyEditedInvoice]);
 
-  // Watch for changes in the manager's details to update invoicing if needed
   const managerDetail = watch("managerDetails");
   useEffect(() => {
-    // Only copy if the checkbox is checked and we're not in manual edit mode
     if (isInvoiceSameAsManager && !manuallyEditedInvoice && managerDetail) {
       setValue("invoicingDetails", {
         ...managerDetail,
@@ -196,14 +228,41 @@ const AddSurveyType = ({
 
   const fetchClient = async () => {
     try {
-      setIsDataLoading(true);
+      // setIsDataLoading(true);
       const result = await getSpecificClient(clientId);
       if (result?.status === 200 && result.data?.data) {
-        reset(result.data.data);
-        setOwnerInputValue(result.data.data.ownerDetails?.companyName || '');
-        setValue("ownerDetails.nameOfCompany", result.data.data.ownerDetails?.companyName || '');
-        setValue('managerDetails.nameOfCompany', result.data.data.managerDetails?.companyName || '');
-        setValue('invoicingDetails.nameOfCompany', result.data.data.invoicingDetails?.companyName || '');
+        // Format date fields before setting them in the form
+        const clientData = result.data.data;
+
+        // Format all date fields to YYYY-MM-DD format for input[type="date"]
+        const dateFields = [
+          "dateOfBuild",
+          "keelLaidDate",
+          "dateOfModification",
+          "dateOfBuildingContract",
+          "dateOfDelivery"
+        ];
+
+        dateFields.forEach(field => {
+          if (clientData[field]) {
+            // Parse the date and format it as YYYY-MM-DD
+            try {
+              const date = new Date(clientData[field]);
+              if (!isNaN(date.getTime())) {
+                const formattedDate = date.toISOString().split('T')[0];
+                clientData[field] = formattedDate;
+              }
+            } catch (e) {
+              console.error(`Error formatting date for ${field}:`, e);
+            }
+          }
+        });
+
+        reset(clientData);
+        setOwnerInputValue(clientData.ownerDetails?.companyName || '');
+        setValue("ownerDetails.nameOfCompany", clientData.ownerDetails?.companyName || '');
+        setValue('managerDetails.nameOfCompany', clientData.managerDetails?.companyName || '');
+        setValue('invoicingDetails.nameOfCompany', clientData.invoicingDetails?.companyName || '');
       } else {
         toast.error("Something went wrong! Please try again after some time");
       }
@@ -213,7 +272,9 @@ const AddSurveyType = ({
     } finally {
       setIsDataLoading(false);
     }
-  };
+  }
+
+  console.log('255 ===>', clientId);
 
   useEffect(() => {
     if (clientId) {
@@ -289,16 +350,25 @@ const AddSurveyType = ({
         classId: data.classId || "",
         flag: data.flag || "",
         portOfRegistry: data.portOfRegistry || "",
-        classSign: data.classSign || "",
         grossTonnage: data.grossTonnage || "",
         netTonnage: data.netTonnage || "",
-        lengthM: data.lengthM || "",
-        breadthmldM: data.breadthmldM || "",
-        depthmldM: data.depthmldM || "",
-        draught: data.draught || "",
+        lengthOfShip: data.lengthOfShip || "",
         shipBuilder: data.shipBuilder || "",
         countryOfBuild: data.countryOfBuild || "",
-        yearOfBuild: data.yearOfBuild || "",
+        dateOfBuild: data.dateOfBuild || "",
+        keelLaidDate: data.keelLaidDate || "",
+        callSign: data.callSign || "",
+        officialNo: data.officialNo || "",
+        deadweight: data.deadweight || "",
+        dateOfModification: data.dateOfModification || "",
+        typeOfShip: data.typeOfShip || "",
+        dateOfBuildingContract: data.dateOfBuildingContract || "",
+        dateOfDelivery: data.dateOfDelivery || "",
+        areaOfOperation: data.areaOfOperation || "",
+        carryingCapacity: data.carryingCapacity || "",
+        hullNotation: data.hullNotation || "",
+        machineryNotation: data.machineryNotation || "",
+        descriptiveNotation: data.descriptiveNotation || "",
         ownerDetails: {
           nameOfCompany: data.ownerDetails.nameOfCompany,
           companyAddress: data.ownerDetails.companyAddress,
@@ -578,6 +648,145 @@ const AddSurveyType = ({
     </Stack>
   );
 
+  const renderShipParticularsSection = () => {
+    // State to control Accordion expansion
+    const [expanded, setExpanded] = useState(false);
+
+    const handleAccordionChange = () => {
+      setExpanded(!expanded);
+    };
+
+    return (
+      <Accordion
+        expanded={expanded}
+        onChange={handleAccordionChange}
+        sx={{
+          borderRadius: '15px',
+          '&:before': {
+            display: 'none',
+          }
+        }}
+      >
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          aria-controls="ship-particulars-content"
+          id="ship-particulars-header"
+          sx={{
+            bgcolor: expanded && '#f5f5f5',
+            borderRadius: "15px",
+            minHeight: 56
+          }}
+        >
+          <Typography fontWeight={600}>Ship Particulars</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Grid2 container spacing={3}>
+            {/* Fields with string type */}
+            {[
+              "shipName", "imoNumber", "classId", "flag", "portOfRegistry",
+              "grossTonnage", "netTonnage", "lengthOfShip",
+              "shipBuilder", "countryOfBuild", "areaOfOperation",
+              "carryingCapacity", "hullNotation", "machineryNotation",
+              "descriptiveNotation", "typeOfShip"
+            ].map((field) => (
+              <Grid2 size={{ xs: 4 }}>
+                <Controller
+                  name={field}
+                  control={control}
+                  render={({ field: controllerField }) => (
+                    <CommonInput
+                      {...controllerField}
+                      fullWidth
+                      variant="standard"
+                      label={field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
+                      placeholder={`Enter ${field.replace(/([A-Z])/g, " ")}`}
+                      disabled={!editingAllowed}
+                      error={Boolean(errors?.[field])}
+                      helperText={errors?.[field]?.message}
+                    />
+                  )}
+                />
+              </Grid2>
+            ))}
+
+            {/* Fields with number type */}
+            {["deadweight"].map((field) => (
+              <Grid2 size={{ xs: 4 }}>
+                <Controller
+                  name={field}
+                  control={control}
+                  render={({ field: controllerField }) => (
+                    <CommonInput
+                      {...controllerField}
+                      fullWidth
+                      type="number"
+                      variant="standard"
+                      label={field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
+                      placeholder={`Enter ${field.replace(/([A-Z])/g, " ")}`}
+                      disabled={!editingAllowed}
+                      error={Boolean(errors?.[field])}
+                      helperText={errors?.[field]?.message}
+                    />
+                  )}
+                />
+              </Grid2>
+            ))}
+
+            {/* Fields with date/string type */}
+            {[
+              "dateOfBuild", "keelLaidDate", "dateOfModification",
+              "dateOfBuildingContract", "dateOfDelivery"
+            ].map((field) => (
+              <Grid2 size={{ xs: 4 }}>
+                <Controller
+                  name={field}
+                  control={control}
+                  render={({ field: controllerField }) => (
+                    <CommonInput
+                      {...controllerField}
+                      fullWidth
+                      type="date"
+                      variant="standard"
+                      label={field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
+                      placeholder={`Enter ${field.replace(/([A-Z])/g, " ")}`}
+                      InputLabelProps={{ shrink: true }}
+                      disabled={!editingAllowed}
+                      error={Boolean(errors?.[field])}
+                      helperText={errors?.[field]?.message}
+                    />
+                  )}
+                />
+              </Grid2>
+            ))}
+
+            {/* Special fields: Call Sign, Official No */}
+            {["callSign", "officialNo"].map((field) => (
+              <Grid2 size={{ xs: 4 }}>
+                <Controller
+                  name={field}
+                  control={control}
+                  render={({ field: controllerField }) => (
+                    <CommonInput
+                      {...controllerField}
+                      fullWidth
+                      variant="standard"
+                      label={field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
+                      placeholder={`Enter ${field.replace(/([A-Z])/g, " ")}`}
+                      disabled={!editingAllowed}
+                      error={Boolean(errors?.[field])}
+                      helperText={errors?.[field]?.message}
+                    />
+                  )}
+                />
+              </Grid2>
+            ))}
+          </Grid2>
+        </AccordionDetails>
+      </Accordion>
+    )
+  };
+
+
   return (
     <Box>
       {isDataLoading ? (
@@ -594,298 +803,7 @@ const AddSurveyType = ({
           <Paper sx={{ padding: "20px", borderRadius: "15px" }}>
             <form onSubmit={handleSubmit(onSubmit)}>
               <Grid2 container spacing={3} marginBottom={3}>
-                <Grid2 size={{ xs: 4 }}>
-                  <Controller
-                    name="shipName"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        fullWidth
-                        variant="standard"
-                        label="Ship Name *"
-                        placeholder="Enter Ship Name"
-                        disabled={!editingAllowed}
-                        error={Boolean(errors?.shipName)}
-                        helperText={errors?.shipName?.message}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                    )}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 4 }}>
-                  <Controller
-                    name="imoNumber"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        fullWidth
-                        variant="standard"
-                        label="IMO Number"
-                        placeholder="Enter IMO Number"
-                        disabled={!editingAllowed}
-                        error={Boolean(errors?.imoNumber)}
-                        helperText={errors?.imoNumber?.message}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                    )}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 4 }}>
-                  <Controller
-                    name="classId"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        fullWidth
-                        variant="standard"
-                        label="Class ID"
-                        placeholder="Enter Class ID"
-                        disabled={!editingAllowed}
-                        error={Boolean(errors?.classId)}
-                        helperText={errors?.classId?.message}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                    )}
-                  />
-                </Grid2>
-
-                <Grid2 size={{ xs: 4 }}>
-                  <Controller
-                    name="flag"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        fullWidth
-                        variant="standard"
-                        label="Flag"
-                        placeholder="Enter Flag"
-                        disabled={!editingAllowed}
-                        error={Boolean(errors?.flag)}
-                        helperText={errors?.flag?.message}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                    )}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 4 }}>
-                  <Controller
-                    name="portOfRegistry"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        fullWidth
-                        variant="standard"
-                        label="Port of Registry"
-                        placeholder="Enter Port of Registry"
-                        disabled={!editingAllowed}
-                        error={Boolean(errors?.portOfRegistry)}
-                        helperText={errors?.portOfRegistry?.message}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                    )}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 4 }}>
-                  <Controller
-                    name="classSign"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        fullWidth
-                        variant="standard"
-                        label="Class Sign"
-                        placeholder="Enter Class Sign"
-                        disabled={!editingAllowed}
-                        error={Boolean(errors?.classSign)}
-                        helperText={errors?.classSign?.message}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                    )}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 4 }}>
-                  <Controller
-                    name="grossTonnage"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        fullWidth
-                        variant="standard"
-                        type="number"
-                        label="Gross Tonnage"
-                        placeholder="Enter Gross Tonnage"
-                        disabled={!editingAllowed}
-                        error={Boolean(errors?.grossTonnage)}
-                        helperText={errors?.grossTonnage?.message}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                    )}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 4 }}>
-                  <Controller
-                    name="netTonnage"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        fullWidth
-                        variant="standard"
-                        type="number"
-                        label="Net Tonnage"
-                        placeholder="Enter Net Tonnage"
-                        disabled={!editingAllowed}
-                        error={Boolean(errors?.netTonnage)}
-                        helperText={errors?.netTonnage?.message}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                    )}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 4 }}>
-                  <Controller
-                    name="lengthM"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        fullWidth
-                        variant="standard"
-                        type="number"
-                        label="Length (m)"
-                        placeholder="Enter Length (m)"
-                        disabled={!editingAllowed}
-                        error={Boolean(errors?.lengthM)}
-                        helperText={errors?.lengthM?.message}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                    )}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 4 }}>
-                  <Controller
-                    name="breadthmldM"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        fullWidth
-                        variant="standard"
-                        type="number"
-                        label="Breadthmld. (m)"
-                        placeholder="Enter Breadthmld (m)"
-                        disabled={!editingAllowed}
-                        error={Boolean(errors?.breadthmldM)}
-                        helperText={errors?.breadthmldM?.message}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                    )}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 4 }}>
-                  <Controller
-                    name="depthmldM"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        fullWidth
-                        variant="standard"
-                        type="number"
-                        label="Depthmld. (m)"
-                        placeholder="Enter Breadthmld (m)"
-                        disabled={!editingAllowed}
-                        error={Boolean(errors?.depthmldM)}
-                        helperText={errors?.depthmldM?.message}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                    )}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 4 }}>
-                  <Controller
-                    name="draught"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        fullWidth
-                        variant="standard"
-                        label="Draught"
-                        placeholder="Enter Draught"
-                        disabled={!editingAllowed}
-                        error={Boolean(errors?.draught)}
-                        helperText={errors?.draught?.message}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                    )}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 4 }}>
-                  <Controller
-                    name="shipBuilder"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        fullWidth
-                        variant="standard"
-                        label="Ship Builder"
-                        placeholder="Enter Ship Builder"
-                        disabled={!editingAllowed}
-                        error={Boolean(errors?.shipBuilder)}
-                        helperText={errors?.shipBuilder?.message}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                    )}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 4 }}>
-                  <Controller
-                    name="countryOfBuild"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        fullWidth
-                        variant="standard"
-                        label="Country of Build"
-                        placeholder="Enter Country of Build"
-                        disabled={!editingAllowed}
-                        error={Boolean(errors?.countryOfBuild)}
-                        helperText={errors?.countryOfBuild?.message}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                    )}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 4 }}>
-                  <Controller
-                    name="yearOfBuild"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        fullWidth
-                        variant="standard"
-                        type="number"
-                        label="Year of Build"
-                        placeholder="Enter Year of Build"
-                        disabled={!editingAllowed}
-                        error={Boolean(errors?.yearOfBuild)}
-                        helperText={errors?.yearOfBuild?.message}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      />
-                    )}
-                  />
-                </Grid2>
+                {renderShipParticularsSection()}
               </Grid2>
 
               <Grid2 container spacing={4}>
