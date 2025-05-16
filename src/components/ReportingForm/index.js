@@ -30,9 +30,12 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
 import { useRouter } from "next/navigation";
-import { createReportDetail, getAllClients, getAllJournals } from "@/api";
+import { createReportDetail, getAllActivityReportDetails, getAllClients, getAllJournals, getSelectedActivityReportDetails } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
+import { updateActivityDetails } from "@/api";
+import { getAllActivities } from "@/api";
+import moment from "moment";
 
 // New component for Document Upload Dialog
 const DocumentUploadDialog = ({
@@ -65,8 +68,8 @@ const DocumentUploadDialog = ({
   };
 
   const renderFileIcon = (file) => {
-    const fileType = file.type.split('/')[0];
-    const fileName = file.name;
+    const fileType = file?.type?.split('/')[0];
+    // const fileName = file.name;
 
     switch (fileType) {
       case 'image':
@@ -108,9 +111,9 @@ const DocumentUploadDialog = ({
                   <Typography>
                     {renderFileIcon(file)} {file.name}
                   </Typography>
-                  <IconButton onClick={() => handleRemoveDocument(index)} size="small">
+                  {/* <IconButton onClick={() => handleRemoveDocument(index)} size="small">
                     <DeleteIcon fontSize="small" />
-                  </IconButton>
+                  </IconButton> */}
                 </Box>
               ))}
             </Box>
@@ -166,6 +169,8 @@ const ReportingForm = () => {
   const [showForm, setShowForm] = useState(false);
   const [tableData, setTableData] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);
+  const [journalId, setjournalId] = useState(null);
+  const [activitiesList, setActivitiesList] = useState([]);
 
   // New state for document uploads
   const [documentUploadDialogOpen, setDocumentUploadDialogOpen] = useState(false);
@@ -205,9 +210,10 @@ const ReportingForm = () => {
     });
   };
   const handleReportNumber = (event) => {
+    setShowTable(false)
     const selectedJournalTypeId = event.target.value;
     const selectedIndex = journals.findIndex(journal => journal.journalTypeId === selectedJournalTypeId);
-
+    setjournalId(journals[selectedIndex]?.id)
     setSelectedReportNumber({
       journalTypeId: selectedJournalTypeId,
       index: selectedIndex !== -1 ? selectedIndex : null
@@ -222,6 +228,7 @@ const ReportingForm = () => {
 
   const handleShowTable = () => {
     setShowTable(true);
+    getAllActivity(journalId)
   };
 
   const generateReport = async (payload) => {
@@ -265,15 +272,25 @@ const ReportingForm = () => {
     generateReport(payload);
   };
 
-  const handleStatusChange = (id, value) => {
+  const handleStatusChange = async (id, value) => {
     setTableData((prevData) =>
       prevData.map((item) =>
         item.id === id ? { ...item, status: value } : item
       )
     );
+    try {
+      const response = await updateActivityDetails(id, { status: value });
+      if (response?.data?.status === 'success') {
+        toast.success("Status updated successfully.");
+      } else {
+        toast.error("Something went wrong ! Please try again after some time")
+      }
+    } catch (error) {
+      toast.error("Something went wrong ! Please try again after some time")
+    }
   };
 
-  const handleRemarksChange = (id, value) => {
+  const handleRemarksChange = async (id, value) => {
     const row = tableData.find((item) => item.id === id);
 
     // Check if max length is defined and enforce it
@@ -286,14 +303,56 @@ const ReportingForm = () => {
         item.id === id ? { ...item, remarks: value } : item
       )
     );
+    try {
+      const response = await updateActivityDetails(id, { remarks: value });
+      if (response?.data?.status === 'success') {
+        toast.success("Remarks updated successfully.");
+      } else {
+        toast.error("Something went wrong ! Please try again after some time")
+      }
+    } catch (error) {
+      toast.error("Something went wrong ! Please try again after some time", error)
+    }
   };
 
-  const handleReportClick = (row) => {
-    router.push('#reportDetails')
-    setShowForm(row);
-    setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
-    setSelectedRow(row);
-  };
+
+  const handleReportClick = async (row) => {
+  try {
+    setLoading(true);
+    const result = await getSelectedActivityReportDetails(row?.id);
+    if (result?.data?.status === "success") {
+      router.push('#reportDetails');
+      const reportData = result?.data?.data;
+      setShowForm(true);
+      setSelectedRow(row);
+      setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
+      setSelectCertificate(reportData?.typeOfCertificate ? reportData?.typeOfCertificate : "");
+      setValue('issuancedate',  reportData?.issuanceDate ? moment(reportData?.issuanceDate).format("YYYY-MM-DD") : '');
+      setValue('validitydate', reportData?.validityDate ?  moment(reportData?.validityDate).format("YYYY-MM-DD") : '');
+      setValue('surveydate', reportData?.surveyDate ? moment(reportData?.surveyDate).format("YYYY-MM-DD") : "");
+      setValue('endorsementdate', reportData?.endorsementDate ? moment(reportData?.endorsementDate).format("YYYY-MM-DD") : "");
+      setValue('issuedBy', reportData?.issuedBy ? reportData?.issuedBy : "");
+      setValue('place',reportData?.place ? reportData?.place : "");
+    } else {
+      // toast.error("Something went wrong! Please try again after some time");
+            const reportData = result?.data?.data;
+      setShowForm(true);
+      setSelectedRow(row);
+      setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
+      setSelectCertificate(reportData?.typeOfCertificate ? reportData?.typeOfCertificate : "");
+      setValue('issuancedate',  reportData?.issuanceDate ? moment(reportData?.issuanceDate).format("YYYY-MM-DD") : '');
+      setValue('validitydate', reportData?.validityDate ?  moment(reportData?.validityDate).format("YYYY-MM-DD") : '');
+      setValue('surveydate', reportData?.surveyDate ? moment(reportData?.surveyDate).format("YYYY-MM-DD") : "");
+      setValue('endorsementdate', reportData?.endorsementDate ? moment(reportData?.endorsementDate).format("YYYY-MM-DD") : "");
+      setValue('issuedBy', reportData?.issuedBy ? reportData?.issuedBy : "");
+      setValue('place',reportData?.place ? reportData?.place : "");
+    }
+  } catch (error) {
+    toast.error(error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const onSubmit = (data) => {
     console.log("Form submitted:", data);
@@ -357,7 +416,7 @@ const ReportingForm = () => {
     return TYPE_OF_SURVEYS.find(ele => ele.value === val)?.label || val;
   }
 
-  const handleDocumentUpload = (rowId, documents) => {
+  const handleDocumentUpload = async (rowId, documents) => {
     setTableData((prevData) =>
       prevData.map((item) =>
         item.id === rowId
@@ -370,6 +429,37 @@ const ReportingForm = () => {
           : item
       )
     );
+    const formData = new FormData();
+
+    documents.forEach((doc, index) => {
+
+      formData.append("attachments", doc);
+
+    });
+
+
+
+    try {
+
+      const response = await updateActivityDetails(rowId, formData);
+
+      if (response?.data?.status === "success") {
+
+        toast.success("Documents uploaded successfully.");
+
+      } else {
+
+        toast.error("Something went wrong! Please try again after some time");
+
+      }
+
+    } catch (err) {
+
+      toast.error("Upload failed. Please check your internet or file format.");
+
+      console.error(err);
+
+    }
   };
 
   const handleRemoveDocument = (rowId, documentIndex) => {
@@ -389,6 +479,27 @@ const ReportingForm = () => {
     setCurrentRowForDocuments(row);
     setDocumentUploadDialogOpen(true);
   };
+
+  const getAllActivity = async (id) => {
+    try {
+      setLoading(true);
+      const result = await getAllActivities('journalId', id);
+      if (result?.data?.status === "success") {
+        setActivitiesList(result?.data?.data);
+      } else {
+        toast.error("Something went wrong ! Please try again after some time");
+      }
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error);
+    }
+  };
+
+  useEffect(() => {
+    getAllActivity(journalId)
+  }, [journalId]);
+
 
   return (
     <Box mt={2}>
@@ -485,19 +596,25 @@ const ReportingForm = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {tableData.map((row, index) => (
+                  {tableData.map((row, index) => {
+                    const fallbackRow = activitiesList?.[index] || {};
+                    const mergedRow = {
+                      ...fallbackRow,
+                      ...row,
+                    };
+                    return (
                     <TableRow
-                      key={row.id}
+                      key={mergedRow.id}
                       sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                     >
                       <TableCell component="th" scope="row">
-                        {row.id}
+                        {mergedRow.id}
                       </TableCell>
-                      <TableCell>{getSurveyTitle(row.surveyTypes.name)}</TableCell>
+                      <TableCell>{getSurveyTitle(mergedRow.surveyTypes.name)}</TableCell>
                       <TableCell>
                         <FormControl fullWidth size="small">
                           <Select
-                            value={row.status}
+                            value={mergedRow.status}
                             onChange={(e) =>
                               handleStatusChange(row.id, e.target.value)
                             }
@@ -516,14 +633,14 @@ const ReportingForm = () => {
                       </TableCell>
                       <TableCell>
                         <Controller
-                          name={`remarks-${row.id}`}
-                          control={control}
-                          defaultValue={row.remarks}
-                          render={({ field }) => (
+                            name={`remarks-${mergedRow.id}`}
+                            control={control}
+                            defaultValue={mergedRow.remarks}
+                            render={({ field }) => (
                             <>
                               <TextareaAutosize
                                 {...field}
-                                value={row.remarks}
+                                value={mergedRow.remarks}
                                 minRows={2}
                                 placeholder="Enter remarks"
                                 style={{
@@ -536,12 +653,12 @@ const ReportingForm = () => {
                                 }}
                                 onFocus={(event) => {
                                   event.target.blur();
-                                  setFullScreenRemarksVisible(row);
+                                  setFullScreenRemarksVisible(mergedRow);
                                 }}
-                                maxLength={row.maxLength || undefined}
+                                maxLength={mergedRow.maxLength || undefined}
                                 onChange={(e) => {
                                   field.onChange(e);
-                                  handleRemarksChange(row.id, e.target.value);
+                                  handleRemarksChange(mergedRow.id, e.target.value);
                                 }}
                               />
                             </>
@@ -551,18 +668,18 @@ const ReportingForm = () => {
                       <TableCell align="center">
                         <IconButton
                           color="primary"
-                          onClick={() => openDocumentUpload(row)}
+                          onClick={() => openDocumentUpload(mergedRow)}
                           size="small"
                           aria-label="upload attachments"
                         >
                           <AttachmentIcon />
-                          {row.attachments && row.attachments.length > 0 && (
+                          {mergedRow.attachments && mergedRow.attachments.length > 0 && (
                             <Typography
                               variant="caption"
                               color="primary"
                               sx={{ marginLeft: 1 }}
                             >
-                              {row.attachments.length}
+                              {mergedRow.attachments.length}
                             </Typography>
                           )}
                         </IconButton>
@@ -578,7 +695,7 @@ const ReportingForm = () => {
                         </IconButton>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )})}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -712,8 +829,8 @@ const ReportingForm = () => {
                       {...field}
                       label="Place of Activity"
                       placeholder="Enter place name"
-                      error={!!errors.issuedBy}
-                      helperText={errors.issuedBy?.message}
+                      error={!!errors.place}
+                      helperText={errors.place?.message}
                     />
                   )}
                 />
