@@ -30,7 +30,7 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
 import { useRouter } from "next/navigation";
-import { createReportDetail, generateFullReport, getAllActivityReportDetails, getAllClients, getAllJournals, getSelectedActivityReportDetails, updateReportDetail } from "@/api";
+import { createReportDetail, generateFullReport, getAllActivityReportDetails, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, updateReportDetail } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { updateActivityDetails } from "@/api";
@@ -175,6 +175,10 @@ const ReportingForm = () => {
   // New state for document uploads
   const [documentUploadDialogOpen, setDocumentUploadDialogOpen] = useState(false);
   const [currentRowForDocuments, setCurrentRowForDocuments] = useState(null);
+  const [endorsedIssuedBy, setEndorsedIssuedBy] = useState([]);
+  const [selectSurveyor, setSelectSurveyor] = useState("");
+
+  console.log(endorsedIssuedBy,"endorsedIssuedBy")
 
   const {
     control,
@@ -224,6 +228,10 @@ const ReportingForm = () => {
 
   const handleCertificate = (event) => {
     setSelectCertificate(event.target.value);
+  };
+
+  const handleSurveyor = (event) => {
+    setSelectSurveyor(event.target.value);
   };
 
   const handleShowTable = () => {
@@ -284,7 +292,7 @@ const ReportingForm = () => {
       validityDate: values.validitydate ? formatDate(values.validitydate) : null,
       surveyDate: values.surveydate ? formatDate(values.surveydate) : null,
       endorsementDate: values.endorsementdate ? formatDate(values.endorsementdate) : null,
-      issuedBy: Number(values.issuedBy) || null,
+      issuedBy: Number(selectSurveyor) || null,
       place: values.place || null
     };
 
@@ -537,8 +545,31 @@ const ReportingForm = () => {
 
   useEffect(() => {
     getAllActivity(journalId)
+    getEndorsedIssuedByList(journalId);
+
   }, [journalId]);
 
+console.log(journalId,"journalId")
+console.log(endorsedIssuedBy,"endorsedIssuedBy 544")
+  const getEndorsedIssuedByList = async (journalId) => {
+    try {
+    
+      const result = await getEndorsedIssuedBy('journalId', journalId);
+      console.log(result,"result")
+      if (result?.data?.status === "success") {
+        setEndorsedIssuedBy(result?.data.uniqueSurveyors);
+      } else {
+        toast.error("Something went wrong ! Please try again after some time");
+      }
+    } catch (error) {
+      toast.error(error);
+    }
+  };
+
+  const surveyorOptions = endorsedIssuedBy.map((surveyor) => ({
+    label: surveyor.name,
+    value: surveyor.id,
+  }));
 
   return (
     <Box mt={2}>
@@ -839,7 +870,7 @@ const ReportingForm = () => {
                 />
               </Grid2>
               <Grid2 item size={{ md: 3 }}>
-                <Controller
+                {/* <Controller
                   name="issuedBy"
                   control={control}
                   render={({ field }) => (
@@ -851,7 +882,27 @@ const ReportingForm = () => {
                       helperText={errors.issuedBy?.message}
                     />
                   )}
-                />
+                /> */}
+                <FormControl fullWidth sx={{ maxWidth: 255 }}>
+                  <Typography variant="body1" mb={1.5}>
+                  Endorsed / Issued By
+                  </Typography>
+                  <Select
+                    value={selectSurveyor}
+                    onChange={handleSurveyor}
+                    displayEmpty
+                    name="issuedBy"
+                  >
+                    <MenuItem value="" disabled>
+                      Select Endorsed / Issued By
+                    </MenuItem>
+                    {surveyorOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Grid2>
               <Grid2 item size={{ md: 3 }}>
                 <Controller
