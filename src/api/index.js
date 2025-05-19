@@ -620,3 +620,13 @@ export const generateFullReport = async (payload) => {
   }
   return result;
 };
+
+export const getEndorsedIssuedBy = async (filterKey, filterValue) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/visitDetails?filterKey=${filterKey}&filterValue=${1}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
