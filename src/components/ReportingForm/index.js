@@ -84,6 +84,8 @@ const DocumentUploadDialog = ({
     }
   };
 
+  console.log(documents, "documents")
+
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>Upload Documents</DialogTitle>
@@ -133,7 +135,7 @@ const DocumentUploadDialog = ({
                   mb={1}
                 >
                   <Typography>
-                    {renderFileIcon(doc)} {doc.fileName}
+                    {renderFileIcon(doc)} {doc.name}
                   </Typography>
                   {/* <IconButton onClick={() => onRemoveDocument(index)} size="small">
                     <DeleteIcon fontSize="small" />
@@ -177,8 +179,7 @@ const ReportingForm = () => {
   const [currentRowForDocuments, setCurrentRowForDocuments] = useState(null);
   const [endorsedIssuedBy, setEndorsedIssuedBy] = useState([]);
   const [selectSurveyor, setSelectSurveyor] = useState("");
-
-  console.log(endorsedIssuedBy,"endorsedIssuedBy")
+  console.log(selectSurveyor,"selectSurveyor")
 
   const {
     control,
@@ -245,7 +246,7 @@ const ReportingForm = () => {
       const result = await createReportDetail(payload);
       if (result?.data?.status === 'success') {
         setReportDetails(result?.data?.data);
-        toast.success("Report generated successfully.")
+        toast.success("Report saved successfully.")
         showForm(false);
       } else {
         toast.error("Something went wrong ! Please try again after some time")
@@ -320,7 +321,7 @@ const ReportingForm = () => {
         document.body.removeChild(link);
         setLoading(false);
       }
-      console.log('280 ===>', result.data.data);
+      console.log('280 ===>', result);
       if (result?.data?.status === 'success') {
         toast.success("Report generated successfully.")
         showForm(false);
@@ -395,6 +396,7 @@ const ReportingForm = () => {
         setValue('surveydate', reportData?.surveyDate ? moment(reportData?.surveyDate).format("YYYY-MM-DD") : "");
         setValue('endorsementdate', reportData?.endorsementDate ? moment(reportData?.endorsementDate).format("YYYY-MM-DD") : "");
         setValue('issuedBy', reportData?.issuedBy ? reportData?.issuedBy : "");
+        setSelectSurveyor(reportData?.issuedBy.toString() ? reportData?.issuedBy.toString() : "");
         setValue('place', reportData?.place ? reportData?.place : "");
       } else {
         const reportData = result?.data?.data[0];
@@ -407,6 +409,7 @@ const ReportingForm = () => {
         setValue('surveydate', reportData?.surveyDate ? moment(reportData?.surveyDate).format("YYYY-MM-DD") : "");
         setValue('endorsementdate', reportData?.endorsementDate ? moment(reportData?.endorsementDate).format("YYYY-MM-DD") : "");
         setValue('issuedBy', reportData?.issuedBy ? reportData?.issuedBy : "");
+        setSelectSurveyor(reportData?.issuedBy ? reportData?.issuedBy : "");
         setValue('place', reportData?.place ? reportData?.place : "");
       }
     } catch (error) {
