@@ -17,7 +17,7 @@ import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import CommonInput from "../CommonInput";
 import CommonButton from "../CommonButton";
-import { createClient, getSpecificClient, searchowner_detail, updateClient } from "@/api";
+import { createClient, getSpecificClient, searchinvoicing_detail, searchmanager_detail, searchowner_detail, updateClient } from "@/api";
 import { Accordion, AccordionDetails, AccordionSummary, Typography } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
@@ -92,7 +92,11 @@ const AddSurveyType = ({
   const [isInvoiceSameAsManager, setIsInvoiceSameAsManager] = useState(false);
   const [ownerOptions, setOwnerOptions] = useState([]);
   const [ownerInputValue, setOwnerInputValue] = useState('');
+  const [managerOptions, setManagerOptions] = useState([]);
+  const [managerInputValue, setManagerInputValue] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [invoicingOptions, setInvoicingOptions] = useState([]);
+  const [invoicingInputValue, setInvoicingInputValue] = useState('');
 
   // Flags to track manual edits
   const [manuallyEditedManager, setManuallyEditedManager] = useState(false);
@@ -165,7 +169,8 @@ const AddSurveyType = ({
   useEffect(() => {
     const ownerDetails = getValues("ownerDetails");
     const managerDetails = getValues("managerDetails");
-
+    const invoicingDetails = getValues("invoicingDetails");
+    console.log(invoicingDetails,1234567)
     if (isManagerSameAsOwner && ownerDetails) {
       setValue("managerDetails", { ...ownerDetails });
       clearErrors('managerDetails.companyAddress');
@@ -263,6 +268,7 @@ const AddSurveyType = ({
         setValue("ownerDetails.nameOfCompany", clientData.ownerDetails?.companyName || '');
         setValue('managerDetails.nameOfCompany', clientData.managerDetails?.companyName || '');
         setValue('invoicingDetails.nameOfCompany', clientData.invoicingDetails?.companyName || '');
+        
       } else {
         toast.error("Something went wrong! Please try again after some time");
       }
@@ -311,16 +317,79 @@ const AddSurveyType = ({
     }
   };
 
+  const handleManagerSearch = async (searchQuery) => {
+    if (!searchQuery || searchQuery.trim() === '') {
+      setManagerOptions([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const result = await searchmanager_detail(searchQuery);
+      if (result?.status === 200 && result?.data) {
+        setManagerOptions(
+          (result.data.data || []).map((item) => ({
+            label: item.companyName,
+            value: item.companyName,
+            ...item,
+          }))
+        );
+      } else {
+        setManagerOptions([]);
+      }
+    } catch (error) {
+      console.error("Error searching manager details:", error);
+      setManagerOptions([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleInvoicingSearch = async (searchQuery) => {
+    if (!searchQuery || searchQuery.trim() === '') {
+      setInvoicingOptions([]);
+      return;
+    }
+    console.log(searchQuery,"searchQuery")
+    setIsSearching(true);
+    try {
+      const result = await searchinvoicing_detail(searchQuery);
+      console.log("result ===>", result);
+      if (result?.status === 200 && result?.data) {
+        setInvoicingOptions(
+          (result.data.data || []).map((item) => ({
+            label: item.companyName,
+            value: item.companyName,
+            ...item,
+          }))
+        );
+      } else {
+        setInvoicingOptions([]);
+      }
+    } catch (error) {
+      console.error("Error searching invoicing details:", error);
+      setInvoicingOptions([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   // Debounce search function
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (ownerInputValue) {
         handleOwnerSearch(ownerInputValue);
       }
+      if(managerInputValue){
+        handleManagerSearch(managerInputValue);
+      }
+      if(invoicingInputValue){
+        handleInvoicingSearch(invoicingInputValue);
+      }
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [ownerInputValue]);
+  }, [ownerInputValue, managerInputValue, invoicingInputValue]);
 
   const snackbarClose = () => {
     setSnackBar({ open: false, message: "" });
@@ -525,12 +594,191 @@ const AddSurveyType = ({
     />
   );
 
+  
+  const renderManageCompanyField = () => (
+    <Controller
+      name="managerDetails.nameOfCompany"
+      control={control}
+      render={({ field }) => (
+        <Autocomplete
+          freeSolo
+          options={managerOptions}
+          loading={isSearching}
+          value={field.value || ""}
+          inputValue={managerInputValue}
+          disabled={!editingAllowed}
+          onInputChange={(event, newInputValue) => {
+            setManagerInputValue(newInputValue);
+
+            // Directly update the form value when typing
+            if (newInputValue) {
+              field.onChange(newInputValue);
+            }
+          }}
+          onChange={(event, newValue) => {
+            if (typeof newValue === 'string') {
+              field.onChange(newValue);
+            } else if (newValue && newValue.label) {
+              field.onChange(newValue.value);
+
+              // Update other owner fields
+              setValue('managerDetails.companyAddress', newValue.companyAddress || '');
+              setValue('managerDetails.phoneNumber', newValue.phoneNumber || '');
+              setValue('managerDetails.email', newValue.email || '');
+
+              // If checkboxes are checked, propagate the changes
+              if (isManagerSameAsOwner) {
+                setValue('managerDetails.nameOfCompany', newValue.nameOfCompany || '');
+                setValue('managerDetails.companyAddress', newValue.companyAddress || '');
+                setValue('managerDetails.phoneNumber', newValue.phoneNumber || '');
+                setValue('managerDetails.email', newValue.email || '');
+              }
+
+              if (isInvoiceSameAsOwner) {
+                setValue('invoicingDetails.nameOfCompany', newValue.nameOfCompany || '');
+                setValue('invoicingDetails.companyAddress', newValue.companyAddress || '');
+                setValue('invoicingDetails.phoneNumber', newValue.phoneNumber || '');
+                setValue('invoicingDetails.email', newValue.email || '');
+              }
+            } else if (newValue === null) {
+              // Handle clearing the field
+              field.onChange('');
+            }
+          }}
+          getOptionLabel={(option) => {
+            if (typeof option === 'string') return option;
+            return option.label || '';
+          }}
+
+          // getOptionLabel={(option) => {
+          //   // Value selected with enter, right from the input
+          //   if (typeof option === 'string') {
+          //     return option;
+          //   }
+          //   return option?.nameOfCompany || '';
+          // }}
+          renderInput={(params) => (
+            <CommonInput
+              {...params}
+              variant="standard"
+              label="Company Name *"
+              placeholder="Company Name"
+              disabled={!editingAllowed}
+              error={Boolean(errors?.ownerDetails?.nameOfCompany)}
+              helperText={errors?.ownerDetails?.nameOfCompany?.message}
+              InputProps={{
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {isSearching ? <CircularProgress color="inherit" size={20} /> : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              }}
+            />
+          )}
+        />
+      )}
+    />
+  );
+
+  const renderInvoicingCompanyField = () => (
+    <Controller
+      name="invoicingDetails.nameOfCompany"
+      control={control}
+      render={({ field }) => (
+        <Autocomplete
+          freeSolo
+          options={invoicingOptions}
+          loading={isSearching}
+          value={field.value || ""}
+          inputValue={invoicingInputValue}
+          disabled={!editingAllowed}
+          onInputChange={(event, newInputValue) => {
+            setInvoicingInputValue(newInputValue);
+
+            // Directly update the form value when typing
+            if (newInputValue) {
+              field.onChange(newInputValue);
+            }
+          }}
+          onChange={(event, newValue) => {
+            if (typeof newValue === 'string') {
+              field.onChange(newValue);
+            } else if (newValue && newValue.label) {
+              field.onChange(newValue.value);
+              console.log(newValue, "newValue");
+              // Update other owner fields
+              setValue('invoicingDetails.companyAddress', newValue.companyAddress || '');
+              setValue('invoicingDetails.phoneNumber', newValue.phoneNumber || '');
+              setValue('invoicingDetails.email', newValue.email || '');
+
+              // If checkboxes are checked, propagate the changes
+              if (isInvoiceSameAsOwner) {
+                setValue('managerDetails.nameOfCompany', newValue.nameOfCompany || '');
+                setValue('managerDetails.companyAddress', newValue.companyAddress || '');
+                setValue('managerDetails.phoneNumber', newValue.phoneNumber || '');
+                setValue('managerDetails.email', newValue.email || '');
+              }
+
+              if (isInvoiceSameAsOwner) {
+                setValue('invoicingDetails.nameOfCompany', newValue.nameOfCompany || '');
+                setValue('invoicingDetails.companyAddress', newValue.companyAddress || '');
+                setValue('invoicingDetails.phoneNumber', newValue.phoneNumber || '');
+                setValue('invoicingDetails.email', newValue.email || '');
+                setValue('invoicingDetails.gstNo', newValue.gstNo || 'hwlo');
+              }
+            } else if (newValue === null) {
+              // Handle clearing the field
+              field.onChange('');
+            }
+          }}
+          getOptionLabel={(option) => {
+            if (typeof option === 'string') return option;
+            return option.label || '';
+          }}
+
+          // getOptionLabel={(option) => {
+          //   // Value selected with enter, right from the input
+          //   if (typeof option === 'string') {
+          //     return option;
+          //   }
+          //   return option?.nameOfCompany || '';
+          // }}
+          renderInput={(params) => (
+            <CommonInput
+              {...params}
+              variant="standard"
+              label="Company Name *"
+              placeholder="Company Name"
+              disabled={!editingAllowed}
+              error={Boolean(errors?.ownerDetails?.nameOfCompany)}
+              helperText={errors?.ownerDetails?.nameOfCompany?.message}
+              InputProps={{
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {isSearching ? <CircularProgress color="inherit" size={20} /> : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              }}
+            />
+          )}
+        />
+      )}
+    />
+  );
   // Common section renderer
   const renderContactSection = (sectionKey) => (
     <Stack gap={2}>
       {sectionKey === "ownerDetails"
         ? renderOwnerCompanyField()
-        : (
+        : sectionKey === "managerDetails"
+          ? renderManageCompanyField()
+          : sectionKey === "invoicingDetails"
+            ? renderInvoicingCompanyField()
+            : (
           <Controller
             name={`${sectionKey}.nameOfCompany`}
             control={control}
@@ -895,7 +1143,7 @@ const AddSurveyType = ({
                             setIsInvoiceSameAsManager(checked);
                             if (checked) {
                               // Immediately copy the values
-                              const currentManagerDetails = getValues("managerDetails");
+                              const currentManagerDetails = getValues("invoicingDetails");
                               setValue("invoicingDetails", {
                                 nameOfCompany: currentManagerDetails.nameOfCompany || "",
                                 companyAddress: currentManagerDetails.companyAddress || "",

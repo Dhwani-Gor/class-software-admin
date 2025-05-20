@@ -317,6 +317,26 @@ export const searchowner_detail = async (searchQuery) => {
   return result;
 };
 
+export const searchmanager_detail = async (searchQuery) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/search/managerDetails?search=${searchQuery}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const searchinvoicing_detail = async (searchQuery) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/search/invoicingDetails?search=${searchQuery}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
 export const getClientHistory = async (clientId) => {
   let result;
   try {
