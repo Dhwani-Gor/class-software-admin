@@ -32,31 +32,31 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
   const [formValues, setFormValues] = useState({
     name: "",
     type: "",
-    validity : "",
+    validity: "",
     document: null,
   });
   const [errors, setErrors] = useState({
     name: false,
     type: false,
-    validity : "",
+    validity: "",
     document: false,
   });
+  const [additionalKeys, setAdditionalKeys] = useState([]);
 
-const handleSelectChange = (e) => {
-  const { name, value } = e.target;
-  setFormValues((prev) => ({
-    ...prev,
-    [name]: value,
-  }));
-
-  // Clear error on change
-  if (errors[name]) {
-    setErrors((prev) => ({
+  const handleSelectChange = (e) => {
+    const { name, value } = e.target;
+    setFormValues((prev) => ({
       ...prev,
-      [name]: false,
+      [name]: value,
     }));
-  }
-};
+
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: false,
+      }));
+    }
+  };
 
 
   useEffect(() => {
@@ -69,14 +69,17 @@ const handleSelectChange = (e) => {
     try {
       setLoading(true);
       const result = await getDocumentDetails(documentId);
+      console.log(result.data.data.fields)
       if (result?.status === 200) {
         const documentData = result.data.data;
+        console.log(documentData.filePath, "documentData")
         setFormValues({
           name: documentData.name || "",
           type: documentData.type || "",
-          validity : documentData.validity || "",
-          document : documentData.document || "",
+          validity: documentData.validity || "",
+          document: documentData.filePath || "",
         });
+        setAdditionalKeys(documentData.fields);
       } else {
         toast.error("Error fetching document details");
       }
@@ -107,7 +110,7 @@ const handleSelectChange = (e) => {
     const newErrors = {
       name: !formValues.name.trim(),
       type: !formValues.type.trim(),
-      validity : !formValues.validity.trim(),
+      validity: !formValues.validity.trim(),
       document: !formValues.document,
     };
 
@@ -132,9 +135,19 @@ const handleSelectChange = (e) => {
         formData.append('name', formValues.name);
         formData.append('type', formValues.type);
         formData.append('validity', formValues.validity);
-  if (formValues.document instanceof File) {
-    formData.append("document", formValues.document);
-  }
+        if (formValues.document instanceof File) {
+          formData.append("document", formValues.document);
+        }
+        const fieldNames = [];
+        additionalKeys.forEach((key) => {
+          if (key.trim()) {
+            fieldNames.push(key);
+          }
+        });
+
+        if (fieldNames.length > 0) {
+          formData.append("fields", fieldNames.join(","));
+        }
 
         console.log("formData ==>", [...formData.entries()])
         response = await createDocument(formData);
@@ -157,7 +170,7 @@ const handleSelectChange = (e) => {
       } else {
         toast.error(
           response?.response?.data?.message ||
-            "Something went wrong! Please try again."
+          "Something went wrong! Please try again."
         );
       }
       setLoading(false);
@@ -182,6 +195,22 @@ const handleSelectChange = (e) => {
     );
   }
 
+  const handleAdditionalKeyChange = (index, value) => {
+    const updatedKeys = [...additionalKeys];
+    updatedKeys[index] = value;
+    setAdditionalKeys(updatedKeys);
+  };
+
+  const handleAddKey = () => {
+    const lastKey = additionalKeys[additionalKeys.length - 1];
+    if (lastKey?.trim() !== "") {
+      setAdditionalKeys((prev) => [...prev, ""]);
+    } else {
+      toast.error("Please fill the previous key before adding another.");
+    }
+  };
+
+  console.log(formValues, "formValues")
   return (
     <CommonCard>
       <Box component="form" onSubmit={handleSubmit} noValidate>
@@ -264,6 +293,25 @@ const handleSelectChange = (e) => {
             )}
           </FormControl>
 
+          <Typography variant="h6">Additional Fields</Typography>
+          <Stack spacing={2}>
+            {additionalKeys.length > 0 && additionalKeys.map((key, index) => (
+              <TextField
+                key={index}
+                label={`Key ${index + 1}`}
+                value={key}
+                onChange={(e) => handleAdditionalKeyChange(index, e.target.value)}
+                fullWidth
+              />
+            ))}
+
+            <CommonButton
+              text="Add Key"
+              variant="outlined"
+              onClick={handleAddKey}
+              sx={{ alignSelf: "flex-start" }}
+            />
+          </Stack>
           <FormControl fullWidth error={errors.document}>
             <Box
               component="label"
@@ -283,7 +331,7 @@ const handleSelectChange = (e) => {
                 <CloudUploadIcon />
                 <Typography variant="body2">
                   {formValues.document
-                    ? formValues.document.name
+                    ? formValues.document
                     : "Drag files or browse to upload"}
                 </Typography>
               </Box>
