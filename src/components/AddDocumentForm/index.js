@@ -210,7 +210,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
     }
   };
 
-  console.log(formValues, "formValues")
+  console.log(formValues.document, "formValues")
   return (
     <CommonCard>
       <Box component="form" onSubmit={handleSubmit} noValidate>
@@ -331,7 +331,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
                 <CloudUploadIcon />
                 <Typography variant="body2">
                   {formValues.document
-                    ? formValues.document
+                    ? formValues.document.name
                     : "Drag files or browse to upload"}
                 </Typography>
               </Box>
