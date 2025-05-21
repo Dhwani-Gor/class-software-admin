@@ -97,8 +97,8 @@ const JournalEntryForm = ({ journalId = null }) => {
   const [journalData, setJournalData] = useState(null);
   const [formData, setFormData] = useState(null);
   const [isJournalLocked, setIsJournalLocked] = useState(false);
-  const [surveyTypes,setSurveyTypes] = useState([]);
-    const [surveyors, setSurveyors] = useState([]);
+  const [surveyTypes, setSurveyTypes] = useState([]);
+  const [surveyors, setSurveyors] = useState([]);
 
   // console.log('101 ===>', activitiesList);
 
@@ -140,7 +140,7 @@ const JournalEntryForm = ({ journalId = null }) => {
 
   const handleCloseModal = () => setOpenModal(false);
 
-  const getAllVisitData= async (journalId) => {
+  const getAllVisitData = async (journalId) => {
     try {
       setLoading(true);
       const result = await getAllVisitDetails('journalId', journalId);
@@ -218,30 +218,30 @@ const JournalEntryForm = ({ journalId = null }) => {
 
   const handleSaveVisit = (visitData) => {
     if (isJournalLocked) return;
-    if(journalId){
+    if (journalId) {
       if (editVisit) {
         const payload = {
-          journalId : visitData.journalId,
-          location : visitData.location,
-          timeFrom : visitData.timeFrom,
+          journalId: visitData.journalId,
+          location: visitData.location,
+          timeFrom: visitData.timeFrom,
           timeTo: visitData.timeTo,
-          date : visitData.date
-         }
+          date: visitData.date
+        }
         // console.log(payload, "edit visit data")
-        updateVisitData(payload,visitData.id)
+        updateVisitData(payload, visitData.id)
       } else {
         const payload = {
-          journalId : journalId,
-          location :  `${visitData.location.nameOfDiacritics} (${visitData.location.name}, ${visitData.location.country})`,
-          timeFrom : visitData.timeFrom,
+          journalId: journalId,
+          location: `${visitData.location.nameOfDiacritics} (${visitData.location.name}, ${visitData.location.country})`,
+          timeFrom: visitData.timeFrom,
           timeTo: visitData.timeTo,
-          date : visitData.date,
-          initialOfSurveyors : visitData.initialOfSurveyors,
-         }
+          date: visitData.date,
+          initialOfSurveyors: visitData.initialOfSurveyors,
+        }
         addVisitData(payload);
       }
     }
-    else{
+    else {
       if (editVisit) {
         setVisitList(
           visitList.map((visit) =>
@@ -293,7 +293,7 @@ const JournalEntryForm = ({ journalId = null }) => {
 
   const handleCloseActivityModal = () => setOpenActivityModal(false);
 
-    const getAllActivity = async (journalId) => {
+  const getAllActivity = async (journalId) => {
     try {
       setLoading(true);
       const result = await getAllActivities('journalId', journalId);
@@ -355,7 +355,7 @@ const JournalEntryForm = ({ journalId = null }) => {
     }
   };
   const deleteActivities = async (activity) => {
-    if(activity.id){
+    if (activity.id) {
       try {
         setLoading(true);
         const result = await deleteActivity(activity.id);
@@ -373,8 +373,8 @@ const JournalEntryForm = ({ journalId = null }) => {
     }
     else {
       setActivitiesList(
-  activitiesList.filter((list) => list.typeOfSurvey !== activity.typeOfSurvey)
-);
+        activitiesList.filter((list) => list.typeOfSurvey !== activity.typeOfSurvey)
+      );
     }
   };
 
@@ -406,13 +406,13 @@ const JournalEntryForm = ({ journalId = null }) => {
           activitiesList.map((activity) =>
             activity.surveyTypes.name === editActivity.surveyTypes.name
               ? {
-                  ...activity,
-                  ...activityData,
-                  id: editActivity.id,
-                  surveyTypes: {
-                    name: survey.name,
-                  },
-                }
+                ...activity,
+                ...activityData,
+                id: editActivity.id,
+                surveyTypes: {
+                  name: survey.name,
+                },
+              }
               : activity
           )
         );
@@ -475,9 +475,9 @@ const JournalEntryForm = ({ journalId = null }) => {
       setLoading(true);
       const result = await getSurveyTypes();
       // if (result?.status === 200) {
-        setSurveyTypes(result.data.data);
+      setSurveyTypes(result.data.data);
       // } else {
-        // toast.error("Something went wrong ! Please try again after some time");
+      // toast.error("Something went wrong ! Please try again after some time");
       // }
       setLoading(false);
     } catch (error) {
@@ -486,20 +486,20 @@ const JournalEntryForm = ({ journalId = null }) => {
     }
   };
 
-    const fetchSurveyors = async () => {
-      try {
-        const res = await getAllUsers();
-        if (res?.data?.data) {
-          const flattenedData = res?.data?.data?.filter(
-            (item) => item?.roleId === "2"
-          );
-          const sortedData = flattenedData?.sort((a, b) => a?.id - b?.id);
-          setSurveyors(sortedData);
-        }
-      } catch (error) {
-        console.error("Error fetching Surveyors:", error);
-      } 
-    };
+  const fetchSurveyors = async () => {
+    try {
+      const res = await getAllUsers();
+      if (res?.data?.data) {
+        const flattenedData = res?.data?.data?.filter(
+          (item) => item?.roleId === "2"
+        );
+        const sortedData = flattenedData?.sort((a, b) => a?.id - b?.id);
+        setSurveyors(sortedData);
+      }
+    } catch (error) {
+      console.error("Error fetching Surveyors:", error);
+    }
+  };
 
   const fetchJournal = async () => {
     try {
@@ -508,7 +508,7 @@ const JournalEntryForm = ({ journalId = null }) => {
       if (result?.status === 200) {
         const journalData = result.data.data;
         setJournalData(journalData);
-        
+
         // Check if journal is locked
         setIsJournalLocked(userInfo?.journalUnlockRights || userInfo?.roleId === '1' ? false : journalData.isLocked);
 
@@ -561,7 +561,7 @@ const JournalEntryForm = ({ journalId = null }) => {
 
   const handleSubmitJournal = async (data, lockJournal = false) => {
     if (isJournalLocked) return;
-    
+
     try {
       const payload = {
         userId: userInfo?.id,
@@ -601,7 +601,7 @@ const JournalEntryForm = ({ journalId = null }) => {
 
   const onSubmit = (data) => {
     if (isJournalLocked) return;
-    
+
     // Store the form data to use later
     setFormData(data);
 
@@ -683,18 +683,21 @@ const JournalEntryForm = ({ journalId = null }) => {
             <Stack
               direction="row"
               alignItems="center"
-              justifyContent={"space-between"}
+              justifyContent="space-between"
+              display="inline"
             >
-              <Box>
-                <Typography fontSize={"18px"} fontWeight={"600"}>
-                  Type of Journal
-                </Typography>
-                <Stack>
+              <Box display="fliex" justifyContent="space-between" alignItems="center" mt={2} gap={2}>
+                {/* Left Side: Label + Radio Group */}
+                <Box>
+                  <Typography fontSize="18px" fontWeight={600} mb={1}>
+                    Type of Journal {" "}
+                    <span style={{ color: 'red' }}>*</span>
+                  </Typography>
                   <Controller
                     name="type"
                     control={control}
                     render={({ field }) => (
-                      <FormControl component="fieldset" fullWidth>
+                      <FormControl component="fieldset">
                         <RadioGroup
                           {...field}
                           row
@@ -714,12 +717,8 @@ const JournalEntryForm = ({ journalId = null }) => {
                               control={
                                 <Radio
                                   sx={{
-                                    "&.Mui-checked": {
-                                      color: "black",
-                                    },
-                                    "&:focus-within": {
-                                      outline: "none",
-                                    },
+                                    "&.Mui-checked": { color: "black" },
+                                    "&:focus-within": { outline: "none" },
                                   }}
                                 />
                               }
@@ -728,15 +727,22 @@ const JournalEntryForm = ({ journalId = null }) => {
                           ))}
                         </RadioGroup>
                         {Boolean(errors.type) && (
-                          <FormHelperText error>
-                            {errors.type?.message}
-                          </FormHelperText>
+                          <FormHelperText error>{errors.type?.message}</FormHelperText>
                         )}
                       </FormControl>
                     )}
                   />
-                </Stack>
+                </Box>
+
+                {/* Right Side: Save/Update Button */}
+                {!isJournalLocked && (
+                  <Box>
+                    <CommonButton type="submit" text={journalId ? "Update" : "Save"} />
+                  </Box>
+                )}
               </Box>
+
+
               {journalData && (
                 <Box>
                   <Typography>Report Number</Typography>
@@ -811,7 +817,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                     render={({ field }) => (
                       <CommonInput
                         {...field}
-                        label="Requested by"
+                        label={<>Requested By <span style={{ color: 'red' }}>*</span></>}
                         placeholder="Requested by"
                         error={!!errors.requestedBy}
                         helperText={errors.requestedBy?.message}
@@ -828,7 +834,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                       <CommonInput
                         {...field}
                         type="date"
-                        label="Date"
+                        label={<>Date <span style={{ color: 'red' }}>*</span></>}
                         error={!!errors.date}
                         helperText={errors.date?.message}
                         disabled={isJournalLocked}
@@ -864,7 +870,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                     <TableHead sx={{ backgroundColor: "lightgray" }}>
                       <TableRow>
                         <TableCell>SL No.</TableCell>
-                        <TableCell align="right">Date</TableCell>
+                        <TableCell align="right">Date </TableCell>
                         <TableCell align="right">Time from</TableCell>
                         <TableCell align="right">Time to</TableCell>
                         <TableCell align="right">Location</TableCell>
@@ -885,7 +891,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                           <TableCell align="right">{visit.timeTo}</TableCell>
                           <TableCell align="right">{visit.location}</TableCell>
                           <TableCell align="right">
-  {visit?.surveyors?.map(s => s.name).join(", ")}
+                            {visit?.surveyors?.map(s => s.name).join(", ")}
                           </TableCell>
                           {!isJournalLocked && (
                             <TableCell align="right">
@@ -970,16 +976,7 @@ const JournalEntryForm = ({ journalId = null }) => {
             </CommonCard>
           </Box>
 
-          {!isJournalLocked && (
-            <Box mt={2}>
-              <CommonCard>
-                <CommonButton
-                  type="submit"
-                  text={journalId ? "Update" : "Save"}
-                />
-              </CommonCard>
-            </Box>
-          )}
+
         </form>
       )}
       <CommonConfirmationDialog

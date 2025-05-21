@@ -12,6 +12,7 @@ import {
   Autocomplete,
   TextField,
   Chip,
+  Typography,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -56,20 +57,20 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
   });
 
 
-useEffect(() => {
-  if (defaultValues) {
-    reset({
-      ...defaultValues,
-      location: null, 
-      initialOfSurveyors: [], 
-    });
+  useEffect(() => {
+    if (defaultValues) {
+      reset({
+        ...defaultValues,
+        location: null,
+        initialOfSurveyors: [],
+      });
 
-    if (defaultValues.surveyors?.length && surveyors.length) {
-      const surveyorIds = defaultValues.surveyors.map((s) => s.id);
-      setValue("initialOfSurveyors", surveyorIds);
+      if (defaultValues.surveyors?.length && surveyors.length) {
+        const surveyorIds = defaultValues.surveyors.map((s) => s.id);
+        setValue("initialOfSurveyors", surveyorIds);
+      }
     }
-  }
-}, [defaultValues, locationOptions, surveyors, reset, setValue]);
+  }, [defaultValues, locationOptions, surveyors, reset, setValue]);
 
 
   const onCloseModal = () => {
@@ -148,7 +149,7 @@ useEffect(() => {
                 <CommonInput
                   {...field}
                   type="date"
-                  label="Date"
+                  label={<>Date <span style={{ color: 'red' }}>*</span></>}
                   error={!!errors.date}
                   helperText={errors.date?.message}
                 />
@@ -163,7 +164,7 @@ useEffect(() => {
                 <CommonInput
                   {...field}
                   type="time"
-                  label="Time From"
+                  label={<>Time From <span style={{ color: 'red' }}>*</span></>}
                   error={!!errors.timeFrom}
                   helperText={errors.timeFrom?.message}
                 />
@@ -178,7 +179,7 @@ useEffect(() => {
                 <CommonInput
                   {...field}
                   type="time"
-                  label="Time To"
+                  label={<>Time To <span style={{ color: 'red' }}>*</span></>}
                   error={!!errors.timeTo}
                   helperText={errors.timeTo?.message}
                 />
@@ -192,9 +193,9 @@ useEffect(() => {
               error={Boolean(errors.location)}
             >
               <FormLabel component="legend" sx={{ mb: 1 }}>
-                <span>
-                  Location <span style={{ color: "red" }}>*</span>
-                </span>
+                <Typography component="span" color="#000000d6" fontWeight={'500'}>
+                  Location <Typography component="span" color="error">*</Typography>
+                </Typography>
               </FormLabel>
               <Controller
                 name="location"
@@ -251,10 +252,11 @@ useEffect(() => {
               error={Boolean(errors.initialOfSurveyors)}
             >
               <FormLabel component="legend" sx={{ mb: 1 }}>
-                <span>
-                  Initial Of Surveyors <span style={{ color: "red" }}>*</span>
-                </span>
+                <Typography component="span" color="#000000d6" fontWeight={'500'}>
+                  Initial Of Surveyors <Typography component="span" color="error">*</Typography>
+                </Typography>
               </FormLabel>
+
               <Controller
                 name="initialOfSurveyors"
                 control={control}

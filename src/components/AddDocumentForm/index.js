@@ -43,8 +43,8 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
     validity: "",
     document: false,
   });
-  const [additionalKeys, setAdditionalKeys] = useState([]);
-  const [removedKeys, setRemovedKeys] = useState([]);
+  const [additionalFields, setAdditionalFields] = useState([]);
+  const [removedFields, setRemovedFields] = useState([]);
 
   const handleSelectChange = (e) => {
     const { name, value } = e.target;
@@ -81,7 +81,76 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
           validity: documentData.validity || "",
           document: documentData.filePath || "",
         });
-        setAdditionalKeys(documentData.fields || []);
+        
+        // Handle the fields data
+        if (documentData.fields) {
+          try {
+            if (Array.isArray(documentData.fields) && 
+                documentData.fields.length > 0 && 
+                typeof documentData.fields[0] === 'string' &&
+                documentData.fields[0].includes('\"attribute\"')) {
+              
+              const joinedJson = documentData.fields.join('');
+              try {
+                const parsedFields = JSON.parse(joinedJson);
+                setAdditionalFields(parsedFields);
+              } catch (jsonError) {
+                console.error("Error parsing joined JSON:", jsonError);
+                
+                const fieldsData = [];
+                let currentField = {};
+                
+                for (const fragment of documentData.fields) {
+                  if (fragment.includes('[{\"attribute\"') || fragment.includes('{\"attribute\"')) {
+                    const attrMatch = fragment.match(/\"attribute\":\"([^\"]*)\"/);
+                    if (attrMatch && attrMatch[1]) {
+                      currentField.attribute = attrMatch[1];
+                    }
+                  }
+                  
+                  if (fragment.includes('\"label\"')) {
+                    const labelMatch = fragment.match(/\"label\":\"([^\"]*)\"/);
+                    if (labelMatch && labelMatch[1]) {
+                      currentField.label = labelMatch[1];
+                      if (currentField.attribute) {
+                        fieldsData.push({...currentField});
+                        currentField = {};
+                      }
+                    }
+                  }
+                }
+                
+                setAdditionalFields(fieldsData);
+              }
+            } else if (typeof documentData.fields === 'object' && !Array.isArray(documentData.fields)) {
+              setAdditionalFields([documentData.fields]);
+            } else if (typeof documentData.fields === 'string') {
+              try {
+                const parsedFields = JSON.parse(documentData.fields);
+                setAdditionalFields(Array.isArray(parsedFields) ? parsedFields : [parsedFields]);
+              } catch (e) {
+                const fieldArray = documentData.fields.split(',').map(field => ({
+                  attribute: field.trim(),
+                  label: field.trim()
+                }));
+                setAdditionalFields(fieldArray);
+              }
+            } else if (Array.isArray(documentData.fields)) {
+              const formattedFields = documentData.fields.map(field => {
+                if (typeof field === 'string' && !field.includes('\"attribute\"')) {
+                  return { attribute: field.trim(), label: field.trim() };
+                } else if (typeof field === 'object') {
+                  return field;
+                }
+                return { attribute: "", label: "" };
+              });
+              setAdditionalFields(formattedFields);
+            }
+          } catch (error) {
+            console.error("Error parsing fields:", error);
+            setAdditionalFields([]);
+          }
+        }
       } else {
         toast.error("Error fetching document details");
       }
@@ -89,6 +158,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
     } catch (error) {
       setLoading(false);
       toast.error("Something went wrong while fetching document details");
+      console.error(error);
     }
   };
 
@@ -132,7 +202,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
       let response;
 
       if (mode === "create") {
-        console.log("form values", formValues)
+        console.log("form values", formValues);
         const formData = new FormData();
         formData.append('name', formValues.name);
         formData.append('type', formValues.type);
@@ -140,18 +210,18 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
         if (formValues.document instanceof File) {
           formData.append("document", formValues.document);
         }
-        const fieldNames = [];
-        additionalKeys.forEach((key) => {
-          if (key.trim()) {
-            fieldNames.push(key);
+        
+        // Add fields as a JSON string if there are any
+        if (additionalFields.length > 0) {
+          const validFields = additionalFields.filter(
+            field => field.attribute.trim() && field.label.trim()
+          );
+          if (validFields.length > 0) {
+            formData.append("fields", JSON.stringify(validFields));
           }
-        });
-
-        if (fieldNames.length > 0) {
-          formData.append("fields", fieldNames.join(","));
         }
 
-        console.log("formData ==>", [...formData.entries()])
+        console.log("formData ==>", [...formData.entries()]);
         response = await createDocument(formData);
       } else {
         const payload = {
@@ -159,19 +229,19 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
           ...(editReason && { reason: editReason }),
         };
 
-        const fieldNames = [];
-        additionalKeys.forEach((key) => {
-          if (key.trim()) {
-            fieldNames.push(key);
+        // Add fields as a JSON array if there are any
+        if (additionalFields.length > 0) {
+          const validFields = additionalFields.filter(
+            field => field.attribute.trim() && field.label.trim()
+          );
+          if (validFields.length > 0) {
+            payload.fields = JSON.stringify(validFields);
           }
-        });
-
-        if (fieldNames.length > 0) {
-          payload.fields = fieldNames.join(",");
         }
 
-        if (removedKeys.length > 0) {
-          payload.removedFields = removedKeys.join(",");
+        // Handle removed fields
+        if (removedFields.length > 0) {
+          payload.removedFields = JSON.stringify(removedFields);
         }
 
         response = await updateDocument(documentId, payload);
@@ -212,36 +282,42 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
     );
   }
 
-  const handleAdditionalKeyChange = (index, value) => {
-    const updatedKeys = [...additionalKeys];
-    updatedKeys[index] = value;
-    setAdditionalKeys(updatedKeys);
+  const handleFieldChange = (index, field, value) => {
+    const updatedFields = [...additionalFields];
+    updatedFields[index] = {
+      ...updatedFields[index],
+      [field]: value
+    };
+    setAdditionalFields(updatedFields);
   };
 
-  const handleAddKey = () => {
-    const lastKey = additionalKeys[additionalKeys.length - 1];
-    if (!additionalKeys.length || lastKey?.trim() !== "") {
-      setAdditionalKeys((prev) => [...prev, ""]);
+  const handleAddField = () => {
+    const lastField = additionalFields[additionalFields.length - 1];
+    if (!additionalFields.length || 
+        (lastField?.attribute?.trim() !== "" && lastField?.label?.trim() !== "")) {
+      setAdditionalFields((prev) => [...prev, { attribute: "", label: "" }]);
     } else {
-      toast.error("Please fill the previous key before adding another.");
+      toast.error("Please fill both attribute and label before adding another field.");
     }
   };
 
-  const handleDeleteKey = (index) => {
-    // Store the deleted key for backend update if in edit mode
-    if (mode === "update" && additionalKeys[index]?.trim()) {
-      setRemovedKeys(prev => [...prev, additionalKeys[index]]);
+  const handleDeleteField = (index) => {
+    // Store the deleted field for backend update if in edit mode
+    if (mode === "update" && additionalFields[index]) {
+      setRemovedFields(prev => [...prev, additionalFields[index]]);
     }
 
-    // Remove the key from UI
-    const updatedKeys = [...additionalKeys];
-    updatedKeys.splice(index, 1);
-    setAdditionalKeys(updatedKeys);
+    // Remove the field from UI
+    const updatedFields = [...additionalFields];
+    updatedFields.splice(index, 1);
+    setAdditionalFields(updatedFields);
 
     toast.success("Field removed successfully");
   };
 
-  console.log(formValues.document, "formValues")
+  console.log(formValues.document, "formValues");
+  console.log(additionalFields, "additionalFields");
+
   return (
     <CommonCard>
       <Box component="form" onSubmit={handleSubmit} noValidate>
@@ -313,35 +389,6 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
             )}
           </FormControl>
 
-          <Typography variant="h6">Additional Fields</Typography>
-          <Stack spacing={2}>
-            {Array.isArray(additionalKeys) && additionalKeys.length > 0 &&
-              additionalKeys.map((key, index) => (
-                <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <TextField
-                    label={`Key ${index + 1}`}
-                    value={key}
-                    onChange={(e) => handleAdditionalKeyChange(index, e.target.value)}
-                    fullWidth
-                  />
-                  <IconButton
-                    color="error"
-                    onClick={() => handleDeleteKey(index)}
-                    aria-label="delete field"
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-              ))}
-
-            <CommonButton
-              text="Add Key"
-              variant="outlined"
-              onClick={handleAddKey}
-              sx={{ alignSelf: "flex-start" }}
-            />
-          </Stack>
-
           <FormControl fullWidth error={errors.document}>
             <Box
               component="label"
@@ -405,6 +452,41 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
               </Typography>
             )}
           </FormControl>
+
+          <Typography variant="h6">Additional Fields</Typography>
+          <Stack spacing={2}>
+            {Array.isArray(additionalFields) && additionalFields.length > 0 &&
+              additionalFields.map((field, index) => (
+                <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <TextField
+                    label="Attribute"
+                    value={field.attribute || ""}
+                    onChange={(e) => handleFieldChange(index, "attribute", e.target.value)}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Label"
+                    value={field.label || ""}
+                    onChange={(e) => handleFieldChange(index, "label", e.target.value)}
+                    fullWidth
+                  />
+                  <IconButton
+                    color="error"
+                    onClick={() => handleDeleteField(index)}
+                    aria-label="delete field"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              ))}
+
+            <CommonButton
+              text="Add Attribute"
+              variant="outlined"
+              onClick={handleAddField}
+              sx={{ alignSelf: "flex-start" }}
+            />
+          </Stack>
 
           <Stack
             direction="row"

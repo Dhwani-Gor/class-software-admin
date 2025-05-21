@@ -580,7 +580,7 @@ const AddSurveyType = ({
             <CommonInput
               {...params}
               variant="standard"
-              label="Company Name *"
+              label={<>Company Name <span style={{ color: 'red' }}>*</span></>}
               placeholder="Company Name"
               disabled={!editingAllowed}
               error={Boolean(errors?.ownerDetails?.nameOfCompany)}
@@ -668,7 +668,7 @@ const AddSurveyType = ({
             <CommonInput
               {...params}
               variant="standard"
-              label="Company Name *"
+              label={<>Company Name <span style={{ color: 'red' }}>*</span></>}
               placeholder="Company Name"
               disabled={!editingAllowed}
               error={Boolean(errors?.ownerDetails?.nameOfCompany)}
@@ -758,7 +758,7 @@ const AddSurveyType = ({
             <CommonInput
               {...params}
               variant="standard"
-              label="Company Name *"
+              label={<>Company Name <span style={{ color: 'red' }}>*</span></>}
               placeholder="Company Name"
               disabled={!editingAllowed}
               error={Boolean(errors?.ownerDetails?.nameOfCompany)}
@@ -796,7 +796,7 @@ const AddSurveyType = ({
                 {...field}
                 fullWidth
                 variant="standard"
-                label="Company Name *"
+                label="Company Name"
                 placeholder="Company Name"
                 disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) ||
                   (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
@@ -819,7 +819,7 @@ const AddSurveyType = ({
             {...field}
             fullWidth
             variant="standard"
-            label="Complete Address *"
+            label={<>Complete Address <span style={{ color: 'red' }}>*</span></>}
             placeholder="Enter Complete Address"
             disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) ||
               (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
@@ -841,7 +841,7 @@ const AddSurveyType = ({
             fullWidth
             variant="standard"
             type="text"
-            label="Phone Number *"
+            label={<>Phone Number <span style={{ color: 'red' }}>*</span></>}
             placeholder="Enter Phone Number"
             disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) ||
               (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
@@ -870,7 +870,7 @@ const AddSurveyType = ({
             fullWidth
             variant="standard"
             type="email"
-            label="Email *"
+            label={<>Email <span style={{ color: 'red' }}>*</span></>}
             placeholder="Enter Email Address"
             disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) ||
               (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
@@ -955,8 +955,13 @@ const AddSurveyType = ({
                       {...controllerField}
                       fullWidth
                       variant="standard"
-                      label={field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
-                      placeholder={`Enter ${field.replace(/([A-Z])/g, " ")}`}
+                      label={
+                        <>
+                          {field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
+                          <span style={{ color: 'red' }}> *</span>
+                        </>
+                      }
+                      placeholder={`Enter ${field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}`}
                       disabled={!editingAllowed}
                       error={Boolean(errors?.[field])}
                       helperText={errors?.[field]?.message}
@@ -978,8 +983,13 @@ const AddSurveyType = ({
                       fullWidth
                       type="number"
                       variant="standard"
-                      label={field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
-                      placeholder={`Enter ${field.replace(/([A-Z])/g, " ")}`}
+                      label={
+                        <>
+                          {field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
+                          <span style={{ color: 'red' }}> *</span>
+                        </>
+                      }
+                      placeholder={`Enter ${field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}`}
                       disabled={!editingAllowed}
                       error={Boolean(errors?.[field])}
                       helperText={errors?.[field]?.message}
@@ -1004,8 +1014,13 @@ const AddSurveyType = ({
                       fullWidth
                       type="date"
                       variant="standard"
-                      label={field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
-                      placeholder={`Enter ${field.replace(/([A-Z])/g, " ")}`}
+                      label={
+                        <>
+                          {field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
+                          <span style={{ color: 'red' }}> *</span>
+                        </>
+                      }
+                      placeholder={`Enter ${field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}`}
                       InputLabelProps={{ shrink: true }}
                       disabled={!editingAllowed}
                       error={Boolean(errors?.[field])}
@@ -1027,8 +1042,13 @@ const AddSurveyType = ({
                       {...controllerField}
                       fullWidth
                       variant="standard"
-                      label={field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
-                      placeholder={`Enter ${field.replace(/([A-Z])/g, " ")}`}
+                      label={
+                        <>
+                          {field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
+                          <span style={{ color: 'red' }}> *</span>
+                        </>
+                      }
+                      placeholder={`Enter ${field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}`}
                       disabled={!editingAllowed}
                       error={Boolean(errors?.[field])}
                       helperText={errors?.[field]?.message}

@@ -37,7 +37,8 @@ import { updateActivityDetails } from "@/api";
 import { getAllActivities } from "@/api";
 import moment from "moment";
 import { Stack } from "@mui/material";
-
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from 'yup'
 // New component for Document Upload Dialog
 const DocumentUploadDialog = ({
   open,
@@ -179,7 +180,7 @@ const ReportingForm = () => {
   const [currentRowForDocuments, setCurrentRowForDocuments] = useState(null);
   const [endorsedIssuedBy, setEndorsedIssuedBy] = useState([]);
   const [selectSurveyor, setSelectSurveyor] = useState("");
-  console.log(selectSurveyor,"selectSurveyor")
+  console.log(selectSurveyor, "selectSurveyor")
 
   const {
     control,
@@ -244,12 +245,42 @@ const ReportingForm = () => {
     try {
       setLoading(true);
       const result = await createReportDetail(payload);
+      console.log(result, "result")
       if (result?.data?.status === 'success') {
         setReportDetails(result?.data?.data);
         toast.success("Report saved successfully.")
         showForm(false);
       } else {
-        toast.error("Something went wrong ! Please try again after some time")
+        const rawData = result?.config?.data;
+        const data = JSON.parse(rawData);
+
+        const requiredFields = {
+          typeOfCertificate: 'Type of certificate',
+          issuanceDate: 'Issuance date',
+          validityDate: 'Validity date',
+          surveyDate: 'Survey date',
+          endorsementDate: 'Endorsement date',
+          issuedBy: 'Issued by',
+          place: 'Place',
+        };
+
+        const missingFields = Object.entries(requiredFields)
+          .filter(([key]) => !data[key])
+          .map(([_, label]) => `• ${label} is missing`);
+
+        if (missingFields.length > 0) {
+          toast.error(
+            <div>
+              <strong>Please correct the following:</strong>
+              <ul style={{ paddingLeft: '1rem', margin: 0 }}>
+                {missingFields.map((msg, index) => (
+                  <li key={index}>{msg}</li>
+                ))}
+              </ul>
+            </div>
+          );
+        }
+
       }
 
       setLoading(false);
@@ -268,7 +299,7 @@ const ReportingForm = () => {
         toast.success("Report updated successfully.")
         showForm(false);
       } else {
-        toast.error("Something went wrong ! Please try again after some time")
+        toast.error(result?.data?.message)
       }
 
       setLoading(false);
@@ -440,7 +471,7 @@ const ReportingForm = () => {
       if (result?.status === 200) {
         setClientsList(result.data.data)
       } else {
-        toast.error("Something went wrong ! Please try again after some time")
+        toast.error(result?.message)
       }
 
       setLoading(false);
@@ -552,13 +583,13 @@ const ReportingForm = () => {
 
   }, [journalId]);
 
-console.log(journalId,"journalId")
-console.log(endorsedIssuedBy,"endorsedIssuedBy 544")
+  console.log(journalId, "journalId")
+  console.log(endorsedIssuedBy, "endorsedIssuedBy 544")
   const getEndorsedIssuedByList = async (journalId) => {
     try {
-    
+
       const result = await getEndorsedIssuedBy('journalId', journalId);
-      console.log(result,"result")
+      console.log(result, "result")
       if (result?.data?.status === "success") {
         setEndorsedIssuedBy(result?.data.uniqueSurveyors);
       } else {
@@ -773,7 +804,7 @@ console.log(endorsedIssuedBy,"endorsedIssuedBy 544")
       {showForm && (
         <Box id="reportDetails">
           <CommonCard sx={{ mt: 2 }}>
-            <Typography fontSize={'18px'} fontWeight={'600'} mt={2} mb={4}>Report Details for {selectedRow.surveyTypes?.name}</Typography>
+            <Typography fontSize={'18px'} fontWeight={'600'} mt={2} mb={4}>Endorsement/Issuance Details for {selectedRow.surveyTypes?.name}</Typography>
             <Grid2 container spacing={2}>
               <Grid2 item size={{ md: 3 }}>
                 <Controller
@@ -783,7 +814,7 @@ console.log(endorsedIssuedBy,"endorsedIssuedBy 544")
                     <CommonInput
                       {...field}
                       disabled
-                      label="Type of Survey"
+                      label={<>Type of Survey <span style={{ color: 'red' }}>*</span></>}
                       placeholder="Type of Survey"
                       error={!!errors.typesOfSurvey}
                       helperText={errors.typesOfSurvey?.message}
@@ -794,7 +825,7 @@ console.log(endorsedIssuedBy,"endorsedIssuedBy 544")
               <Grid2 item size={{ md: 9 }}>
                 <FormControl fullWidth sx={{ maxWidth: 255 }}>
                   <Typography variant="body1" mb={1.5}>
-                    Type Of Certificate
+                    Type Of Certificate <span style={{ color: 'red' }}>*</span>
                   </Typography>
                   <Select
                     value={selectCertificate}
@@ -802,7 +833,7 @@ console.log(endorsedIssuedBy,"endorsedIssuedBy 544")
                     displayEmpty
                   >
                     <MenuItem value="" disabled>
-                      Select certificate
+                      Select Certificate
                     </MenuItem>
                     {certificateList.map((report) => (
                       <MenuItem key={report.value} value={report.value}>
@@ -820,7 +851,7 @@ console.log(endorsedIssuedBy,"endorsedIssuedBy 544")
                     <CommonInput
                       {...field}
                       type="date"
-                      label="Issuance date"
+                      label={<>Issuance Date <span style={{ color: 'red' }}>*</span></>}
                       error={!!errors.issuancedate}
                       helperText={errors.issuancedate?.message}
                     />
@@ -835,7 +866,7 @@ console.log(endorsedIssuedBy,"endorsedIssuedBy 544")
                     <CommonInput
                       {...field}
                       type="date"
-                      label="Validity date"
+                      label={<>Validity Date <span style={{ color: 'red' }}>*</span></>}
                       error={!!errors.validitydate}
                       helperText={errors.validitydate?.message}
                     />
@@ -850,7 +881,7 @@ console.log(endorsedIssuedBy,"endorsedIssuedBy 544")
                     <CommonInput
                       {...field}
                       type="date"
-                      label="Survey date"
+                      label={<>Survey Date <span style={{ color: 'red' }}>*</span></>}
                       error={!!errors.surveydate}
                       helperText={errors.surveydate?.message}
                     />
@@ -865,7 +896,7 @@ console.log(endorsedIssuedBy,"endorsedIssuedBy 544")
                     <CommonInput
                       {...field}
                       type="date"
-                      label="Endorsement date"
+                      label={<>Endorsement Date <span style={{ color: 'red' }}>*</span></>}
                       error={!!errors.endorsementdate}
                       helperText={errors.endorsementdate?.message}
                     />
@@ -888,7 +919,7 @@ console.log(endorsedIssuedBy,"endorsedIssuedBy 544")
                 /> */}
                 <FormControl fullWidth sx={{ maxWidth: 255 }}>
                   <Typography variant="body1" mb={1.5}>
-                  Endorsed / Issued By
+                    Endorsed / Issued By <span style={{ color: 'red' }}>*</span>
                   </Typography>
                   <Select
                     value={selectSurveyor}
@@ -914,7 +945,7 @@ console.log(endorsedIssuedBy,"endorsedIssuedBy 544")
                   render={({ field }) => (
                     <CommonInput
                       {...field}
-                      label="Place of Issuance"
+                      label={<>Place Of Issuance <span style={{ color: "red" }}>*</span></>}
                       placeholder="Enter place name"
                       error={!!errors.place}
                       helperText={errors.place?.message}
