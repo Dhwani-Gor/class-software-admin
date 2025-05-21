@@ -376,20 +376,27 @@ const AddSurveyType = ({
 
   // Debounce search function
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (ownerInputValue) {
-        handleOwnerSearch(ownerInputValue);
-      }
-      if(managerInputValue){
-        handleManagerSearch(managerInputValue);
-      }
-      if(invoicingInputValue){
-        handleInvoicingSearch(invoicingInputValue);
-      }
+    const timeout = setTimeout(() => {
+      if (ownerInputValue) handleOwnerSearch(ownerInputValue);
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [ownerInputValue]);
+  
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (managerInputValue) handleManagerSearch(managerInputValue);
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [managerInputValue]);
+  
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (invoicingInputValue) handleInvoicingSearch(invoicingInputValue);
     }, 500);
 
-    return () => clearTimeout(timeoutId);
-  }, [ownerInputValue, managerInputValue, invoicingInputValue]);
+    return () => clearTimeout(timeout);
+  }, [invoicingInputValue]);
+  
 
   const snackbarClose = () => {
     setSnackBar({ open: false, message: "" });
@@ -515,7 +522,7 @@ const AddSurveyType = ({
         <Autocomplete
           freeSolo
           options={ownerOptions}
-          loading={isSearching}
+          loading={ownerInputValue && isSearching}
           value={field.value || ""}
           inputValue={ownerInputValue}
           disabled={!editingAllowed}
@@ -603,7 +610,7 @@ const AddSurveyType = ({
         <Autocomplete
           freeSolo
           options={managerOptions}
-          loading={isSearching}
+          loading={managerInputValue && isSearching}
           value={field.value || ""}
           inputValue={managerInputValue}
           disabled={!editingAllowed}
@@ -690,7 +697,7 @@ const AddSurveyType = ({
         <Autocomplete
           freeSolo
           options={invoicingOptions}
-          loading={isSearching}
+          loading={invoicingInputValue && isSearching}
           value={field.value || ""}
           inputValue={invoicingInputValue}
           disabled={!editingAllowed}
@@ -712,6 +719,7 @@ const AddSurveyType = ({
               setValue('invoicingDetails.companyAddress', newValue.companyAddress || '');
               setValue('invoicingDetails.phoneNumber', newValue.phoneNumber || '');
               setValue('invoicingDetails.email', newValue.email || '');
+              setValue('invoicingDetails.gstNo', newValue.gstNo || '');
 
               // If checkboxes are checked, propagate the changes
               if (isInvoiceSameAsOwner) {
@@ -719,6 +727,7 @@ const AddSurveyType = ({
                 setValue('managerDetails.companyAddress', newValue.companyAddress || '');
                 setValue('managerDetails.phoneNumber', newValue.phoneNumber || '');
                 setValue('managerDetails.email', newValue.email || '');
+                setValue('managerDetails.gstNo', newValue.gstNo || '');
               }
 
               if (isInvoiceSameAsOwner) {
