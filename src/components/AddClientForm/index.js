@@ -97,6 +97,7 @@ const AddSurveyType = ({
   const [isSearching, setIsSearching] = useState(false);
   const [invoicingOptions, setInvoicingOptions] = useState([]);
   const [invoicingInputValue, setInvoicingInputValue] = useState('');
+  const [shipName, setShipName] = useState('');
 
   // Flags to track manual edits
   const [manuallyEditedManager, setManuallyEditedManager] = useState(false);
@@ -238,6 +239,7 @@ const AddSurveyType = ({
       if (result?.status === 200 && result.data?.data) {
         // Format date fields before setting them in the form
         const clientData = result.data.data;
+        setShipName(clientData.shipName);
 
         // Format all date fields to YYYY-MM-DD format for input[type="date"]
         const dateFields = [
@@ -934,7 +936,7 @@ const AddSurveyType = ({
             minHeight: 56
           }}
         >
-          <Typography fontWeight={600}>Ship Names</Typography>
+          <Typography fontWeight={600}>Ship Particulars {shipName && `-  [${shipName}]`}</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Grid2 container spacing={3}>
@@ -956,10 +958,12 @@ const AddSurveyType = ({
                       fullWidth
                       variant="standard"
                       label={
-                        <>
-                          {field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
-                          <span style={{ color: 'red' }}> *</span>
-                        </>
+                        <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                          <Typography fontStyle="italic">
+                            {field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
+                          </Typography>
+                          <span style={{ color: 'red', marginLeft: 4 }}>*</span>
+                        </span>
                       }
                       placeholder={`Enter ${field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}`}
                       disabled={!editingAllowed}
@@ -983,12 +987,12 @@ const AddSurveyType = ({
                       fullWidth
                       type="number"
                       variant="standard"
-                      label={
-                        <>
+                      label={<span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        <Typography fontWeight={500} fontStyle="italic">
                           {field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
-                          <span style={{ color: 'red' }}> *</span>
-                        </>
-                      }
+                        </Typography>
+                        <span style={{ color: 'red', marginLeft: 4 }}>*</span>
+                      </span>}
                       placeholder={`Enter ${field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}`}
                       disabled={!editingAllowed}
                       error={Boolean(errors?.[field])}
@@ -1014,12 +1018,12 @@ const AddSurveyType = ({
                       fullWidth
                       type="date"
                       variant="standard"
-                      label={
-                        <>
+                      label={<span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        <Typography fontWeight={500} fontStyle="italic">
                           {field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
-                          <span style={{ color: 'red' }}> *</span>
-                        </>
-                      }
+                        </Typography>
+                        <span style={{ color: 'red', marginLeft: 4 }}>*</span>
+                      </span>}
                       placeholder={`Enter ${field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}`}
                       InputLabelProps={{ shrink: true }}
                       disabled={!editingAllowed}
@@ -1042,12 +1046,12 @@ const AddSurveyType = ({
                       {...controllerField}
                       fullWidth
                       variant="standard"
-                      label={
-                        <>
+                      label={<span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        <Typography fontWeight={500} fontStyle="italic">
                           {field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
-                          <span style={{ color: 'red' }}> *</span>
-                        </>
-                      }
+                        </Typography>
+                        <span style={{ color: 'red', marginLeft: 4 }}>*</span>
+                      </span>}
                       placeholder={`Enter ${field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}`}
                       disabled={!editingAllowed}
                       error={Boolean(errors?.[field])}

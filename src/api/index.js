@@ -466,12 +466,12 @@ export const getAllVisitDetails = async (filterKey, filterValue) => {
   return result;
 };
 
-export const getSurveyTypes = async () => {
+export const getSurveyTypes = async (search, page, limit) => {
   let result;
   try {
-    result = await axiosInstance.get("/api/surveyTypes");
+    result = await axiosInstance.get(`/api/surveyTypes?search=${search}&page=${page}&limit=${limit}`);
   } catch (error) {
-    result = ertror;
+    result = error;
   }
   return result;
 };

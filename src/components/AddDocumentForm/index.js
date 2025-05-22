@@ -357,7 +357,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
                 cursor: "pointer",
               }}
               onDragOver={(e) => {
-                e.preventDefault(); // Important to allow drop
+                e.preventDefault();
               }}
               onDrop={(e) => {
                 e.preventDefault();
