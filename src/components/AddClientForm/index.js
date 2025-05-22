@@ -934,7 +934,7 @@ const AddSurveyType = ({
             minHeight: 56
           }}
         >
-          <Typography fontWeight={600}>Ship Particulars</Typography>
+          <Typography fontWeight={600}>Ship Names</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Grid2 container spacing={3}>

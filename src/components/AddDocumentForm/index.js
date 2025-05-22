@@ -81,76 +81,31 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
           validity: documentData.validity || "",
           document: documentData.filePath || "",
         });
-        
+
         // Handle the fields data
         if (documentData.fields) {
           try {
-            if (Array.isArray(documentData.fields) && 
-                documentData.fields.length > 0 && 
-                typeof documentData.fields[0] === 'string' &&
-                documentData.fields[0].includes('\"attribute\"')) {
-              
-              const joinedJson = documentData.fields.join('');
-              try {
-                const parsedFields = JSON.parse(joinedJson);
-                setAdditionalFields(parsedFields);
-              } catch (jsonError) {
-                console.error("Error parsing joined JSON:", jsonError);
-                
-                const fieldsData = [];
-                let currentField = {};
-                
-                for (const fragment of documentData.fields) {
-                  if (fragment.includes('[{\"attribute\"') || fragment.includes('{\"attribute\"')) {
-                    const attrMatch = fragment.match(/\"attribute\":\"([^\"]*)\"/);
-                    if (attrMatch && attrMatch[1]) {
-                      currentField.attribute = attrMatch[1];
-                    }
-                  }
-                  
-                  if (fragment.includes('\"label\"')) {
-                    const labelMatch = fragment.match(/\"label\":\"([^\"]*)\"/);
-                    if (labelMatch && labelMatch[1]) {
-                      currentField.label = labelMatch[1];
-                      if (currentField.attribute) {
-                        fieldsData.push({...currentField});
-                        currentField = {};
-                      }
-                    }
-                  }
-                }
-                
-                setAdditionalFields(fieldsData);
-              }
-            } else if (typeof documentData.fields === 'object' && !Array.isArray(documentData.fields)) {
-              setAdditionalFields([documentData.fields]);
-            } else if (typeof documentData.fields === 'string') {
-              try {
-                const parsedFields = JSON.parse(documentData.fields);
-                setAdditionalFields(Array.isArray(parsedFields) ? parsedFields : [parsedFields]);
-              } catch (e) {
-                const fieldArray = documentData.fields.split(',').map(field => ({
-                  attribute: field.trim(),
-                  label: field.trim()
-                }));
-                setAdditionalFields(fieldArray);
-              }
-            } else if (Array.isArray(documentData.fields)) {
-              const formattedFields = documentData.fields.map(field => {
-                if (typeof field === 'string' && !field.includes('\"attribute\"')) {
-                  return { attribute: field.trim(), label: field.trim() };
-                } else if (typeof field === 'object') {
-                  return field;
-                }
-                return { attribute: "", label: "" };
-              });
-              setAdditionalFields(formattedFields);
+            let parsed = documentData.fields;
+        
+            // If stringified JSON
+            if (typeof parsed === 'string') {
+              parsed = JSON.parse(parsed);
             }
-          } catch (error) {
-            console.error("Error parsing fields:", error);
+        
+            // Normalize into array
+            if (!Array.isArray(parsed)) {
+              parsed = [parsed];
+            }
+        
+            // Optional: validate objects have attribute and label
+            const validFields = parsed.filter(f => f.attribute && f.label);
+            setAdditionalFields(validFields);
+          } catch (err) {
+            console.error("Failed to parse fields:", err);
             setAdditionalFields([]);
           }
         }
+        
       } else {
         toast.error("Error fetching document details");
       }
@@ -210,7 +165,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
         if (formValues.document instanceof File) {
           formData.append("document", formValues.document);
         }
-        
+
         // Add fields as a JSON string if there are any
         if (additionalFields.length > 0) {
           const validFields = additionalFields.filter(
@@ -293,8 +248,8 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
 
   const handleAddField = () => {
     const lastField = additionalFields[additionalFields.length - 1];
-    if (!additionalFields.length || 
-        (lastField?.attribute?.trim() !== "" && lastField?.label?.trim() !== "")) {
+    if (!additionalFields.length ||
+      (lastField?.attribute?.trim() !== "" && lastField?.label?.trim() !== "")) {
       setAdditionalFields((prev) => [...prev, { attribute: "", label: "" }]);
     } else {
       toast.error("Please fill both attribute and label before adding another field.");
@@ -324,13 +279,12 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
         <Stack spacing={3}>
           <TextField
             fullWidth
-            label="Document Name"
+            label={<Typography variant="body1" color="gray" fontWeight={400}>Document Name <span style={{ color: "red" }}>*</span></Typography>}
             name="name"
             value={formValues.name}
             onChange={handleInputChange}
             error={errors.name}
             helperText={errors.name ? "Document name is required" : ""}
-            required
           />
 
           <FormControl fullWidth error={errors.type}>
@@ -341,8 +295,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
               displayEmpty
             >
               <MenuItem value="" disabled>
-                Select Document Type *
-              </MenuItem>
+                <Typography variant="body1" color="gray" fontWeight={400}>Select Document Type <span style={{ color: "red" }}>*</span></Typography>              </MenuItem>
               {documentType.map((document) => (
                 <MenuItem key={document.value} value={document.value}>
                   {document.label}
@@ -369,7 +322,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
               displayEmpty
             >
               <MenuItem value="" disabled>
-                Select Document Validity Type *
+                <Typography variant="body1" color="gray" fontWeight={400}>Select Document Validity Type <span style={{ color: "red" }}>*</span></Typography>
               </MenuItem>
               {documentValidityType.map((document) => (
                 <MenuItem key={document.value} value={document.value}>
@@ -402,6 +355,25 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
                 p: 1.5,
                 color: "text.secondary",
                 cursor: "pointer",
+              }}
+              onDragOver={(e) => {
+                e.preventDefault(); // Important to allow drop
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                  setFormValues((prev) => ({
+                    ...prev,
+                    document: file,
+                  }));
+                  if (errors.document) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      document: false,
+                    }));
+                  }
+                }
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -448,7 +420,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
 
             {errors.document && (
               <Typography variant="caption" color="error" mt={1}>
-                document is required
+                Document is required
               </Typography>
             )}
           </FormControl>

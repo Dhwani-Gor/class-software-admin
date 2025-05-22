@@ -633,7 +633,7 @@ const JournalEntryForm = ({ journalId = null }) => {
               <Box>
                 <FormControl fullWidth sx={{ maxWidth: 300 }}>
                   <Typography variant="body1" mb={1}>
-                    Select the ship / Work
+                    Select the Ship / Work
                   </Typography>
                   <Select
                     value={selectedClient}
@@ -641,7 +641,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                     displayEmpty
                   >
                     <MenuItem value="" disabled>
-                      Select the ship / Work
+                      Select the Ship / Work
                     </MenuItem>
                     {clientsList.map((client) => (
                       <MenuItem key={client.id} value={client}>

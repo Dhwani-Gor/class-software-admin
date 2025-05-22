@@ -625,7 +625,7 @@ const ReportingForm = () => {
             <Box>
               <FormControl fullWidth sx={{ maxWidth: 300 }}>
                 <Typography variant="body1" mb={1}>
-                  Select the ship / Work
+                  Select the Ship / Work
                 </Typography>
                 <Select
                   value={selectedShip.id || ""}
@@ -633,7 +633,7 @@ const ReportingForm = () => {
                   displayEmpty
                 >
                   <MenuItem value="" disabled>
-                    Select the ship / Work
+                    Select the Ship / Work
                   </MenuItem>
                   {clientsList.map((client) => (
                     <MenuItem key={client.id} value={client.id}>
@@ -740,7 +740,7 @@ const ReportingForm = () => {
                                 {...field}
                                 value={row.remarks}
                                 minRows={2}
-                                placeholder="Enter remarks"
+                                placeholder="Enter Remarks"
                                 style={{
                                   width: "100%",
                                   padding: "8px",
@@ -824,7 +824,7 @@ const ReportingForm = () => {
               </Grid2>
               <Grid2 item size={{ md: 9 }}>
                 <FormControl fullWidth sx={{ maxWidth: 255 }}>
-                  <Typography variant="body1" mb={1.5}>
+                  <Typography variant="body1" fontWeight={'500'} mb={1.5}>
                     Type Of Certificate <span style={{ color: 'red' }}>*</span>
                   </Typography>
                   <Select
@@ -918,7 +918,7 @@ const ReportingForm = () => {
                   )}
                 /> */}
                 <FormControl fullWidth sx={{ maxWidth: 255 }}>
-                  <Typography variant="body1" mb={1.5}>
+                  <Typography variant="body1" mb={1.5} fontWeight={500}>
                     Endorsed / Issued By <span style={{ color: 'red' }}>*</span>
                   </Typography>
                   <Select

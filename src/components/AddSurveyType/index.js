@@ -295,7 +295,7 @@ const SurveyTypeForm = ({
                       error={Boolean(errors.reportIds)}
                     >
                       <FormLabel component="legend" sx={{ mb: 1 }}>
-                        <span>Reports <span style={{ color: "red" }}>*</span></span>
+                        <Typography color='#000000DE' fontWeight={'500'}> Reports <span style={{ color: "red" }}>*</span></Typography> 
                       </FormLabel>
                       <Controller
                         name="reportIds"
@@ -328,7 +328,7 @@ const SurveyTypeForm = ({
                               <TextField
                                 {...params}
                                 variant="outlined"
-                                placeholder="Search and select reports"
+                                placeholder="Search and Select Reports"
                                 error={Boolean(errors.reportIds)}
                                 helperText={errors.reportIds?.message}
                                 InputProps={{
