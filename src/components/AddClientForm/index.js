@@ -988,7 +988,7 @@ const AddSurveyType = ({
                       type="number"
                       variant="standard"
                       label={<span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                        <Typography fontWeight={500} fontStyle="italic">
+                        <Typography fontStyle="italic">
                           {field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
                         </Typography>
                         <span style={{ color: 'red', marginLeft: 4 }}>*</span>
@@ -1019,7 +1019,7 @@ const AddSurveyType = ({
                       type="date"
                       variant="standard"
                       label={<span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                        <Typography fontWeight={500} fontStyle="italic">
+                        <Typography fontStyle="italic">
                           {field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
                         </Typography>
                         <span style={{ color: 'red', marginLeft: 4 }}>*</span>
@@ -1047,7 +1047,7 @@ const AddSurveyType = ({
                       fullWidth
                       variant="standard"
                       label={<span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                        <Typography fontWeight={500} fontStyle="italic">
+                        <Typography fontStyle="italic">
                           {field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
                         </Typography>
                         <span style={{ color: 'red', marginLeft: 4 }}>*</span>
@@ -1212,7 +1212,6 @@ const AddSurveyType = ({
                   <>
                     <CommonButton
                       type="submit"
-
                       variant="contained"
                       text="Save"
                       disabled={loading}
