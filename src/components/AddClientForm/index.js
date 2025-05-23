@@ -94,7 +94,11 @@ const AddSurveyType = ({
   const [ownerInputValue, setOwnerInputValue] = useState('');
   const [managerOptions, setManagerOptions] = useState([]);
   const [managerInputValue, setManagerInputValue] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
+  const [isSearching, setIsSearching] = useState({
+    owner: false,
+    manager: false,
+    invoicing: false
+  });
   const [invoicingOptions, setInvoicingOptions] = useState([]);
   const [invoicingInputValue, setInvoicingInputValue] = useState('');
   const [shipName, setShipName] = useState('');
@@ -297,7 +301,7 @@ const AddSurveyType = ({
       return;
     }
 
-    setIsSearching(true);
+    setIsSearching(prev => ({ ...prev, owner: true }));
     try {
       const result = await searchowner_detail(searchQuery);
       if (result?.status === 200 && result?.data) {
@@ -315,7 +319,7 @@ const AddSurveyType = ({
       console.error("Error searching owner details:", error);
       setOwnerOptions([]);
     } finally {
-      setIsSearching(false);
+      setIsSearching(prev => ({ ...prev, owner: false }));
     }
   };
 
@@ -325,7 +329,7 @@ const AddSurveyType = ({
       return;
     }
 
-    setIsSearching(true);
+    setIsSearching(prev => ({ ...prev, manager: true }));
     try {
       const result = await searchmanager_detail(searchQuery);
       if (result?.status === 200 && result?.data) {
@@ -343,7 +347,7 @@ const AddSurveyType = ({
       console.error("Error searching manager details:", error);
       setManagerOptions([]);
     } finally {
-      setIsSearching(false);
+      setIsSearching(prev => ({ ...prev, manager: false }));
     }
   };
 
@@ -353,7 +357,7 @@ const AddSurveyType = ({
       return;
     }
     console.log(searchQuery,"searchQuery")
-    setIsSearching(true);
+    setIsSearching(prev => ({ ...prev, invoicing: true }));
     try {
       const result = await searchinvoicing_detail(searchQuery);
       console.log("result ===>", result);
@@ -372,7 +376,7 @@ const AddSurveyType = ({
       console.error("Error searching invoicing details:", error);
       setInvoicingOptions([]);
     } finally {
-      setIsSearching(false);
+      setIsSearching(prev => ({ ...prev, invoicing: false }));
     }
   };
 
@@ -524,7 +528,7 @@ const AddSurveyType = ({
         <Autocomplete
           freeSolo
           options={ownerOptions}
-          loading={ownerInputValue && isSearching}
+          loading={ownerInputValue && isSearching.owner}
           value={field.value || ""}
           inputValue={ownerInputValue}
           disabled={!editingAllowed}
@@ -591,7 +595,7 @@ const AddSurveyType = ({
                 ...params.InputProps,
                 endAdornment: (
                   <>
-                    {isSearching ? <CircularProgress color="inherit" size={20} /> : null}
+                    {isSearching.owner ? <CircularProgress color="inherit" size={20} /> : null}
                     {params.InputProps.endAdornment}
                   </>
                 ),
@@ -612,7 +616,7 @@ const AddSurveyType = ({
         <Autocomplete
           freeSolo
           options={managerOptions}
-          loading={managerInputValue && isSearching}
+          loading={managerInputValue && isSearching.manager}
           value={field.value || ""}
           inputValue={managerInputValue}
           disabled={!editingAllowed}
@@ -679,7 +683,7 @@ const AddSurveyType = ({
                 ...params.InputProps,
                 endAdornment: (
                   <>
-                    {isSearching ? <CircularProgress color="inherit" size={20} /> : null}
+                    {isSearching.manager ? <CircularProgress color="inherit" size={20} /> : null}
                     {params.InputProps.endAdornment}
                   </>
                 ),
@@ -699,7 +703,7 @@ const AddSurveyType = ({
         <Autocomplete
           freeSolo
           options={invoicingOptions}
-          loading={invoicingInputValue && isSearching}
+          loading={invoicingInputValue && isSearching.invoicing}
           value={field.value || ""}
           inputValue={invoicingInputValue}
           disabled={!editingAllowed}
@@ -769,7 +773,7 @@ const AddSurveyType = ({
                 ...params.InputProps,
                 endAdornment: (
                   <>
-                    {isSearching ? <CircularProgress color="inherit" size={20} /> : null}
+                    {isSearching.invoicing ? <CircularProgress color="inherit" size={20} /> : null}
                     {params.InputProps.endAdornment}
                   </>
                 ),
