@@ -151,7 +151,7 @@ const AddInspectorForm = ({
         <>
           <Stack mt={4} spacing={4}>
             <Paper sx={{ padding: "20px", borderRadius: "15px" }}>
-              <form onSubmit={handleSubmit(onSubmit)}>
+              <form onSubmit={handleSubmit(onSubmit)} autoComplete="off">
                 <Grid2 container spacing={3}>
                   <Grid2 size={{ xs: 12 }}>
                     <Controller
@@ -175,7 +175,7 @@ const AddInspectorForm = ({
                             InputProps={{
                               style: { color: "black" },
                             }}
-                          />
+                            autoComplete="Enter Name"                          />
                         );
                       }}
                     />
@@ -199,6 +199,7 @@ const AddInspectorForm = ({
                             placeholder="Enter User Name"
                             error={Boolean(errors.username)}
                             helperText={errors.username?.message}
+                            autoComplete="New Username"
                             InputProps={{
                               style: { color: "black" },
                             }}
@@ -227,6 +228,7 @@ const AddInspectorForm = ({
                             error={Boolean(errors.password)}
                             helperText={errors.password?.message}
                             type="password"
+                            autoComplete="password"
                             InputProps={{
                               style: { color: "black" },
                             }}
