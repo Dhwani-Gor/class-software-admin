@@ -181,6 +181,7 @@ const ReportingForm = () => {
   const [currentRowForDocuments, setCurrentRowForDocuments] = useState(null);
   const [endorsedIssuedBy, setEndorsedIssuedBy] = useState([]);
   const [selectSurveyor, setSelectSurveyor] = useState("");
+  const [surveyorName, setSurveyorName] = useState({});
 
   // Form setup with validation only on submit
   const {
@@ -346,15 +347,18 @@ const ReportingForm = () => {
 
   const handleFullReportGeneration = async () => {
     try {
-      console.log('278 ===>', reportDetails);
+      const surveyAbbr = surveyorName?.abbreviation || 'Survey';
+      const certType = selectCertificate || 'Type';
+      const reportNo = selectedReportNumber?.journalTypeId || 'Unknown';
       const result = await generateFullReport({
         reportDetailId: reportDetails?.id
       })
       if (result?.data.data) {
         setLoading(true);
+
         const link = document.createElement('a');
         link.href = result.data.data;
-        link.download = 'report.docx';
+        link.download = `${surveyAbbr}_${certType}_${reportNo}.docx`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -429,6 +433,7 @@ const ReportingForm = () => {
         
         // Set form values
         setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
+        setSurveyorName(getSurveyTitle(row.surveyTypes));
         setValue('typeOfCertificate', reportData?.typeOfCertificate || "");
         setSelectCertificate(reportData?.typeOfCertificate || "");
         setValue('issuancedate', reportData?.issuanceDate ? moment(reportData?.issuanceDate).format("YYYY-MM-DD") : '');

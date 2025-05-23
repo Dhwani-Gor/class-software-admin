@@ -153,7 +153,7 @@ export const getAllUsers = async (page, limit, search, isActiveUsers = true) => 
       params: {
         page: page,
         limit: limit,
-        query: search,
+        search: search,
       },
     });
   } catch (error) {
@@ -257,10 +257,16 @@ export const getShipDetails = async (page, limit, search) => {
   return result;
 };
 
-export const getAllClients = async () => {
+export const getAllClients = async (page, limit, search) => {
   let result;
   try {
-    result = await axiosInstance.get("/api/clients");
+    result = await axiosInstance.get("/api/clients", {
+      params: {
+        page: page,
+        limit: limit,
+        search: search,
+      },
+    });
   } catch (error) {
     result = error;
   }

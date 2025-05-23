@@ -36,7 +36,7 @@ const Clients = () => {
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedClient, setSelectedClientId] = useState(null);
-
+  console.log(totalRows)
   const snackbarClose = () => {
     setSnackBar({ open: false, message: "" });
   };
@@ -49,12 +49,13 @@ const Clients = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  const fetchClients = async (page, limit, searchQuery) => {
+  const fetchClients = async (page, limit, search) => {
     try {
       setLoading(true);
-      const result = await getAllClients();
+      const result = await getAllClients(page, limit, search);
       if (result?.status === 200) {
         setClientsList(result.data.data)
+        setTotalRows(result.data.results)
       } else {
         toast.error("Something went wrong ! Please try again after some time")
       }
@@ -67,8 +68,8 @@ const Clients = () => {
   };
 
   useEffect(() => {
-    fetchClients();
-  }, []);
+    fetchClients(page, limit, debouncedSearch);
+  }, [debouncedSearch, page, limit]);
 
   const handleSearchChange = (event) => {
     setSearch(event.target.value);

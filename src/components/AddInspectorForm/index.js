@@ -113,22 +113,21 @@ const AddInspectorForm = ({
       if (userId) {
         const res = await updateInspectorDetail(userId, data);
 
-        console.log('115 ===>',res)
-
-        if (res.data.status === "success") {
+        if (res?.data?.status === "success") {
           toast.success("Inspector updated successfully");
           router.push('/staff')
         } else {
-          throw new Error("Invalid response format or missing URL");
+          toast.error(res?.response?.data?.message);
         }
       } else {
         const res = await createInspector({ ...data, roleId: 2 });
-
-        if (res?.data.status === "success") {
+        console.log("test")
+        console.log(res,"res data")
+        if (res?.data?.status === "success") {
           toast.success("Inspector created successfully");
           router.push('/staff')
         } else {
-          throw new Error("Invalid response format or missing URL");
+          toast.error(res?.response?.data?.message);
         }
       }
     } catch (error) {
