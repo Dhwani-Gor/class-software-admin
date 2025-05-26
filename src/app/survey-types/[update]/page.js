@@ -53,14 +53,14 @@ const UpdateClient = ({ params }) => {
           <Typography variant="h6" fontWeight={"700"}>
             Survey Types
           </Typography>
-          <CommonButton sx={{ ml: 'auto' }} variant="outlined" text="Edit History" onClick={() => setEditHistoryDialog(true)} />
-          <CommonButton text="Edit" variant="outlined" color="secondary" onClick={() => setIsEditDialogVisible(true)} />
+          {/* <CommonButton sx={{ ml: 'auto' }} variant="outlined" text="Edit History" onClick={() => setEditHistoryDialog(true)} /> */}
+          {/* <CommonButton text="Edit" variant="outlined" color="secondary" onClick={() => setIsEditDialogVisible(true)} /> */}
         </Stack>
       </CommonCard>
       <Stack>
         <SurveyTypeForm  mode="update" surveyTypeId={params?.update} />
       </Stack>
-      {isEditDialogVisible && (
+      {/* {isEditDialogVisible && (
         <EditingReasonDialog
           open={isEditDialogVisible}
           onCancel={() => setIsEditDialogVisible(false)}
@@ -71,14 +71,14 @@ const UpdateClient = ({ params }) => {
           }}
           title="Please mention the Reason of Updating Client Details to continue Editing."
         />
-      )}
-      {editHistoryDialog && (
+      )} */}
+      {/* {editHistoryDialog && (
         <EditHistoryDialog
           open={editHistoryDialog}
           changeHistory={changeHistory}
           onCancel={() => setEditHistoryDialog(false)}
         />
-      )}
+      )} */}
     </Layout>
   );
 };

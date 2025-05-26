@@ -85,13 +85,13 @@ const SurveyTypes = () => {
     if (!selectedClient) return;
     try {
       const res = await deleteSurveyType({ id: selectedClient });
-      if (res?.data?.message) {
-        setSnackBar({ open: true, message: res.data.message });
+      if (res) {
+        toast.success("Survey type deleted successfully");
       }
       fetchAllSurveyTypes(page, limit, debouncedSearch);
     } catch (e) {
       console.error("Error deleting Survey Type:", e.response?.data || e.message);
-      setSnackBar({ open: true, message: "Failed to delete Survey Type." });
+      toast.error("Failed to delete Survey Type.");
     }
   };
 

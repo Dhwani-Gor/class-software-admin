@@ -43,6 +43,8 @@ const Documents = () => {
   const [selectedFilter, setSelectedFilter] = useState("all"); // 'all', 'reports', or 'certificates'
   const [previewFile, setPreviewFile] = useState(null);
   const [openPreviewModal, setOpenPreviewModal] = useState(false);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+
   const snackbarClose = () => {
     setSnackBar({ open: false, message: "" });
   };
@@ -82,17 +84,17 @@ const Documents = () => {
   // Apply filters based on selected chip and search text
   const applyFilters = (docs, filter) => {
     let filtered = [...docs];
-    
+
     // Filter by search text
     if (debouncedSearch) {
-      filtered = filtered.filter(doc => 
+      filtered = filtered.filter(doc =>
         doc.name.toLowerCase().includes(debouncedSearch.toLowerCase())
       );
     }
 
     // Filter by document type (Reports = odd index, Certificates = even index)
     if (filter === "reports") {
-      console.log(filtered , "filtered ==>")
+      console.log(filtered, "filtered ==>")
       filtered = filtered.filter((document, index) => document.type === "report"); // Odd indexed
     } else if (filter === "certificates") {
       filtered = filtered.filter((document, index) => document.type === "certificate"); // Even indexed
@@ -165,6 +167,7 @@ const Documents = () => {
               color="info"
               onClick={() => {
                 setPreviewFile(params.row.filePath);
+                setLoadingPreview(true);
                 setOpenPreviewModal(true);
               }}
             >
@@ -234,38 +237,38 @@ const Documents = () => {
 
       <CommonCard>
         <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-          <Chip 
-            label="All" 
+          <Chip
+            label="All"
             color={selectedFilter === "all" ? "primary" : "default"}
             onClick={() => handleFilterChange("all")}
             clickable
-            sx={{ 
+            sx={{
               fontWeight: selectedFilter === "all" ? 600 : 400,
               px: 2
             }}
           />
-          <Chip 
-            label="Reports" 
+          <Chip
+            label="Reports"
             color={selectedFilter === "reports" ? "primary" : "default"}
             onClick={() => handleFilterChange("reports")}
             clickable
-            sx={{ 
+            sx={{
               fontWeight: selectedFilter === "reports" ? 600 : 400,
               px: 2
             }}
           />
-          <Chip 
-            label="Certificates" 
+          <Chip
+            label="Certificates"
             color={selectedFilter === "certificates" ? "primary" : "default"}
             onClick={() => handleFilterChange("certificates")}
             clickable
-            sx={{ 
+            sx={{
               fontWeight: selectedFilter === "certificates" ? 600 : 400,
               px: 2
             }}
           />
         </Stack>
-        
+
         <CommonInput
           placeholder="Search Documents"
           fullWidth
@@ -354,33 +357,66 @@ const Documents = () => {
         className="snackBarColor"
         key="snackbar"
       />
-       <Dialog
-              open={openPreviewModal}
-              onClose={() => setOpenPreviewModal(false)}
-              maxWidth="md"
-              fullWidth
-            >
-              <DialogTitle>Document Preview</DialogTitle>
-              <DialogContent>
-                {previewFile ? (
-                  <iframe
-                    src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile)}&embedded=true`}
-                    style={{ width: "100%", height: "80vh", border: "none" }}
-                  />
-                ) : (
-                  <img
-                    src={previewFile}
-                    alt="Document Preview"
-                    style={{ maxWidth: "100%", maxHeight: "80vh" }}
-                  />
-                )}
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={() => setOpenPreviewModal(false)} color="primary">
-                  Close
-                </Button>
-              </DialogActions>
-            </Dialog>
+      <Dialog
+        open={openPreviewModal}
+        onClose={() => setOpenPreviewModal(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Document Preview</DialogTitle>
+        <DialogContent>
+          <div style={{ position: 'relative', width: '100%', height: '80vh' }}>
+            {!loadingPreview ? (
+              <a
+                href={previewFile}
+                download
+                rel="noopener noreferrer"
+                style={{
+                  position: 'absolute',
+                  top: '10px',
+                  right: '10px',
+                  zIndex: 1,
+                  backgroundColor: '#4CAF50',
+                  color: 'white',
+                  padding: '8px 12px',
+                  border: 'none',
+                  borderRadius: '4px',
+                  textDecoration: 'none',
+                  fontSize: '14px',
+                }}
+              >
+                Download
+              </a>) : (
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                height="100%"
+                position="absolute"
+                top={0}
+                left={0}
+                width="100%"
+                zIndex={0}
+                sx={{ backgroundColor: "rgba(255,255,255,0.8)" }}
+              >
+                <CircularProgress />
+              </Box>
+            )}
+            <iframe
+              src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile)}&embedded=true`}
+              style={{ width: '100%', height: '100%', border: 'none' }}
+              title="File Preview"
+              onLoad={() => setLoadingPreview(false)}
+
+            />
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenPreviewModal(false)} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Layout>
   );
 };

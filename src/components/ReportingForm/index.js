@@ -47,12 +47,11 @@ const reportSchema = yup.object().shape({
   issuancedate: yup.string().required('Issuance date is required'),
   validitydate: yup.string().required('Validity date is required'),
   surveydate: yup.string().required('Survey date is required'),
-  endorsementdate: yup.string().required('Endorsement date is required'),
+  endorsementdate: yup.string().optional(),
   issuedBy: yup.string().required('Issued by is required'),
   place: yup.string().required('Place is required'),
 });
 
-// Document Upload Dialog Component
 const DocumentUploadDialog = ({
   open,
   onClose,
@@ -61,8 +60,9 @@ const DocumentUploadDialog = ({
   onRemoveDocument
 }) => {
   const [documents, setDocuments] = useState([]);
+  console.log(documents, "documents")
   console.log(selectedDocuments, "selectedDocuments")
-  
+
   const handleFileChange = (event) => {
     if (event.target.files) {
       const newFiles = Array.from(event.target.files);
@@ -84,7 +84,16 @@ const DocumentUploadDialog = ({
   };
 
   const renderFileIcon = (file) => {
-    const fileType = file?.type?.split('/')[0];
+    let fileType;
+
+    if (file?.type) {
+      fileType = file.type.split('/')[0];
+    } else if (file?.fileType) {
+      fileType = file.fileType.split('/')[0];
+    } else {
+      fileType = 'unknown';
+    }
+
     switch (fileType) {
       case 'image':
         return '🖼️';
@@ -95,6 +104,15 @@ const DocumentUploadDialog = ({
       default:
         return '📁';
     }
+  };
+
+  const getFileName = (file) => {
+    if (file?.name) {
+      return file.name;
+    } else if (file?.fileName) {
+      return file.fileName;
+    }
+    return 'Unknown file';
   };
 
   return (
@@ -122,8 +140,15 @@ const DocumentUploadDialog = ({
                   mb={1}
                 >
                   <Typography>
-                    {renderFileIcon(file)} {file.name}
+                    {renderFileIcon(file)} {getFileName(file)}
                   </Typography>
+                  {/* <IconButton 
+                    size="small" 
+                    onClick={() => handleRemoveDocument(index)}
+                    color="error"
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton> */}
                 </Box>
               ))}
             </Box>
@@ -141,8 +166,15 @@ const DocumentUploadDialog = ({
                   mb={1}
                 >
                   <Typography>
-                    {renderFileIcon(doc)} {doc.name}
+                    {renderFileIcon(doc)} {getFileName(doc)}
                   </Typography>
+                  {/* <IconButton 
+                    size="small" 
+                    onClick={() => onRemoveDocument && onRemoveDocument(index)}
+                    color="error"
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton> */}
                 </Box>
               ))}
             </Box>
@@ -194,7 +226,7 @@ const ReportingForm = () => {
     clearErrors,
   } = useForm({
     defaultValues: {
-      remarks:'',
+      remarks: '',
       typesOfSurvey: '',
       typeOfCertificate: '',
       issuancedate: '',
@@ -277,7 +309,7 @@ const ReportingForm = () => {
 
   const handleGenerateReport = async () => {
     const isValid = await trigger();
-    
+
     if (!isValid) {
       console.log("Form validation failed:", errors);
       toast.error("Please fill in all required fields correctly.");
@@ -427,10 +459,10 @@ const ReportingForm = () => {
         console.log(reportData)
         setShowForm(true);
         setSelectedRow(row);
-        
+
         // Clear any existing errors when loading existing data
         clearErrors();
-        
+
         // Set form values
         setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
         setSurveyorName(getSurveyTitle(row.surveyTypes));
@@ -823,10 +855,10 @@ const ReportingForm = () => {
                   )}
                 />
                 {errors.typesOfSurvey && (
-                    <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                      {errors.typesOfSurvey.message}
-                    </Typography>
-                  )}
+                  <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                    {errors.typesOfSurvey.message}
+                  </Typography>
+                )}
               </Grid2>
               <Grid2 item size={{ md: 9 }}>
                 <FormControl fullWidth sx={{ maxWidth: 255 }}>
@@ -872,10 +904,10 @@ const ReportingForm = () => {
                   )}
                 />
                 {errors.issuancedate && (
-                    <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                      {errors.issuancedate.message}
-                    </Typography>
-                  )}
+                  <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                    {errors.issuancedate.message}
+                  </Typography>
+                )}
               </Grid2>
               <Grid2 size={{ md: 3 }}>
                 <Controller
@@ -896,10 +928,10 @@ const ReportingForm = () => {
                   )}
                 />
                 {errors.validitydate && (
-                    <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                      {errors.validitydate.message}
-                    </Typography>
-                  )}
+                  <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                    {errors.validitydate.message}
+                  </Typography>
+                )}
               </Grid2>
               <Grid2 size={{ md: 3 }}>
                 <Controller
@@ -918,10 +950,10 @@ const ReportingForm = () => {
                   )}
                 />
                 {errors.surveydate && (
-                    <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                      {errors.surveydate.message}
-                    </Typography>
-                  )}
+                  <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                    {errors.surveydate.message}
+                  </Typography>
+                )}
               </Grid2>
               <Grid2 size={{ md: 3 }}>
                 <Controller
@@ -940,10 +972,10 @@ const ReportingForm = () => {
                   )}
                 />
                 {errors.endorsementdate && (
-                    <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                      {errors.endorsementdate.message}
-                    </Typography>
-                  )}
+                  <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                    {errors.endorsementdate.message}
+                  </Typography>
+                )}
               </Grid2>
               <Grid2 item size={{ md: 3 }}>
                 <FormControl fullWidth sx={{ maxWidth: 255 }}>
@@ -990,10 +1022,10 @@ const ReportingForm = () => {
                   )}
                 />
                 {errors.place && (
-                    <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                      {errors.place.message}
-                    </Typography>
-                  )}
+                  <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                    {errors.place.message}
+                  </Typography>
+                )}
               </Grid2>
             </Grid2>
             <Stack direction="row" gap={'20px'}>
@@ -1014,7 +1046,7 @@ const ReportingForm = () => {
           </CommonCard>
         </Box>
       )}
-      
+
       <DocumentUploadDialog
         open={documentUploadDialogOpen}
         onClose={() => setDocumentUploadDialogOpen(false)}
@@ -1030,7 +1062,7 @@ const ReportingForm = () => {
           }
         }}
       />
-      
+
       <FullScreenRemarksDialog
         open={fullScreenRemarksVisible}
         onCancel={() => setFullScreenRemarksVisible(null)}
