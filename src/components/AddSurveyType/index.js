@@ -171,10 +171,6 @@ const SurveyTypeForm = ({
         
         if (res?.data?.status === "success") {
           toast.success("Survey type updated successfully");
-          setSnackBar({
-            open: true,
-            message: "Survey type updated successfully",
-          });
           setTimeout(() => {
             router.push('/survey-types');
           }, 2000);
@@ -183,16 +179,9 @@ const SurveyTypeForm = ({
         }
       } else {
         res = await createSurveyType(data);
-        
         if (res?.data?.status === "success") {
           toast.success("Survey type created successfully");
-          setSnackBar({
-            open: true,
-            message: "Survey type created successfully",
-          });
-          setTimeout(() => {
             router.push('/survey-types');
-          }, 2000);
         } else {
           throw new Error(res?.data?.message || "Failed to create survey type");
         }

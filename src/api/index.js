@@ -193,23 +193,45 @@ export const updateInspectorDetail = async (id, payload) => {
 };
 
 
-export const getAllJournals = async (filterKey, filterValue) => {
+// export const getAllJournals = async (filterKey, filterValue, page, limit, search) => {
+//   let result;
+//   try {
+//     // Create params object only if parameters are provided
+//     const params = {};
+//     if (filterKey !== undefined) params.filterKey = filterKey;
+//     if (filterValue !== undefined) params.filterValue = filterValue;
+    
+//     // Only include params object if it's not empty
+//     const config = Object.keys(params).length > 0 ? { params } : undefined;
+    
+//     result = await axiosInstance.get("/api/journals", config);
+//   } catch (error) {
+//     result = error;
+//   }
+//   return result;
+// };
+
+export const getAllJournals = async (options = {}) => {
   let result;
   try {
-    // Create params object only if parameters are provided
+    const { filterKey, filterValue } = options;
+
     const params = {};
-    if (filterKey !== undefined) params.filterKey = filterKey;
-    if (filterValue !== undefined) params.filterValue = filterValue;
-    
-    // Only include params object if it's not empty
+    if (typeof filterKey === 'string' && filterKey.trim() !== '') params.filterKey = filterKey.trim();
+    if (typeof filterValue === 'string' && filterValue.trim() !== '') params.filterValue = filterValue.trim();
+    // if (typeof page === 'number' || (typeof page === 'string' && page.trim() !== '')) params.page = page;
+    // if (typeof limit === 'number' || (typeof limit === 'string' && limit.trim() !== '')) params.limit = limit;
+    // if (typeof search === 'string' && search.trim() !== '') params.search = search.trim();
+
     const config = Object.keys(params).length > 0 ? { params } : undefined;
-    
+
     result = await axiosInstance.get("/api/journals", config);
   } catch (error) {
     result = error;
   }
   return result;
 };
+
 
 export const getJournal = async (journalId) => {
   let result;
@@ -221,6 +243,15 @@ export const getJournal = async (journalId) => {
   return result;
 };
 
+export const deleteJournal = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.delete(`/api/journals/${id}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
 export const generateInspection = async (payload) => {
   let result;
   try {
@@ -472,7 +503,7 @@ export const getAllVisitDetails = async (filterKey, filterValue) => {
   return result;
 };
 
-export const getSurveyTypes = async (search, page, limit) => {
+export const getSurveyTypes = async (search = '', page = '', limit = '') => {
   let result;
   try {
     result = await axiosInstance.get(`/api/surveyTypes?search=${search}&page=${page}&limit=${limit}`);

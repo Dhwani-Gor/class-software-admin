@@ -82,7 +82,6 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
           document: documentData.filePath || "",
         });
 
-        // Handle the fields data
         if (documentData.fields) {
           try {
             let parsed = documentData.fields;
@@ -166,8 +165,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
           formData.append("document", formValues.document);
         }
 
-        // Add fields as a JSON string if there are any
-        if (additionalFields.length > 0) {
+        if (additionalFields && additionalFields.length > 0) {
           const validFields = additionalFields.filter(
             field => field.attribute.trim() && field.label.trim()
           );
@@ -184,8 +182,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
           ...(editReason && { reason: editReason }),
         };
 
-        // Add fields as a JSON array if there are any
-        if (additionalFields.length > 0) {
+        if (additionalFields && additionalFields.length > 0) {
           const validFields = additionalFields.filter(
             field => field.attribute.trim() && field.label.trim()
           );
@@ -193,12 +190,6 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
             payload.fields = JSON.stringify(validFields);
           }
         }
-
-        // Handle removed fields
-        if (removedFields.length > 0) {
-          payload.removedFields = JSON.stringify(removedFields);
-        }
-
         response = await updateDocument(documentId, payload);
       }
 
@@ -257,12 +248,10 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
   };
 
   const handleDeleteField = (index) => {
-    // Store the deleted field for backend update if in edit mode
     if (mode === "update" && additionalFields[index]) {
       setRemovedFields(prev => [...prev, additionalFields[index]]);
     }
 
-    // Remove the field from UI
     const updatedFields = [...additionalFields];
     updatedFields.splice(index, 1);
     setAdditionalFields(updatedFields);
