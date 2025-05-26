@@ -10,6 +10,8 @@ import FormControl from "@mui/material/FormControl";
 import Typography from "@mui/material/Typography";
 import Select from "@mui/material/Select";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import DeleteIcon from "@mui/icons-material/Delete";
+import IconButton from "@mui/material/IconButton";
 import { toast } from "react-toastify";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
@@ -41,7 +43,8 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
     validity: "",
     document: false,
   });
-  const [additionalKeys, setAdditionalKeys] = useState([]);
+  const [additionalFields, setAdditionalFields] = useState([]);
+  const [removedFields, setRemovedFields] = useState([]);
 
   const handleSelectChange = (e) => {
     const { name, value } = e.target;
@@ -57,7 +60,6 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
       }));
     }
   };
-
 
   useEffect(() => {
     if (mode === "update" && documentId) {
@@ -79,7 +81,31 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
           validity: documentData.validity || "",
           document: documentData.filePath || "",
         });
-        setAdditionalKeys(documentData.fields);
+
+        // Handle the fields data
+        if (documentData.fields) {
+          try {
+            let parsed = documentData.fields;
+        
+            // If stringified JSON
+            if (typeof parsed === 'string') {
+              parsed = JSON.parse(parsed);
+            }
+        
+            // Normalize into array
+            if (!Array.isArray(parsed)) {
+              parsed = [parsed];
+            }
+        
+            // Optional: validate objects have attribute and label
+            const validFields = parsed.filter(f => f.attribute && f.label);
+            setAdditionalFields(validFields);
+          } catch (err) {
+            console.error("Failed to parse fields:", err);
+            setAdditionalFields([]);
+          }
+        }
+        
       } else {
         toast.error("Error fetching document details");
       }
@@ -87,6 +113,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
     } catch (error) {
       setLoading(false);
       toast.error("Something went wrong while fetching document details");
+      console.error(error);
     }
   };
 
@@ -130,7 +157,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
       let response;
 
       if (mode === "create") {
-        console.log("form values", formValues)
+        console.log("form values", formValues);
         const formData = new FormData();
         formData.append('name', formValues.name);
         formData.append('type', formValues.type);
@@ -138,25 +165,40 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
         if (formValues.document instanceof File) {
           formData.append("document", formValues.document);
         }
-        const fieldNames = [];
-        additionalKeys.forEach((key) => {
-          if (key.trim()) {
-            fieldNames.push(key);
-          }
-        });
 
-        if (fieldNames.length > 0) {
-          formData.append("fields", fieldNames.join(","));
+        // Add fields as a JSON string if there are any
+        if (additionalFields.length > 0) {
+          const validFields = additionalFields.filter(
+            field => field.attribute.trim() && field.label.trim()
+          );
+          if (validFields.length > 0) {
+            formData.append("fields", JSON.stringify(validFields));
+          }
         }
 
-        console.log("formData ==>", [...formData.entries()])
+        console.log("formData ==>", [...formData.entries()]);
         response = await createDocument(formData);
       } else {
-        // Include edit reason in the payload for update
         const payload = {
           ...formValues,
           ...(editReason && { reason: editReason }),
         };
+
+        // Add fields as a JSON array if there are any
+        if (additionalFields.length > 0) {
+          const validFields = additionalFields.filter(
+            field => field.attribute.trim() && field.label.trim()
+          );
+          if (validFields.length > 0) {
+            payload.fields = JSON.stringify(validFields);
+          }
+        }
+
+        // Handle removed fields
+        if (removedFields.length > 0) {
+          payload.removedFields = JSON.stringify(removedFields);
+        }
+
         response = await updateDocument(documentId, payload);
       }
 
@@ -195,47 +237,55 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
     );
   }
 
-  const handleAdditionalKeyChange = (index, value) => {
-    const updatedKeys = [...additionalKeys];
-    updatedKeys[index] = value;
-    setAdditionalKeys(updatedKeys);
+  const handleFieldChange = (index, field, value) => {
+    const updatedFields = [...additionalFields];
+    updatedFields[index] = {
+      ...updatedFields[index],
+      [field]: value
+    };
+    setAdditionalFields(updatedFields);
   };
 
-  const handleAddKey = () => {
-    const lastKey = additionalKeys[additionalKeys.length - 1];
-    if (lastKey?.trim() !== "") {
-      setAdditionalKeys((prev) => [...prev, ""]);
+  const handleAddField = () => {
+    const lastField = additionalFields[additionalFields.length - 1];
+    if (!additionalFields.length ||
+      (lastField?.attribute?.trim() !== "" && lastField?.label?.trim() !== "")) {
+      setAdditionalFields((prev) => [...prev, { attribute: "", label: "" }]);
     } else {
-      toast.error("Please fill the previous key before adding another.");
+      toast.error("Please fill both attribute and label before adding another field.");
     }
   };
 
-  console.log(formValues, "formValues")
+  const handleDeleteField = (index) => {
+    // Store the deleted field for backend update if in edit mode
+    if (mode === "update" && additionalFields[index]) {
+      setRemovedFields(prev => [...prev, additionalFields[index]]);
+    }
+
+    // Remove the field from UI
+    const updatedFields = [...additionalFields];
+    updatedFields.splice(index, 1);
+    setAdditionalFields(updatedFields);
+
+    toast.success("Field removed successfully");
+  };
+
+  console.log(formValues.document, "formValues");
+  console.log(additionalFields, "additionalFields");
+
   return (
     <CommonCard>
       <Box component="form" onSubmit={handleSubmit} noValidate>
         <Stack spacing={3}>
           <TextField
             fullWidth
-            label="Document Name"
+            label={<Typography variant="body1" color="gray" fontWeight={400}>Document Name <span style={{ color: "red" }}>*</span></Typography>}
             name="name"
             value={formValues.name}
             onChange={handleInputChange}
             error={errors.name}
             helperText={errors.name ? "Document name is required" : ""}
-            required
           />
-
-          {/* <TextField
-            fullWidth
-            label="Document Type"
-            name="type"
-            value={formValues.type}
-            onChange={handleInputChange}
-            error={errors.type}
-            helperText={errors.type ? "Document type is required" : ""}
-            required
-          /> */}
 
           <FormControl fullWidth error={errors.type}>
             <Select
@@ -245,8 +295,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
               displayEmpty
             >
               <MenuItem value="" disabled>
-                Select Document Type *
-              </MenuItem>
+                <Typography variant="body1" color="gray" fontWeight={400}>Select Document Type <span style={{ color: "red" }}>*</span></Typography>              </MenuItem>
               {documentType.map((document) => (
                 <MenuItem key={document.value} value={document.value}>
                   {document.label}
@@ -273,7 +322,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
               displayEmpty
             >
               <MenuItem value="" disabled>
-                Select Document Validity Type *
+                <Typography variant="body1" color="gray" fontWeight={400}>Select Document Validity Type <span style={{ color: "red" }}>*</span></Typography>
               </MenuItem>
               {documentValidityType.map((document) => (
                 <MenuItem key={document.value} value={document.value}>
@@ -293,25 +342,6 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
             )}
           </FormControl>
 
-          <Typography variant="h6">Additional Fields</Typography>
-          <Stack spacing={2}>
-            {additionalKeys.length > 0 && additionalKeys.map((key, index) => (
-              <TextField
-                key={index}
-                label={`Key ${index + 1}`}
-                value={key}
-                onChange={(e) => handleAdditionalKeyChange(index, e.target.value)}
-                fullWidth
-              />
-            ))}
-
-            <CommonButton
-              text="Add Key"
-              variant="outlined"
-              onClick={handleAddKey}
-              sx={{ alignSelf: "flex-start" }}
-            />
-          </Stack>
           <FormControl fullWidth error={errors.document}>
             <Box
               component="label"
@@ -326,12 +356,31 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
                 color: "text.secondary",
                 cursor: "pointer",
               }}
+              onDragOver={(e) => {
+                e.preventDefault();
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                  setFormValues((prev) => ({
+                    ...prev,
+                    document: file,
+                  }));
+                  if (errors.document) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      document: false,
+                    }));
+                  }
+                }
+              }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <CloudUploadIcon />
                 <Typography variant="body2">
                   {formValues.document
-                    ? formValues.document
+                    ? formValues.document.name || formValues.document
                     : "Drag files or browse to upload"}
                 </Typography>
               </Box>
@@ -371,10 +420,45 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
 
             {errors.document && (
               <Typography variant="caption" color="error" mt={1}>
-                document is required
+                Document is required
               </Typography>
             )}
           </FormControl>
+
+          <Typography variant="h6">Additional Fields</Typography>
+          <Stack spacing={2}>
+            {Array.isArray(additionalFields) && additionalFields.length > 0 &&
+              additionalFields.map((field, index) => (
+                <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <TextField
+                    label="Attribute"
+                    value={field.attribute || ""}
+                    onChange={(e) => handleFieldChange(index, "attribute", e.target.value)}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Label"
+                    value={field.label || ""}
+                    onChange={(e) => handleFieldChange(index, "label", e.target.value)}
+                    fullWidth
+                  />
+                  <IconButton
+                    color="error"
+                    onClick={() => handleDeleteField(index)}
+                    aria-label="delete field"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              ))}
+
+            <CommonButton
+              text="Add Attribute"
+              variant="outlined"
+              onClick={handleAddField}
+              sx={{ alignSelf: "flex-start" }}
+            />
+          </Stack>
 
           <Stack
             direction="row"

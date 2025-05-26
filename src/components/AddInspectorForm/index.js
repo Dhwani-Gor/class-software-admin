@@ -113,22 +113,21 @@ const AddInspectorForm = ({
       if (userId) {
         const res = await updateInspectorDetail(userId, data);
 
-        console.log('115 ===>',res)
-
-        if (res.data.status === "success") {
+        if (res?.data?.status === "success") {
           toast.success("Inspector updated successfully");
           router.push('/staff')
         } else {
-          throw new Error("Invalid response format or missing URL");
+          toast.error(res?.response?.data?.message);
         }
       } else {
         const res = await createInspector({ ...data, roleId: 2 });
-
-        if (res?.data.status === "success") {
+        console.log("test")
+        console.log(res,"res data")
+        if (res?.data?.status === "success") {
           toast.success("Inspector created successfully");
           router.push('/staff')
         } else {
-          throw new Error("Invalid response format or missing URL");
+          toast.error(res?.response?.data?.message);
         }
       }
     } catch (error) {
@@ -151,7 +150,7 @@ const AddInspectorForm = ({
         <>
           <Stack mt={4} spacing={4}>
             <Paper sx={{ padding: "20px", borderRadius: "15px" }}>
-              <form onSubmit={handleSubmit(onSubmit)}>
+              <form onSubmit={handleSubmit(onSubmit)} autoComplete="off">
                 <Grid2 container spacing={3}>
                   <Grid2 size={{ xs: 12 }}>
                     <Controller
@@ -175,7 +174,7 @@ const AddInspectorForm = ({
                             InputProps={{
                               style: { color: "black" },
                             }}
-                          />
+                            autoComplete="Enter Name"                          />
                         );
                       }}
                     />
@@ -199,6 +198,7 @@ const AddInspectorForm = ({
                             placeholder="Enter User Name"
                             error={Boolean(errors.username)}
                             helperText={errors.username?.message}
+                            autoComplete="New Username"
                             InputProps={{
                               style: { color: "black" },
                             }}
@@ -227,6 +227,7 @@ const AddInspectorForm = ({
                             error={Boolean(errors.password)}
                             helperText={errors.password?.message}
                             type="password"
+                            autoComplete="password"
                             InputProps={{
                               style: { color: "black" },
                             }}

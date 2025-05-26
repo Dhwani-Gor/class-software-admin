@@ -28,7 +28,7 @@ const EditingReasonDialog = ({ open, title, onCancel, onConfirm }) => {
         <TextareaAutosize
           value={value}
           minRows={10}
-          placeholder="Enter remarks"
+          placeholder="Enter Remarks"
           style={{
             width: "100%",
             minWidth: '50vw',

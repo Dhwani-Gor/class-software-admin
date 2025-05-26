@@ -229,7 +229,7 @@ const Countries = () => {
         />
       </Stack>
         <CommonInput
-          placeholder="Search Document by name"
+          placeholder="Search Document By Name"
           fullWidth
           value={search}
           onChange={handleSearchChange}

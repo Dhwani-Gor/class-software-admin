@@ -27,7 +27,7 @@ const SurveyTypes = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState(""); // Debounced search state
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
   const [surveyTypes, setSurveyTypes] = useState([]);
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
@@ -52,10 +52,10 @@ const SurveyTypes = () => {
   const fetchAllSurveyTypes = async (page, limit, searchQuery) => {
     try {
       setLoading(true);
-      const result = await getSurveyTypes();
+      const result = await getSurveyTypes(searchQuery, page, limit);
       if (result?.status === 200) {
-        console.log('57 ===>', result.data.data);
         setSurveyTypes(result.data.data)
+        setTotalRows(result.data.totalRows)
       } else {
         toast.error("Something went wrong ! Please try again after some time")
       }
@@ -68,8 +68,8 @@ const SurveyTypes = () => {
   };
 
   useEffect(() => {
-    fetchAllSurveyTypes();
-  }, []);
+    fetchAllSurveyTypes(page, limit, debouncedSearch);
+  }, [debouncedSearch, page, limit]);
 
   const handleSearchChange = (event) => {
     setSearch(event.target.value);
@@ -88,7 +88,7 @@ const SurveyTypes = () => {
       if (res?.data?.message) {
         setSnackBar({ open: true, message: res.data.message });
       }
-      fetchAllSurveyTypes();
+      fetchAllSurveyTypes(page, limit, debouncedSearch);
     } catch (e) {
       console.error("Error deleting Survey Type:", e.response?.data || e.message);
       setSnackBar({ open: true, message: "Failed to delete Survey Type." });
@@ -102,7 +102,7 @@ const SurveyTypes = () => {
 
   const handlePageChange = (event, value) => {
     setPage(value);
-    router.push(`/clients?page=${value}&limit=${limit}`);
+    router.push(`/survey-types?page=${value}&limit=${limit}`);
   };
 
   const columns = [

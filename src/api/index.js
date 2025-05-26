@@ -153,7 +153,7 @@ export const getAllUsers = async (page, limit, search, isActiveUsers = true) => 
       params: {
         page: page,
         limit: limit,
-        query: search,
+        search: search,
       },
     });
   } catch (error) {
@@ -257,10 +257,16 @@ export const getShipDetails = async (page, limit, search) => {
   return result;
 };
 
-export const getAllClients = async () => {
+export const getAllClients = async (page, limit, search) => {
   let result;
   try {
-    result = await axiosInstance.get("/api/clients");
+    result = await axiosInstance.get("/api/clients", {
+      params: {
+        page: page,
+        limit: limit,
+        search: search,
+      },
+    });
   } catch (error) {
     result = error;
   }
@@ -311,6 +317,26 @@ export const searchowner_detail = async (searchQuery) => {
   let result;
   try {
     result = await axiosInstance.get(`/api/search/ownerDetails?search=${searchQuery}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const searchmanager_detail = async (searchQuery) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/search/managerDetails?search=${searchQuery}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const searchinvoicing_detail = async (searchQuery) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/search/invoicingDetails?search=${searchQuery}`);
   } catch (error) {
     result = error;
   }
@@ -446,12 +472,12 @@ export const getAllVisitDetails = async (filterKey, filterValue) => {
   return result;
 };
 
-export const getSurveyTypes = async () => {
+export const getSurveyTypes = async (search, page, limit) => {
   let result;
   try {
-    result = await axiosInstance.get("/api/surveyTypes");
+    result = await axiosInstance.get(`/api/surveyTypes?search=${search}&page=${page}&limit=${limit}`);
   } catch (error) {
-    result = ertror;
+    result = error;
   }
   return result;
 };

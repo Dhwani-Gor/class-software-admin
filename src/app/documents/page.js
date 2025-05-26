@@ -23,6 +23,8 @@ import CommonButton from "@/components/CommonButton";
 import CommonInput from "@/components/CommonInput";
 import { deleteDocument, getAllDocuments } from "@/api";
 import { toast } from "react-toastify";
+import PreviewIcon from '@mui/icons-material/Visibility';
+import DialogContent from "@mui/material/DialogContent";
 
 const Documents = () => {
   const router = useRouter();
@@ -39,7 +41,8 @@ const Documents = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [selectedFilter, setSelectedFilter] = useState("all"); // 'all', 'reports', or 'certificates'
-
+  const [previewFile, setPreviewFile] = useState(null);
+  const [openPreviewModal, setOpenPreviewModal] = useState(false);
   const snackbarClose = () => {
     setSnackBar({ open: false, message: "" });
   };
@@ -151,6 +154,30 @@ const Documents = () => {
     },
     { field: "name", headerName: "Document Name", flex: 1.5 },
     { field: "type", headerName: "Document Type", flex: 1 },
+    {
+      field: "filePath",
+      headerName: "File Preview",
+      width: 100,
+      renderCell: (params) => (
+        params.row.filePath ? (
+          <Tooltip title="Preview Document">
+            <IconButton
+              color="info"
+              onClick={() => {
+                setPreviewFile(params.row.filePath);
+                setOpenPreviewModal(true);
+              }}
+            >
+              <PreviewIcon />
+            </IconButton>
+          </Tooltip>
+        ) : (
+          <Typography variant="body2" color="textSecondary">
+            No File
+          </Typography>
+        )
+      ),
+    },
     {
       field: "actions",
       headerName: "Actions",
@@ -327,6 +354,33 @@ const Documents = () => {
         className="snackBarColor"
         key="snackbar"
       />
+       <Dialog
+              open={openPreviewModal}
+              onClose={() => setOpenPreviewModal(false)}
+              maxWidth="md"
+              fullWidth
+            >
+              <DialogTitle>Document Preview</DialogTitle>
+              <DialogContent>
+                {previewFile ? (
+                  <iframe
+                    src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile)}&embedded=true`}
+                    style={{ width: "100%", height: "80vh", border: "none" }}
+                  />
+                ) : (
+                  <img
+                    src={previewFile}
+                    alt="Document Preview"
+                    style={{ maxWidth: "100%", maxHeight: "80vh" }}
+                  />
+                )}
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setOpenPreviewModal(false)} color="primary">
+                  Close
+                </Button>
+              </DialogActions>
+            </Dialog>
     </Layout>
   );
 };
