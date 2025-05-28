@@ -94,10 +94,7 @@ const AddClientInspectorCommonForm = ({
           const data = res?.data?.data;
 
           if (!data) return;
-          // console.log(data, "response data ==>");
-
           setFormData(data);
-
           setValue('id', data?.id)
           setValue("name", data?.name);
           setValue("nameOfCompany", data?.nameOfCompany);
@@ -198,8 +195,6 @@ const AddClientInspectorCommonForm = ({
 
 
   const onSubmit = async (data) => {
-    console.log(data);
-    
     setIsDataLoading(true);
   
     let payload = {

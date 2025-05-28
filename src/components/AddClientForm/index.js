@@ -175,7 +175,6 @@ const AddSurveyType = ({
     const ownerDetails = getValues("ownerDetails");
     const managerDetails = getValues("managerDetails");
     const invoicingDetails = getValues("invoicingDetails");
-    console.log(invoicingDetails,1234567)
     if (isManagerSameAsOwner && ownerDetails) {
       setValue("managerDetails", { ...ownerDetails });
       clearErrors('managerDetails.companyAddress');
@@ -286,8 +285,6 @@ const AddSurveyType = ({
     }
   }
 
-  console.log('255 ===>', clientId);
-
   useEffect(() => {
     if (clientId) {
       fetchClient();
@@ -356,11 +353,9 @@ const AddSurveyType = ({
       setInvoicingOptions([]);
       return;
     }
-    console.log(searchQuery,"searchQuery")
     setIsSearching(prev => ({ ...prev, invoicing: true }));
     try {
       const result = await searchinvoicing_detail(searchQuery);
-      console.log("result ===>", result);
       if (result?.status === 200 && result?.data) {
         setInvoicingOptions(
           (result.data.data || []).map((item) => ({
@@ -409,13 +404,6 @@ const AddSurveyType = ({
   };
 
   const onSubmit = async (data) => {
-    // Add debug logging to verify form data
-    console.log("Submitting form with data:", data);
-    console.log("Owner company:", data.ownerDetails?.nameOfCompany);
-    console.log("Manager company:", data.managerDetails?.nameOfCompany);
-    console.log("Invoicing company:", data.invoicingDetails?.nameOfCompany);
-
-    // Ensure all required data is present
     if (!data.ownerDetails || !data.managerDetails || !data.invoicingDetails) {
       toast.error("Missing required details. Please fill all required fields.");
       return;

@@ -35,8 +35,6 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes }) 
     defaultValues: { typeOfSurvey: "" },
   });
 
-  // console.log(defaultValues?.surveyTypes , "defaultValues ==>" , surveyTypes)
-
   useEffect(() => {
     reset(defaultValues || { typeOfSurvey: "" });
 

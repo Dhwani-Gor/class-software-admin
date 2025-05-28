@@ -20,7 +20,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonInput from "@/components/CommonInput";
-import { deleteVisa, getVisaDetails } from "@/api";
+import { deleteVisa,getVisitDetails } from "@/api";
 import { Chip } from "@mui/material";
 
 const Countries = () => {
@@ -57,36 +57,25 @@ const Countries = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  const fetchVisaListData = async (page, limit, searchQuery) => {
+  const fetchVisaListData = async (filterKey, filterValue, page, limit, searchQuery) => {
     setLoading(true);
-    await getVisaDetails(page, limit, searchQuery).then((res) => {
-      if (res?.data?.data?.visas?.length > 0) {
-        const flattenedData = res?.data?.data?.visas?.map((item) => ({
-          id: item?.id,
-          countryName: item?.basicDetails?.countryName || "-",
-          totalVisaCompleted: item?.basicDetails?.totalVisaCompleted || "-",
-          visaEntry: item?.visaDetails?.visaEntry || "-",
-          visaType: item?.visaDetails?.visaType || "-",
-          validityPeriod: item?.visaDetails?.validityPeriod || "-",
-          lengthOfStay: item?.visaDetails?.lengthOfStay || "-",
-          visaFee: item?.visaDetails?.visaFee || "-",
-          vizayardFee: item?.visaDetails?.vizayardFee || "-",
-          govtVisaFee: item?.visaDetails?.govtVisaFee || "-",
-        }));
-        const sortedData = flattenedData?.sort((a, b) => a?.id - b?.id);
-
-        setCountryLists(sortedData);
-        setTotalRows(res?.data?.data?.totalVisas);
+    try {
+      const res = await getVisitDetails(filterKey, filterValue, page, limit, searchQuery);
+      const data = res?.data;
+  
+      if (Array.isArray(data?.data) && data.data.length > 0) {
+        // Assuming 'results' is the total count of visas
+        setTotalRows(data.results || data.data.length);
       } else {
-        setCountryLists([]);
-        setTotalRows(0)
+        setTotalRows(0);
       }
-    }).catch((e) => {
-      console.log(e)
-    }).finally(() => {
+    } catch (e) {
+      console.log(e);
+    } finally {
       setLoading(false);
-    });
+    }
   };
+  
 
   useEffect(() => {
     if (page > 0 && limit > 0) {

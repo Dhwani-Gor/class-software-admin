@@ -81,7 +81,6 @@ const SurveyTypeForm = ({
       const res = await getReports();
       if (res?.data?.data) {
         setReports(res.data.data);
-        console.log("Fetched reports:", res.data.data);
       }
     } catch (error) {
       console.error("Error fetching reports:", error);
@@ -110,8 +109,6 @@ const SurveyTypeForm = ({
         return;
       }
 
-      console.log("Survey type data received:", data);
-
       // Extract report IDs from the reports array objects
       let reportIdsArray = [];
       
@@ -129,9 +126,7 @@ const SurveyTypeForm = ({
       
       // Remove any NaN values that might have been created by parseInt
       reportIdsArray = reportIdsArray.filter(id => !isNaN(id));
-      
-      console.log("Extracted reportIds:", reportIdsArray);
-      
+            
       // Update form values
       setValue("name", data.name || "");
       setValue("abbreviation", data.abbreviation || "");
@@ -202,7 +197,6 @@ const SurveyTypeForm = ({
   const getReportById = (id) => {
     // Handle numeric or string IDs
     const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
-    console.log('216 ===>',reports)
     return reports.find(report => report.id == numericId) || { id: numericId, name: `Unknown (ID: ${numericId})` };
   };
 

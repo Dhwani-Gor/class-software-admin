@@ -39,6 +39,11 @@ import moment from "moment";
 import { Stack } from "@mui/material";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from 'yup';
+import { PreviewOutlined, PreviewTwoTone } from "@mui/icons-material";
+import { DialogForm } from "../ReportData";
+import InternationalTonnage from "../documents/InternationalTonnage";
+import DocumentForm from "../AddDocumentForm";
+// import { underscoreFields } from "@/JSONDATA/suppo_ipp";
 
 // Updated schema with correct field names
 const reportSchema = yup.object().shape({
@@ -47,11 +52,13 @@ const reportSchema = yup.object().shape({
   issuancedate: yup.string().required('Issuance date is required'),
   validitydate: yup.string().required('Validity date is required'),
   surveydate: yup.string().required('Survey date is required'),
-  endorsementdate: yup.string().optional(),
-  issuedBy: yup.string().required('Issued by is required'),
+  endorsementdate: yup.string().required('Endorsement date is required'),
+  issuedBy: yup.string().optional(),
   place: yup.string().required('Place is required'),
 });
 
+// Document Upload Dialog Component
+// Document Upload Dialog Component - FIXED VERSION
 const DocumentUploadDialog = ({
   open,
   onClose,
@@ -60,9 +67,7 @@ const DocumentUploadDialog = ({
   onRemoveDocument
 }) => {
   const [documents, setDocuments] = useState([]);
-  console.log(documents, "documents")
-  console.log(selectedDocuments, "selectedDocuments")
-
+  
   const handleFileChange = (event) => {
     if (event.target.files) {
       const newFiles = Array.from(event.target.files);
@@ -84,13 +89,17 @@ const DocumentUploadDialog = ({
   };
 
   const renderFileIcon = (file) => {
+    // Handle both File objects (new uploads) and existing document objects
     let fileType;
 
     if (file?.type) {
+      // New file upload (File object)
       fileType = file.type.split('/')[0];
     } else if (file?.fileType) {
+      // Existing document from server
       fileType = file.fileType.split('/')[0];
     } else {
+      // Fallback
       fileType = 'unknown';
     }
 
@@ -107,13 +116,17 @@ const DocumentUploadDialog = ({
   };
 
   const getFileName = (file) => {
+    // Handle both File objects (new uploads) and existing document objects
     if (file?.name) {
+      // New file upload (File object)
       return file.name;
     } else if (file?.fileName) {
+      // Existing document from server
       return file.fileName;
     }
     return 'Unknown file';
   };
+
 
   return (
     <Dialog open={open} onClose={onClose}>
@@ -175,6 +188,13 @@ const DocumentUploadDialog = ({
                   >
                     <DeleteIcon fontSize="small" />
                   </IconButton> */}
+                  <IconButton
+                    size="small"
+                    onClick={() => handleOpenPreview(doc)}
+                    color="error"
+                  >
+                    <PreviewTwoTone fontSize="small" />
+                  </IconButton>
                 </Box>
               ))}
             </Box>
@@ -214,8 +234,14 @@ const ReportingForm = () => {
   const [endorsedIssuedBy, setEndorsedIssuedBy] = useState([]);
   const [selectSurveyor, setSelectSurveyor] = useState("");
   const [surveyorName, setSurveyorName] = useState({});
+  const [open, setOpen] = useState(false);
+  const [openPreviewModal, setOpenPreviewModal] = useState(false);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [previewFile, setPreviewFile] = useState("");
+  const [underscoreFields, setUnderscoreFields] = useState([]);
+  const [reportName,setReportName] = useState("")
 
-  // Form setup with validation only on submit
+  console.log(reportName,"reportName")
   const {
     control,
     handleSubmit,
@@ -346,7 +372,6 @@ const ReportingForm = () => {
     try {
       setLoading(true);
       const result = await createReportDetail(payload);
-      console.log(result, "result")
       if (result?.data?.status === 'success') {
         setReportDetails(result?.data?.data);
         toast.success("Report saved successfully.")
@@ -379,11 +404,18 @@ const ReportingForm = () => {
 
   const handleFullReportGeneration = async () => {
     try {
-      const surveyAbbr = surveyorName?.abbreviation || 'Survey';
-      const certType = selectCertificate || 'Type';
-      const reportNo = selectedReportNumber?.journalTypeId || 'Unknown';
-      const result = await generateFullReport({
-        reportDetailId: reportDetails?.id
+      console.log(underscoreFields,"underscoreFields underscoreFields")
+      if(underscoreFields.length > 0){
+        setOpen(true);
+      }else{
+        const surveyAbbr = surveyorName?.abbreviation || 'Survey';
+        const certType = selectCertificate || 'Type';
+        const reportNo = selectedReportNumber?.journalTypeId || 'Unknown';
+        const result = await generateFullReport({
+        reportDetailId: reportDetails?.id,
+        // data: {
+        //   ...extraFields
+        // }
       })
       if (result?.data.data) {
         setLoading(true);
@@ -401,11 +433,54 @@ const ReportingForm = () => {
       } else {
         toast.error("Something went wrong ! Please try again after some time")
       }
+    }
     } catch (error) {
       toast.error("Failed to generate full report");
     }
   }
+  // const handleFullReportGeneration = () => {
+  //   setOpen(true);
+  // };
 
+  const handleSubmitReport = async (extraFields) => {
+    try {
+      setLoading(true);
+  
+      const surveyAbbr = surveyorName?.abbreviation || 'Survey';
+      const certType = selectCertificate || 'Type';
+      const reportNo = selectedReportNumber?.journalTypeId || 'Unknown';
+  
+      const payload = {
+        reportDetailId: reportDetails?.id,
+        data: {
+          ...extraFields
+        }
+      };
+  
+      const result = await generateFullReport(payload);
+  
+      if (result?.data?.data) {
+        const link = document.createElement("a");
+        link.href = result.data.data;
+        link.target = "_blank";
+        link.download = `${surveyAbbr}_${certType}_${reportNo}.docx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+  
+      if (result?.data?.status === 'success') {
+        toast.success("Report generated successfully.");
+      } else {
+        toast.error("Something went wrong!");
+      }
+    } catch (err) {
+      toast.error("Failed to generate full report");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const handleStatusChange = async (id, value) => {
     setTableData((prevData) =>
       prevData.map((item) =>
@@ -603,6 +678,10 @@ const ReportingForm = () => {
       const result = await getAllActivities('journalId', id);
       if (result?.data?.status === "success") {
         setTableData(result?.data?.data);
+
+        setReportName(result?.data?.data[0]?.surveyTypes?.reports[0]?.name);
+        const data = extractUnderscoreFields(result?.data?.data);
+        setUnderscoreFields(data)
       } else {
         toast.error("Something went wrong ! Please try again after some time");
       }
@@ -632,6 +711,27 @@ const ReportingForm = () => {
       toast.error(error?.message || "Failed to fetch surveyors");
     }
   };
+
+  const extractUnderscoreFields = (data) => {
+    const fields = [];
+  
+    data?.forEach((item) => {
+      item?.surveyTypes?.reports?.forEach((report) => {
+        report?.fields?.forEach((field) => {
+          if (field?.attribute?.startsWith("_")) {
+            fields.push({
+              label: field.label,
+              attribute: field.attribute
+            });
+          }
+        });
+      });
+    });
+  
+    return fields;
+  };
+  
+  
 
   const surveyorOptions = endorsedIssuedBy.map((surveyor) => ({
     label: surveyor.name,
@@ -998,11 +1098,11 @@ const ReportingForm = () => {
                       </MenuItem>
                     ))}
                   </Select>
-                  {errors.issuedBy && (
+                  {/* {errors.issuedBy && (
                     <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
                       {errors.issuedBy.message}
                     </Typography>
-                  )}
+                  )} */}
                 </FormControl>
               </Grid2>
               <Grid2 item size={{ md: 3 }}>
@@ -1076,7 +1176,85 @@ const ReportingForm = () => {
           ? `Remarks for ${fullScreenRemarksVisible.surveyTypes.name}`
           : "Remarks"}
       />
+      <Dialog
+        open={openPreviewModal}
+        onClose={() => setOpenPreviewModal(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Document Preview</DialogTitle>
+        <DialogContent>
+          <div style={{ position: 'relative', width: '100%', height: '80vh' }}>
+            {!loadingPreview ? (
+              <a
+                href={previewFile}
+                download
+                rel="noopener noreferrer"
+                style={{
+                  position: 'absolute',
+                  top: '10px',
+                  right: '10px',
+                  zIndex: 1,
+                  backgroundColor: '#4CAF50',
+                  color: 'white',
+                  padding: '8px 12px',
+                  border: 'none',
+                  borderRadius: '4px',
+                  textDecoration: 'none',
+                  fontSize: '14px',
+                }}
+              >
+                Download
+              </a>) : (
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                height="100%"
+                position="absolute"
+                top={0}
+                left={0}
+                width="100%"
+                zIndex={0}
+                sx={{ backgroundColor: "rgba(255,255,255,0.8)" }}
+              >
+                <CircularProgress />
+              </Box>
+            )}
+            <iframe
+              src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile)}&embedded=true`}
+              style={{ width: '100%', height: '100%', border: 'none' }}
+              title="File Preview"
+              onLoad={() => setLoadingPreview(false)}
+
+            />
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenPreviewModal(false)} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {reportName === "INTERNATIONAL TONNAGE CERTIFICATE (1969)" && (
+        <InternationalTonnage
+          open={open}
+          onClose={() => setOpen(false)}
+          onSubmit={handleSubmitReport}
+          fields={underscoreFields}
+        />
+      )}
+      {reportName === "CARGO SHIP SAFETY CONSTRUCTION CERTIFICATE" && (
+        <DialogForm
+          open={open}
+          onClose={() => setOpen(false)}
+          onSubmit={handleSubmitReport}
+          fields={underscoreFields}
+        />
+      )}
     </Box>
+
+
   );
 };
 

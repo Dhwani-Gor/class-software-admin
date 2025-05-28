@@ -71,10 +71,8 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
     try {
       setLoading(true);
       const result = await getDocumentDetails(documentId);
-      console.log(result.data.data.fields)
       if (result?.status === 200) {
         const documentData = result.data.data;
-        console.log(documentData.filePath, "documentData")
         setFormValues({
           name: documentData.name || "",
           type: documentData.type || "",
@@ -156,7 +154,6 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
       let response;
 
       if (mode === "create") {
-        console.log("form values", formValues);
         const formData = new FormData();
         formData.append('name', formValues.name);
         formData.append('type', formValues.type);
@@ -173,8 +170,6 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
             formData.append("fields", JSON.stringify(validFields));
           }
         }
-
-        console.log("formData ==>", [...formData.entries()]);
         response = await createDocument(formData);
       } else {
         const payload = {
@@ -258,9 +253,6 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
 
     toast.success("Field removed successfully");
   };
-
-  console.log(formValues.document, "formValues");
-  console.log(additionalFields, "additionalFields");
 
   return (
     <CommonCard>

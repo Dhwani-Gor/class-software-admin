@@ -121,8 +121,6 @@ const AddInspectorForm = ({
         }
       } else {
         const res = await createInspector({ ...data, roleId: 2 });
-        console.log("test")
-        console.log(res,"res data")
         if (res?.data?.status === "success") {
           toast.success("Inspector created successfully");
           router.push('/staff')

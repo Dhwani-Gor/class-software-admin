@@ -64,11 +64,13 @@ export const adminLogin = async (payload) => {
   return result;
 };
 
-export const getVisaDetails = async (page, limit, search) => {
+export const getVisitDetails = async (filterKey, filterValue, page, limit, search) => {
   let result;
   try {
-    result = await axiosInstance.get("/visa/visa-list", {
+    result = await axiosInstance.get("/api/visitDetails", {
       params: {
+        filterKey: 'journalId',
+        filterValue: 28,
         page: page,
         limit: limit,
         query: search,
@@ -681,7 +683,7 @@ export const generateFullReport = async (payload) => {
 export const getEndorsedIssuedBy = async (filterKey, filterValue) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/visitDetails?filterKey=${filterKey}&filterValue=${1}`);
+    result = await axiosInstance.get(`/api/visitDetails?filterKey=${filterKey}&filterValue=${filterValue}`);
   } catch (error) {
     result = error;
   }

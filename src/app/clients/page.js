@@ -36,7 +36,6 @@ const Clients = () => {
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedClient, setSelectedClientId] = useState(null);
-  console.log(totalRows)
   const snackbarClose = () => {
     setSnackBar({ open: false, message: "" });
   };
@@ -86,7 +85,7 @@ const Clients = () => {
     try {
       const res = await deleteClient({ id: selectedClient });
       if (res?.data?.message) {
-        setSnackBar({ open: true, message: res.data.message });
+        toast.success(res.data.message)
       }
       fetchClients();
     } catch (e) {

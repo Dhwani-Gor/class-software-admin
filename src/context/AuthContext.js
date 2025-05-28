@@ -80,7 +80,6 @@ const AuthProvider = ({ children }) => {
   
 
   const login = (data) => {
-    // console.log("==> welcome", data);
     localStorage.setItem("token", data?.token);
     localStorage.setItem("roleId", data?.roleId);
     setIsAuthenticated(true);

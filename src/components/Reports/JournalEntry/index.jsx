@@ -100,8 +100,6 @@ const JournalEntryForm = ({ journalId = null }) => {
   const [surveyTypes, setSurveyTypes] = useState([]);
   const [surveyors, setSurveyors] = useState([]);
 
-  // console.log('101 ===>', activitiesList);
-
   const {
     control,
     handleSubmit,
@@ -227,7 +225,6 @@ const JournalEntryForm = ({ journalId = null }) => {
           timeTo: visitData.timeTo,
           date: visitData.date
         }
-        // console.log(payload, "edit visit data")
         updateVisitData(payload, visitData.id)
       } else {
         const payload = {
@@ -390,7 +387,6 @@ const JournalEntryForm = ({ journalId = null }) => {
         };
         updateActivities(payload, activityData.id);
       } else {
-        console.log(activityData, "activityData");
         const payload = {
           journalId: journalId,
           ...activityData,

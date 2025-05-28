@@ -30,7 +30,7 @@ const Documents = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState(""); // Debounced search state
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
   const [documents, setDocuments] = useState([]);
   const [filteredDocuments, setFilteredDocuments] = useState([]);
@@ -40,7 +40,7 @@ const Documents = () => {
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
-  const [selectedFilter, setSelectedFilter] = useState("all"); // 'all', 'reports', or 'certificates'
+  const [selectedFilter, setSelectedFilter] = useState("all");
   const [previewFile, setPreviewFile] = useState(null);
   const [openPreviewModal, setOpenPreviewModal] = useState(false);
   const [loadingPreview, setLoadingPreview] = useState(false);
@@ -62,7 +62,6 @@ const Documents = () => {
       setLoading(true);
       const result = await getAllDocuments();
       if (result?.status === 200) {
-        console.log('Documents data:', result.data.data);
         const docs = result.data.data;
         setDocuments(docs);
         applyFilters(docs, selectedFilter);
@@ -94,7 +93,6 @@ const Documents = () => {
 
     // Filter by document type (Reports = odd index, Certificates = even index)
     if (filter === "reports") {
-      console.log(filtered, "filtered ==>")
       filtered = filtered.filter((document, index) => document.type === "report"); // Odd indexed
     } else if (filter === "certificates") {
       filtered = filtered.filter((document, index) => document.type === "certificate"); // Even indexed
