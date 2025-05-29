@@ -40,9 +40,13 @@ import { Stack } from "@mui/material";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from 'yup';
 import { PreviewOutlined, PreviewTwoTone } from "@mui/icons-material";
-import { DialogForm } from "../ReportData";
-import InternationalTonnage from "../documents/InternationalTonnage";
+import { DialogForm } from "../documents/CommonDocumentForm";
+import InternationalTonnage from "../documents/TonnageCertificateForm";
 import DocumentForm from "../AddDocumentForm";
+import IOPPForm from "../documents/OilPollutionPreventionCertificateForm";
+import CSSForm from "../documents/CargoShipEquipmentRecordForm";
+import LoadLineCertificateForm from "../documents/LoadLineCertificateForm";
+import AntiFoulingCertificateForm from "../documents/AntiFoulingCertificateForm";
 // import { underscoreFields } from "@/JSONDATA/suppo_ipp";
 
 // Updated schema with correct field names
@@ -67,7 +71,7 @@ const DocumentUploadDialog = ({
   onRemoveDocument
 }) => {
   const [documents, setDocuments] = useState([]);
-  
+
   const handleFileChange = (event) => {
     if (event.target.files) {
       const newFiles = Array.from(event.target.files);
@@ -239,9 +243,8 @@ const ReportingForm = () => {
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [previewFile, setPreviewFile] = useState("");
   const [underscoreFields, setUnderscoreFields] = useState([]);
-  const [reportName,setReportName] = useState("")
+  const [reportName, setReportName] = useState("")
 
-  console.log(reportName,"reportName")
   const {
     control,
     handleSubmit,
@@ -263,10 +266,8 @@ const ReportingForm = () => {
       place: '',
     },
     resolver: yupResolver(reportSchema),
-    // Remove mode: 'onChange' to prevent validation on every change
   });
 
-  console.log("Form errors:", errors);
 
   const statusOptions = [
     { value: "Completed", label: "Completed" },
@@ -305,7 +306,6 @@ const ReportingForm = () => {
     const value = event.target.value;
     setSelectCertificate(value);
     setValue('typeOfCertificate', value);
-    // Clear error when user makes a selection
     if (value && errors.typeOfCertificate) {
       clearErrors('typeOfCertificate');
     }
@@ -315,13 +315,11 @@ const ReportingForm = () => {
     const value = event.target.value;
     setSelectSurveyor(value);
     setValue('issuedBy', value);
-    // Clear error when user makes a selection
     if (value && errors.issuedBy) {
       clearErrors('issuedBy');
     }
   };
 
-  // Function to clear field error when user types
   const handleFieldChange = (fieldName, value) => {
     if (value && value.trim() !== '' && errors[fieldName]) {
       clearErrors(fieldName);
@@ -337,13 +335,11 @@ const ReportingForm = () => {
     const isValid = await trigger();
 
     if (!isValid) {
-      console.log("Form validation failed:", errors);
       toast.error("Please fill in all required fields correctly.");
       return;
     }
 
     const values = getValues();
-    console.log("Form values:", values);
 
     const formatDate = (date) => {
       return date ? new Date(date).toISOString() : null;
@@ -404,83 +400,83 @@ const ReportingForm = () => {
 
   const handleFullReportGeneration = async () => {
     try {
-      console.log(underscoreFields,"underscoreFields underscoreFields")
-      if(underscoreFields.length > 0){
+      if (underscoreFields.length > 0) {
         setOpen(true);
-      }else{
+      }
+      else {
         const surveyAbbr = surveyorName?.abbreviation || 'Survey';
         const certType = selectCertificate || 'Type';
         const reportNo = selectedReportNumber?.journalTypeId || 'Unknown';
         const result = await generateFullReport({
-        reportDetailId: reportDetails?.id,
-        // data: {
-        //   ...extraFields
-        // }
-      })
-      if (result?.data.data) {
-        setLoading(true);
+          reportDetailId: reportDetails?.id,
+        })
+        if (result?.data.data) {
+          setLoading(true);
 
-        const link = document.createElement('a');
-        link.href = result.data.data;
-        link.download = `${surveyAbbr}_${certType}_${reportNo}.docx`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setLoading(false);
+          const link = document.createElement('a');
+          link.href = result.data.data;
+          link.download = `${surveyAbbr}_${certType}_${reportNo}.docx`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setLoading(false);
+        }
+        if (result?.data?.status === 'success') {
+          toast.success("Report generated successfully.")
+        } else {
+          toast.error("Something went wrong ! Please try again after some time")
+        }
       }
-      if (result?.data?.status === 'success') {
-        toast.success("Report generated successfully.")
-      } else {
-        toast.error("Something went wrong ! Please try again after some time")
-      }
-    }
     } catch (error) {
       toast.error("Failed to generate full report");
     }
   }
-  // const handleFullReportGeneration = () => {
-  //   setOpen(true);
-  // };
 
   const handleSubmitReport = async (extraFields) => {
+    setLoading(true);
+    setOpen(true);
+
     try {
-      setLoading(true);
-  
       const surveyAbbr = surveyorName?.abbreviation || 'Survey';
       const certType = selectCertificate || 'Type';
       const reportNo = selectedReportNumber?.journalTypeId || 'Unknown';
-  
+
       const payload = {
         reportDetailId: reportDetails?.id,
-        data: {
-          ...extraFields
-        }
+        data: { ...extraFields }
       };
-  
+
       const result = await generateFullReport(payload);
-  
-      if (result?.data?.data) {
-        const link = document.createElement("a");
-        link.href = result.data.data;
-        link.target = "_blank";
-        link.download = `${surveyAbbr}_${certType}_${reportNo}.docx`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+      const fileUrl = result?.data?.data;
+
+      if (!fileUrl) {
+        toast.error("Invalid file URL received.");
+        return;
       }
-  
-      if (result?.data?.status === 'success') {
-        toast.success("Report generated successfully.");
-      } else {
-        toast.error("Something went wrong!");
-      }
+
+      const response = await fetch(fileUrl);
+      if (!response.ok) throw new Error("Network response was not ok");
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `${surveyAbbr}_${certType}_${reportNo}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+
+      toast.success("Report generated successfully.");
     } catch (err) {
+      console.error("Error downloading report:", err);
       toast.error("Failed to generate full report");
     } finally {
       setLoading(false);
     }
   };
-  
+
   const handleStatusChange = async (id, value) => {
     setTableData((prevData) =>
       prevData.map((item) =>
@@ -526,7 +522,6 @@ const ReportingForm = () => {
     try {
       setLoading(true);
       const result = await getSelectedActivityReportDetails(row?.id);
-      console.log('375 ===>', result);
       if (result?.data?.status === "success") {
         setReportDetails(result?.data?.data[0]);
         router.push('#reportDetails');
@@ -535,10 +530,8 @@ const ReportingForm = () => {
         setShowForm(true);
         setSelectedRow(row);
 
-        // Clear any existing errors when loading existing data
         clearErrors();
 
-        // Set form values
         setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
         setSurveyorName(getSurveyTitle(row.surveyTypes));
         setValue('typeOfCertificate', reportData?.typeOfCertificate || "");
@@ -551,7 +544,6 @@ const ReportingForm = () => {
         setSelectSurveyor(reportData?.issuedBy?.toString() || "");
         setValue('place', reportData?.place || "");
       } else {
-        // Clear any existing errors when creating new form
         clearErrors();
         setShowForm(true);
         setSelectedRow(row);
@@ -600,7 +592,7 @@ const ReportingForm = () => {
   const fetchAllJournals = async () => {
     try {
       setLoading(true);
-      const result = await getAllJournals('clientId', selectedShip.id);
+      const result = await getAllJournals({ filterKey: 'clientId', filterValue: selectedShip.id });
       if (result?.status === 200) {
         setJournals(result.data.data)
       } else {
@@ -714,7 +706,7 @@ const ReportingForm = () => {
 
   const extractUnderscoreFields = (data) => {
     const fields = [];
-  
+
     data?.forEach((item) => {
       item?.surveyTypes?.reports?.forEach((report) => {
         report?.fields?.forEach((field) => {
@@ -727,11 +719,11 @@ const ReportingForm = () => {
         });
       });
     });
-  
+
     return fields;
   };
-  
-  
+
+
 
   const surveyorOptions = endorsedIssuedBy.map((surveyor) => ({
     label: surveyor.name,
@@ -1236,7 +1228,7 @@ const ReportingForm = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      {reportName === "INTERNATIONAL TONNAGE CERTIFICATE (1969)" && (
+      {reportName === "INTERNATIONAL TONNAGE CERTIFICATE" && (
         <InternationalTonnage
           open={open}
           onClose={() => setOpen(false)}
@@ -1244,7 +1236,7 @@ const ReportingForm = () => {
           fields={underscoreFields}
         />
       )}
-      {reportName === "CARGO SHIP SAFETY CONSTRUCTION CERTIFICATE" && (
+      {reportName === "CARGO SHIP SAFETY CONSTRUCTION CERTIFICATE" || reportName === "INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" || reportName === "INTERNATIONAL SEWAGE POLLUTION PREVENTION CERTIFICATE" || reportName === "INTERNATIONAL LOAD LINE CERTIFICATE" || reportName === "INTERNATIONAL BALLAST WATER MANAGEMENT CERTIFICATE" && (
         <DialogForm
           open={open}
           onClose={() => setOpen(false)}
@@ -1252,9 +1244,41 @@ const ReportingForm = () => {
           fields={underscoreFields}
         />
       )}
+      {reportName === "INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" &&
+        <div className="container">
+          <IOPPForm
+            open={open}
+            onClose={() => setOpen(false)}
+            onSubmit={handleSubmitReport}
+            fields={underscoreFields}
+          />
+        </div>
+      }
+      {reportName === "RECORD OF EQUIPMENT FOR CARGO SHIP SAFETY" &&
+        <CSSForm
+          open={open}
+          onClose={() => setOpen(false)}
+          onSubmit={handleSubmitReport}
+          fields={underscoreFields}
+        />
+      }
+      {reportName === "INTERNATIONAL LOAD LINE CERTIFICATE" &&
+        <LoadLineCertificateForm
+          open={open}
+          onClose={() => setOpen(false)}
+          onSubmit={handleSubmitReport}
+          fields={underscoreFields}
+        />
+      }
+      {reportName === "International Anti-Fouling System Certificate" &&
+        <AntiFoulingCertificateForm
+          open={open}
+          onClose={() => setOpen(false)}
+          onSubmit={handleSubmitReport}
+          fields={underscoreFields}
+        />
+      }
     </Box>
-
-
   );
 };
 

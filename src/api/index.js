@@ -20,7 +20,7 @@ axiosInstance.interceptors.request.use(
       /*  if (config.data instanceof FormData) {
          config.headers["Content-Type"] = "multipart/form-data";
        } */
-       if (config.data instanceof FormData) {
+      if (config.data instanceof FormData) {
         config.headers["Content-Type"] = "multipart/form-data";
       } else {
         config.headers["Content-Type"] = "application/json";
@@ -194,45 +194,35 @@ export const updateInspectorDetail = async (id, payload) => {
   return result;
 };
 
-
-// export const getAllJournals = async (filterKey, filterValue, page, limit, search) => {
-//   let result;
-//   try {
-//     // Create params object only if parameters are provided
-//     const params = {};
-//     if (filterKey !== undefined) params.filterKey = filterKey;
-//     if (filterValue !== undefined) params.filterValue = filterValue;
-    
-//     // Only include params object if it's not empty
-//     const config = Object.keys(params).length > 0 ? { params } : undefined;
-    
-//     result = await axiosInstance.get("/api/journals", config);
-//   } catch (error) {
-//     result = error;
-//   }
-//   return result;
-// };
-
-export const getAllJournals = async (options = {}) => {
+export const getAllJournals = async ({
+  filterKey = '',
+  filterValue = '',
+  search = '',
+  page,
+  limit,
+} = {}) => {
   let result;
+
+  const params = {};
+
+  if (filterKey && filterValue) {
+    params[filterKey] = filterValue;
+  }
+
+  if (search) params.search = String(search);
+  if (page) params.page = page;
+  if (limit) params.limit = limit;
+
   try {
-    const { filterKey, filterValue } = options;
-
-    const params = {};
-    if (typeof filterKey === 'string' && filterKey.trim() !== '') params.filterKey = filterKey.trim();
-    if (typeof filterValue === 'string' && filterValue.trim() !== '') params.filterValue = filterValue.trim();
-    // if (typeof page === 'number' || (typeof page === 'string' && page.trim() !== '')) params.page = page;
-    // if (typeof limit === 'number' || (typeof limit === 'string' && limit.trim() !== '')) params.limit = limit;
-    // if (typeof search === 'string' && search.trim() !== '') params.search = search.trim();
-
-    const config = Object.keys(params).length > 0 ? { params } : undefined;
-
-    result = await axiosInstance.get("/api/journals", config);
+    result = await axiosInstance.get("/api/journals", { params });
   } catch (error) {
     result = error;
   }
+
   return result;
 };
+
+
 
 
 export const getJournal = async (journalId) => {
@@ -444,10 +434,10 @@ export const getAllActivities = async (filterKey, filterValue) => {
     const params = {};
     if (filterKey !== undefined) params.filterKey = filterKey;
     if (filterValue !== undefined) params.filterValue = filterValue;
-    
+
     // Only include params object if it's not empty
     const config = Object.keys(params).length > 0 ? { params } : undefined;
-    
+
     result = await axiosInstance.get("/api/activities", config);
   } catch (error) {
     result = error;
@@ -494,10 +484,10 @@ export const getAllVisitDetails = async (filterKey, filterValue) => {
     const params = {};
     if (filterKey !== undefined) params.filterKey = filterKey;
     if (filterValue !== undefined) params.filterValue = filterValue;
-    
+
     // Only include params object if it's not empty
     const config = Object.keys(params).length > 0 ? { params } : undefined;
-    
+
     result = await axiosInstance.get("/api/visitDetails", config);
   } catch (error) {
     result = error;
@@ -642,7 +632,7 @@ export const updateActivityDetails = async (id, payload) => {
   }
   return result;
 };
-  
+
 
 export const getAllActivityReportDetails = async (filterKey, filterValue) => {
   let result;
@@ -650,9 +640,9 @@ export const getAllActivityReportDetails = async (filterKey, filterValue) => {
     const params = {};
     if (filterKey !== undefined) params.filterKey = filterKey;
     if (filterValue !== undefined) params.filterValue = filterValue;
-    
+
     const config = Object.keys(params).length > 0 ? { params } : undefined;
-    
+
     result = await axiosInstance.get("/api/reportDetails", config);
   } catch (error) {
     result = error;

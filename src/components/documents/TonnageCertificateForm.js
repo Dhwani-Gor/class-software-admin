@@ -22,6 +22,7 @@ import {
   Grid,
   Divider,
   Button,
+  Grid2,
 } from "@mui/material";
 // import {
 //   Close as CloseIcon,
@@ -34,9 +35,7 @@ import {
   ExpandMore as ExpandMoreIcon
 } from "@mui/icons-material";
 
-import CommonButton from "@/components/CommonButton";
-
-const InternationalTonnage = ({ open, onClose, onSubmit, fields, title = "International Tonnage Certificate" }) => {
+const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
   const [formValues, setFormValues] = useState({});
   const [expandedSection, setExpandedSection] = useState("basicInfo");
   // Initialize form values
@@ -63,7 +62,6 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, title = "Intern
   };
 
   const handleSubmit = () => {
-    // Filter out empty values
     const filledValues = Object?.entries(formValues).reduce((acc, [key, value]) => {
       if (value && value.trim() !== "") {
         acc[key] = value;
@@ -74,23 +72,16 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, title = "Intern
     onSubmit(filledValues);
   };
 
-  const getFilledFieldsCount = () => {
-    return Object.values(formValues)?.filter(value => value && value.trim() !== "").length;
-  };
-
-  // Format field label for better readability
   const formatLabel = (attribute) => {
     return attribute
       ?.replace(/^_/, '')
       ?.replace(/_/g, ' ')
       ?.replace(/\b\w/g, l => l.toUpperCase());
   };
-  // Organize GT and NT spaces into table rows
   const organizeSpacesData = () => {
     const gtSpaces = [];
     const ntSpaces = [];
 
-    // Extract GT spaces
     for (let i = 1; i <= 20; i++) {
       const spaceAttr = `_GT_space_${i}`;
       const locAttr = `_GT_loc_${i}`;
@@ -105,7 +96,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, title = "Intern
         });
       }
     }
-    // Extract NT spaces
+    
     for (let i = 1; i <= 20; i++) {
       const spaceAttr = `_NT_space_${i}`;
       const locAttr = `_NT_loc_${i}`;
@@ -126,7 +117,6 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, title = "Intern
 
   const { gtSpaces, ntSpaces } = organizeSpacesData();
 
-  // Organize fields by categories
   const organizeFields = () => {
     const categories = {
       basic: [],
@@ -269,9 +259,9 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, title = "Intern
   );
 
   const renderFieldCategory = (categoryFields) => (
-    <Grid container spacing={2}>
+    <Grid2 container spacing={2}>
       {categoryFields.map((field) => (
-        <Grid item xs={12} sm={6} md={4} key={field.attribute}>
+        <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={field.attribute}>
           <TextField
             fullWidth
             label={formatLabel(field.attribute)}
@@ -280,9 +270,9 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, title = "Intern
             onChange={(e) => handleInputChange(field.attribute, e.target.value)}
             placeholder={`Enter ${formatLabel(field.attribute)?.toLowerCase()}`}
           />
-        </Grid>
+        </Grid2>
       ))}
-    </Grid>
+    </Grid2>
   );
 
   return (
@@ -322,10 +312,10 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, title = "Intern
             </Box>
             <Box>
               <Typography variant="h5" fontWeight={700} sx={{ mb: 0.5 }}>
-                Report Details
+              International Tonnage Certificate
               </Typography>
               <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                Provide additional information to generate your report
+              Fill out ship-related details including identification, measurements, capacities, key dates, construction specifications, and additional information.
               </Typography>
             </Box>
           </Box>
@@ -418,7 +408,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, title = "Intern
                   formValues[space.spaceAttr]?.trim() ||
                   formValues[space.locAttr]?.trim() ||
                   formValues[space.lengthAttr]?.trim()
-                ).length}/{gtSpaces.length + ntSpaces.length} rows)
+                ).length}/{gtSpaces.length + ntSpaces.length})
               </Typography>
             </Typography>
           </AccordionSummary>
@@ -532,81 +522,61 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, title = "Intern
         )}
       </DialogContent>
       <Divider sx={{ borderColor: 'rgba(102, 126, 234, 0.1)' }} />
-
-      {/* <DialogActions sx={{ p: 3, bgcolor: 'grey.50' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
-            {getFilledFieldsCount()} of {fields?.length || 0} fields completed
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <CommonButton
-              text="Cancel"
-              variant="outlined"
-              onClick={onClose}
-            />
-            <CommonButton
-              text="Submit"
-              variant="contained"
-              onClick={handleSubmit}
-            />
-          </Box>
-        </Box>
-      </DialogActions> */}
-       <DialogActions 
-              sx={{ 
-                p: 3,
-                background: 'white',
-                gap: 2,
-                justifyContent: 'flex-end'
-              }}
-            >
-              <Button 
-                onClick={handleClose} 
-                variant="outlined"
-                size="large"
-                sx={{
-                  borderRadius: 2,
-                  px: 3,
-                  py: 1.5,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  borderColor: 'rgba(102, 126, 234, 0.3)',
-                  color: 'text.secondary',
-                  '&:hover': {
-                    borderColor: 'primary.main',
-                    background: 'rgba(102, 126, 234, 0.04)',
-                    transform: 'translateY(-1px)',
-                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
-                  },
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleSubmit} 
-                variant="contained" 
-                size="large"
-                startIcon={<CheckIcon />}
-                sx={{
-                  borderRadius: 2,
-                  px: 4,
-                  py: 1.5,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 8px 25px rgba(102, 126, 234, 0.6)'
-                  },
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                Generate Report
-              </Button>
-            </DialogActions>
+      <DialogActions
+        sx={{
+          p: 3,
+          background: 'white',
+          gap: 2,
+          justifyContent: 'flex-end'
+        }}
+      >
+        <Button
+          onClick={handleClose}
+          variant="outlined"
+          size="large"
+          sx={{
+            borderRadius: 2,
+            px: 3,
+            py: 1.5,
+            textTransform: 'none',
+            fontWeight: 600,
+            borderColor: 'rgba(102, 126, 234, 0.3)',
+            color: 'text.secondary',
+            '&:hover': {
+              borderColor: 'primary.main',
+              background: 'rgba(102, 126, 234, 0.04)',
+              transform: 'translateY(-1px)',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+            },
+            transition: 'all 0.2s ease'
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          size="large"
+          startIcon={<CheckIcon />}
+          sx={{
+            borderRadius: 2,
+            px: 4,
+            py: 1.5,
+            textTransform: 'none',
+            fontWeight: 600,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 8px 25px rgba(102, 126, 234, 0.6)'
+            },
+            transition: 'all 0.2s ease'
+          }}
+        >
+          Generate Report
+        </Button>
+      </DialogActions>
     </Dialog>
   );
 };

@@ -17,14 +17,14 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
   const [formData, setFormData] = useState({});
   const [focusedField, setFocusedField] = useState(null);
-  
+
   const handleChange = (key) => (e) => {
     setFormData((prev) => ({
       ...prev,
       [key]: e.target.value,
     }));
   };
-  
+
   useEffect(() => {
     if (fields && fields.length > 0) {
       const initialValues = {};
@@ -34,7 +34,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
       setFormData(initialValues);
     }
   }, [fields, open]);
-  
+
   const handleSave = () => {
     onSubmit(formData);
     onClose();
@@ -52,8 +52,6 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
       return <ReportIcon sx={{ color: 'primary.main' }} />;
     }
   };
-
-  console.log(fields,"fields fields")
 
   return (
     <Dialog
@@ -140,7 +138,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
                   <Box>
                     <TextField
                       fullWidth
-                      label={field.attribute}
+                      label={field.label}
                       variant="outlined"
                       value={formData[field.attribute] || ""}
                       onChange={handleChange(field.attribute)}

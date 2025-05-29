@@ -87,13 +87,17 @@ const Reports = () => {
 
   const handlePageChange = (event, value) => {
     setPage(value);
-    router.push(`/journal?page=${value}&limit=${limit}`);
+    router.push(`/journal?page=${page}&limit=${limit}`);
   };
 
-  const fetchAllJournals = async (page, limit, search) => {
+  const fetchAllJournals = async (search,page,limit) => {
     try {
       setLoading(true);
-      const result = await getAllJournals();
+      const result = await getAllJournals({
+        search,
+        page,
+        limit,
+      });
 
       if (result?.status === 200) {
         setJournals(result.data.data || []);
@@ -111,14 +115,15 @@ const Reports = () => {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
+      setPage(1);
     }, 300);
 
     return () => clearTimeout(handler);
   }, [search]);
 
   useEffect(() => {
-    fetchAllJournals();
-  }, []);
+    fetchAllJournals(debouncedSearch,page,limit);
+  }, [debouncedSearch,page,limit]);
 
   const handleCancelDelete = () => {
     setSelectedClientId(null);
@@ -133,7 +138,7 @@ const Reports = () => {
       if (res) {
         toast.success("Journal deleted successfully");
       }
-      fetchAllJournals();
+      fetchAllJournals(search,page,limit);
     } catch (e) {
       console.error("Error deleting Client:", e.response?.data || e.message);
       toast.error("Failed to delete Client.");

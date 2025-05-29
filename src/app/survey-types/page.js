@@ -44,18 +44,19 @@ const SurveyTypes = () => {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
+      setPage(1);
     }, 300);
 
     return () => clearTimeout(handler);
   }, [search]);
 
-  const fetchAllSurveyTypes = async (page, limit, searchQuery) => {
+  const fetchAllSurveyTypes = async (search,page, limit ) => {
     try {
       setLoading(true);
-      const result = await getSurveyTypes(searchQuery, page, limit);
+      const result = await getSurveyTypes(search, page, limit);
       if (result?.status === 200) {
         setSurveyTypes(result.data.data)
-        setTotalRows(result.data.totalRows)
+        setTotalRows(result.data.results)
       } else {
         toast.error("Something went wrong ! Please try again after some time")
       }
@@ -68,7 +69,7 @@ const SurveyTypes = () => {
   };
 
   useEffect(() => {
-    fetchAllSurveyTypes(page, limit, debouncedSearch);
+    fetchAllSurveyTypes(debouncedSearch,page, limit);
   }, [debouncedSearch, page, limit]);
 
   const handleSearchChange = (event) => {
