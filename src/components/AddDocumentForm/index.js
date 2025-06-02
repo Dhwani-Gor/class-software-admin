@@ -193,9 +193,11 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
 
       if (response?.status === 200 || response?.status === 201) {
         toast.success(
-          mode === "create" || mode === "duplicate"
-            ? "Document created successfully"
-            : "Document updated successfully"
+          mode === "duplicate"
+            ? "Document duplicated successfully"
+            : mode === "update"
+            ? "Document updated successfully"
+            : "Document created successfully"
         );
         router.push("/documents");
       } else {
