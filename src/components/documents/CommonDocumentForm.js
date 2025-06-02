@@ -17,7 +17,7 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
   const [formData, setFormData] = useState({});
   const [focusedField, setFocusedField] = useState(null);
-
+  console.log(fields,"fields")
   const handleChange = (key) => (e) => {
     setFormData((prev) => ({
       ...prev,
@@ -144,52 +144,6 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
                       onChange={handleChange(field.attribute)}
                       onFocus={() => setFocusedField(field)}
                       onBlur={() => setFocusedField(null)}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            {getFieldIcon(field?.attribute)}
-                          </InputAdornment>
-                        ),
-                        sx: {
-                          borderRadius: 2,
-                          background: focusedField === field ? 'rgba(102, 126, 234, 0.04)' : 'white',
-                          transition: 'all 0.3s ease',
-                          '&:hover': {
-                            background: 'rgba(102, 126, 234, 0.04)',
-                            transform: 'translateY(-1px)',
-                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
-                          },
-                          '&.Mui-focused': {
-                            background: 'rgba(102, 126, 234, 0.04)',
-                            transform: 'translateY(-1px)',
-                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
-                          }
-                        }
-                      }}
-                      InputLabelProps={{
-                        sx: {
-                          color: 'text.secondary',
-                          '&.Mui-focused': {
-                            color: 'primary.main'
-                          }
-                        }
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          '& fieldset': {
-                            borderColor: 'rgba(0,0,0,0.1)',
-                            borderWidth: 1.5
-                          },
-                          '&:hover fieldset': {
-                            borderColor: 'primary.main',
-                            borderWidth: 2
-                          },
-                          '&.Mui-focused fieldset': {
-                            borderColor: 'primary.main',
-                            borderWidth: 2
-                          }
-                        }
-                      }}
                     />
                   </Box>
                 </Fade>
