@@ -13,7 +13,7 @@ import {
 const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
   const [formValues, setFormValues] = useState({});
   const [expandedSection, setExpandedSection] = useState("freeboard");
-
+  
   useEffect(() => {
     if (fields?.length) {
       const initialValues = {};
@@ -72,10 +72,9 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
           <TextField
             fullWidth
             size="small"
-            label={formatLabel(field.attribute)}
+            label={field.attribute}
             value={formValues[field.attribute] || ""}
             onChange={(e) => handleInputChange(field.attribute, e.target.value)}
-            placeholder={`Enter ${formatLabel(field.attribute).toLowerCase()}`}
           />
         </Grid2>
       ))}
@@ -92,7 +91,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
       >
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="h6">
-            {icon} {title}
+            {title}
             <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
               ({fieldList.filter(f => formValues[f.attribute]?.trim()).length}/{fieldList.length})
             </Typography>
@@ -105,7 +104,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth PaperProps={{ sx: { height: '95vh', maxHeight: '1000px' } }}>
-      <Box sx={{ background: 'linear-gradient(135deg, #2980b9 0%, #6dd5fa 100%)', color: 'white', p: 3 }}>
+      <Box sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box sx={{ width: 48, height: 48, borderRadius: '12px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

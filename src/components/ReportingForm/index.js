@@ -30,7 +30,7 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
 import { useRouter } from "next/navigation";
-import { createReportDetail, generateFullReport, getAllActivityReportDetails, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, updateReportDetail } from "@/api";
+import { createReportDetail, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, updateReportDetail } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { updateActivityDetails } from "@/api";
@@ -47,6 +47,7 @@ import IOPPForm from "../documents/OilPollutionPreventionCertificateForm";
 import CSSForm from "../documents/CargoShipEquipmentRecordForm";
 import LoadLineCertificateForm from "../documents/LoadLineCertificateForm";
 import AntiFoulingCertificateForm from "../documents/AntiFoulingCertificateForm";
+import IAPPForm from "../documents/RecordOfConstructioCertificate";
 // import { underscoreFields } from "@/JSONDATA/suppo_ipp";
 
 // Updated schema with correct field names
@@ -61,6 +62,8 @@ const reportSchema = yup.object().shape({
   place: yup.string().required('Place is required'),
 });
 
+
+
 // Document Upload Dialog Component
 // Document Upload Dialog Component - FIXED VERSION
 const DocumentUploadDialog = ({
@@ -71,6 +74,7 @@ const DocumentUploadDialog = ({
   onRemoveDocument
 }) => {
   const [documents, setDocuments] = useState([]);
+
 
   const handleFileChange = (event) => {
     if (event.target.files) {
@@ -91,19 +95,14 @@ const DocumentUploadDialog = ({
   const handleRemoveDocument = (index) => {
     setDocuments(prev => prev.filter((_, i) => i !== index));
   };
-
   const renderFileIcon = (file) => {
-    // Handle both File objects (new uploads) and existing document objects
     let fileType;
 
     if (file?.type) {
-      // New file upload (File object)
       fileType = file.type.split('/')[0];
     } else if (file?.fileType) {
-      // Existing document from server
       fileType = file.fileType.split('/')[0];
     } else {
-      // Fallback
       fileType = 'unknown';
     }
 
@@ -120,12 +119,9 @@ const DocumentUploadDialog = ({
   };
 
   const getFileName = (file) => {
-    // Handle both File objects (new uploads) and existing document objects
     if (file?.name) {
-      // New file upload (File object)
       return file.name;
     } else if (file?.fileName) {
-      // Existing document from server
       return file.fileName;
     }
     return 'Unknown file';
@@ -243,7 +239,15 @@ const ReportingForm = () => {
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [previewFile, setPreviewFile] = useState("");
   const [underscoreFields, setUnderscoreFields] = useState([]);
-  const [reportName, setReportName] = useState("")
+  const [reportName, setReportName] = useState("");
+
+ 
+  const [loadingReport, setLoadingReport] = useState(false);
+  const validReports = [
+    "CARGO SHIP SAFETY CONSTRUCTION CERTIFICATE",
+    "INTERNATIONAL SEWAGE POLLUTION PREVENTION CERTIFICATE",
+    "INTERNATIONAL BALLAST WATER MANAGEMENT CERTIFICATE"
+  ];
 
   const {
     control,
@@ -402,38 +406,47 @@ const ReportingForm = () => {
     try {
       if (underscoreFields.length > 0) {
         setOpen(true);
-      }
-      else {
-        const surveyAbbr = surveyorName?.abbreviation || 'Survey';
-        const certType = selectCertificate || 'Type';
-        const reportNo = selectedReportNumber?.journalTypeId || 'Unknown';
+      } else {
+        setLoadingReport(true);
         const result = await generateFullReport({
           reportDetailId: reportDetails?.id,
-        })
-        if (result?.data.data) {
-          setLoading(true);
+        });
 
-          const link = document.createElement('a');
-          link.href = result.data.data;
-          link.download = `${surveyAbbr}_${certType}_${reportNo}.docx`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          setLoading(false);
+        const fileUrl = result?.data?.data;
+
+        if (!fileUrl) {
+          toast.error("Invalid file URL received.");
+          return;
         }
-        if (result?.data?.status === 'success') {
-          toast.success("Report generated successfully.")
-        } else {
-          toast.error("Something went wrong ! Please try again after some time")
-        }
+
+        const response = await fetch(fileUrl);
+        if (!response.ok) throw new Error("Failed to fetch file.");
+
+        const blob = await response.blob();
+        const filename = fileUrl.split('/').pop();
+
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+
+        toast.success("Report downloaded successfully.");
       }
     } catch (error) {
+      console.error("Download error:", error);
       toast.error("Failed to generate full report");
+    } finally {
+      setLoadingReport(false);
     }
-  }
+  };
 
   const handleSubmitReport = async (extraFields) => {
     setLoading(true);
+    setLoadingReport(true);
     setOpen(true);
 
     try {
@@ -449,6 +462,7 @@ const ReportingForm = () => {
       const result = await generateFullReport(payload);
       const fileUrl = result?.data?.data;
 
+
       if (!fileUrl) {
         toast.error("Invalid file URL received.");
         return;
@@ -462,6 +476,7 @@ const ReportingForm = () => {
 
       const link = document.createElement("a");
       link.href = downloadUrl;
+      link.target = "_blank";
       link.download = `${surveyAbbr}_${certType}_${reportNo}.pdf`;
       document.body.appendChild(link);
       link.click();
@@ -474,6 +489,7 @@ const ReportingForm = () => {
       toast.error("Failed to generate full report");
     } finally {
       setLoading(false);
+      setLoadingReport(false);
     }
   };
 
@@ -519,11 +535,19 @@ const ReportingForm = () => {
   };
 
   const handleReportClick = async (row) => {
+    console.log(row,"row")
     try {
       setLoading(true);
       const result = await getSelectedActivityReportDetails(row?.id);
+      setReportName(row?.surveyTypes?.reports?.[0]?.name);
+
+      const data = extractUnderscoreFields(row);
+      console.log(data,"data")
+      setUnderscoreFields(data)
+      console.log(data,"data fields")
       if (result?.data?.status === "success") {
         setReportDetails(result?.data?.data[0]);
+
         router.push('#reportDetails');
         const reportData = result?.data?.data[0];
         console.log(reportData)
@@ -671,9 +695,6 @@ const ReportingForm = () => {
       if (result?.data?.status === "success") {
         setTableData(result?.data?.data);
 
-        setReportName(result?.data?.data[0]?.surveyTypes?.reports[0]?.name);
-        const data = extractUnderscoreFields(result?.data?.data);
-        setUnderscoreFields(data)
       } else {
         toast.error("Something went wrong ! Please try again after some time");
       }
@@ -706,9 +727,8 @@ const ReportingForm = () => {
 
   const extractUnderscoreFields = (data) => {
     const fields = [];
-
-    data?.forEach((item) => {
-      item?.surveyTypes?.reports?.forEach((report) => {
+    if(data && typeof data === 'object'){
+      data?.surveyTypes?.reports?.forEach((report) => {
         report?.fields?.forEach((field) => {
           if (field?.attribute?.startsWith("_")) {
             fields.push({
@@ -718,18 +738,14 @@ const ReportingForm = () => {
           }
         });
       });
-    });
-
+    }
     return fields;
   };
-
-
 
   const surveyorOptions = endorsedIssuedBy.map((surveyor) => ({
     label: surveyor.name,
     value: surveyor.id,
   }));
-
   return (
     <Box mt={2}>
       <CommonCard sx={{ mt: 2 }}>
@@ -741,7 +757,7 @@ const ReportingForm = () => {
             display="flex"
             justifyContent="center"
             alignItems="center"
-            height="300px"
+            height="100vh"
           >
             <CircularProgress />
           </Box>
@@ -1168,66 +1184,67 @@ const ReportingForm = () => {
           ? `Remarks for ${fullScreenRemarksVisible.surveyTypes.name}`
           : "Remarks"}
       />
-      <Dialog
-        open={openPreviewModal}
-        onClose={() => setOpenPreviewModal(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>Document Preview</DialogTitle>
-        <DialogContent>
-          <div style={{ position: 'relative', width: '100%', height: '80vh' }}>
-            {!loadingPreview ? (
-              <a
-                href={previewFile}
-                download
-                rel="noopener noreferrer"
-                style={{
-                  position: 'absolute',
-                  top: '10px',
-                  right: '10px',
-                  zIndex: 1,
-                  backgroundColor: '#4CAF50',
-                  color: 'white',
-                  padding: '8px 12px',
-                  border: 'none',
-                  borderRadius: '4px',
-                  textDecoration: 'none',
-                  fontSize: '14px',
-                }}
-              >
-                Download
-              </a>) : (
-              <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                height="100%"
-                position="absolute"
-                top={0}
-                left={0}
-                width="100%"
-                zIndex={0}
-                sx={{ backgroundColor: "rgba(255,255,255,0.8)" }}
-              >
-                <CircularProgress />
-              </Box>
-            )}
-            <iframe
-              src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile)}&embedded=true`}
-              style={{ width: '100%', height: '100%', border: 'none' }}
-              title="File Preview"
-              onLoad={() => setLoadingPreview(false)}
+      {/* <Dialog
+          open={openPreviewModal}
+          onClose={() => setOpenPreviewModal(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>Document Preview</DialogTitle>
+          <DialogContent>
+            <div style={{ position: 'relative', width: '100%', height: '80vh' }}>
+              {!loadingPreview ? (
+                <a
+                  href={previewFile}
+                  download
+                  rel="noopener noreferrer"
+                  style={{
+                    position: 'absolute',
+                    top: '10px',
+                    right: '10px',
+                    zIndex: 1,
+                    backgroundColor: '#4CAF50',
+                    color: 'white',
+                    padding: '8px 12px',
+                    border: 'none',
+                    borderRadius: '4px',
+                    textDecoration: 'none',
+                    fontSize: '14px',
+                  }}
+                >
+                  Download
+                </a>) : (
+                <Box
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                  height="100%"
+                  position="absolute"
+                  top={0}
+                  left={0}
+                  width="100%"
+                  zIndex={0}
+                  sx={{ backgroundColor: "rgba(255,255,255,0.8)" }}
+                >
+                  <CircularProgress />
+                </Box>
+              )}
+              <iframe
+                src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile)}&embedded=true`}
+                style={{ width: '100%', height: '100%', border: 'none' }}
+                title="File Preview"
+                onLoad={() => setLoadingPreview(false)}
 
-            />
-          </div>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenPreviewModal(false)} color="primary">
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
+              />
+            </div>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenPreviewModal(false)} color="primary">
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog> */}
+
       {reportName === "INTERNATIONAL TONNAGE CERTIFICATE" && (
         <InternationalTonnage
           open={open}
@@ -1236,14 +1253,18 @@ const ReportingForm = () => {
           fields={underscoreFields}
         />
       )}
-      {reportName === "CARGO SHIP SAFETY CONSTRUCTION CERTIFICATE" || reportName === "INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" || reportName === "INTERNATIONAL SEWAGE POLLUTION PREVENTION CERTIFICATE" || reportName === "INTERNATIONAL LOAD LINE CERTIFICATE" || reportName === "INTERNATIONAL BALLAST WATER MANAGEMENT CERTIFICATE" && (
-        <DialogForm
-          open={open}
-          onClose={() => setOpen(false)}
-          onSubmit={handleSubmitReport}
-          fields={underscoreFields}
-        />
-      )}
+
+      {
+        validReports.includes(reportName) && (
+          <DialogForm
+            open={open}
+            onClose={() => setOpen(false)}
+            onSubmit={handleSubmitReport}
+            fields={underscoreFields}
+          />
+        )
+      }
+
       {reportName === "INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" &&
         <div className="container">
           <IOPPForm
@@ -1278,6 +1299,31 @@ const ReportingForm = () => {
           fields={underscoreFields}
         />
       }
+      {reportName === "RECORD OF CONSTRUCTION AND EQUIPMENT" &&
+        <IAPPForm
+          open={open}
+          onClose={() => setOpen(false)}
+          onSubmit={handleSubmitReport}
+          fields={underscoreFields}
+        />
+      }
+      {loadingReport && (
+        <Box
+          position="fixed"
+          top={0}
+          left={0}
+          width="100vw"
+          height="100vh"
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          bgcolor="rgba(255,255,255,0.6)"
+          zIndex={9999}
+        >
+          <CircularProgress />
+        </Box>
+      )}
+
     </Box>
   );
 };

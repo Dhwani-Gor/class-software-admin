@@ -14,6 +14,7 @@ import {
     Grid,
     Divider,
     Button,
+    Grid2,
 } from "@mui/material";
 import {
     Close as CloseIcon,
@@ -91,20 +92,20 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
     const customCategories = categorizeByCustomGroups(fields);
 
     const renderFieldCategory = (categoryFields) => (
-        <Grid container spacing={2}>
+        <Grid2 container spacing={2}>
             {categoryFields.map((field) => (
-                <Grid item xs={12} sm={6} md={4} key={field.attribute}>
+                <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={field.attribute}>
                     <TextField
+                        variant="outlined"
                         fullWidth
-                        label={formatLabel(field.attribute)}
+                        label={field.attribute}
                         size="small"
                         value={formValues[field.attribute] || ""}
                         onChange={(e) => handleInputChange(field.attribute, e.target.value)}
-                        placeholder={`Enter ${formatLabel(field.attribute)?.toLowerCase()}`}
                     />
-                </Grid>
+                </Grid2>
             ))}
-        </Grid>
+        </Grid2>
     );
 
     const renderCategoryAccordion = (title, key, icon, categoryFields) => {

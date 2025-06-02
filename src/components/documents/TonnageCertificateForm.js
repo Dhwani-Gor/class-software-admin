@@ -154,7 +154,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
   };
 
   const fieldCategories = organizeFields();
-
+console.log(fieldCategories,"fieldCategories")
   const renderSpacesTable = () => (
     <TableContainer component={Paper} variant="outlined">
       <Table size="small">
@@ -190,7 +190,6 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
                     size="small"
                     value={formValues[gtSpaces[index].spaceAttr] || ""}
                     onChange={(e) => handleInputChange(gtSpaces[index].spaceAttr, e.target.value)}
-                    placeholder="Space name"
                   />
                 )}
               </TableCell>
