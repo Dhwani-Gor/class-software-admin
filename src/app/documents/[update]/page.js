@@ -6,7 +6,7 @@ import Stack from "@mui/material/Stack";
 import CommonCard from "@/components/CommonCard";
 import { IconButton } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import CommonButton from "@/components/CommonButton";
 import EditingReasonDialog from "@/components/Dialogs/EditingReasonDialog";
 import EditHistoryDialog from "@/components/Dialogs/EditHistoryDialog";
@@ -21,6 +21,8 @@ const UpdateDocument = ({ params }) => {
   const [isEditDialogVisible, setIsEditDialogVisible] = useState(false);
   const [editingAllowed, setEditingAllowed] = useState(false);
   const [editReason, setEditReason] = useState('');
+  const searchParams = useSearchParams();
+  const mode = searchParams.get("mode") || "update";
 
   return (
     <Layout>
@@ -35,7 +37,7 @@ const UpdateDocument = ({ params }) => {
         </Stack>
       </CommonCard>
       <Stack>
-        <DocumentForm mode="update" documentId={params?.update} editReason={editReason} />
+        <DocumentForm mode={mode} documentId={params?.update} editReason={editReason} />
       </Stack>
     </Layout>
   );

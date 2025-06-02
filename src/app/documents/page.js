@@ -25,6 +25,7 @@ import { deleteDocument, getAllDocuments } from "@/api";
 import { toast } from "react-toastify";
 import PreviewIcon from '@mui/icons-material/Visibility';
 import DialogContent from "@mui/material/DialogContent";
+import { CopyAll } from "@mui/icons-material";
 
 const Documents = () => {
   const router = useRouter();
@@ -121,6 +122,11 @@ const Documents = () => {
     setOpenDialog(true);
   };
 
+  const handleDuplicateClick = (documentId) => {
+    setSelectedDocument(documentId);
+    router.push(`/documents/${documentId}?mode=duplicate`);
+  };
+  
   const handleConfirmDelete = async () => {
     setOpenDialog(false);
     if (!selectedDocument) return;
@@ -182,7 +188,7 @@ const Documents = () => {
     {
       field: "actions",
       headerName: "Actions",
-      width: 100,
+      width: 150,
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
           <Tooltip title="Edit Document">
@@ -193,6 +199,14 @@ const Documents = () => {
               <EditIcon />
             </IconButton>
           </Tooltip>
+          <Tooltip title="Duplicate Document">
+            <IconButton
+              color="primary"
+              onClick={() => handleDuplicateClick(params?.id)}
+            >
+              <CopyAll />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Delete Document">
             <IconButton
               color="error"
@@ -201,6 +215,7 @@ const Documents = () => {
               <DeleteIcon />
             </IconButton>
           </Tooltip>
+          
         </Stack>
       ),
     },
