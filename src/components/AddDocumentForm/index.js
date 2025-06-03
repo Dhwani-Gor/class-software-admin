@@ -16,6 +16,7 @@ import { toast } from "react-toastify";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import { createDocument, getDocumentDetails, updateDocument } from "@/api";
+import { Alert } from "@mui/material";
 
 const documentValidityType = [
   { value: "interim", label: "Interim" },
@@ -28,7 +29,7 @@ const documentType = [
   { value: "report", label: "report" },
 ];
 
-const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
+const DocumentForm = ({ mode, documentId, editReason = "" }) => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formValues, setFormValues] = useState({
@@ -42,6 +43,8 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
     type: false,
     validity: "",
     document: false,
+    fields: false,
+
   });
   const [additionalFields, setAdditionalFields] = useState([]);
   const [removedFields, setRemovedFields] = useState([]);
@@ -62,10 +65,10 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
   };
 
   useEffect(() => {
-    if (mode === "update" && documentId) {
+    if (documentId) {
       fetchDocumentDetails();
     }
-  }, [mode, documentId]);
+  }, [documentId]);
 
   const fetchDocumentDetails = async () => {
     try {
@@ -74,10 +77,11 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
       if (result?.status === 200) {
         const documentData = result.data.data;
         setFormValues({
-          name: documentData.name || "",
+          name: mode === "duplicate" ? `${documentData.name} (Copy)` : documentData.name || "",
           type: documentData.type || "",
-          validity: documentData.validity || "",
-          document: documentData.filePath || "",
+          validity: mode === "duplicate" ? "" : documentData.validity,
+          document: mode === "duplicate" ? "" : documentData.filePath,
+          fields: documentData.fields || "",
         });
 
         if (documentData.fields) {
@@ -152,8 +156,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
     try {
       setLoading(true);
       let response;
-
-      if (mode === "create") {
+      if (mode === "create" || mode === "duplicate") {
         const formData = new FormData();
         formData.append('name', formValues.name);
         formData.append('type', formValues.type);
@@ -190,9 +193,11 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
 
       if (response?.status === 200 || response?.status === 201) {
         toast.success(
-          mode === "create"
-            ? "Document created successfully"
-            : "Document updated successfully"
+          mode === "duplicate"
+            ? "Document duplicated successfully"
+            : mode === "update"
+            ? "Document updated successfully"
+            : "Document created successfully"
         );
         router.push("/documents");
       } else {
@@ -208,7 +213,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
     }
   };
 
-  if (mode === "update" && loading) {
+  if (loading) {
     return (
       <Box
         sx={{
@@ -243,7 +248,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
   };
 
   const handleDeleteField = (index) => {
-    if (mode === "update" && additionalFields[index]) {
+    if (additionalFields[index]) {
       setRemovedFields(prev => [...prev, additionalFields[index]]);
     }
 
@@ -252,6 +257,13 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
     setAdditionalFields(updatedFields);
 
     toast.success("Field removed successfully");
+  };
+
+  const getSubmitButtonText = () => {
+    if (mode === "duplicate") {
+      return "Create Duplicate";
+    }
+    return mode === "update" ? "Update Document" : "Create Document";
   };
 
   return (
@@ -453,9 +465,7 @@ const DocumentForm = ({ mode = "create", documentId, editReason = "" }) => {
               onClick={() => router.push("/documents")}
             />
             <CommonButton
-              text={
-                loading ? "Saving..." : mode === "create" ? "Create" : "Update"
-              }
+              text={getSubmitButtonText()}
               type="submit"
               variant="contained"
               disabled={loading}
