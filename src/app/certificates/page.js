@@ -4,10 +4,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
 import CircularProgress from "@mui/material/CircularProgress";
 import Pagination from '@mui/material/Pagination';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogTitle from '@mui/material/DialogTitle';
-import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Snackbar from "@mui/material/Snackbar";
@@ -15,30 +11,29 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { DataGrid } from "@mui/x-data-grid";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
+
+
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import GetAppIcon from "@mui/icons-material/GetApp";
 import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonInput from "@/components/CommonInput";
-import { deleteVisa,getVisitDetails } from "@/api";
+import { getAllIssuedDocuments } from "@/api"; // Updated API function names
 import { Chip } from "@mui/material";
 
-const Countries = () => {
+const Certificates = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState(""); // Debounced search state
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
-  const [countryLists, setCountryLists] = useState([]);
+  const [certificatesList, setCertificatesList] = useState([]);
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [limit, setLimit] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [selectedVisaId, setSelectedVisaId] = useState(null);
-  const [selectedFilter, setSelectedFilter] = useState("all"); // 'all', 'reports', or 'certificates'
-
+  const [selectedFilter, setSelectedFilter] = useState("all");
 
   const handleFilterChange = (newFilter) => {
     setSelectedFilter(newFilter);
@@ -57,59 +52,37 @@ const Countries = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  const fetchVisaListData = async (filterKey, filterValue, page, limit, searchQuery) => {
+  const fetchCertificatesData = async (page, limit, searchQuery) => {
     setLoading(true);
     try {
-      const res = await getVisitDetails(filterKey, filterValue, page, limit, searchQuery);
+      // You'll need to update this API call based on your actual API structure
+      const res = await getAllIssuedDocuments(page, limit, searchQuery, selectedFilter);
       const data = res?.data;
   
-      if (Array.isArray(data?.data) && data.data.length > 0) {
-        // Assuming 'results' is the total count of visas
+      if (data?.status === "success" && Array.isArray(data?.data)) {
+        setCertificatesList(data.data);
         setTotalRows(data.results || data.data.length);
       } else {
+        setCertificatesList([]);
         setTotalRows(0);
       }
     } catch (e) {
-      console.log(e);
+      console.log("Error fetching certificates:", e);
+      setCertificatesList([]);
+      setTotalRows(0);
     } finally {
       setLoading(false);
     }
   };
-  
 
   useEffect(() => {
     if (page > 0 && limit > 0) {
-      fetchVisaListData(page, limit, debouncedSearch.trim() ? debouncedSearch : null);
+      fetchCertificatesData(page, limit, debouncedSearch.trim() ? debouncedSearch : null);
     }
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, debouncedSearch, selectedFilter]);
 
   const handleSearchChange = (event) => {
     setSearch(event.target.value);
-  };
-
-  const handleDeleteClick = (visaId) => {
-    setSelectedVisaId(visaId);
-    setOpenDialog(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    setOpenDialog(false);
-    if (!selectedVisaId) return;
-    try {
-      const res = await deleteVisa({ id: selectedVisaId });
-      if (res?.data?.message) {
-        setSnackBar({ open: true, message: res.data.message });
-      }
-      fetchVisaListData(page, limit, debouncedSearch);
-    } catch (e) {
-      console.error("Error deleting visa:", e.response?.data || e.message);
-      setSnackBar({ open: true, message: "Failed to delete visa." });
-    }
-  };
-
-  const handleCancelDelete = () => {
-    setSelectedVisaId(null);
-    setOpenDialog(false);
   };
 
   const handlePageChange = (event, value) => {
@@ -117,46 +90,113 @@ const Countries = () => {
     router.push(`/certificates?page=${value}&limit=${limit}`);
   };
 
+  const handleViewDocument = (documentUrl) => {
+    if (documentUrl) {
+      window.open(documentUrl, '_blank');
+    }
+  };
+
+  const handleDownloadDocument = (documentUrl, certificateId) => {
+    if (documentUrl) {
+      const link = document.createElement('a');
+      link.href = documentUrl;
+      link.download = `certificate_${certificateId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit'
+    });
+  };
+
   const columns = [
     {
       field: "id",
-      headerName: "ID",
-      flex: 1,
+      headerName: "S.No",
+      width: 80,
       renderCell: (params) => {
-        return (
-          <Typography>{params?.api?.getRowIndexRelativeToVisibleRows(params.id) + 1}</Typography>
-        )
+        const rowIndex = certificatesList.findIndex(row => row.id === params.id);
+        return <Typography>{rowIndex + 1 + (page - 1) * limit}</Typography>;
       },
     },
-    { field: "countryName", headerName: "Country Name", flex: 1.5 },
-    { field: "totalVisaCompleted", headerName: "Total Visa Completed", flex: 1 },
-    { field: "visaEntry", headerName: "Visa Entry", flex: 1 },
-    { field: "visaType", headerName: "Visa Type", flex: 1 },
-    { field: "validityPeriod", headerName: "Validity Period", flex: 1 },
-    { field: "lengthOfStay", headerName: "Length of Stay", flex: 1 },
-    { field: "visaFee", headerName: "Visa Fee", flex: 1 },
-    { field: "vizayardFee", headerName: "Vizayard Fee", flex: 1 },
-    { field: "govtVisaFee", headerName: "Government Visa Fee", flex: 1 },
+    { 
+      field: "typeOfCertificate", 
+      headerName: "Certificate Type", 
+      flex: 1,
+      renderCell: (params) => (
+        <Typography sx={{ textTransform: 'capitalize' }}>
+          {params.value?.replace('_', ' ') || 'N/A'}
+        </Typography>
+      )
+    },
+    { 
+      field: "activity", 
+      headerName: "Survey Type", 
+      flex: 1,
+      renderCell: (params) => (
+        <Typography>
+          {params.row.activity?.typeOfSurvey || 'N/A'}
+        </Typography>
+      )
+    },
+    { 
+      field: "place", 
+      headerName: "Place", 
+      flex: 1 
+    },
+    { 
+      field: "issuanceDate", 
+      headerName: "Issuance Date", 
+      flex: 1,
+      renderCell: (params) => (
+        <Typography>{formatDate(params.value)}</Typography>
+      )
+    },
+    { 
+      field: "validityDate", 
+      headerName: "Validity Date", 
+      flex: 1,
+      renderCell: (params) => (
+        <Typography>{formatDate(params.value)}</Typography>
+      )
+    },
+    { 
+      field: "surveyDate", 
+      headerName: "Survey Date", 
+      flex: 1,
+      renderCell: (params) => (
+        <Typography>{formatDate(params.value)}</Typography>
+      )
+    },
     {
       field: "actions",
       headerName: "Actions",
-      width: 100,
+      width: 120,
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
-          <Tooltip title="Edit Country">
+          <Tooltip title="View Document">
             <IconButton
-              color="primary"
-              onClick={() => router.push(`/certificates/${params?.id}`)}
+              color="info"
+              onClick={() => handleViewDocument(params.row.generatedDoc)}
+              disabled={!params.row.generatedDoc}
             >
-              <EditIcon />
+              <VisibilityIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Delete Country">
+          <Tooltip title="Download Document">
             <IconButton
-              color="error"
-              onClick={() => handleDeleteClick(params?.id)}
+              color="success"
+              onClick={() => handleDownloadDocument(params.row.generatedDoc, params.row.id)}
+              disabled={!params.row.generatedDoc}
             >
-              <DeleteIcon />
+              <GetAppIcon />
             </IconButton>
           </Tooltip>
         </Stack>
@@ -169,69 +209,61 @@ const Countries = () => {
       <CommonCard sx={{ mt: 0 }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Typography variant="h4" fontWeight={700}>
-            Issued Documents
+            Issued Certificates
           </Typography>
-          {/* <CommonButton
-            sx={{ textTransform: "capitalize" }}
-            text="Generate New certificate"
-            variant="contained"
-            onClick={() => {
-              dispatch(clearCountry());
-              router.push("/certificates/create");
-            }}
-            endIcon={<AddIcon />}
-          /> */}
         </Stack>
       </CommonCard>
 
       <CommonCard>
-      <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-        <Chip
-          label="All"
-          color={selectedFilter === "all" ? "primary" : "default"}
-          onClick={() => handleFilterChange("all")}
-          clickable
-          sx={{
-            fontWeight: selectedFilter === "all" ? 600 : 400,
-            px: 2
-          }}
-        />
-        <Chip
-          label="Reports"
-          color={selectedFilter === "reports" ? "primary" : "default"}
-          onClick={() => handleFilterChange("reports")}
-          clickable
-          sx={{
-            fontWeight: selectedFilter === "reports" ? 600 : 400,
-            px: 2
-          }}
-        />
-        <Chip
-          label="Certificates"
-          color={selectedFilter === "certificates" ? "primary" : "default"}
-          onClick={() => handleFilterChange("certificates")}
-          clickable
-          sx={{
-            fontWeight: selectedFilter === "certificates" ? 600 : 400,
-            px: 2
-          }}
-        />
-      </Stack>
+        {/* <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+          <Chip
+            label="All"
+            color={selectedFilter === "all" ? "primary" : "default"}
+            onClick={() => handleFilterChange("all")}
+            clickable
+            sx={{
+              fontWeight: selectedFilter === "all" ? 600 : 400,
+              px: 2
+            }}
+          />
+          <Chip
+            label="Full Term"
+            color={selectedFilter === "full_term" ? "primary" : "default"}
+            onClick={() => handleFilterChange("full_term")}
+            clickable
+            sx={{
+              fontWeight: selectedFilter === "full_term" ? 600 : 400,
+              px: 2
+            }}
+          />
+          <Chip
+            label="Interim"
+            color={selectedFilter === "interim" ? "primary" : "default"}
+            onClick={() => handleFilterChange("interim")}
+            clickable
+            sx={{
+              fontWeight: selectedFilter === "interim" ? 600 : 400,
+              px: 2
+            }}
+          />
+        </Stack> */}
+        
         <CommonInput
-          placeholder="Search Document By Name"
+          placeholder="Search Certificate By Place or Type"
           fullWidth
           value={search}
           onChange={handleSearchChange}
           sx={{ marginBottom: 2 }}
         />
+        
         <Box sx={{ width: "100%", mt: 4 }}>
           {loading ? (
             <Box display="flex" justifyContent="center" alignItems="center" height="300px">
               <CircularProgress />
             </Box>
-          ) : countryLists.length > 0 ? (
+          ) : certificatesList.length > 0 ? (
             <DataGrid
-              rows={countryLists}
+              rows={certificatesList}
               columns={columns}
               loading={loading}
               pagination={false}
@@ -241,9 +273,14 @@ const Countries = () => {
               disableDensitySelector
               disableRowSelectionOnClick
               hideFooter
+              getRowHeight={() => 70}
               sx={{
                 backgroundColor: "#fff",
                 border: "none",
+                '& .MuiDataGrid-cell': {
+                  display: 'flex',
+                  alignItems: 'center',
+                },
               }}
             />
           ) : (
@@ -252,30 +289,25 @@ const Countries = () => {
               align="center"
               sx={{ color: "gray", padding: 3 }}
             >
-              No Data Found
+              No Certificates Found
             </Typography>
           )}
         </Box>
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-          <Pagination
-            count={Math.ceil(totalRows / limit)}
-            page={page}
-            onChange={handlePageChange}
-            color="primary"
-            variant="outlined"
-            shape="rounded"
-            sx={{ marginTop: "10px" }}
-          />
-        </Box>
+        
+        {totalRows > limit && (
+          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
+            <Pagination
+              count={Math.ceil(totalRows / limit)}
+              page={page}
+              onChange={handlePageChange}
+              color="primary"
+              variant="outlined"
+              shape="rounded"
+              sx={{ marginTop: "10px" }}
+            />
+          </Box>
+        )}
       </CommonCard>
-
-      <Dialog open={openDialog} onClose={handleCancelDelete}>
-        <DialogTitle>Are you sure you want to delete this country?</DialogTitle>
-        <DialogActions>
-          <Button onClick={handleCancelDelete} color="primary">Cancel</Button>
-          <Button onClick={handleConfirmDelete} sx={{ backgroundColor: "#ed2b1c", color: "white", fontWeight: "500" }}>Delete</Button>
-        </DialogActions>
-      </Dialog>
 
       <Snackbar
         open={snackBar.open}
@@ -293,4 +325,4 @@ const Countries = () => {
   );
 };
 
-export default Countries;
+export default Certificates;

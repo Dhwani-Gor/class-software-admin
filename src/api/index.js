@@ -679,3 +679,14 @@ export const getEndorsedIssuedBy = async (filterKey, filterValue) => {
   }
   return result;
 };
+
+
+export const getAllIssuedDocuments = async () => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/reportDetails?filterKey=generatedDoc&filterValue=true`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
