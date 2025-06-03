@@ -156,7 +156,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                         <TextField
                             fullWidth
                             size="small"
-                            label={field.attribute}
+                            label={field.label}
                             value={formValues[field.attribute] || ""}
                             onChange={(e) => handleInputChange(field.attribute, e.target.value)}
                         />
@@ -193,7 +193,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                                         <TableCell key={col.key}>
                                             <TextField
                                                 fullWidth
-                                                label={group[col.key]?.attribute}
+                                                label={group[col.key]?.label}
                                                 size="small"
                                                 value={formValues[group[col.key]?.attribute] || ""}
                                                 onChange={(e) => handleInputChange(group[col.key]?.attribute, e.target.value)}

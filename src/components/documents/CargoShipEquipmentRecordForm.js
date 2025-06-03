@@ -67,10 +67,10 @@ const CSSForm = ({ open, onClose, onSubmit, fields }) => {
           <TextField
             fullWidth
             size="small"
-            label={formatLabel(field.attribute)}
+            label={field.label}
             value={formValues[field.attribute] || ""}
             onChange={(e) => handleInputChange(field.attribute, e.target.value)}
-            placeholder={`Enter ${formatLabel(field.attribute).toLowerCase()}`}
+            placeholder={`Enter ${field.label.toLowerCase()}`}
           />
         </Grid2>
       ))}

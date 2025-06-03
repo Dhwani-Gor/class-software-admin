@@ -98,7 +98,7 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
                     <TextField
                         variant="outlined"
                         fullWidth
-                        label={field.attribute}
+                        label={field.label}
                         size="small"
                         value={formValues[field.attribute] || ""}
                         onChange={(e) => handleInputChange(field.attribute, e.target.value)}

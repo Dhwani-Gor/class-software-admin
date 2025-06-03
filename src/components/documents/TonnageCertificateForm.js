@@ -72,11 +72,9 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
     onSubmit(filledValues);
   };
 
-  const formatLabel = (attribute) => {
-    return attribute
-      ?.replace(/^_/, '')
-      ?.replace(/_/g, ' ')
-      ?.replace(/\b\w/g, l => l.toUpperCase());
+  const formatLabel = (label) => {
+    return label
+
   };
   const organizeSpacesData = () => {
     const gtSpaces = [];
@@ -96,7 +94,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
         });
       }
     }
-    
+
     for (let i = 1; i <= 20; i++) {
       const spaceAttr = `_NT_space_${i}`;
       const locAttr = `_NT_loc_${i}`;
@@ -153,8 +151,12 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
     return categories;
   };
 
+  const getLabelFromFields = (attribute) => {
+    return fields?.find(f => f.attribute === attribute)?.label || attribute;
+  };
+
   const fieldCategories = organizeFields();
-console.log(fieldCategories,"fieldCategories")
+  console.log(fieldCategories, "fieldCategories")
   const renderSpacesTable = () => (
     <TableContainer component={Paper} variant="outlined">
       <Table size="small">
@@ -187,6 +189,7 @@ console.log(fieldCategories,"fieldCategories")
                 {gtSpaces[index] && (
                   <TextField
                     fullWidth
+                    label={getLabelFromFields(gtSpaces[index].spaceAttr)}
                     size="small"
                     value={formValues[gtSpaces[index].spaceAttr] || ""}
                     onChange={(e) => handleInputChange(gtSpaces[index].spaceAttr, e.target.value)}
@@ -197,6 +200,7 @@ console.log(fieldCategories,"fieldCategories")
                 {gtSpaces[index] && (
                   <TextField
                     fullWidth
+                    label={getLabelFromFields(gtSpaces[index].locAttr)}
                     size="small"
                     value={formValues[gtSpaces[index].locAttr] || ""}
                     onChange={(e) => handleInputChange(gtSpaces[index].locAttr, e.target.value)}
@@ -208,6 +212,7 @@ console.log(fieldCategories,"fieldCategories")
                 {gtSpaces[index] && (
                   <TextField
                     fullWidth
+                    label={getLabelFromFields(gtSpaces[index].lengthAttr)}
                     size="small"
                     value={formValues[gtSpaces[index].lengthAttr] || ""}
                     onChange={(e) => handleInputChange(gtSpaces[index].lengthAttr, e.target.value)}
@@ -221,6 +226,7 @@ console.log(fieldCategories,"fieldCategories")
                 {ntSpaces[index] && (
                   <TextField
                     fullWidth
+                    label={getLabelFromFields(ntSpaces[index].spaceAttr)}
                     size="small"
                     value={formValues[ntSpaces[index].spaceAttr] || ""}
                     onChange={(e) => handleInputChange(ntSpaces[index].spaceAttr, e.target.value)}
@@ -232,6 +238,7 @@ console.log(fieldCategories,"fieldCategories")
                 {ntSpaces[index] && (
                   <TextField
                     fullWidth
+                    label={getLabelFromFields(ntSpaces[index].locAttr)}
                     size="small"
                     value={formValues[ntSpaces[index].locAttr] || ""}
                     onChange={(e) => handleInputChange(ntSpaces[index].locAttr, e.target.value)}
@@ -243,6 +250,7 @@ console.log(fieldCategories,"fieldCategories")
                 {ntSpaces[index] && (
                   <TextField
                     fullWidth
+                    label={getLabelFromFields(ntSpaces[index].lengthAttr)}
                     size="small"
                     value={formValues[ntSpaces[index].lengthAttr] || ""}
                     onChange={(e) => handleInputChange(ntSpaces[index].lengthAttr, e.target.value)}
@@ -263,11 +271,11 @@ console.log(fieldCategories,"fieldCategories")
         <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={field.attribute}>
           <TextField
             fullWidth
-            label={formatLabel(field.attribute)}
+            label={formatLabel(field.label)}
             size="small"
             value={formValues[field.attribute] || ""}
             onChange={(e) => handleInputChange(field.attribute, e.target.value)}
-            placeholder={`Enter ${formatLabel(field.attribute)?.toLowerCase()}`}
+            placeholder={`Enter ${formatLabel(field.label)?.toLowerCase()}`}
           />
         </Grid2>
       ))}
@@ -311,10 +319,10 @@ console.log(fieldCategories,"fieldCategories")
             </Box>
             <Box>
               <Typography variant="h5" fontWeight={700} sx={{ mb: 0.5 }}>
-              International Tonnage Certificate
+                International Tonnage Certificate
               </Typography>
               <Typography variant="body2" sx={{ opacity: 0.9 }}>
-              Fill out ship-related details including identification, measurements, capacities, key dates, construction specifications, and additional information.
+                Fill out ship-related details including identification, measurements, capacities, key dates, construction specifications, and additional information.
               </Typography>
             </Box>
           </Box>

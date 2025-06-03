@@ -57,7 +57,7 @@ const reportSchema = yup.object().shape({
   issuancedate: yup.string().required('Issuance date is required'),
   validitydate: yup.string().required('Validity date is required'),
   surveydate: yup.string().required('Survey date is required'),
-  endorsementdate: yup.string().required('Endorsement date is required'),
+  endorsementdate: yup.string().optional(),
   issuedBy: yup.string().optional(),
   place: yup.string().required('Place is required'),
 });
@@ -240,8 +240,25 @@ const ReportingForm = () => {
   const [previewFile, setPreviewFile] = useState("");
   const [underscoreFields, setUnderscoreFields] = useState([]);
   const [reportName, setReportName] = useState("");
-
+  const [showEndorsementField, setShowEndorsementField] = useState(false);
+  const [showExtraEndorsementField, setShowExtraEndorsementField] = useState(false);
  
+  useEffect(() => {
+    if (selectCertificate === "full_term") {
+      setShowEndorsementField(true);
+      setShowExtraEndorsementField(false);
+    } else if (selectCertificate === "short_term" || selectCertificate === "interim") {
+      setShowEndorsementField(false);
+      setShowExtraEndorsementField(false);
+    } else if (selectCertificate === "extended") {
+      setShowEndorsementField(true);
+      setShowExtraEndorsementField(true);
+    } else {
+      setShowEndorsementField(false);
+      setShowExtraEndorsementField(false);
+    }
+  }, [selectCertificate]);
+  
   const [loadingReport, setLoadingReport] = useState(false);
   const validReports = [
     "CARGO SHIP SAFETY CONSTRUCTION CERTIFICATE",
@@ -358,7 +375,8 @@ const ReportingForm = () => {
       surveyDate: values.surveydate ? formatDate(values.surveydate) : null,
       endorsementDate: values.endorsementdate ? formatDate(values.endorsementdate) : null,
       issuedBy: Number(values.issuedBy) || null,
-      place: values.place || null
+      place: values.place || null,
+      newValidityDate: values.newValidityDate ? formatDate(values.newValidityDate) : null,
     };
 
     if (reportDetails) {
@@ -1063,7 +1081,8 @@ const ReportingForm = () => {
                   </Typography>
                 )}
               </Grid2>
-              <Grid2 size={{ md: 3 }}>
+              {showEndorsementField && (
+                <Grid2 size={{ md: 3 }}>
                 <Controller
                   name="endorsementdate"
                   control={control}
@@ -1071,7 +1090,7 @@ const ReportingForm = () => {
                     <CommonInput
                       {...field}
                       type="date"
-                      label={<>Endorsement Date <span style={{ color: 'red' }}>*</span></>}
+                      label={<>Endorsement Date</>}
                       onChange={(e) => {
                         field.onChange(e);
                         handleFieldChange('endorsementdate', e.target.value);
@@ -1079,12 +1098,33 @@ const ReportingForm = () => {
                     />
                   )}
                 />
-                {errors.endorsementdate && (
+
+              </Grid2>
+              )}
+               {showExtraEndorsementField && (
+                <Grid2 size={{ md: 3 }}>
+                <Controller
+                  name="newValidityDate"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label={<>New Validity Date <span style={{ color: 'red' }}>*</span></>}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange('newValidityDate', e.target.value);
+                      }}
+                    />
+                  )}
+                />
+                {errors.new_validity_date && (
                   <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                    {errors.endorsementdate.message}
+                    {errors.new_validity_date.message}
                   </Typography>
                 )}
               </Grid2>
+              )}
               <Grid2 item size={{ md: 3 }}>
                 <FormControl fullWidth sx={{ maxWidth: 255 }}>
                   <Typography variant="body1" mb={1.5} fontWeight={500}>
