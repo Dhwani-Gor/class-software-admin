@@ -18,6 +18,11 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
   const [formData, setFormData] = useState({});
   const [focusedField, setFocusedField] = useState(null);
   console.log(fields,"fields")
+
+  const handleInputChange = (fieldName, value) => {
+    setFormData(prev => ({ ...prev, [fieldName]: value }));
+  };
+
   const handleChange = (key) => (e) => {
     const value = e.target.value;
     if (typeof value === "boolean") {
@@ -31,6 +36,20 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
         [key]: value,
       }));
     }
+  };
+
+  const handleSubmit = () => {
+    const filledValues = Object.entries(formData).reduce((acc, [key, value]) => {
+    if (typeof value === "boolean") {
+      acc[key] = value === true ? "\u2611" : "\u2610";
+  } else if (typeof value === "string" && value.trim()) {
+    acc[key] = value;
+  }
+  return acc;
+}, {});
+   onSubmit(filledValues);
+   onClose();
+   setFormData({}); 
   };
 
   useEffect(() => {
@@ -141,9 +160,9 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
         <Fade in={open} timeout={600}>
           <Grid2 container spacing={2}>
             {fields.map((field, index) => {
-              const attr = field?.attribute;
-              const isCheckbox = attr?.startsWith("_checkbox");
-              const isDate = attr?.includes("date");
+              const attr = field.attribute;
+              const isCheckbox = attr.startsWith("_checkbox");
+              const isDate = attr.includes("date");
               return (
               <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={field.attribute}>
                 <Fade in={open} timeout={800 + (index * 100)}>
@@ -153,8 +172,8 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
                         <input
                           type="checkbox"
                           checked={!!formData[field.attribute]}
-                          onChange={(e) => handleChange(field.attribute)(e)}
-                        />
+                          onChange={(e) => handleInputChange(field.attribute, e.target.checked)}
+                          />
                         <Typography variant="body2" sx={{ ml: 1 }}>
                           {field.label}
                         </Typography>
@@ -165,7 +184,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
                       label={field.label}
                       variant="outlined"
                       value={formData[field.attribute] || ""}
-                      onChange={handleChange(field.attribute)}
+                      onChange={(e) => handleInputChange(field.attribute, e.target.value)}
                       onFocus={() => setFocusedField(field)}
                       onBlur={() => setFocusedField(null)}
                       placeholder={isDate ? "Select Date" : `Enter ${field.label.toLowerCase()}`}
@@ -216,7 +235,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
           Cancel
         </Button>
         <Button
-          onClick={handleSave}
+          onClick={handleSubmit}
           variant="contained"
           size="large"
           startIcon={<CheckIcon />}
