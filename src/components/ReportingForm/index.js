@@ -226,6 +226,7 @@ const ReportingForm = () => {
   const [showTable, setShowTable] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [reportDetails, setReportDetails] = useState();
+  console.log(reportDetails,"reportDetails")
   const [tableData, setTableData] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);
   const [journalId, setjournalId] = useState(null);
@@ -373,10 +374,22 @@ const ReportingForm = () => {
       issuanceDate: values.issuancedate ? formatDate(values.issuancedate) : null,
       validityDate: values.validitydate ? formatDate(values.validitydate) : null,
       surveyDate: values.surveydate ? formatDate(values.surveydate) : null,
-      endorsementDate: values.endorsementdate ? formatDate(values.endorsementdate) : null,
       issuedBy: Number(values.issuedBy) || null,
       place: values.place || null,
-      newValidityDate: values.newValidityDate ? formatDate(values.newValidityDate) : null,
+      ...(selectCertificate === "full_term" || selectCertificate === "extended"
+        ? {
+            endorsementDate: values.endorsementdate
+              ? formatDate(values.endorsementdate)
+              : null,
+          }
+        : {}),
+      ...(selectCertificate === "extended"
+        ? {
+            newValidityDate: values.newValidityDate
+              ? formatDate(values.newValidityDate)
+              : null,
+          }
+        : {}),
     };
 
     if (reportDetails) {
@@ -1081,7 +1094,7 @@ const ReportingForm = () => {
                   </Typography>
                 )}
               </Grid2>
-              {showEndorsementField && (
+              {showEndorsementField && (reportDetails?.typeOfCertificate === "full_term" || reportDetails?.typeOfCertificate === "extended") && (
                 <Grid2 size={{ md: 3 }}>
                 <Controller
                   name="endorsementdate"
@@ -1101,7 +1114,7 @@ const ReportingForm = () => {
 
               </Grid2>
               )}
-               {showExtraEndorsementField && (
+               {showExtraEndorsementField && (reportDetails?.typeOfCertificate === "extended") &&  (
                 <Grid2 size={{ md: 3 }}>
                 <Controller
                   name="newValidityDate"

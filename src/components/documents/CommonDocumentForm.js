@@ -141,9 +141,9 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
         <Fade in={open} timeout={600}>
           <Grid2 container spacing={2}>
             {fields.map((field, index) => {
-              const attr = field.attribute;
-              const isCheckbox = attr.startsWith("_checkbox");
-              const isDate = attr.includes("date");
+              const attr = field?.attribute;
+              const isCheckbox = attr?.startsWith("_checkbox");
+              const isDate = attr?.includes("date");
               return (
               <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={field.attribute}>
                 <Fade in={open} timeout={800 + (index * 100)}>
