@@ -21,6 +21,40 @@ import { createClient, getSpecificClient, searchinvoicing_detail, searchmanager_
 import { Accordion, AccordionDetails, AccordionSummary, Typography } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
+const requiredFields = [
+  "shipName",
+  "imoNumber",
+  "classId",
+  "flag",
+  "portOfRegistry",
+  "grossTonnage",
+  "netTonnage",
+  "lengthOfShip",
+  "shipBuilder",
+  "countryOfBuild",
+  "dateOfBuild",
+  "callSign",
+  "officialNo",
+  "deadweight",
+  "typeOfShip",
+  "dateOfDelivery",
+];
+
+const renderLabel = (field) => {
+  const labelText = field
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, str => str.toUpperCase());
+
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+      <Typography fontStyle="italic">{labelText}</Typography>
+      {requiredFields.includes(field) && (
+        <span style={{ color: 'red', marginLeft: 4 }}>*</span>
+      )}
+    </span>
+  );
+};
+
 const schema = yup.object().shape({
   shipName: yup.string().required("Ship Name is required"),
   imoNumber: yup.string().required("IMO number is required"),
@@ -36,9 +70,7 @@ const schema = yup.object().shape({
   keelLaidDate: yup.string(),
   callSign: yup.string().required("Call Sign is required"),
   officialNo: yup.string().required("Official Number is required"),
-  deadweight: yup
-    .number()
-    .required("Dead weight is required"),
+  deadweight: yup.number().required("Dead weight is required"),
   dateOfModification: yup.string(),
   typeOfShip: yup.string().required("Type of Ship required"),
   dateOfBuildingContract: yup.string(),
@@ -170,6 +202,9 @@ const AddSurveyType = ({
     },
   });
 
+  const formatFieldText = (field) =>
+    field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase());
+
   // Copy values when checkboxes are checked
   useEffect(() => {
     const ownerDetails = getValues("ownerDetails");
@@ -273,7 +308,7 @@ const AddSurveyType = ({
         setValue("ownerDetails.nameOfCompany", clientData.ownerDetails?.companyName || '');
         setValue('managerDetails.nameOfCompany', clientData.managerDetails?.companyName || '');
         setValue('invoicingDetails.nameOfCompany', clientData.invoicingDetails?.companyName || '');
-        
+
       } else {
         toast.error("Something went wrong! Please try again after some time");
       }
@@ -382,14 +417,14 @@ const AddSurveyType = ({
     }, 500);
     return () => clearTimeout(timeout);
   }, [ownerInputValue]);
-  
+
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (managerInputValue) handleManagerSearch(managerInputValue);
     }, 500);
     return () => clearTimeout(timeout);
   }, [managerInputValue]);
-  
+
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (invoicingInputValue) handleInvoicingSearch(invoicingInputValue);
@@ -397,7 +432,7 @@ const AddSurveyType = ({
 
     return () => clearTimeout(timeout);
   }, [invoicingInputValue]);
-  
+
 
   const snackbarClose = () => {
     setSnackBar({ open: false, message: "" });
@@ -595,7 +630,7 @@ const AddSurveyType = ({
     />
   );
 
-  
+
   const renderManageCompanyField = () => (
     <Controller
       name="managerDetails.nameOfCompany"
@@ -782,28 +817,28 @@ const AddSurveyType = ({
           : sectionKey === "invoicingDetails"
             ? renderInvoicingCompanyField()
             : (
-          <Controller
-            name={`${sectionKey}.nameOfCompany`}
-            control={control}
-            render={({ field }) => (
-              <CommonInput
-                {...field}
-                fullWidth
-                variant="standard"
-                label="Company Name"
-                placeholder="Company Name"
-                disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) ||
-                  (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
-                error={Boolean(errors?.[sectionKey]?.nameOfCompany)}
-                helperText={errors?.[sectionKey]?.nameOfCompany?.message}
-                onChange={(e) => {
-                  field.onChange(e.target.value);
-                  createManualEditHandler(sectionKey)();
-                }}
+              <Controller
+                name={`${sectionKey}.nameOfCompany`}
+                control={control}
+                render={({ field }) => (
+                  <CommonInput
+                    {...field}
+                    fullWidth
+                    variant="standard"
+                    label="Company Name"
+                    placeholder="Company Name"
+                    disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) ||
+                      (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
+                    error={Boolean(errors?.[sectionKey]?.nameOfCompany)}
+                    helperText={errors?.[sectionKey]?.nameOfCompany?.message}
+                    onChange={(e) => {
+                      field.onChange(e.target.value);
+                      createManualEditHandler(sectionKey)();
+                    }}
+                  />
+                )}
               />
-            )}
-          />
-        )
+            )
       }
       <Controller
         name={`${sectionKey}.companyAddress`}
@@ -948,15 +983,9 @@ const AddSurveyType = ({
                     <CommonInput
                       {...controllerField}
                       fullWidth
+                      type="text"
                       variant="standard"
-                      label={
-                        <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                          <Typography fontStyle="italic">
-                            {field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
-                          </Typography>
-                          <span style={{ color: 'red', marginLeft: 4 }}>*</span>
-                        </span>
-                      }
+                      label={renderLabel(field)}
                       placeholder={`Enter ${field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}`}
                       disabled={!editingAllowed}
                       error={Boolean(errors?.[field])}
@@ -1010,12 +1039,7 @@ const AddSurveyType = ({
                       fullWidth
                       type="date"
                       variant="standard"
-                      label={<span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                        <Typography fontStyle="italic">
-                          {field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
-                        </Typography>
-                        <span style={{ color: 'red', marginLeft: 4 }}>*</span>
-                      </span>}
+                      label={renderLabel(field)}
                       placeholder={`Enter ${field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}`}
                       InputLabelProps={{ shrink: true }}
                       disabled={!editingAllowed}

@@ -34,7 +34,11 @@ const CSSForm = ({ open, onClose, onSubmit, fields }) => {
 
   const handleSubmit = () => {
     const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
-      if (value?.trim()) acc[key] = value;
+      if (typeof value === "boolean") {
+        acc[key] = value === true ? "\u2611" : "\u2610";
+      } else if (typeof value === "string" && value.trim()) {
+        acc[key] = value;
+      }
       return acc;
     }, {});
     onSubmit(filledValues);
@@ -62,18 +66,38 @@ const CSSForm = ({ open, onClose, onSubmit, fields }) => {
 
   const renderFields = (fieldList) => (
     <Grid2 container spacing={2}>
-      {fieldList.map(field => (
-        <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={field.attribute}>
-          <TextField
-            fullWidth
-            size="small"
-            label={formatLabel(field.attribute)}
-            value={formValues[field.attribute] || ""}
-            onChange={(e) => handleInputChange(field.attribute, e.target.value)}
-            placeholder={`Enter ${formatLabel(field.attribute).toLowerCase()}`}
-          />
-        </Grid2>
-      ))}
+      {fieldList.map(field => {
+        const attr = field.attribute;
+        const isCheckbox = attr.startsWith("_checkbox");
+        const isDate = attr.includes("date");
+        return (
+          <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={attr}>
+            {isCheckbox ? (
+              <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
+                <input
+                  type="checkbox"
+                  checked={!!formValues[field.attribute]}
+                  onChange={(e) => handleInputChange(field.attribute, e.target.checked)}
+                />
+                <Typography variant="body2" sx={{ ml: 1 }}>
+                  {field.label}
+                </Typography>
+              </Box>
+            ) : (
+              <TextField
+                fullWidth
+                InputLabelProps={isDate ? { shrink: true } : undefined}
+                size="small"
+                label={isDate ? undefined : (field.label || formatLabel(attr))}
+                value={formValues[field.attribute] || ""}
+                onChange={(e) => handleInputChange(field.attribute, e.target.value)}
+                placeholder={`Enter ${field.label.toLowerCase()}`}
+                type={isDate ? "date" : "text"}
+              />
+            )}
+          </Grid2>
+        )
+      })}
     </Grid2>
   );
 

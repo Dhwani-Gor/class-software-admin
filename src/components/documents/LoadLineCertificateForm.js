@@ -13,7 +13,7 @@ import {
 const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
   const [formValues, setFormValues] = useState({});
   const [expandedSection, setExpandedSection] = useState("freeboard");
-  
+
   useEffect(() => {
     if (fields?.length) {
       const initialValues = {};
@@ -35,7 +35,11 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
 
   const handleSubmit = () => {
     const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
-      if (value?.trim()) acc[key] = value;
+      if (typeof value === "boolean") {
+        acc[key] = value === true ? "\u2611" : "\u2610";
+      } else if (typeof value === "string" && value.trim()) {
+        acc[key] = value;
+      }
       return acc;
     }, {});
     onSubmit(filledValues);
@@ -67,17 +71,37 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
 
   const renderFields = (fieldList) => (
     <Grid2 container spacing={2}>
-      {fieldList.map(field => (
-        <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={field.attribute}>
-          <TextField
-            fullWidth
-            size="small"
-            label={field.attribute}
-            value={formValues[field.attribute] || ""}
-            onChange={(e) => handleInputChange(field.attribute, e.target.value)}
-          />
-        </Grid2>
-      ))}
+      {fieldList.map(field => {
+        const attr = field.attribute;
+        const isDate = attr.includes("date");
+        const isCheckbox = attr.startsWith("_checkbox");
+        return (
+          <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={field.attribute}>
+            {isCheckbox ? (
+              <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
+                <input
+                  type="checkbox"
+                  checked={!!formValues[field.attribute]}
+                  onChange={(e) => handleInputChange(field.attribute, e.target.checked)}
+                />
+                <Typography variant="body2" sx={{ ml: 1 }}>
+                  {field.label}
+                </Typography>
+              </Box>
+            ) : (
+              <TextField
+                fullWidth
+                size="small"
+                label={field.label}
+                value={formValues[field.attribute] || ""}
+                onChange={(e) => handleInputChange(field.attribute, e.target.value)}
+                type={isDate ? "date" : "text"}
+                InputLabelProps={isDate ? { shrink: true } : undefined}
+              />
+            )}
+          </Grid2>
+        )
+      })}
     </Grid2>
   );
 
@@ -130,60 +154,60 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
       <Divider />
 
       <DialogActions
-              sx={{
-                p: 3,
-                background: 'white',
-                gap: 2,
-                justifyContent: 'flex-end'
-              }}
-            >
-              <Button
-                onClick={handleClose}
-                variant="outlined"
-                size="large"
-                sx={{
-                  borderRadius: 2,
-                  px: 3,
-                  py: 1.5,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  borderColor: 'rgba(102, 126, 234, 0.3)',
-                  color: 'text.secondary',
-                  '&:hover': {
-                    borderColor: 'primary.main',
-                    background: 'rgba(102, 126, 234, 0.04)',
-                    transform: 'translateY(-1px)',
-                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
-                  },
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                variant="contained"
-                size="large"
-                startIcon={<CheckIcon />}
-                sx={{
-                  borderRadius: 2,
-                  px: 4,
-                  py: 1.5,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 8px 25px rgba(102, 126, 234, 0.6)'
-                  },
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                Generate Report
-              </Button>
-            </DialogActions>
+        sx={{
+          p: 3,
+          background: 'white',
+          gap: 2,
+          justifyContent: 'flex-end'
+        }}
+      >
+        <Button
+          onClick={handleClose}
+          variant="outlined"
+          size="large"
+          sx={{
+            borderRadius: 2,
+            px: 3,
+            py: 1.5,
+            textTransform: 'none',
+            fontWeight: 600,
+            borderColor: 'rgba(102, 126, 234, 0.3)',
+            color: 'text.secondary',
+            '&:hover': {
+              borderColor: 'primary.main',
+              background: 'rgba(102, 126, 234, 0.04)',
+              transform: 'translateY(-1px)',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+            },
+            transition: 'all 0.2s ease'
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          size="large"
+          startIcon={<CheckIcon />}
+          sx={{
+            borderRadius: 2,
+            px: 4,
+            py: 1.5,
+            textTransform: 'none',
+            fontWeight: 600,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 8px 25px rgba(102, 126, 234, 0.6)'
+            },
+            transition: 'all 0.2s ease'
+          }}
+        >
+          Generate Report
+        </Button>
+      </DialogActions>
     </Dialog>
   );
 };

@@ -152,45 +152,72 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
       toast.error("Please fill all required fields");
       return;
     }
-
+  
     try {
       setLoading(true);
       let response;
+  
       if (mode === "create" || mode === "duplicate") {
         const formData = new FormData();
-        formData.append('name', formValues.name);
-        formData.append('type', formValues.type);
-        formData.append('validity', formValues.validity);
+        formData.append("name", formValues.name);
+        formData.append("type", formValues.type);
+        formData.append("validity", formValues.validity);
+  
         if (formValues.document instanceof File) {
           formData.append("document", formValues.document);
         }
-
-        if (additionalFields && additionalFields.length > 0) {
+  
+        if (additionalFields?.length > 0) {
           const validFields = additionalFields.filter(
-            field => field.attribute.trim() && field.label.trim()
+            (field) => field.attribute.trim() && field.label.trim()
           );
           if (validFields.length > 0) {
             formData.append("fields", JSON.stringify(validFields));
           }
         }
+  
         response = await createDocument(formData);
       } else {
-        const payload = {
-          ...formValues,
-          ...(editReason && { reason: editReason }),
-        };
-
-        if (additionalFields && additionalFields.length > 0) {
-          const validFields = additionalFields.filter(
-            field => field.attribute.trim() && field.label.trim()
-          );
-          if (validFields.length > 0) {
-            payload.fields = JSON.stringify(validFields);
+        const hasFile = formValues.document instanceof File;
+  
+        if (hasFile) {
+          const formData = new FormData();
+          formData.append("name", formValues.name);
+          formData.append("type", formValues.type);
+          formData.append("validity", formValues.validity);
+          formData.append("document", formValues.document);
+          if (editReason) formData.append("reason", editReason);
+  
+          if (additionalFields?.length > 0) {
+            const validFields = additionalFields.filter(
+              (field) => field.attribute.trim() && field.label.trim()
+            );
+            if (validFields.length > 0) {
+              formData.append("fields", JSON.stringify(validFields));
+            }
           }
+  
+          response = await updateDocument(documentId, formData);
+        } else {
+          const payload = {
+            ...formValues,
+            ...(editReason && { reason: editReason }),
+          };
+  
+          if (additionalFields?.length > 0) {
+            const validFields = additionalFields.filter(
+              (field) => field.attribute.trim() && field.label.trim()
+            );
+            if (validFields.length > 0) {
+              payload.fields = JSON.stringify(validFields);
+            }
+          }
+  
+          response = await updateDocument(documentId, payload);
         }
-        response = await updateDocument(documentId, payload);
       }
-
+  
+      // ✅ Common success handling
       if (response?.status === 200 || response?.status === 201) {
         toast.success(
           mode === "duplicate"
@@ -206,12 +233,13 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           "Something went wrong! Please try again."
         );
       }
-      setLoading(false);
     } catch (error) {
-      setLoading(false);
       toast.error("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
+  
 
   if (loading) {
     return (

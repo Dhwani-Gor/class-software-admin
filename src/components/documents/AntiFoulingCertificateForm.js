@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from "react";
 import {
   Dialog, DialogContent, DialogActions, TextField, Box, Typography, IconButton,
-  Divider, Button, Accordion, AccordionSummary, AccordionDetails,Grid2
+  Divider, Button, Accordion, AccordionSummary, AccordionDetails
 } from "@mui/material";
+import Grid2 from "@mui/material/Grid2";
 import {
   Close as CloseIcon, ExpandMore as ExpandMoreIcon,
   CheckCircle as CheckIcon, Science as ScienceIcon
@@ -17,7 +18,8 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
     if (fields?.length) {
       const initialValues = {};
       fields.forEach(field => {
-        initialValues[field?.attribute] = "";
+        const attr = field.attribute;
+        initialValues[attr] = attr.startsWith("_checkbox") ? false : "";
       });
       setFormValues(initialValues);
     }
@@ -34,14 +36,21 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
 
   const handleSubmit = () => {
     const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
-      if (value?.trim()) acc[key] = value;
+      if (typeof value === "boolean") {
+        acc[key] = value === true ? "\u2611" : "\u2610";
+      } else if (typeof value === "string" && value.trim()) {
+        acc[key] = value;
+      }
       return acc;
     }, {});
     onSubmit(filledValues);
   };
 
+
   const formatLabel = (attribute) =>
     attribute.replace(/^_/, "").replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+
+  const cleanFields = fields
 
   const categorizeFields = (fields) => {
     const categories = {
@@ -64,22 +73,40 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
     return categories;
   };
 
-  const { systemInfo, facilityInfo, sealerInfo } = categorizeFields(fields);
+  const { systemInfo, facilityInfo, sealerInfo } = categorizeFields(cleanFields);
 
   const renderFields = (fieldList) => (
     <Grid2 container spacing={2}>
-      {fieldList.map(field => (
-        <Grid2 size={{ xs: 12, sm: 6, md: 3 }} key={field.attribute}>
-          <TextField
-            fullWidth
-            size="small"
-            label={formatLabel(field.attribute)}
-            value={formValues[field.attribute] || ""}
-            onChange={(e) => handleInputChange(field.attribute, e.target.value)}
-            placeholder={`Enter ${formatLabel(field.attribute).toLowerCase()}`}
-          />
-        </Grid2>
-      ))}
+      {fieldList.map(field => {
+        const attr = field.attribute;
+        const isCheckbox = attr.startsWith("_checkbox");
+        const isDate = attr.includes("date");
+        return (
+          <Grid2 size={{ xs: 12, sm: 6, md: 3 }} key={attr}>
+            {isCheckbox ? (
+              <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
+                <input
+                  type="checkbox"
+                  checked={!!formValues[field.attribute]}
+                  onChange={(e) => handleInputChange(field.attribute, e.target.checked)}
+                />
+                <Typography sx={{ ml: 1 }}>{field.label || formatLabel(field.attribute)}</Typography>
+              </Box>
+            ) : (
+              <TextField
+                fullWidth
+                InputLabelProps={isDate ? { shrink: true } : undefined}
+                size="small"
+                label={isDate ? undefined : (field.label || formatLabel(field.attribute))}
+                value={formValues[field.attribute] || ""}
+                onChange={(e) => handleInputChange(field.attribute, e.target.value)}
+                placeholder={isDate ? "Select Date" : `Enter ${formatLabel(field.attribute).toLowerCase()}`}
+                type={isDate ? "date" : "text"}
+              />
+            )}
+          </Grid2>
+        );
+      })}
     </Grid2>
   );
 
@@ -95,7 +122,7 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
           <Typography variant="h6">
             {title}
             <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
-              ({fieldList?.filter(f => formValues[f.attribute]?.trim())?.length}/{fieldList?.length})
+              ({fieldList?.filter(f => formValues[f.attribute])?.length}/{fieldList?.length})
             </Typography>
           </Typography>
         </AccordionSummary>
@@ -131,61 +158,54 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
 
       <Divider />
 
-      <DialogActions
-              sx={{
-                p: 3,
-                background: 'white',
-                gap: 2,
-                justifyContent: 'flex-end'
-              }}
-            >
-              <Button
-                onClick={handleClose}
-                variant="outlined"
-                size="large"
-                sx={{
-                  borderRadius: 2,
-                  px: 3,
-                  py: 1.5,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  borderColor: 'rgba(102, 126, 234, 0.3)',
-                  color: 'text.secondary',
-                  '&:hover': {
-                    borderColor: 'primary.main',
-                    background: 'rgba(102, 126, 234, 0.04)',
-                    transform: 'translateY(-1px)',
-                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
-                  },
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                variant="contained"
-                size="large"
-                startIcon={<CheckIcon />}
-                sx={{
-                  borderRadius: 2,
-                  px: 4,
-                  py: 1.5,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 8px 25px rgba(102, 126, 234, 0.6)'
-                  },
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                Generate Report
-              </Button>
-            </DialogActions>
+      <DialogActions sx={{ p: 3, background: 'white', gap: 2, justifyContent: 'flex-end' }}>
+        <Button
+          onClick={handleClose}
+          variant="outlined"
+          size="large"
+          sx={{
+            borderRadius: 2,
+            px: 3,
+            py: 1.5,
+            textTransform: 'none',
+            fontWeight: 600,
+            borderColor: 'rgba(102, 126, 234, 0.3)',
+            color: 'text.secondary',
+            '&:hover': {
+              borderColor: 'primary.main',
+              background: 'rgba(102, 126, 234, 0.04)',
+              transform: 'translateY(-1px)',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+            },
+            transition: 'all 0.2s ease'
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          size="large"
+          startIcon={<CheckIcon />}
+          sx={{
+            borderRadius: 2,
+            px: 4,
+            py: 1.5,
+            textTransform: 'none',
+            fontWeight: 600,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 8px 25px rgba(102, 126, 234, 0.6)'
+            },
+            transition: 'all 0.2s ease'
+          }}
+        >
+          Generate Report
+        </Button>
+      </DialogActions>
     </Dialog>
   );
 };

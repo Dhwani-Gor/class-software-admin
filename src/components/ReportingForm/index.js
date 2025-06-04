@@ -57,7 +57,7 @@ const reportSchema = yup.object().shape({
   issuancedate: yup.string().required('Issuance date is required'),
   validitydate: yup.string().required('Validity date is required'),
   surveydate: yup.string().required('Survey date is required'),
-  endorsementdate: yup.string().required('Endorsement date is required'),
+  endorsementdate: yup.string().optional(),
   issuedBy: yup.string().optional(),
   place: yup.string().required('Place is required'),
 });
@@ -226,6 +226,7 @@ const ReportingForm = () => {
   const [showTable, setShowTable] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [reportDetails, setReportDetails] = useState();
+  console.log(reportDetails, "reportDetails")
   const [tableData, setTableData] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);
   const [journalId, setjournalId] = useState(null);
@@ -240,8 +241,25 @@ const ReportingForm = () => {
   const [previewFile, setPreviewFile] = useState("");
   const [underscoreFields, setUnderscoreFields] = useState([]);
   const [reportName, setReportName] = useState("");
+  const [showEndorsementField, setShowEndorsementField] = useState(false);
+  const [showExtraEndorsementField, setShowExtraEndorsementField] = useState(false);
 
- 
+  useEffect(() => {
+    if (selectCertificate === "full_term") {
+      setShowEndorsementField(true);
+      setShowExtraEndorsementField(false);
+    } else if (selectCertificate === "short_term" || selectCertificate === "interim") {
+      setShowEndorsementField(false);
+      setShowExtraEndorsementField(false);
+    } else if (selectCertificate === "extended") {
+      setShowEndorsementField(true);
+      setShowExtraEndorsementField(true);
+    } else {
+      setShowEndorsementField(false);
+      setShowExtraEndorsementField(false);
+    }
+  }, [selectCertificate]);
+
   const [loadingReport, setLoadingReport] = useState(false);
   const validReports = [
     "CARGO SHIP SAFETY CONSTRUCTION CERTIFICATE",
@@ -356,9 +374,22 @@ const ReportingForm = () => {
       issuanceDate: values.issuancedate ? formatDate(values.issuancedate) : null,
       validityDate: values.validitydate ? formatDate(values.validitydate) : null,
       surveyDate: values.surveydate ? formatDate(values.surveydate) : null,
-      endorsementDate: values.endorsementdate ? formatDate(values.endorsementdate) : null,
       issuedBy: Number(values.issuedBy) || null,
-      place: values.place || null
+      place: values.place || null,
+      ...(selectCertificate === "full_term" || selectCertificate === "extended"
+        ? {
+          endorsementDate: values.endorsementdate
+            ? formatDate(values.endorsementdate)
+            : null,
+        }
+        : {}),
+      ...(selectCertificate === "extended"
+        ? {
+          newValidityDate: values.newValidityDate
+            ? formatDate(values.newValidityDate)
+            : null,
+        }
+        : {}),
     };
 
     if (reportDetails) {
@@ -535,16 +566,16 @@ const ReportingForm = () => {
   };
 
   const handleReportClick = async (row) => {
-    console.log(row,"row")
+    console.log(row, "row")
     try {
       setLoading(true);
       const result = await getSelectedActivityReportDetails(row?.id);
       setReportName(row?.surveyTypes?.reports?.[0]?.name);
 
       const data = extractUnderscoreFields(row);
-      console.log(data,"data")
+      console.log(data, "data")
       setUnderscoreFields(data)
-      console.log(data,"data fields")
+      console.log(data, "data fields")
       if (result?.data?.status === "success") {
         setReportDetails(result?.data?.data[0]);
 
@@ -727,7 +758,7 @@ const ReportingForm = () => {
 
   const extractUnderscoreFields = (data) => {
     const fields = [];
-    if(data && typeof data === 'object'){
+    if (data && typeof data === 'object') {
       data?.surveyTypes?.reports?.forEach((report) => {
         report?.fields?.forEach((field) => {
           if (field?.attribute?.startsWith("_")) {
@@ -1063,28 +1094,56 @@ const ReportingForm = () => {
                   </Typography>
                 )}
               </Grid2>
+              {(showEndorsementField ||
+                reportDetails?.typeOfCertificate === "full_term" ||
+                reportDetails?.typeOfCertificate === "extended") && (
+                  // Render Endorsement Date field
+                  <Grid2 size={{ md: 3 }}>
+                    <Controller
+                      name="endorsementdate"
+                      control={control}
+                      render={({ field }) => (
+                        <CommonInput
+                          {...field}
+                          type="date"
+                          label={<>Endorsement Date</>}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            handleFieldChange('endorsementdate', e.target.value);
+                          }}
+                        />
+                      )}
+                    />
+
+                  </Grid2>
+                )}
+              {(
+                showExtraEndorsementField ||
+                reportDetails?.typeOfCertificate === "extended"
+              ) && (
               <Grid2 size={{ md: 3 }}>
                 <Controller
-                  name="endorsementdate"
+                  name="newValidityDate"
                   control={control}
                   render={({ field }) => (
                     <CommonInput
                       {...field}
                       type="date"
-                      label={<>Endorsement Date <span style={{ color: 'red' }}>*</span></>}
+                      label={<>New Validity Date <span style={{ color: 'red' }}>*</span></>}
                       onChange={(e) => {
                         field.onChange(e);
-                        handleFieldChange('endorsementdate', e.target.value);
+                        handleFieldChange('newValidityDate', e.target.value);
                       }}
                     />
                   )}
                 />
-                {errors.endorsementdate && (
+                {errors.new_validity_date && (
                   <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                    {errors.endorsementdate.message}
+                    {errors.new_validity_date.message}
                   </Typography>
                 )}
               </Grid2>
+                )}
               <Grid2 item size={{ md: 3 }}>
                 <FormControl fullWidth sx={{ maxWidth: 255 }}>
                   <Typography variant="body1" mb={1.5} fontWeight={500}>

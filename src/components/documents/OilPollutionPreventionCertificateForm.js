@@ -48,9 +48,13 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
 
     const handleSubmit = () => {
         const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
-            if (value?.trim()) acc[key] = value;
+            if (typeof value === "boolean") {
+                acc[key] = value === true ? "\u2611" : "\u2610";
+            } else if (typeof value === "string" && value.trim()) {
+                acc[key] = value;
+            }
             return acc;
-        }, {});
+        });
         onSubmit(filledValues);
     };
 
@@ -61,6 +65,11 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
             ?.replace(/\b\w/g, l => l.toUpperCase());
     };
 
+    const extractCheckboxFields = (fields = []) => {
+        return fields.filter(f => f.attribute?.startsWith("_checkbox"));
+    };
+
+    const checkboxFields = extractCheckboxFields(fields);
     const categorizeByCustomGroups = (fields = []) => {
         const categories = {
             shipConstruction: [],
@@ -70,6 +79,7 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
             waivers: [],
             odmcs: []
         };
+
         fields.forEach(field => {
             const attr = field.attribute?.toLowerCase();
             if (/conversion|trade_engagement|drg_no|approve_by_5_7|approve_on_5_7|reg_28|input_5_8|admin_verification/.test(attr)) {
@@ -91,20 +101,39 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
 
     const customCategories = categorizeByCustomGroups(fields);
 
+
     const renderFieldCategory = (categoryFields) => (
         <Grid2 container spacing={2}>
-            {categoryFields.map((field) => (
-                <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={field.attribute}>
-                    <TextField
-                        variant="outlined"
-                        fullWidth
-                        label={field.attribute}
-                        size="small"
-                        value={formValues[field.attribute] || ""}
-                        onChange={(e) => handleInputChange(field.attribute, e.target.value)}
-                    />
-                </Grid2>
-            ))}
+            {categoryFields.map((field) => {
+                const isCheckbox = field.attribute.startsWith("_checkbox");
+                const isDate = field.attribute.includes("date");
+                return (
+                    <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={field.attribute}>
+                        {isCheckbox ? (
+                            <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={!!formValues[field.attribute]}
+                                    onChange={(e) => handleInputChange(field.attribute, e.target.checked)}
+                                />
+                                <Typography sx={{ ml: 1 }}>{field.label}</Typography>
+                            </Box>
+                        ) : (
+                            <TextField
+                                variant="outlined"
+                                fullWidth
+                                label={field.label}
+                                size="small"
+                                value={formValues[field.attribute] || ""}
+                                onChange={(e) => handleInputChange(field.attribute, e.target.value)}
+                                placeholder={isDate ? "Select Date" : `Enter ${field.label}`}
+                                type={isDate ? "date" : "text"}
+                                InputLabelProps={isDate ? { shrink: true } : undefined}
+                            />
+                        )}
+                    </Grid2>
+                )
+            })}
         </Grid2>
     );
 
@@ -146,10 +175,10 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
                         </Box>
                         <Box>
                             <Typography variant="h5" fontWeight={700} sx={{ mb: 0.5 }}>
-                            International Oil Pollution Prevention Certificate
+                                International Oil Pollution Prevention Certificate
                             </Typography>
                             <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                            Provide additional information to generate your report
+                                Provide additional information to generate your report
                             </Typography>
                         </Box>
                     </Box>
@@ -166,6 +195,7 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
                 {renderCategoryAccordion("Slop Tanks & Oil Management", "slopTanks", "🛢️", customCategories.slopTanks)}
                 {renderCategoryAccordion("Regulation Waivers / Exemptions", "waivers", "🌍", customCategories.waivers)}
                 {renderCategoryAccordion("ODMCS System Info", "odmcs", "🖥️", customCategories.odmcs)}
+                {renderFieldCategory(checkboxFields)}
             </DialogContent>
 
             <Divider sx={{ borderColor: 'rgba(102, 126, 234, 0.1)' }} />
