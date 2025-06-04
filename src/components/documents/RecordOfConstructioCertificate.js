@@ -52,7 +52,9 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
 
     const handleSubmit = () => {
         const filledValues = Object?.entries(formValues).reduce((acc, [key, value]) => {
-            if (value && value.trim() !== "") {
+            if (typeof value === "boolean") {
+                acc[key] = value === true ? "\u2611" : "\u2610";
+            } else if (typeof value === "string" && value.trim()) {
                 acc[key] = value;
             }
             return acc;
@@ -151,17 +153,36 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                 {title}
             </Typography>
             <Grid2 container spacing={2}>
-                {fieldList.map(field => (
-                    <Grid2 item xs={12} sm={6} md={4} key={field.attribute}>
-                        <TextField
-                            fullWidth
-                            size="small"
-                            label={field.label}
-                            value={formValues[field.attribute] || ""}
-                            onChange={(e) => handleInputChange(field.attribute, e.target.value)}
-                        />
-                    </Grid2>
-                ))}
+                {fieldList.map(field => {
+                    const attr = field.attribute;
+                    const isCheckbox = attr.startsWith("_checkbox");
+                    const isDate = attr.includes("date");
+                    return (
+                        <Grid2 item xs={12} sm={6} md={4} key={field.attribute}>
+                            {isCheckbox ? (
+                                <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={!!formValues[field.attribute]}
+                                        onChange={(e) => handleInputChange(field.attribute, e.target.checked)}
+                                    />
+                                    <Typography sx={{ ml: 1 }}>{field.label}</Typography>
+                                </Box>
+                            ) : (
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    label={field.label}
+                                    InputLabelProps={isDate ? { shrink: true } : undefined}
+                                    value={formValues[field.attribute] || ""}
+                                    onChange={(e) => handleInputChange(field.attribute, e.target.value)}
+                                    placeholder={isDate ? "Select Date" : `Enter ${field.label}`}
+                                    type={isDate ? "date" : "text"}
+                                />
+                            )}
+                        </Grid2>
+                    )
+                })}
             </Grid2>
         </Grid2>
     );
@@ -184,25 +205,44 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {groups.map((group, index) => (
-                                <TableRow key={index} sx={{
-                                    '&:nth-of-type(odd)': { bgcolor: '#fafafa' },
-                                    '&:hover': { bgcolor: '#f0f7ff' }
-                                }}>
-                                    {columns.map(col => (
-                                        <TableCell key={col.key}>
-                                            <TextField
-                                                fullWidth
-                                                label={group[col.key]?.label}
-                                                size="small"
-                                                value={formValues[group[col.key]?.attribute] || ""}
-                                                onChange={(e) => handleInputChange(group[col.key]?.attribute, e.target.value)}
-                                                placeholder={group[col.key]?.attribute}
-                                            />
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
-                            ))}
+                            {groups.map((group, index) => {
+                                const attr = group.attribute;
+                                const isCheckbox = attr.startsWith("_checkbox");
+                                const isDate = attr.includes("date");
+                                return (
+
+                                    <TableRow key={index} sx={{
+                                        '&:nth-of-type(odd)': { bgcolor: '#fafafa' },
+                                        '&:hover': { bgcolor: '#f0f7ff' }
+                                    }}>
+                                        {columns.map(col => (
+                                            <TableCell key={col.key}>
+                                                {isCheckbox ? (
+                                                    <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={!!formValues[group[col.key]?.attribute]}
+                                                            onChange={(e) => handleInputChange(group[col.key]?.attribute, e.target.checked)}
+                                                        />
+                                                        <Typography sx={{ ml: 1 }}>{group[col.key]?.label}</Typography>
+                                                    </Box>
+                                                ) : (
+                                                    <TextField
+                                                        fullWidth
+                                                        label={group[col.key]?.label}
+                                                        size="small"
+                                                        value={formValues[group[col.key]?.attribute] || ""}
+                                                        onChange={(e) => handleInputChange(group[col.key]?.attribute, e.target.value)}
+                                                        placeholder={isDate ? "Select Date" : `Enter ${group[col.key]?.label}`}
+                                                        type={isDate ? "date" : "text"}
+                                                        InputLabelProps={isDate ? { shrink: true } : undefined}
+                                                    />
+                                                )}
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                )
+                            })}
                         </TableBody>
                     </Table>
                 </TableContainer>
@@ -304,6 +344,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                                                         onChange={(e) => handleInputChange(fieldKey, e.target.value)}
                                                         disabled={!fieldKey}
                                                         placeholder={!fieldKey ? "N/A" : ""}
+                                                        InputLabelProps={!fieldKey ? { shrink: true } : undefined}
                                                     />
                                                 </TableCell>
                                             );
@@ -341,17 +382,31 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                                         </TableCell>
                                         {engineNumbers.map(num => {
                                             const fieldKey = groupedEngineFields[num]?.[attr.key];
+                                            const isDate = fieldKey?.includes("date");
+                                            const isCheckbox = fieldKey?.includes("checkbox");
                                             return (
                                                 <TableCell key={num}>
-                                                    <TextField
-                                                        fullWidth
-                                                        size="small"
-                                                        label={fieldKey}
-                                                        value={formValues[fieldKey] || ""}
-                                                        onChange={(e) => handleInputChange(fieldKey, e.target.value)}
-                                                        disabled={!fieldKey}
-                                                        placeholder={!fieldKey ? "N/A" : ""}
-                                                    />
+                                                    {isCheckbox ? (
+                                                        <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={!!formValues[fieldKey]}
+                                                                onChange={(e) => handleInputChange(fieldKey, e.target.checked)}
+                                                            />
+                                                            <Typography sx={{ ml: 1 }}>{fieldKey}</Typography>
+                                                        </Box>
+                                                    ) : (
+                                                        <TextField
+                                                            fullWidth
+                                                            size="small"
+                                                            label={fieldKey}
+                                                            value={formValues[fieldKey] || ""}
+                                                            onChange={(e) => handleInputChange(fieldKey, e.target.value)}
+                                                            disabled={!fieldKey}
+                                                            placeholder={!fieldKey ? "N/A" : ""}
+                                                            InputLabelProps={!fieldKey ? { shrink: true } : undefined}
+                                                        />
+                                                    )}
                                                 </TableCell>
                                             );
                                         })}

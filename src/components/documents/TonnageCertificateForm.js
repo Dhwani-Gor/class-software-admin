@@ -63,7 +63,9 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
 
   const handleSubmit = () => {
     const filledValues = Object?.entries(formValues).reduce((acc, [key, value]) => {
-      if (value && value.trim() !== "") {
+      if (typeof value === "boolean") {
+        acc[key] = value === true ? "\u2611" : "\u2610";
+      } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       }
       return acc;
@@ -156,7 +158,6 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
   };
 
   const fieldCategories = organizeFields();
-  console.log(fieldCategories, "fieldCategories")
   const renderSpacesTable = () => (
     <TableContainer component={Paper} variant="outlined">
       <Table size="small">
@@ -184,7 +185,6 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
               '&:nth-of-type(odd)': { bgcolor: '#fafafa' },
               '&:hover': { bgcolor: '#f0f7ff' }
             }}>
-              {/* GT Fields */}
               <TableCell sx={{ borderRight: '1px solid #e0e0e0' }}>
                 {gtSpaces[index] && (
                   <TextField
@@ -193,6 +193,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
                     size="small"
                     value={formValues[gtSpaces[index].spaceAttr] || ""}
                     onChange={(e) => handleInputChange(gtSpaces[index].spaceAttr, e.target.value)}
+
                   />
                 )}
               </TableCell>
@@ -204,7 +205,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
                     size="small"
                     value={formValues[gtSpaces[index].locAttr] || ""}
                     onChange={(e) => handleInputChange(gtSpaces[index].locAttr, e.target.value)}
-                    placeholder="Location"
+                    
                   />
                 )}
               </TableCell>
@@ -231,6 +232,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
                     value={formValues[ntSpaces[index].spaceAttr] || ""}
                     onChange={(e) => handleInputChange(ntSpaces[index].spaceAttr, e.target.value)}
                     placeholder="Space name"
+                    
                   />
                 )}
               </TableCell>

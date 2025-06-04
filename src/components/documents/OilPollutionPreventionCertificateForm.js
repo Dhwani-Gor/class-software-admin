@@ -48,9 +48,13 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
 
     const handleSubmit = () => {
         const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
-            if (value?.trim()) acc[key] = value;
-            return acc;
-        }, {});
+            if (typeof value === "boolean") {
+                acc[key] = value === true ? "\u2611" : "\u2610";
+              } else if (typeof value === "string" && value.trim()) {
+                acc[key] = value;
+              }
+              return acc;
+        });
         onSubmit(filledValues);
     };
 
@@ -93,8 +97,21 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
 
     const renderFieldCategory = (categoryFields) => (
         <Grid2 container spacing={2}>
-            {categoryFields.map((field) => (
+            {categoryFields.map((field) => {
+                const isCheckbox = field.attribute.startsWith("_checkbox");
+                const isDate = field.attribute.includes("date");
+                return (
                 <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={field.attribute}>
+                    {isCheckbox ? (
+                        <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
+                            <input
+                                type="checkbox"
+                                checked={!!formValues[field.attribute]}
+                                onChange={(e) => handleInputChange(field.attribute, e.target.checked)}
+                            />
+                            <Typography sx={{ ml: 1 }}>{field.label}</Typography>
+                        </Box>
+                    ) : (
                     <TextField
                         variant="outlined"
                         fullWidth
@@ -102,9 +119,13 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
                         size="small"
                         value={formValues[field.attribute] || ""}
                         onChange={(e) => handleInputChange(field.attribute, e.target.value)}
+                        placeholder={isDate ? "Select Date" : `Enter ${field.label}`}
+                        type={isDate ? "date" : "text"}
+                        InputLabelProps={isDate ? { shrink: true } : undefined}
                     />
+                    )}
                 </Grid2>
-            ))}
+            )})}
         </Grid2>
     );
 

@@ -19,10 +19,18 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
   const [focusedField, setFocusedField] = useState(null);
   console.log(fields,"fields")
   const handleChange = (key) => (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      [key]: e.target.value,
-    }));
+    const value = e.target.value;
+    if (typeof value === "boolean") {
+      setFormData((prev) => ({
+        ...prev,
+        [key]: value === true ? "\u2611" : "\u2610",
+      }));
+    } else if (typeof value === "string" && value.trim()) {
+      setFormData((prev) => ({
+        ...prev,
+        [key]: value,
+      }));
+    }
   };
 
   useEffect(() => {
@@ -132,11 +140,27 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
 
         <Fade in={open} timeout={600}>
           <Grid2 container spacing={2}>
-            {fields.map((field, index) => (
+            {fields.map((field, index) => {
+              const attr = field.attribute;
+              const isCheckbox = attr.startsWith("_checkbox");
+              const isDate = attr.includes("date");
+              return (
               <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={field.attribute}>
                 <Fade in={open} timeout={800 + (index * 100)}>
                   <Box>
-                    <TextField
+                    {isCheckbox ? (
+                      <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
+                        <input
+                          type="checkbox"
+                          checked={!!formData[field.attribute]}
+                          onChange={(e) => handleChange(field.attribute)(e)}
+                        />
+                        <Typography variant="body2" sx={{ ml: 1 }}>
+                          {field.label}
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <TextField
                       fullWidth
                       label={field.label}
                       variant="outlined"
@@ -144,11 +168,15 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
                       onChange={handleChange(field.attribute)}
                       onFocus={() => setFocusedField(field)}
                       onBlur={() => setFocusedField(null)}
+                      placeholder={isDate ? "Select Date" : `Enter ${field.label.toLowerCase()}`}
+                      type={isDate ? "date" : "text"}
+                      InputLabelProps={isDate ? { shrink: true } : undefined}
                     />
-                  </Box>
+                  )}
+                </Box>
                 </Fade>
               </Grid2>
-            ))}
+            )})}
           </Grid2>
         </Fade>
       </DialogContent>
