@@ -47,29 +47,27 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
     };
 
     const handleSubmit = () => {
-        const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
-            if (typeof value === "boolean") {
-                acc[key] = value === true ? "\u2611" : "\u2610";
-            } else if (typeof value === "string" && value.trim()) {
-                acc[key] = value;
+        const finalPayload = {};
+    
+        fields.forEach(({ attribute }) => {
+            const value = formValues[attribute];
+    
+            if (attribute.startsWith("_checkbox")) {
+                finalPayload[attribute] = value === true ? "\u2611" : "\u2610";
+            } else {
+                finalPayload[attribute] = value || "";
             }
-            return acc;
         });
-        onSubmit(filledValues);
+    
+        onSubmit(finalPayload);
     };
-
-    const formatLabel = (attribute) => {
-        return attribute
-            ?.replace(/^_/, '')
-            ?.replace(/_/g, ' ')
-            ?.replace(/\b\w/g, l => l.toUpperCase());
-    };
-
+    
     const extractCheckboxFields = (fields = []) => {
-        return fields.filter(f => f.attribute?.startsWith("_checkbox"));
+        return fields?.filter(f => f.attribute?.startsWith("_checkbox"));
     };
 
     const checkboxFields = extractCheckboxFields(fields);
+    
     const categorizeByCustomGroups = (fields = []) => {
         const categories = {
             shipConstruction: [],
@@ -104,9 +102,9 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
 
     const renderFieldCategory = (categoryFields) => (
         <Grid2 container spacing={2}>
-            {categoryFields.map((field) => {
+            {categoryFields?.map((field) => {
                 const isCheckbox = field.attribute.startsWith("_checkbox");
-                const isDate = field.attribute.includes("date");
+                const isDate = field.attribute?.includes("date");
                 return (
                     <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={field.attribute}>
                         {isCheckbox ? (
@@ -138,7 +136,7 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
     );
 
     const renderCategoryAccordion = (title, key, icon, categoryFields) => {
-        if (categoryFields.length === 0) return null;
+        if (categoryFields?.length === 0) return null;
         return (
             <Accordion
                 expanded={expandedSection === key}
@@ -154,7 +152,7 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
                             color="primary"
                             sx={{ ml: 1, fontWeight: 'medium' }}
                         >
-                            ({categoryFields.filter(f => formValues[f.attribute]?.trim()).length}/{categoryFields.length})
+                            ({categoryFields?.filter(f => formValues[f.attribute]?.trim())?.length}/{categoryFields?.length})
                         </Typography>
                     </Typography>
                 </AccordionSummary>
@@ -195,7 +193,7 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
                 {renderCategoryAccordion("Slop Tanks & Oil Management", "slopTanks", "🛢️", customCategories.slopTanks)}
                 {renderCategoryAccordion("Regulation Waivers / Exemptions", "waivers", "🌍", customCategories.waivers)}
                 {renderCategoryAccordion("ODMCS System Info", "odmcs", "🖥️", customCategories.odmcs)}
-                {renderFieldCategory(checkboxFields)}
+                {renderCategoryAccordion("Ship Classification & Delivery Status", "shipClassification", "🖥️", checkboxFields)}
             </DialogContent>
 
             <Divider sx={{ borderColor: 'rgba(102, 126, 234, 0.1)' }} />

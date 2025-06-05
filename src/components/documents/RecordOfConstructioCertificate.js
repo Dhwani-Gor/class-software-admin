@@ -25,9 +25,11 @@ import {
     FormControlLabel,
     Checkbox
 } from '@mui/material';
-import { ExpandMore as ExpandMoreIcon, Science as ScienceIcon, Close as CloseIcon } from '@mui/icons-material';
+import { ExpandMore as ExpandMoreIcon, Science as ScienceIcon, Close as CloseIcon, CheckCircle as CheckIcon } from '@mui/icons-material';
 
 const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
+    const [expandedSection, setExpandedSection] = useState("systemInfo");
+
     const [formValues, setFormValues] = useState({});
     console.log(fields, "fields");
 
@@ -360,7 +362,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                                                     <TextField
                                                         fullWidth
                                                         size="small"
-                                                        label={fieldKey}
+                                                        label={attr.label}
                                                         value={formValues[fieldKey] || ""}
                                                         onChange={(e) => handleInputChange(fieldKey, e.target.value)}
                                                         disabled={!fieldKey}
@@ -423,7 +425,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                                                         <TextField
                                                             fullWidth
                                                             size="small"
-                                                            label={fieldKey}
+                                                            label={attr.label}
                                                             value={formValues[fieldKey] || ""}
                                                             onChange={(e) => handleInputChange(fieldKey, e.target.value)}
                                                             disabled={!fieldKey}
@@ -443,6 +445,26 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                 </CardContent>
             </Card>
         );
+    };
+
+    const getEngineFieldStats = () => {
+        let total = 0;
+        let filled = 0;
+
+        Object.values(groupedEngineFields).forEach(engineFieldGroup => {
+            Object.keys(engineFieldGroup || {}).forEach(fieldKey => {
+                total += 1;
+                const value = formValues[fieldKey];
+
+                if (typeof value === "boolean") {
+                    filled += true; // always count checkbox (☑ or ☐)
+                } else if (typeof value === "string" && value.trim()) {
+                    filled += 1;
+                }
+            });
+        });
+
+        return { filled, total };
     };
 
     return (
@@ -473,10 +495,17 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
             </Box>
             <DialogContent dividers sx={{ p: 3 }}>
 
-                <Accordion>
+                <Accordion
+                    expanded={expandedSection === "ozone"}
+                    onChange={() => setExpandedSection(expandedSection === "ozone" ? null : "ozone")}
+                    sx={{ mb: 2 }}
+                >
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                        <Typography variant="h6">
                             Ozone-Depleting Substances (Regulation 12)
+                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                                ({groupedOzoneFields?.filter(f => formValues[f.attribute])?.length}/{groupedOzoneFields?.length})
+                            </Typography>
                         </Typography>
                     </AccordionSummary>
                     <AccordionDetails>
@@ -492,9 +521,18 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                     </AccordionDetails>
                 </Accordion>
 
-                <Accordion>
+                <Accordion
+                    expanded={expandedSection === "hcfc"}
+                    onChange={() => setExpandedSection(expandedSection === "hcfc" ? null : "hcfc")}
+                    sx={{ mb: 2 }}
+                >
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="h6">HCFC Systems (Regulation 12)</Typography>
+                        <Typography variant="h6">
+                            HCFC Systems (Regulation 12)
+                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                                ({groupedHcfcFields?.filter(f => formValues[f.attribute])?.length}/{groupedHcfcFields?.length})
+                            </Typography>
+                        </Typography>
                     </AccordionSummary>
                     <AccordionDetails>
                         {renderTableWithGroups(
@@ -509,34 +547,68 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                     </AccordionDetails>
                 </Accordion>
 
-                <Accordion>
+                <Accordion
+                    expanded={expandedSection === "engine"}
+                    onChange={() => setExpandedSection(expandedSection === "engine" ? null : "engine")}
+                    sx={{ mb: 2 }}
+                >
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="h6">Nitrogen Oxides (NOx) - Engine Information</Typography>
+                        <Typography variant="h6">
+                            Nitrogen Oxides (NOx) - Engine Information
+                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                                <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                                    ({getEngineFieldStats().filled}/{getEngineFieldStats().total})
+                                </Typography>                            </Typography>
+                        </Typography>
                     </AccordionSummary>
                     <AccordionDetails>
                         {renderEngineTable()}
                     </AccordionDetails>
                 </Accordion>
 
-                <Accordion>
+                <Accordion
+                    expanded={expandedSection === "voc"}
+                    onChange={() => setExpandedSection(expandedSection === "voc" ? null : "voc")}
+                    sx={{ mb: 2 }}
+                >
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="h6">Volatile Organic Compounds (VOCs)</Typography>
+                        <Typography variant="h6">Volatile Organic Compounds (VOCs)
+                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                                ({vocFields?.filter(f => formValues[f.attribute])?.length}/{vocFields?.length})
+                            </Typography>
+                        </Typography>
                     </AccordionSummary>
                     <AccordionDetails>
                         {renderBasicFields(vocFields)}
                     </AccordionDetails>
                 </Accordion>
-                <Accordion>
+                <Accordion
+                    expanded={expandedSection === "shipboard"}
+                    onChange={() => setExpandedSection(expandedSection === "shipboard" ? null : "shipboard")}
+                    sx={{ mb: 2 }}
+                >
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="h6">Shipboard incineration (Regulation 12)</Typography>
+                        <Typography variant="h6">Shipboard incineration (Regulation 12)
+                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                                ({checkboxFields?.filter(f => formValues[f.attribute])?.length}/{checkboxFields?.length})
+                            </Typography>
+                        </Typography>
                     </AccordionSummary>
                     <AccordionDetails>
                         {renderBasicFields([...checkboxFields])}
                     </AccordionDetails>
                 </Accordion>
-                <Accordion>
+                <Accordion
+                    expanded={expandedSection === "equivalent"}
+                    onChange={() => setExpandedSection(expandedSection === "equivalent" ? null : "equivalent")}
+                    sx={{ mb: 2 }}
+                >
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="h6">Equivalent Arrangements (Regulation 4)</Typography>
+                        <Typography variant="h6">Equivalent Arrangements (Regulation 4)
+                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                                ({groupedEquivalentFields?.filter(f => formValues[f.attribute])?.length}/{groupedEquivalentFields?.length})
+                            </Typography>
+                        </Typography>
                     </AccordionSummary>
                     <AccordionDetails>
                         {renderTableWithGroups(
@@ -587,6 +659,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                     onClick={handleSubmit}
                     variant="contained"
                     size="large"
+                    startIcon={<CheckIcon />}
                     sx={{
                         borderRadius: 2,
                         px: 4,
