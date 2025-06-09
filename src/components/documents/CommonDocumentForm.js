@@ -181,7 +181,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
                     ) : (
                       <TextField
                       fullWidth
-                      label={field.label}
+                      label={isDate ? '' : field.label}
                       variant="outlined"
                       value={formData[field.attribute] || ""}
                       onChange={(e) => handleInputChange(field.attribute, e.target.value)}
@@ -189,7 +189,6 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
                       onBlur={() => setFocusedField(null)}
                       placeholder={isDate ? "Select Date" : `Enter ${field.label.toLowerCase()}`}
                       type={isDate ? "date" : "text"}
-                      InputLabelProps={isDate ? { shrink: true } : undefined}
                     />
                   )}
                 </Box>

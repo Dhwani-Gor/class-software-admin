@@ -1039,9 +1039,8 @@ const AddSurveyType = ({
                       fullWidth
                       type="date"
                       variant="standard"
-                      label={renderLabel(field)}
+                      label={isDate ? '' : renderLabel(field)}
                       placeholder={`Enter ${field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}`}
-                      InputLabelProps={{ shrink: true }}
                       disabled={!editingAllowed}
                       error={Boolean(errors?.[field])}
                       helperText={errors?.[field]?.message}

@@ -95,9 +95,8 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
             ) : (
               <TextField
                 fullWidth
-                InputLabelProps={isDate ? { shrink: true } : undefined}
                 size="small"
-                label={isDate ? undefined : (field.label || formatLabel(field.attribute))}
+                label={isDate ? '' : (field.label || formatLabel(field.attribute))}
                 value={formValues[field.attribute] || ""}
                 onChange={(e) => handleInputChange(field.attribute, e.target.value)}
                 placeholder={isDate ? "Select Date" : `Enter ${formatLabel(field.attribute).toLowerCase()}`}
