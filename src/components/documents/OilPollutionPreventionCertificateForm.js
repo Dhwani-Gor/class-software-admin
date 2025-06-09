@@ -120,7 +120,6 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
                             <TextField
                                 variant="outlined"
                                 fullWidth
-                                label={field.label}
                                 size="small"
                                 label={isDate ? '' : field.label}
                                 value={formValues[field.attribute] || ""}
