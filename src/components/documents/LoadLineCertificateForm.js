@@ -52,8 +52,10 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
     const categories = {
       freeboard: [],
       timberFreeboard: [],
-      allowance: []
+      allowance: [],
+      others: []
     };
+  
     fields.forEach(field => {
       const attr = field.attribute.toLowerCase();
       if (/_tropical_|_summer_|_winter_|_wna/.test(attr)) {
@@ -62,12 +64,15 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
         categories.timberFreeboard.push(field);
       } else if (/fw|upper_edge/.test(attr)) {
         categories.allowance.push(field);
+      } else {
+        categories.others.push(field);
       }
     });
+  
     return categories;
   };
 
-  const { freeboard, timberFreeboard, allowance } = categorizeFields(fields);
+  const { freeboard, timberFreeboard, allowance, others } = categorizeFields(fields);
 
   const renderFields = (fieldList) => (
     <Grid2 container spacing={2}>
