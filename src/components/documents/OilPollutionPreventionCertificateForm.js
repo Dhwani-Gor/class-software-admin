@@ -121,11 +121,12 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
                                 variant="outlined"
                                 fullWidth
                                 size="small"
-                                label={isDate ? '' : field.label}
+                                label={field.label}
                                 value={formValues[field.attribute] || ""}
                                 onChange={(e) => handleInputChange(field.attribute, e.target.value)}
-                                placeholder={isDate ? "Select Date" : `Enter ${field.label}`}
+                                placeholder={field.label}
                                 type={isDate ? "date" : "text"}
+                                InputLabelProps={isDate ? { shrink: true } : undefined}
                             />
                         )}
                     </Grid2>
