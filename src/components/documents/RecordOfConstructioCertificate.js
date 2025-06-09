@@ -25,9 +25,11 @@ import {
     FormControlLabel,
     Checkbox
 } from '@mui/material';
-import { ExpandMore as ExpandMoreIcon, Science as ScienceIcon, Close as CloseIcon } from '@mui/icons-material';
+import { ExpandMore as ExpandMoreIcon, Science as ScienceIcon, Close as CloseIcon, CheckCircle as CheckIcon } from '@mui/icons-material';
 
 const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
+    const [expandedSection, setExpandedSection] = useState("systemInfo");
+
     const [formValues, setFormValues] = useState({});
     console.log(fields, "fields");
 
@@ -35,7 +37,6 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
         if (fields && fields?.length > 0) {
             const initialValues = {};
             fields.forEach(field => {
-                // Initialize checkboxes as false, other fields as empty string
                 const isCheckbox = field.attribute?.includes("checkbox") || field.attribute?.startsWith("_checkbox");
                 initialValues[field?.attribute] = isCheckbox ? false : "";
             });
@@ -124,12 +125,12 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
     const groupedEngineFields = {};
 
     engineFields.forEach(field => {
-        const match = field.attribute.match(/^_engine_(\d+)_(.+)$/);
+        const match = field.attribute.match(/^_(?:date_|checkbox_)?engine_(\d+)_(.+)$/);
         if (match) {
             const engineNum = match[1];
-            const fieldKey = match[2];
+            const key = match[2];
             if (!groupedEngineFields[engineNum]) groupedEngineFields[engineNum] = {};
-            groupedEngineFields[engineNum][fieldKey] = field.attribute;
+            groupedEngineFields[engineNum][key] = field.attribute;
         }
     });
 
@@ -169,7 +170,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                     {fieldList.map(field => {
                         const attr = field.attribute;
                         const isCheckbox = attr?.includes("checkbox") || attr?.startsWith("_checkbox");
-                        const isDate = attr?.includes("date");
+                        const isDate = attr?.includes("date") || attr?.endsWith("_date");
 
                         return (
                             <Grid2 item xs={12} sm={6} md={4} key={field.attribute}>
@@ -186,8 +187,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                                     <TextField
                                         fullWidth
                                         size="small"
-                                        label={field.label}
-                                        InputLabelProps={isDate ? { shrink: true } : undefined}
+                                        label={isDate ? '' : field.label}
                                         value={formValues[field.attribute] || ""}
                                         onChange={(e) => handleInputChange(field.attribute, e.target.value)}
                                         placeholder={isDate ? "Select Date" : `Enter ${field.label}`}
@@ -249,13 +249,12 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                                                     ) : (
                                                         <TextField
                                                             fullWidth
-                                                            label={fieldObj?.label}
                                                             size="small"
+                                                            label={isDate ? '' : fieldObj?.label}
                                                             value={formValues[fieldObj?.attribute] || ""}
                                                             onChange={(e) => handleInputChange(fieldObj?.attribute, e.target.value)}
                                                             placeholder={isDate ? "Select Date" : `Enter ${fieldObj?.label}`}
                                                             type={isDate ? "date" : "text"}
-                                                            InputLabelProps={isDate ? { shrink: true } : undefined}
                                                         />
                                                     )}
                                                 </TableCell>
@@ -272,8 +271,9 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
     );
 
     const renderEngineTable = () => {
-        const engineNumbers = Object.keys(groupedEngineFields).sort();
-
+        const engineNumbers = Object.keys(groupedEngineFields)
+            .filter(key => key !== 'undefined' && !!groupedEngineFields[key])
+            .sort();
         if (engineNumbers.length === 0) {
             return (
                 <Card variant="outlined" sx={{ mb: 2 }}>
@@ -355,18 +355,32 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                                         <TableCell sx={{ fontWeight: 'medium' }}>{attr.label}</TableCell>
                                         {engineNumbers.map(num => {
                                             const fieldKey = groupedEngineFields[num]?.[attr.key];
+                                            console.log(fieldKey, "field key")
+                                            const isCheckbox = fieldKey?.includes("checkbox") || fieldKey?.startsWith("_checkbox");
+                                            const isDate = fieldKey?.includes("date") || fieldKey?.endsWith("_date");
                                             return (
                                                 <TableCell key={num}>
-                                                    <TextField
-                                                        fullWidth
-                                                        size="small"
-                                                        label={fieldKey}
-                                                        value={formValues[fieldKey] || ""}
-                                                        onChange={(e) => handleInputChange(fieldKey, e.target.value)}
-                                                        disabled={!fieldKey}
-                                                        placeholder={!fieldKey ? "N/A" : ""}
-                                                        InputLabelProps={!fieldKey ? { shrink: true } : undefined}
-                                                    />
+                                                    {isCheckbox ? (
+                                                        <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={!!formValues[fieldKey]}
+                                                                onChange={(e) => handleInputChange(fieldKey, e.target.checked)}
+                                                            />
+                                                            <Typography sx={{ ml: 1 }}>{attr.label}</Typography>
+                                                        </Box>
+                                                    ) : (
+                                                        <TextField
+                                                            fullWidth
+                                                            size="small"
+                                                            label={isDate ? '' : attr.label}
+                                                            value={formValues[fieldKey] || ""}
+                                                            onChange={(e) => handleInputChange(fieldKey, e.target.value)}
+                                                            disabled={!fieldKey}
+                                                            placeholder={!fieldKey ? "N/A" : ""}
+                                                            type={isDate ? "date" : "text"}
+                                                        />
+                                                    )}
                                                 </TableCell>
                                             );
                                         })}
@@ -423,12 +437,11 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                                                         <TextField
                                                             fullWidth
                                                             size="small"
-                                                            label={fieldKey}
+                                                            label={isDate ? "" : attr.label}
                                                             value={formValues[fieldKey] || ""}
                                                             onChange={(e) => handleInputChange(fieldKey, e.target.value)}
                                                             disabled={!fieldKey}
                                                             placeholder={!fieldKey ? "N/A" : ""}
-                                                            InputLabelProps={!fieldKey ? { shrink: true } : undefined}
                                                             type={isDate ? "date" : "text"}
                                                         />
                                                     )}
@@ -444,6 +457,28 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
             </Card>
         );
     };
+
+    const getEngineFieldStats = () => {
+        let total = 0;
+        let filled = 0;
+
+        Object.values(groupedEngineFields).forEach(engineFieldGroup => {
+            Object.values(engineFieldGroup || {}).forEach(fieldKey => {
+                total += 1;
+                const value = formValues[fieldKey];
+
+                if (
+                    (typeof value === "boolean") ||
+                    (typeof value === "string" && value.trim())
+                ) {
+                    filled += 1;
+                }
+            });
+        });
+
+        return { filled, total };
+    };
+
 
     return (
         <Dialog
@@ -473,10 +508,17 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
             </Box>
             <DialogContent dividers sx={{ p: 3 }}>
 
-                <Accordion>
+                <Accordion
+                    expanded={expandedSection === "ozone"}
+                    onChange={() => setExpandedSection(expandedSection === "ozone" ? null : "ozone")}
+                    sx={{ mb: 2 }}
+                >
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                        <Typography variant="h6">
                             Ozone-Depleting Substances (Regulation 12)
+                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                                ({groupedOzoneFields?.filter(f => formValues[f.attribute])?.length}/{groupedOzoneFields?.length})
+                            </Typography>
                         </Typography>
                     </AccordionSummary>
                     <AccordionDetails>
@@ -492,9 +534,18 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                     </AccordionDetails>
                 </Accordion>
 
-                <Accordion>
+                <Accordion
+                    expanded={expandedSection === "hcfc"}
+                    onChange={() => setExpandedSection(expandedSection === "hcfc" ? null : "hcfc")}
+                    sx={{ mb: 2 }}
+                >
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="h6">HCFC Systems (Regulation 12)</Typography>
+                        <Typography variant="h6">
+                            HCFC Systems (Regulation 12)
+                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                                ({groupedHcfcFields?.filter(f => formValues[f.attribute])?.length}/{groupedHcfcFields?.length})
+                            </Typography>
+                        </Typography>
                     </AccordionSummary>
                     <AccordionDetails>
                         {renderTableWithGroups(
@@ -509,34 +560,68 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                     </AccordionDetails>
                 </Accordion>
 
-                <Accordion>
+                <Accordion
+                    expanded={expandedSection === "engine"}
+                    onChange={() => setExpandedSection(expandedSection === "engine" ? null : "engine")}
+                    sx={{ mb: 2 }}
+                >
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="h6">Nitrogen Oxides (NOx) - Engine Information</Typography>
+                        <Typography variant="h6">
+                            Nitrogen Oxides (NOx) - Engine Information
+                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                                <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                                    ({getEngineFieldStats().filled}/{getEngineFieldStats().total})
+                                </Typography>                            </Typography>
+                        </Typography>
                     </AccordionSummary>
                     <AccordionDetails>
                         {renderEngineTable()}
                     </AccordionDetails>
                 </Accordion>
 
-                <Accordion>
+                <Accordion
+                    expanded={expandedSection === "voc"}
+                    onChange={() => setExpandedSection(expandedSection === "voc" ? null : "voc")}
+                    sx={{ mb: 2 }}
+                >
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="h6">Volatile Organic Compounds (VOCs)</Typography>
+                        <Typography variant="h6">Volatile Organic Compounds (VOCs)
+                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                                ({vocFields?.filter(f => formValues[f.attribute])?.length}/{vocFields?.length})
+                            </Typography>
+                        </Typography>
                     </AccordionSummary>
                     <AccordionDetails>
                         {renderBasicFields(vocFields)}
                     </AccordionDetails>
                 </Accordion>
-                <Accordion>
+                <Accordion
+                    expanded={expandedSection === "shipboard"}
+                    onChange={() => setExpandedSection(expandedSection === "shipboard" ? null : "shipboard")}
+                    sx={{ mb: 2 }}
+                >
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="h6">Shipboard incineration (Regulation 12)</Typography>
+                        <Typography variant="h6">Shipboard incineration (Regulation 12)
+                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                                ({checkboxFields?.filter(f => formValues[f.attribute])?.length}/{checkboxFields?.length})
+                            </Typography>
+                        </Typography>
                     </AccordionSummary>
                     <AccordionDetails>
                         {renderBasicFields([...checkboxFields])}
                     </AccordionDetails>
                 </Accordion>
-                <Accordion>
+                <Accordion
+                    expanded={expandedSection === "equivalent"}
+                    onChange={() => setExpandedSection(expandedSection === "equivalent" ? null : "equivalent")}
+                    sx={{ mb: 2 }}
+                >
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="h6">Equivalent Arrangements (Regulation 4)</Typography>
+                        <Typography variant="h6">Equivalent Arrangements (Regulation 4)
+                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                                ({groupedEquivalentFields?.filter(f => formValues[f.attribute])?.length}/{groupedEquivalentFields?.length})
+                            </Typography>
+                        </Typography>
                     </AccordionSummary>
                     <AccordionDetails>
                         {renderTableWithGroups(
@@ -587,6 +672,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                     onClick={handleSubmit}
                     variant="contained"
                     size="large"
+                    startIcon={<CheckIcon />}
                     sx={{
                         borderRadius: 2,
                         px: 4,

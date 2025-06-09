@@ -92,12 +92,11 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
               <TextField
                 fullWidth
                 size="small"
-                label={field.label}
+                label={isDate ? '' : field.label}
                 value={formValues[field.attribute] || ""}
                 onChange={(e) => handleInputChange(field.attribute, e.target.value)}
                 type={isDate ? "date" : "text"}
-                InputLabelProps={isDate ? { shrink: true } : undefined}
-              />
+s              />
             )}
           </Grid2>
         )
