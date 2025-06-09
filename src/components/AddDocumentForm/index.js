@@ -16,7 +16,6 @@ import { toast } from "react-toastify";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import { createDocument, getDocumentDetails, updateDocument } from "@/api";
-import { Alert } from "@mui/material";
 
 const documentValidityType = [
   { value: "interim", label: "Interim" },
@@ -87,17 +86,14 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           try {
             let parsed = documentData.fields;
         
-            // If stringified JSON
             if (typeof parsed === 'string') {
               parsed = JSON.parse(parsed);
             }
         
-            // Normalize into array
             if (!Array.isArray(parsed)) {
               parsed = [parsed];
             }
         
-            // Optional: validate objects have attribute and label
             const validFields = parsed.filter(f => f.attribute && f.label);
             setAdditionalFields(validFields);
           } catch (err) {
@@ -124,7 +120,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
       [name]: value,
     }));
 
-    // Clear errors when typing
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,

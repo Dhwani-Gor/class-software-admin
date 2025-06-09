@@ -96,11 +96,12 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
               <TextField
                 fullWidth
                 size="small"
-                label={isDate ? '' : (field.label || formatLabel(field.attribute))}
+                label={(field.label || formatLabel(field.attribute))}
                 value={formValues[field.attribute] || ""}
                 onChange={(e) => handleInputChange(field.attribute, e.target.value)}
-                placeholder={isDate ? "Select Date" : `Enter ${formatLabel(field.attribute).toLowerCase()}`}
+                placeholder={formatLabel(field.attribute).toLowerCase()}
                 type={isDate ? "date" : "text"}
+                InputLabelProps={isDate ? { shrink: true } : undefined}
               />
             )}
           </Grid2>

@@ -187,11 +187,12 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                                     <TextField
                                         fullWidth
                                         size="small"
-                                        label={isDate ? '' : field.label}
+                                        label={field.label}
                                         value={formValues[field.attribute] || ""}
                                         onChange={(e) => handleInputChange(field.attribute, e.target.value)}
-                                        placeholder={isDate ? "Select Date" : `Enter ${field.label}`}
+                                        placeholder={field.label}
                                         type={isDate ? "date" : "text"}
+                                        InputLabelProps={isDate ? { shrink: true } : undefined}
                                     />
                                 )}
                             </Grid2>
@@ -250,11 +251,12 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                                                         <TextField
                                                             fullWidth
                                                             size="small"
-                                                            label={isDate ? '' : fieldObj?.label}
+                                                            label={fieldObj?.label}
                                                             value={formValues[fieldObj?.attribute] || ""}
                                                             onChange={(e) => handleInputChange(fieldObj?.attribute, e.target.value)}
-                                                            placeholder={isDate ? "Select Date" : `Enter ${fieldObj?.label}`}
+                                                            placeholder={fieldObj?.label}
                                                             type={isDate ? "date" : "text"}
+                                                            InputLabelProps={isDate ? { shrink: true } : undefined}
                                                         />
                                                     )}
                                                 </TableCell>
@@ -373,12 +375,13 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                                                         <TextField
                                                             fullWidth
                                                             size="small"
-                                                            label={isDate ? '' : attr.label}
+                                                            label={attr.label}
                                                             value={formValues[fieldKey] || ""}
                                                             onChange={(e) => handleInputChange(fieldKey, e.target.value)}
                                                             disabled={!fieldKey}
                                                             placeholder={!fieldKey ? "N/A" : ""}
                                                             type={isDate ? "date" : "text"}
+                                                            InputLabelProps={isDate ? { shrink: true } : undefined}
                                                         />
                                                     )}
                                                 </TableCell>
@@ -437,12 +440,13 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                                                         <TextField
                                                             fullWidth
                                                             size="small"
-                                                            label={isDate ? "" : attr.label}
+                                                            label={attr.label}
                                                             value={formValues[fieldKey] || ""}
                                                             onChange={(e) => handleInputChange(fieldKey, e.target.value)}
                                                             disabled={!fieldKey}
                                                             placeholder={!fieldKey ? "N/A" : ""}
                                                             type={isDate ? "date" : "text"}
+                                                            InputLabelProps={isDate ? { shrink: true } : undefined}
                                                         />
                                                     )}
                                                 </TableCell>

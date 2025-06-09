@@ -87,11 +87,12 @@ const CSSForm = ({ open, onClose, onSubmit, fields }) => {
               <TextField
                 fullWidth
                 size="small"
-                label={isDate ? '' : (field.label || formatLabel(attr))}
+                label={field.label || formatLabel(attr)}
                 value={formValues[field.attribute] || ""}
                 onChange={(e) => handleInputChange(field.attribute, e.target.value)}
                 placeholder={`Enter ${field.label.toLowerCase()}`}
                 type={isDate ? "date" : "text"}
+                InputLabelProps={isDate ? { shrink: true } : undefined}
               />
             )}
           </Grid2>
