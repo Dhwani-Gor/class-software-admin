@@ -153,6 +153,7 @@ s              />
         {renderCategoryAccordion("Freeboard & Load Line", "freeboard", "📏", freeboard)}
         {renderCategoryAccordion("Timber Load Lines", "timberFreeboard", "🌲", timberFreeboard)}
         {renderCategoryAccordion("Fresh Water Allowance", "allowance", "💧", allowance)}
+        {renderCategoryAccordion("Others", "others", "", others)}
       </DialogContent>
 
       <Divider />

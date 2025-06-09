@@ -81,7 +81,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           type: documentData.type || "",
           validity: mode === "duplicate" ? "" : documentData.validity,
           document: mode === "duplicate" ? "" : documentData.filePath,
-          fields: documentData.fields || "",
         });
 
         if (documentData.fields) {
