@@ -1044,7 +1044,6 @@ const AddSurveyType = ({
                       disabled={!editingAllowed}
                       error={Boolean(errors?.[field])}
                       helperText={errors?.[field]?.message}
-                      InputLabelProps={isDate ? { shrink: true } : undefined}
                     />
                   )}
                 />

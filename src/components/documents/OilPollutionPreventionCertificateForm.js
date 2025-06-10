@@ -152,7 +152,11 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
                             color="primary"
                             sx={{ ml: 1, fontWeight: 'medium' }}
                         >
-                            ({categoryFields?.filter(f => formValues[f.attribute]?.trim())?.length}/{categoryFields?.length})
+                            ({categoryFields?.filter(f => {
+                               const value = formValues[f.attribute];
+                                return typeof value === "boolean" ? value : value?.trim();
+                            })?.length}/{categoryFields?.length})
+
                         </Typography>
                     </Typography>
                 </AccordionSummary>
