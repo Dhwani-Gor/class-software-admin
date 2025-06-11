@@ -26,6 +26,7 @@ import {
     Checkbox
 } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, Science as ScienceIcon, Close as CloseIcon, CheckCircle as CheckIcon } from '@mui/icons-material';
+import { formattedDate } from "@/utils/date";
 
 const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
     const [expandedSection, setExpandedSection] = useState("systemInfo");

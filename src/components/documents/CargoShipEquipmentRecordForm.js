@@ -8,6 +8,7 @@ import {
   Close as CloseIcon, ExpandMore as ExpandMoreIcon,
   CheckCircle as CheckIcon, Report as ReportIcon
 } from "@mui/icons-material";
+import { formattedDate } from "@/utils/date";
 
 const CSSForm = ({ open, onClose, onSubmit, fields }) => {
   const [formValues, setFormValues] = useState({});

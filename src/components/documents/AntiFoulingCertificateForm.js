@@ -9,7 +9,7 @@ import {
   Close as CloseIcon, ExpandMore as ExpandMoreIcon,
   CheckCircle as CheckIcon, Science as ScienceIcon
 } from "@mui/icons-material";
-import { formattedDate } from "@/utils/helper";
+import { formattedDate } from "@/utils/date";
 
 const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
   const [formValues, setFormValues] = useState({});
