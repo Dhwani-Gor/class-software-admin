@@ -9,6 +9,7 @@ import {
   Close as CloseIcon, ExpandMore as ExpandMoreIcon,
   CheckCircle as CheckIcon, Science as ScienceIcon
 } from "@mui/icons-material";
+import { formattedDate } from "@/utils/helper";
 
 const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
   const [formValues, setFormValues] = useState({});
@@ -19,12 +20,16 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
       const initialValues = {};
       fields.forEach(field => {
         const attr = field.attribute;
-        initialValues[attr] = attr.startsWith("_checkbox") ? false : "";
+        if (attr.startsWith("_checkbox")) {
+          initialValues[attr] = false;
+        } else {
+          initialValues[attr] = "";
+        }
       });
       setFormValues(initialValues);
     }
   }, [fields]);
-
+  
   const handleClose = () => {
     onClose();
     setFormValues({});
@@ -37,7 +42,9 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
   const handleSubmit = () => {
     const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
       if (typeof value === "boolean") {
-        acc[key] = value === true ? "\u2611" : "\u2610";
+        acc[key] = value ? "\u2611" : "\u2610";
+      } else if (key.includes("date") && value) {
+        acc[key] = formattedDate(value);
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       }
@@ -45,6 +52,7 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
     }, {});
     onSubmit(filledValues);
   };
+
 
 
   const formatLabel = (attribute) =>

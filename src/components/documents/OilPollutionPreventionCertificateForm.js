@@ -54,6 +54,8 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
     
             if (attribute.startsWith("_checkbox")) {
                 finalPayload[attribute] = value === true ? "\u2611" : "\u2610";
+            } else if (attribute.includes("date") && value) {
+                finalPayload[attribute] = formattedDate(value);
             } else {
                 finalPayload[attribute] = value || "";
             }

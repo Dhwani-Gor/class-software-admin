@@ -36,6 +36,8 @@ const CSSForm = ({ open, onClose, onSubmit, fields }) => {
     const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
       if (typeof value === "boolean") {
         acc[key] = value === true ? "\u2611" : "\u2610";
+      } else if (key.includes("date") && value) {
+        acc[key] = formattedDate(value);
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       }
