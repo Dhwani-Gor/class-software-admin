@@ -12,14 +12,14 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { DataGrid } from "@mui/x-data-grid";
 
-
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import GetAppIcon from "@mui/icons-material/GetApp";
 import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonInput from "@/components/CommonInput";
-import { getAllIssuedDocuments } from "@/api"; // Updated API function names
-import { Chip } from "@mui/material";
+import { getAllIssuedDocuments, getAllJournals } from "@/api";
+import { MenuItem, Select, TextField } from "@mui/material";
+import CommonButton from "@/components/CommonButton";
 
 const Certificates = () => {
   const dispatch = useDispatch();
@@ -33,11 +33,34 @@ const Certificates = () => {
   const [limit, setLimit] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState("all");
+  const [journals, setJournals] = useState([]);
+  const [selectedReportNumber, setSelectedReportNumber] = useState("");
+  const [placeFilter, setPlaceFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
+
+  // Client-side search functionality
+
+  const filteredCertificates = certificatesList.filter(certificate => {
+    if (!search.trim()) return true;
+
+    const searchTerm = search.toLowerCase();
+    const shipName = certificate.activity?.journal?.client?.shipName?.toLowerCase() || '';
+    const journalTypeId = certificate.activity?.journal?.journalTypeId?.toLowerCase() || '';
+    const certificateType = certificate.typeOfCertificate?.toLowerCase() || '';
+    const place = certificate.place?.toLowerCase() || '';
+
+    return shipName.includes(searchTerm) ||
+      journalTypeId.includes(searchTerm) ||
+      certificateType.includes(searchTerm) ||
+      place.includes(searchTerm);
+  });
+
+  // Remove unused functions and effects
   const handleFilterChange = (newFilter) => {
-    setSelectedFilter(newFilter);
-    setPage(1);
+    // Not needed anymore
   };
 
   const snackbarClose = () => {
@@ -52,22 +75,59 @@ const Certificates = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  const fetchCertificatesData = async (page, limit, searchQuery) => {
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  const fetchCertificatesData = async () => {
     setLoading(true);
     try {
-      // You'll need to update this API call based on your actual API structure
-      const res = await getAllIssuedDocuments(page, limit, searchQuery, selectedFilter);
+      const filterKeys = [];
+      const filterValues = [];
+
+      if (selectedReportNumber) {
+        filterKeys.push("activity.journal.journalTypeId");
+        filterValues.push(selectedReportNumber);
+      }
+
+      if (placeFilter) {
+        filterKeys.push("place");
+        filterValues.push(placeFilter);
+      }
+
+      if (statusFilter) {
+        filterKeys.push("activity.status");
+        filterValues.push(statusFilter);
+      }
+
+      const searchQuery = debouncedSearch.trim();
+
+      const res = await getAllIssuedDocuments(
+        filterKeys,
+        filterValues,
+        searchQuery,
+        page,
+        limit,
+        startDate,
+        endDate
+      );
+
       const data = res?.data;
-  
+
       if (data?.status === "success" && Array.isArray(data?.data)) {
         setCertificatesList(data.data);
-        setTotalRows(data.results || data.data.length);
+        setTotalRows(data.total || data.results || data.data.length);
       } else {
         setCertificatesList([]);
         setTotalRows(0);
       }
     } catch (e) {
-      console.log("Error fetching certificates:", e);
+      console.error("Error fetching certificates:", e);
       setCertificatesList([]);
       setTotalRows(0);
     } finally {
@@ -76,10 +136,8 @@ const Certificates = () => {
   };
 
   useEffect(() => {
-    if (page > 0 && limit > 0) {
-      fetchCertificatesData(page, limit, debouncedSearch.trim() ? debouncedSearch : null);
-    }
-  }, [page, limit, debouncedSearch, selectedFilter]);
+    fetchCertificatesData();
+  }, [selectedReportNumber, placeFilter, statusFilter, debouncedSearch, page, limit, startDate, endDate]);
 
   const handleSearchChange = (event) => {
     setSearch(event.target.value);
@@ -126,9 +184,29 @@ const Certificates = () => {
         return <Typography>{rowIndex + 1 + (page - 1) * limit}</Typography>;
       },
     },
-    { 
-      field: "typeOfCertificate", 
-      headerName: "Certificate Type", 
+    {
+      field: "journalTypeId",
+      headerName: "Report No",
+      flex: 1,
+      renderCell: (params) => (
+        <Typography>
+          {params.row.activity?.journal?.journalTypeId || 'N/A'}
+        </Typography>
+      )
+    },
+    {
+      field: "shipName",
+      headerName: "Ship Name",
+      flex: 1,
+      renderCell: (params) => (
+        <Typography>
+          {params.row.activity?.journal?.client?.shipName || 'N/A'}
+        </Typography>
+      )
+    },
+    {
+      field: "typeOfCertificate",
+      headerName: "Certificate Type",
       flex: 1,
       renderCell: (params) => (
         <Typography sx={{ textTransform: 'capitalize' }}>
@@ -136,40 +214,9 @@ const Certificates = () => {
         </Typography>
       )
     },
-    { 
-      field: "activity", 
-      headerName: "Survey Type", 
-      flex: 1,
-      renderCell: (params) => (
-        <Typography>
-          {params.row.activity?.typeOfSurvey || 'N/A'}
-        </Typography>
-      )
-    },
-    { 
-      field: "place", 
-      headerName: "Place", 
-      flex: 1 
-    },
-    { 
-      field: "issuanceDate", 
-      headerName: "Issuance Date", 
-      flex: 1,
-      renderCell: (params) => (
-        <Typography>{formatDate(params.value)}</Typography>
-      )
-    },
-    { 
-      field: "validityDate", 
-      headerName: "Validity Date", 
-      flex: 1,
-      renderCell: (params) => (
-        <Typography>{formatDate(params.value)}</Typography>
-      )
-    },
-    { 
-      field: "surveyDate", 
-      headerName: "Survey Date", 
+    {
+      field: "surveyDate",
+      headerName: "Survey Date",
       flex: 1,
       renderCell: (params) => (
         <Typography>{formatDate(params.value)}</Typography>
@@ -204,6 +251,32 @@ const Certificates = () => {
     },
   ];
 
+  const fetchJournals = async () => {
+    try {
+      const response = await getAllJournals();
+      const data = response?.data;
+      if (data?.status === "success" && Array.isArray(data?.data)) {
+        setJournals(data.data);
+      }
+    } catch (error) {
+      console.log("Error fetching journals:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchJournals();
+  }, []);
+
+  const handleClearFilter = () => {
+    setSelectedReportNumber("");
+    setPlaceFilter("");
+    setStatusFilter("");
+    setStartDate("");
+    setEndDate("");
+    setPage(1);
+  };
+
+
   return (
     <Layout>
       <CommonCard sx={{ mt: 0 }}>
@@ -215,39 +288,6 @@ const Certificates = () => {
       </CommonCard>
 
       <CommonCard>
-        {/* <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-          <Chip
-            label="All"
-            color={selectedFilter === "all" ? "primary" : "default"}
-            onClick={() => handleFilterChange("all")}
-            clickable
-            sx={{
-              fontWeight: selectedFilter === "all" ? 600 : 400,
-              px: 2
-            }}
-          />
-          <Chip
-            label="Full Term"
-            color={selectedFilter === "full_term" ? "primary" : "default"}
-            onClick={() => handleFilterChange("full_term")}
-            clickable
-            sx={{
-              fontWeight: selectedFilter === "full_term" ? 600 : 400,
-              px: 2
-            }}
-          />
-          <Chip
-            label="Interim"
-            color={selectedFilter === "interim" ? "primary" : "default"}
-            onClick={() => handleFilterChange("interim")}
-            clickable
-            sx={{
-              fontWeight: selectedFilter === "interim" ? 600 : 400,
-              px: 2
-            }}
-          />
-        </Stack> */}
-        
         <CommonInput
           placeholder="Search Certificate By Place or Type"
           fullWidth
@@ -255,7 +295,73 @@ const Certificates = () => {
           onChange={handleSearchChange}
           sx={{ marginBottom: 2 }}
         />
-        
+
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2, mt: 2 }}>
+          <Select
+            value={selectedReportNumber}
+            onChange={(e) => { setSelectedReportNumber(e.target.value); setPage(1); }}
+            displayEmpty
+            sx={{ minWidth: 180 }}
+          >
+            <MenuItem value="">All Reports</MenuItem>
+            {journals.map((report, index) => (
+              <MenuItem key={index} value={report.journalTypeId}>
+                {report.journalTypeId}
+              </MenuItem>
+            ))}
+          </Select>
+
+          <TextField
+            label="Place"
+            size="small"
+            value={placeFilter}
+            onChange={(e) => { setPlaceFilter(e.target.value); setPage(1); }}
+          />
+
+          <TextField
+            label="Activity Status"
+            size="small"
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+          />
+          <TextField
+            label="Survey Date From"
+            type="date"
+            size="small"
+            InputLabelProps={{ shrink: true }}
+            value={startDate}
+            onChange={(e) => {
+              setStartDate(e.target.value);
+              setPage(1);
+            }}
+          />
+
+          <TextField
+            label="Survey Date To"
+            type="date"
+            size="small"
+            InputLabelProps={{ shrink: true }}
+            value={endDate}
+            onChange={(e) => {
+              setEndDate(e.target.value);
+              setPage(1);
+            }}
+          />
+
+          {(selectedReportNumber || placeFilter || statusFilter) && (
+            <CommonButton
+              variant="contained"
+              size="small"
+              sx={{ textTransform: "uppercase", padding: "6px 10px", fontSize: "11px" }}
+              text="Clear Filters"
+              onClick={() => {
+                handleClearFilter();
+              }}
+            />
+          )}
+        </Stack>
+
+
         <Box sx={{ width: "100%", mt: 4 }}>
           {loading ? (
             <Box display="flex" justifyContent="center" alignItems="center" height="300px">
@@ -293,7 +399,7 @@ const Certificates = () => {
             </Typography>
           )}
         </Box>
-        
+
         {totalRows > limit && (
           <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
             <Pagination

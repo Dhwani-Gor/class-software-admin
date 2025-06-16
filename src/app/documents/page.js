@@ -160,31 +160,31 @@ const Documents = () => {
     },
     { field: "name", headerName: "Document Name", flex: 1.5 },
     { field: "type", headerName: "Document Type", flex: 1 },
-    {
-      field: "filePath",
-      headerName: "File Preview",
-      width: 100,
-      renderCell: (params) => (
-        params.row.filePath ? (
-          <Tooltip title="Preview Document">
-            <IconButton
-              color="info"
-              onClick={() => {
-                setPreviewFile(params.row.filePath);
-                setLoadingPreview(true);
-                setOpenPreviewModal(true);
-              }}
-            >
-              <PreviewIcon />
-            </IconButton>
-          </Tooltip>
-        ) : (
-          <Typography variant="body2" color="textSecondary">
-            No File
-          </Typography>
-        )
-      ),
-    },
+    // {
+    //   field: "fullTermFilePath || interimFilePath || shortTermFilePath",
+    //   headerName: "File Preview",
+    //   width: 100,
+    //   renderCell: (params) => (
+    //     params.row.fullTermFilePath || params.row.interimFilePath || params.row.shortTermFilePath ? (
+    //       <Tooltip title="Preview Document">
+    //         <IconButton
+    //           color="info"
+    //           onClick={() => {
+    //             setPreviewFile(params.row.fullTermFilePath || params.row.interimFilePath || params.row.shortTermFilePath);
+    //             setLoadingPreview(true);
+    //             setOpenPreviewModal(true);
+    //           }}
+    //         >
+    //           <PreviewIcon />
+    //         </IconButton>
+    //       </Tooltip>
+    //     ) : (
+    //       <Typography variant="body2" color="textSecondary">
+    //         No File
+    //       </Typography>
+    //     )
+    //   ),
+    // },
     {
       field: "actions",
       headerName: "Actions",
@@ -199,14 +199,14 @@ const Documents = () => {
               <EditIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Duplicate Document">
+          {/* <Tooltip title="Duplicate Document">
             <IconButton
               color="primary"
               onClick={() => handleDuplicateClick(params?.id)}
             >
               <CopyAll />
             </IconButton>
-          </Tooltip>
+          </Tooltip> */}
           <Tooltip title="Delete Document">
             <IconButton
               color="error"

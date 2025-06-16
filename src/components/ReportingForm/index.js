@@ -21,6 +21,7 @@ import IconButton from "@mui/material/IconButton";
 import DescriptionIcon from "@mui/icons-material/Description";
 import AttachmentIcon from "@mui/icons-material/Attachment";
 import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import TextareaAutosize from "@mui/material/TextareaAutosize";
 import Grid2 from "@mui/material/Grid2";
 import Dialog from "@mui/material/Dialog";
@@ -30,7 +31,7 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
 import { useRouter } from "next/navigation";
-import { createReportDetail, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, updateReportDetail } from "@/api";
+import { createReportDetail, deleteAttachment, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, updateReportDetail } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { updateActivityDetails } from "@/api";
@@ -39,7 +40,7 @@ import moment from "moment";
 import { Stack } from "@mui/material";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from 'yup';
-import { PreviewOutlined, PreviewTwoTone } from "@mui/icons-material";
+import { Diversity2, PreviewOutlined, PreviewTwoTone } from "@mui/icons-material";
 import { DialogForm } from "../documents/CommonDocumentForm";
 import InternationalTonnage from "../documents/TonnageCertificateForm";
 import DocumentForm from "../AddDocumentForm";
@@ -48,7 +49,6 @@ import CSSForm from "../documents/CargoShipEquipmentRecordForm";
 import LoadLineCertificateForm from "../documents/LoadLineCertificateForm";
 import AntiFoulingCertificateForm from "../documents/AntiFoulingCertificateForm";
 import IAPPForm from "../documents/RecordOfConstructioCertificate";
-// import { underscoreFields } from "@/JSONDATA/suppo_ipp";
 
 // Updated schema with correct field names
 const reportSchema = yup.object().shape({
@@ -62,19 +62,15 @@ const reportSchema = yup.object().shape({
   place: yup.string().required('Place is required'),
 });
 
-
-
-// Document Upload Dialog Component
-// Document Upload Dialog Component - FIXED VERSION
 const DocumentUploadDialog = ({
   open,
   onClose,
   onUpload,
   selectedDocuments,
-  onRemoveDocument
+  onRemoveDocument,
+  onPreviewDocument
 }) => {
   const [documents, setDocuments] = useState([]);
-
 
   const handleFileChange = (event) => {
     if (event.target.files) {
@@ -82,19 +78,30 @@ const DocumentUploadDialog = ({
       const validFiles = newFiles.filter(file =>
         ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'video/mp4', 'video/mpeg'].includes(file.type)
       );
+
+      if (validFiles.length !== newFiles.length) {
+        toast.warning("Some files were skipped due to invalid file type");
+      }
+
       setDocuments(prev => [...prev, ...validFiles]);
     }
   };
 
   const handleUpload = () => {
+    if (documents.length === 0) {
+      toast.warning("Please select at least one file to upload");
+      return;
+    }
+
     onUpload(documents);
     setDocuments([]);
     onClose();
   };
 
-  const handleRemoveDocument = (index) => {
+  const handleRemoveNewDocument = (index) => {
     setDocuments(prev => prev.filter((_, i) => i !== index));
   };
+
   const renderFileIcon = (file) => {
     let fileType;
 
@@ -127,6 +134,33 @@ const DocumentUploadDialog = ({
     return 'Unknown file';
   };
 
+  // Safe remove function with validation
+  const handleSafeRemoveDocument = (docId) => {
+    if (!docId) {
+      toast.error("Cannot remove document: Invalid document ID");
+      return;
+    }
+
+    if (typeof onRemoveDocument === 'function') {
+      onRemoveDocument(docId);
+    } else {
+      toast.error("Remove function not available");
+    }
+  };
+
+  // Safe preview function with validation
+  const handleSafePreviewDocument = (doc) => {
+    if (!doc) {
+      toast.error("Cannot preview document: Invalid document");
+      return;
+    }
+
+    if (typeof onPreviewDocument === 'function') {
+      onPreviewDocument(doc);
+    } else {
+      toast.error("Preview function not available");
+    }
+  };
 
   return (
     <Dialog open={open} onClose={onClose}>
@@ -155,13 +189,13 @@ const DocumentUploadDialog = ({
                   <Typography>
                     {renderFileIcon(file)} {getFileName(file)}
                   </Typography>
-                  {/* <IconButton 
-                    size="small" 
-                    onClick={() => handleRemoveDocument(index)}
+                  <IconButton
+                    size="small"
+                    onClick={() => handleRemoveNewDocument(index)}
                     color="error"
                   >
                     <DeleteIcon fontSize="small" />
-                  </IconButton> */}
+                  </IconButton>
                 </Box>
               ))}
             </Box>
@@ -170,9 +204,9 @@ const DocumentUploadDialog = ({
           {selectedDocuments && selectedDocuments.length > 0 && (
             <Box mt={2}>
               <Typography variant="subtitle1">Existing Documents:</Typography>
-              {selectedDocuments.map((doc, index) => (
+              {selectedDocuments.map((doc) => (
                 <Box
-                  key={index}
+                  key={doc.id}
                   display="flex"
                   alignItems="center"
                   justifyContent="space-between"
@@ -181,20 +215,25 @@ const DocumentUploadDialog = ({
                   <Typography>
                     {renderFileIcon(doc)} {getFileName(doc)}
                   </Typography>
-                  {/* <IconButton 
-                    size="small" 
-                    onClick={() => onRemoveDocument && onRemoveDocument(index)}
-                    color="error"
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton> */}
-                  <IconButton
-                    size="small"
-                    onClick={() => handleOpenPreview(doc)}
-                    color="error"
-                  >
-                    <PreviewTwoTone fontSize="small" />
-                  </IconButton>
+                  <Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleSafePreviewDocument(doc)}
+                      color="primary"
+                      title="Preview Document"
+                    >
+                      <VisibilityIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleSafeRemoveDocument(doc.id)}
+                      color="error"
+                      title="Delete Document"
+                      disabled={!doc.id}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
                 </Box>
               ))}
             </Box>
@@ -214,6 +253,132 @@ const DocumentUploadDialog = ({
   );
 };
 
+// Document Preview Modal Component
+const DocumentPreviewModal = ({ open, onClose, document, loading }) => {
+  let fileUrl
+  let fileType
+  
+  const handleDownload = () => {
+    // const link = document.createElement('a');
+    // link.href = document.filePath;
+    // link.download = document.filePath.split('/').pop();
+    // document.body.appendChild(link);
+    // link.click();
+    // document.body.removeChild(link);
+    // const blob =  fileUrl.blob();
+        const filename = fileUrl.split('/').pop();
+
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = document.filePath;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+
+  };
+  
+  const getPreviewContent = () => {
+    if (!document) return null;
+    fileUrl = document.filePath;
+    fileType = document.fileType;
+    if (fileType?.startsWith('image/')) {
+      return (
+        <img
+          src={fileUrl}
+          alt="Document preview"
+          style={{
+            maxWidth: '100%',
+            maxHeight: '70vh',
+            objectFit: 'contain'
+          }}
+        />
+      );
+    } else if (fileType === 'application/pdf') {
+      return (
+        <iframe
+          src={`https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`}
+          style={{ width: '100%', height: '70vh', border: 'none' }}
+          title="PDF Preview"
+        />
+      );
+    } else if (fileType?.startsWith('video/')) {
+      return (
+        <video
+          controls
+          style={{ maxWidth: '100%', maxHeight: '70vh' }}
+        >
+          <source src={fileUrl} type={fileType} />
+          Your browser does not support the video tag.
+        </video>
+      );
+    } else {
+      return (
+        <Box textAlign="center" p={4}>
+          <Typography variant="h6" gutterBottom>
+            Preview not available for this file type
+          </Typography>
+          <Button
+            variant="contained"
+            href={fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Download File
+          </Button>
+        </Box>
+      );
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        style: { minHeight: '80vh' }
+      }}
+    >
+      <DialogTitle>
+        Document Preview
+        {document?.filePath && (
+          <Box
+            onClick={handleDownload}
+            style={{ float: 'right', textDecoration: 'none' }}
+          >
+            {/* <Button variant="outlined" size="small">
+              Download
+            </Button> */}
+          </Box>
+        )}
+      </DialogTitle>
+
+      <DialogContent>
+        {loading ? (
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            height="400px"
+          >
+            <CircularProgress />
+          </Box>
+        ) : (
+          getPreviewContent()
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} color="primary">
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 const ReportingForm = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -226,7 +391,6 @@ const ReportingForm = () => {
   const [showTable, setShowTable] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [reportDetails, setReportDetails] = useState();
-  console.log(reportDetails, "reportDetails")
   const [tableData, setTableData] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);
   const [journalId, setjournalId] = useState(null);
@@ -238,11 +402,12 @@ const ReportingForm = () => {
   const [open, setOpen] = useState(false);
   const [openPreviewModal, setOpenPreviewModal] = useState(false);
   const [loadingPreview, setLoadingPreview] = useState(false);
-  const [previewFile, setPreviewFile] = useState("");
+  const [previewDocument, setPreviewDocument] = useState(null);
   const [underscoreFields, setUnderscoreFields] = useState([]);
   const [reportName, setReportName] = useState("");
   const [showEndorsementField, setShowEndorsementField] = useState(false);
   const [showExtraEndorsementField, setShowExtraEndorsementField] = useState(false);
+  const [activityId, setActivityId] = useState(null);
 
   useEffect(() => {
     if (selectCertificate === "full_term") {
@@ -290,7 +455,6 @@ const ReportingForm = () => {
     resolver: yupResolver(reportSchema),
   });
 
-
   const statusOptions = [
     { value: "Completed", label: "Completed" },
     { value: "Partheld", label: "Part held" },
@@ -322,6 +486,7 @@ const ReportingForm = () => {
       index: selectedIndex !== -1 ? selectedIndex : null
     });
     setTableData(journals[selectedIndex]?.activities)
+    setShowTable(true)
   };
 
   const handleCertificate = (event) => {
@@ -493,7 +658,6 @@ const ReportingForm = () => {
       const result = await generateFullReport(payload);
       const fileUrl = result?.data?.data;
 
-
       if (!fileUrl) {
         toast.error("Invalid file URL received.");
         return;
@@ -566,22 +730,19 @@ const ReportingForm = () => {
   };
 
   const handleReportClick = async (row) => {
-    console.log(row, "row")
     try {
       setLoading(true);
       const result = await getSelectedActivityReportDetails(row?.id);
       setReportName(row?.surveyTypes?.reports?.[0]?.name);
 
       const data = extractUnderscoreFields(row);
-      console.log(data, "data")
       setUnderscoreFields(data)
-      console.log(data, "data fields")
+
       if (result?.data?.status === "success") {
         setReportDetails(result?.data?.data[0]);
 
         router.push('#reportDetails');
         const reportData = result?.data?.data[0];
-        console.log(reportData)
         setShowForm(true);
         setSelectedRow(row);
 
@@ -701,17 +862,57 @@ const ReportingForm = () => {
     }
   };
 
-  const handleRemoveDocument = (rowId, documentIndex) => {
-    setTableData((prevData) =>
-      prevData.map((item) =>
-        item.id === rowId
-          ? {
-            ...item,
-            attachments: item.attachments.filter((_, index) => index !== documentIndex)
-          }
-          : item
-      )
-    );
+  const handleRemoveDocument = async (activityId, documentId) => {
+    if (!activityId) {
+      toast.error("Invalid activity ID");
+      return;
+    }
+
+    if (!documentId) {
+      toast.error("Invalid document ID");
+      return;
+    }
+
+    const confirmDelete = window.confirm("Are you sure you want to delete this document?");
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      const response = await deleteAttachment(activityId, documentId);
+      setDocumentUploadDialogOpen(false);
+      getAllActivity(journalId);
+      if (response?.data?.status === 'success') {
+        setTableData((prevData) =>
+          prevData.map((item) =>
+            item.id === activityId
+              ? {
+                ...item,
+                attachments: item.attachments ? item.attachments.filter((doc) => doc.id !== documentId) : []
+              }
+              : item
+          )
+        );
+
+        toast.success("Document removed successfully.");
+      } else {
+        // toast.error(response?.data?.message || "Failed to remove document");
+      }
+    } catch (error) {
+      console.error("Error removing document:", error);
+      toast.error("Failed to remove document. Please try again.");
+    }
+  };
+
+  const handlePreviewDocument = (document) => {
+    console.log(document, "document")
+    setPreviewDocument(document);
+    setLoadingPreview(true);
+    setOpenPreviewModal(true);
+
+    setTimeout(() => {
+      setLoadingPreview(false);
+    }, 1000);
   };
 
   const openDocumentUpload = (row) => {
@@ -725,16 +926,16 @@ const ReportingForm = () => {
       const result = await getAllActivities('journalId', id);
       if (result?.data?.status === "success") {
         setTableData(result?.data?.data);
-
+        setActivityId(result?.data?.data[0]?.id);
       } else {
         toast.error("Something went wrong ! Please try again after some time");
       }
       setLoading(false);
     } catch (error) {
       setLoading(false);
-      toast.error(error?.message || "Failed to fetch activities");
+      toast.error(error?.message || "Failed to fetch activity");
     }
-  };
+  }
 
   useEffect(() => {
     if (journalId) {
@@ -1121,28 +1322,28 @@ const ReportingForm = () => {
                 showExtraEndorsementField ||
                 reportDetails?.typeOfCertificate === "extended"
               ) && (
-              <Grid2 size={{ md: 3 }}>
-                <Controller
-                  name="newValidityDate"
-                  control={control}
-                  render={({ field }) => (
-                    <CommonInput
-                      {...field}
-                      type="date"
-                      label={<>New Validity Date <span style={{ color: 'red' }}>*</span></>}
-                      onChange={(e) => {
-                        field.onChange(e);
-                        handleFieldChange('newValidityDate', e.target.value);
-                      }}
+                  <Grid2 size={{ md: 3 }}>
+                    <Controller
+                      name="newValidityDate"
+                      control={control}
+                      render={({ field }) => (
+                        <CommonInput
+                          {...field}
+                          type="date"
+                          label={<>New Validity Date <span style={{ color: 'red' }}>*</span></>}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            handleFieldChange('newValidityDate', e.target.value);
+                          }}
+                        />
+                      )}
                     />
-                  )}
-                />
-                {errors.new_validity_date && (
-                  <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                    {errors.new_validity_date.message}
-                  </Typography>
-                )}
-              </Grid2>
+                    {errors.new_validity_date && (
+                      <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                        {errors.new_validity_date.message}
+                      </Typography>
+                    )}
+                  </Grid2>
                 )}
               <Grid2 item size={{ md: 3 }}>
                 <FormControl fullWidth sx={{ maxWidth: 255 }}>
@@ -1220,15 +1421,26 @@ const ReportingForm = () => {
         onUpload={(documents) => {
           if (currentRowForDocuments) {
             handleDocumentUpload(currentRowForDocuments.id, documents);
+            getAllActivity(journalId);
           }
         }}
         selectedDocuments={currentRowForDocuments?.attachments || []}
-        onRemoveDocument={(index) => {
+        onRemoveDocument={(documentId) => {
           if (currentRowForDocuments) {
-            handleRemoveDocument(currentRowForDocuments.id, index);
+            handleRemoveDocument(currentRowForDocuments.id, documentId);
           }
         }}
+        onPreviewDocument={(document) => {
+          handlePreviewDocument(document);
+        }}
       />
+      <DocumentPreviewModal
+        open={openPreviewModal}
+        onClose={() => setOpenPreviewModal(false)}
+        document={previewDocument}
+        loading={loadingPreview}
+      />
+
 
       <FullScreenRemarksDialog
         open={fullScreenRemarksVisible}
@@ -1243,67 +1455,6 @@ const ReportingForm = () => {
           ? `Remarks for ${fullScreenRemarksVisible.surveyTypes.name}`
           : "Remarks"}
       />
-      {/* <Dialog
-          open={openPreviewModal}
-          onClose={() => setOpenPreviewModal(false)}
-          maxWidth="md"
-          fullWidth
-        >
-          <DialogTitle>Document Preview</DialogTitle>
-          <DialogContent>
-            <div style={{ position: 'relative', width: '100%', height: '80vh' }}>
-              {!loadingPreview ? (
-                <a
-                  href={previewFile}
-                  download
-                  rel="noopener noreferrer"
-                  style={{
-                    position: 'absolute',
-                    top: '10px',
-                    right: '10px',
-                    zIndex: 1,
-                    backgroundColor: '#4CAF50',
-                    color: 'white',
-                    padding: '8px 12px',
-                    border: 'none',
-                    borderRadius: '4px',
-                    textDecoration: 'none',
-                    fontSize: '14px',
-                  }}
-                >
-                  Download
-                </a>) : (
-                <Box
-                  display="flex"
-                  justifyContent="center"
-                  alignItems="center"
-                  height="100%"
-                  position="absolute"
-                  top={0}
-                  left={0}
-                  width="100%"
-                  zIndex={0}
-                  sx={{ backgroundColor: "rgba(255,255,255,0.8)" }}
-                >
-                  <CircularProgress />
-                </Box>
-              )}
-              <iframe
-                src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile)}&embedded=true`}
-                style={{ width: '100%', height: '100%', border: 'none' }}
-                title="File Preview"
-                onLoad={() => setLoadingPreview(false)}
-
-              />
-            </div>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenPreviewModal(false)} color="primary">
-              Close
-            </Button>
-          </DialogActions>
-        </Dialog> */}
-
       {reportName === "INTERNATIONAL TONNAGE CERTIFICATE" && (
         <InternationalTonnage
           open={open}
@@ -1324,7 +1475,7 @@ const ReportingForm = () => {
         )
       }
 
-      {reportName === "INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" &&
+      {reportName === "SUPPLEMENT TO THE INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" &&
         <div className="container">
           <IOPPForm
             open={open}
