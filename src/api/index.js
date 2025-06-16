@@ -681,12 +681,35 @@ export const getEndorsedIssuedBy = async (filterKey, filterValue) => {
 };
 
 
-export const getAllIssuedDocuments = async () => {
+export const getAllIssuedDocuments = async (filterKeys = [], filterValues = [], searchQuery, page, limit, startDate, endDate) => {
+  try {
+    const params = {};
+
+    if (filterKeys.length && filterValues.length) {
+      params.filterKey = filterKeys.join(",");
+      params.filterValue = filterValues.join(",");
+    }
+
+    if (searchQuery) params.search = searchQuery;
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+
+    const result = await axiosInstance.get("/api/reportDetails", { params });
+    return result;
+  } catch (error) {
+    return error;
+  }
+};
+
+export const deleteAttachment = async(activityId,attachmentId) =>{
   let result;
   try {
-    result = await axiosInstance.get(`/api/reportDetails?filterKey=generatedDoc&filterValue=true`);
+    result = await axiosInstance.delete(`/api/activities/${activityId}/attachments/${attachmentId}`);
   } catch (error) {
     result = error;
   }
   return result;
-};
+} 
+
