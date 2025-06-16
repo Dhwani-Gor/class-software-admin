@@ -161,16 +161,16 @@ const Documents = () => {
     { field: "name", headerName: "Document Name", flex: 1.5 },
     { field: "type", headerName: "Document Type", flex: 1 },
     {
-      field: "filePath",
+      field: "fullTermFilePath || interimFilePath || shortTermFilePath",
       headerName: "File Preview",
       width: 100,
       renderCell: (params) => (
-        params.row.filePath ? (
+        params.row.fullTermFilePath || params.row.interimFilePath || params.row.shortTermFilePath ? (
           <Tooltip title="Preview Document">
             <IconButton
               color="info"
               onClick={() => {
-                setPreviewFile(params.row.filePath);
+                setPreviewFile(params.row.fullTermFilePath || params.row.interimFilePath || params.row.shortTermFilePath);
                 setLoadingPreview(true);
                 setOpenPreviewModal(true);
               }}
@@ -199,14 +199,14 @@ const Documents = () => {
               <EditIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Duplicate Document">
+          {/* <Tooltip title="Duplicate Document">
             <IconButton
               color="primary"
               onClick={() => handleDuplicateClick(params?.id)}
             >
               <CopyAll />
             </IconButton>
-          </Tooltip>
+          </Tooltip> */}
           <Tooltip title="Delete Document">
             <IconButton
               color="error"

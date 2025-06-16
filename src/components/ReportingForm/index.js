@@ -21,7 +21,7 @@ import IconButton from "@mui/material/IconButton";
 import DescriptionIcon from "@mui/icons-material/Description";
 import AttachmentIcon from "@mui/icons-material/Attachment";
 import DeleteIcon from "@mui/icons-material/Delete";
-import PreviewIcon from "@mui/icons-material/Preview";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import TextareaAutosize from "@mui/material/TextareaAutosize";
 import Grid2 from "@mui/material/Grid2";
 import Dialog from "@mui/material/Dialog";
@@ -40,7 +40,7 @@ import moment from "moment";
 import { Stack } from "@mui/material";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from 'yup';
-import { PreviewOutlined, PreviewTwoTone } from "@mui/icons-material";
+import { Diversity2, PreviewOutlined, PreviewTwoTone } from "@mui/icons-material";
 import { DialogForm } from "../documents/CommonDocumentForm";
 import InternationalTonnage from "../documents/TonnageCertificateForm";
 import DocumentForm from "../AddDocumentForm";
@@ -222,7 +222,7 @@ const DocumentUploadDialog = ({
                       color="primary"
                       title="Preview Document"
                     >
-                      <PreviewIcon fontSize="small" />
+                      <VisibilityIcon fontSize="small" />
                     </IconButton>
                     <IconButton
                       size="small"
@@ -255,12 +255,34 @@ const DocumentUploadDialog = ({
 
 // Document Preview Modal Component
 const DocumentPreviewModal = ({ open, onClose, document, loading }) => {
+  let fileUrl
+  let fileType
+  
+  const handleDownload = () => {
+    // const link = document.createElement('a');
+    // link.href = document.filePath;
+    // link.download = document.filePath.split('/').pop();
+    // document.body.appendChild(link);
+    // link.click();
+    // document.body.removeChild(link);
+    // const blob =  fileUrl.blob();
+        const filename = fileUrl.split('/').pop();
+
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = document.filePath;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+
+  };
+  
   const getPreviewContent = () => {
     if (!document) return null;
-
-    const fileUrl = document.filePath;
-    const fileType = document.fileType;
-
+    fileUrl = document.filePath;
+    fileType = document.fileType;
     if (fileType?.startsWith('image/')) {
       return (
         <img
@@ -322,19 +344,18 @@ const DocumentPreviewModal = ({ open, onClose, document, loading }) => {
     >
       <DialogTitle>
         Document Preview
-        {document && (
-          <Button
-            href={document.fileUrl || document.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            variant="outlined"
-            size="small"
-            style={{ float: 'right' }}
+        {document?.filePath && (
+          <Box
+            onClick={handleDownload}
+            style={{ float: 'right', textDecoration: 'none' }}
           >
-            Download
-          </Button>
+            {/* <Button variant="outlined" size="small">
+              Download
+            </Button> */}
+          </Box>
         )}
       </DialogTitle>
+
       <DialogContent>
         {loading ? (
           <Box
@@ -1434,67 +1455,6 @@ const ReportingForm = () => {
           ? `Remarks for ${fullScreenRemarksVisible.surveyTypes.name}`
           : "Remarks"}
       />
-      {/* <Dialog
-          open={openPreviewModal}
-          onClose={() => setOpenPreviewModal(false)}
-          maxWidth="md"
-          fullWidth
-        >
-          <DialogTitle>Document Preview</DialogTitle>
-          <DialogContent>
-            <div style={{ position: 'relative', width: '100%', height: '80vh' }}>
-              {!loadingPreview ? (
-                <a
-                  href={previewFile}
-                  download
-                  rel="noopener noreferrer"
-                  style={{
-                    position: 'absolute',
-                    top: '10px',
-                    right: '10px',
-                    zIndex: 1,
-                    backgroundColor: '#4CAF50',
-                    color: 'white',
-                    padding: '8px 12px',
-                    border: 'none',
-                    borderRadius: '4px',
-                    textDecoration: 'none',
-                    fontSize: '14px',
-                  }}
-                >
-                  Download
-                </a>) : (
-                <Box
-                  display="flex"
-                  justifyContent="center"
-                  alignItems="center"
-                  height="100%"
-                  position="absolute"
-                  top={0}
-                  left={0}
-                  width="100%"
-                  zIndex={0}
-                  sx={{ backgroundColor: "rgba(255,255,255,0.8)" }}
-                >
-                  <CircularProgress />
-                </Box>
-              )}
-              <iframe
-                src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile)}&embedded=true`}
-                style={{ width: '100%', height: '100%', border: 'none' }}
-                title="File Preview"
-                onLoad={() => setLoadingPreview(false)}
-
-              />
-            </div>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenPreviewModal(false)} color="primary">
-              Close
-            </Button>
-          </DialogActions>
-        </Dialog> */}
-
       {reportName === "INTERNATIONAL TONNAGE CERTIFICATE" && (
         <InternationalTonnage
           open={open}
