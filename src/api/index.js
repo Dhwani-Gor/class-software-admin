@@ -204,10 +204,8 @@ export const getAllJournals = async ({
   let result;
 
   const params = {};
-
-  if (filterKey && filterValue) {
-    params[filterKey] = filterValue;
-  }
+  params.filterKey = filterKey;
+  params.filterValue = filterValue;
 
   if (search) params.search = String(search);
   if (page) params.page = page;
@@ -703,7 +701,7 @@ export const getAllIssuedDocuments = async (filterKeys = [], filterValues = [], 
   }
 };
 
-export const deleteAttachment = async(activityId,attachmentId) =>{
+export const deleteAttachment = async (activityId, attachmentId) => {
   let result;
   try {
     result = await axiosInstance.delete(`/api/activities/${activityId}/attachments/${attachmentId}`);
@@ -711,5 +709,5 @@ export const deleteAttachment = async(activityId,attachmentId) =>{
     result = error;
   }
   return result;
-} 
+}
 
