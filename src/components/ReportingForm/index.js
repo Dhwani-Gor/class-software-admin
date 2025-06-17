@@ -1462,7 +1462,7 @@ const ReportingForm = () => {
       )}
 
       {
-        validReports.includes(reportName) && (
+        validReports.includes(reportName.trim()) && (
           <DialogForm
             open={open}
             onClose={() => setOpen(false)}
