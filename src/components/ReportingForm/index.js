@@ -60,6 +60,7 @@ const reportSchema = yup.object().shape({
   endorsementdate: yup.string().optional(),
   issuedBy: yup.string().optional(),
   place: yup.string().required('Place is required'),
+  newValidityDate: yup.string().optional(),
 });
 
 const DocumentUploadDialog = ({
@@ -730,10 +731,11 @@ const ReportingForm = () => {
   };
 
   const handleReportClick = async (row) => {
+    console.log(row)
     try {
       setLoading(true);
       const result = await getSelectedActivityReportDetails(row?.id);
-      setReportName(row?.surveyTypes?.reports?.[0]?.name);
+      setReportName(row?.surveyTypes?.report?.name);
 
       const data = extractUnderscoreFields(row);
       setUnderscoreFields(data)
@@ -926,7 +928,6 @@ const ReportingForm = () => {
       const result = await getAllActivities('journalId', id);
       if (result?.data?.status === "success") {
         setTableData(result?.data?.data);
-        setActivityId(result?.data?.data[0]?.id);
       } else {
         toast.error("Something went wrong ! Please try again after some time");
       }
@@ -960,16 +961,14 @@ const ReportingForm = () => {
   const extractUnderscoreFields = (data) => {
     const fields = [];
     if (data && typeof data === 'object') {
-      data?.surveyTypes?.reports?.forEach((report) => {
-        report?.fields?.forEach((field) => {
-          if (field?.attribute?.startsWith("_")) {
-            fields.push({
-              label: field.label,
-              attribute: field.attribute
+      data?.surveyTypes?.report?.fields?.forEach((field) => {
+        if (field?.attribute?.startsWith("_")) {
+          fields.push({
+            label: field.label,
+            attribute: field.attribute
             });
           }
         });
-      });
     }
     return fields;
   };
@@ -1455,7 +1454,7 @@ const ReportingForm = () => {
           ? `Remarks for ${fullScreenRemarksVisible.surveyTypes.name}`
           : "Remarks"}
       />
-      {reportName === "INTERNATIONAL TONNAGE CERTIFICATE" && (
+      {reportName.trim() === "INTERNATIONAL TONNAGE CERTIFICATE" && (
         <InternationalTonnage
           open={open}
           onClose={() => setOpen(false)}
@@ -1465,7 +1464,7 @@ const ReportingForm = () => {
       )}
 
       {
-        validReports.includes(reportName) && (
+        validReports.includes(reportName.trim()) && (
           <DialogForm
             open={open}
             onClose={() => setOpen(false)}
@@ -1475,7 +1474,7 @@ const ReportingForm = () => {
         )
       }
 
-      {reportName === "SUPPLEMENT TO THE INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" &&
+      {reportName.trim() === "SUPPLEMENT TO THE INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" &&
         <div className="container">
           <IOPPForm
             open={open}
@@ -1485,7 +1484,7 @@ const ReportingForm = () => {
           />
         </div>
       }
-      {reportName === "RECORD OF EQUIPMENT FOR CARGO SHIP SAFETY" &&
+      {reportName.trim() === "RECORD OF EQUIPMENT FOR CARGO SHIP SAFETY" &&
         <CSSForm
           open={open}
           onClose={() => setOpen(false)}
@@ -1493,7 +1492,7 @@ const ReportingForm = () => {
           fields={underscoreFields}
         />
       }
-      {reportName === "INTERNATIONAL LOAD LINE CERTIFICATE" &&
+      {reportName.trim() === "INTERNATIONAL LOAD LINE CERTIFICATE" &&
         <LoadLineCertificateForm
           open={open}
           onClose={() => setOpen(false)}
@@ -1501,7 +1500,7 @@ const ReportingForm = () => {
           fields={underscoreFields}
         />
       }
-      {reportName === "International Anti-Fouling System Certificate" &&
+      {reportName.trim() === "International Anti-Fouling System Certificate" &&
         <AntiFoulingCertificateForm
           open={open}
           onClose={() => setOpen(false)}
@@ -1509,7 +1508,7 @@ const ReportingForm = () => {
           fields={underscoreFields}
         />
       }
-      {reportName === "RECORD OF CONSTRUCTION AND EQUIPMENT" &&
+      {reportName.trim() === "RECORD OF CONSTRUCTION AND EQUIPMENT" &&
         <IAPPForm
           open={open}
           onClose={() => setOpen(false)}
