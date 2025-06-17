@@ -31,10 +31,7 @@ import { toast } from "react-toastify";
 const schema = yup.object().shape({
   name: yup.string().required("Name is required"),
   abbreviation: yup.string().required("Abbreviation is required"),
-  reportIds: yup
-    .array()
-    .min(1, "Select at least one report")
-    .required("Report selection is required"),
+  reportId: yup.number().required("Report selection is required"),
 });
 
 const SurveyTypeForm = ({
@@ -62,14 +59,14 @@ const SurveyTypeForm = ({
     defaultValues: {
       name: "",
       abbreviation: "",
-      reportIds: [],
+      reportId: null,
       ...defaultValues
     },
   });
-  
+
   // Watch reportIds to debug
-  const watchedReportIds = watch("reportIds");
-  
+  const watchedReportIds = watch("reportId");
+
   useEffect(() => {
     console.log("Current reportIds in form:", watchedReportIds);
   }, [watchedReportIds]);
@@ -98,7 +95,7 @@ const SurveyTypeForm = ({
   // Only fetch survey type details after reports are loaded
   const fetchSurveyTypeDetails = async () => {
     if (!surveyTypeId) return;
-    
+
     try {
       setIsDataLoading(true);
       const res = await getSurveyTypeDetails(surveyTypeId);
@@ -109,29 +106,10 @@ const SurveyTypeForm = ({
         return;
       }
 
-      // Extract report IDs from the reports array objects
-      let reportIdsArray = [];
-      
-      if (data.reports && Array.isArray(data.reports)) {
-        // Extract IDs from the reports array of objects
-        reportIdsArray = data.reports.map(report => {
-          // Handle if report is an object with id property or just an id
-          if (typeof report === 'object' && report !== null) {
-            return typeof report.id === 'string' ? parseInt(report.id, 10) : report.id;
-          } else {
-            return typeof report === 'string' ? parseInt(report, 10) : report;
-          }
-        });
-      }
-      
-      // Remove any NaN values that might have been created by parseInt
-      reportIdsArray = reportIdsArray.filter(id => !isNaN(id));
-            
-      // Update form values
       setValue("name", data.name || "");
       setValue("abbreviation", data.abbreviation || "");
-      setValue("reportIds", reportIdsArray);
-      
+      setValue("reportId", data.reportId || null);
+
     } catch (error) {
       console.error("Error fetching survey type details:", error);
       toast.error("Failed to fetch survey type details");
@@ -140,9 +118,7 @@ const SurveyTypeForm = ({
     }
   };
 
-  // Separate useEffect to fetch survey type details after reports are loaded
   useEffect(() => {
-    // If update mode, fetch survey type details after reports are loaded
     if (isUpdate && surveyTypeId && reports.length > 0) {
       fetchSurveyTypeDetails();
     }
@@ -160,10 +136,10 @@ const SurveyTypeForm = ({
     try {
       setIsSubmitting(true);
       let res;
-      
+
       if (isUpdate) {
         res = await updateSurveyType(surveyTypeId, data);
-        
+
         if (res?.data?.status === "success") {
           toast.success("Survey type updated successfully");
           setTimeout(() => {
@@ -176,7 +152,7 @@ const SurveyTypeForm = ({
         res = await createSurveyType(data);
         if (res?.data?.status === "success") {
           toast.success("Survey type created successfully");
-            router.push('/survey-types');
+          router.push('/survey-types');
         } else {
           throw new Error(res?.data?.message || "Failed to create survey type");
         }
@@ -193,12 +169,13 @@ const SurveyTypeForm = ({
     }
   };
 
-  // Helper function to get report object from ID
   const getReportById = (id) => {
-    // Handle numeric or string IDs
-    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
-    return reports.find(report => report.id == numericId) || { id: numericId, name: `Unknown (ID: ${numericId})` };
+    if (!id) return null;
+    console.log("numericId", id);
+    console.log(reports.find(report => report.id === id));
+    return reports.find(report => report.id === id) || null;
   };
+
 
   return (
     <Box>
@@ -218,10 +195,10 @@ const SurveyTypeForm = ({
               <Typography variant="h6" mb={3}>
                 {isUpdate ? "Update Survey Type" : "Create New Survey Type"}
               </Typography>
-              
+
               <form onSubmit={handleSubmit(onSubmit)}>
                 <Grid2 container spacing={3}>
-                  <Grid2 size={{xs: 12}}>
+                  <Grid2 size={{ xs: 12 }}>
                     <Controller
                       name="name"
                       control={control}
@@ -246,7 +223,7 @@ const SurveyTypeForm = ({
                     />
                   </Grid2>
 
-                  <Grid2 size={{xs: 12}}>
+                  <Grid2 size={{ xs: 12 }}>
                     <Controller
                       name="abbreviation"
                       control={control}
@@ -271,49 +248,54 @@ const SurveyTypeForm = ({
                     />
                   </Grid2>
 
-                  <Grid2 size={{xs: 12}}>
+                  <Grid2 size={{ xs: 12 }}>
                     <FormControl
                       fullWidth
                       variant="standard"
-                      error={Boolean(errors.reportIds)}
+                      error={Boolean(errors.reportId)}
                     >
                       <FormLabel component="legend" sx={{ mb: 1 }}>
-                        <Typography color='#000000DE' fontWeight={'500'}> Reports <span style={{ color: "red" }}>*</span></Typography> 
+                        <Typography color='#000000DE' fontWeight={'500'}> Reports <span style={{ color: "red" }}>*</span></Typography>
                       </FormLabel>
                       <Controller
-                        name="reportIds"
+                        name="reportId"
                         control={control}
                         render={({ field }) => (
                           <Autocomplete
-                            multiple
-                            id="reports-autocomplete"
+                            id="report-autocomplete"
                             options={reports}
                             loading={loadingReports}
-                            getOptionLabel={(option) => {
-                              // For display in dropdown menu
-                              return typeof option === 'object' ? option.name : getReportById(option).name;
-                            }}
-                            isOptionEqualToValue={(option, value) => {
-                              // For comparing options
-                              if (typeof value === 'object') {
-                                return option.id === value.id;
-                              }
-                              return option.id === value || option.id === parseInt(value, 10);
-                            }}
-                            // Convert IDs to report objects for Autocomplete
-                            value={field.value.map(id => getReportById(id))}
+                            getOptionLabel={(option) =>
+                              typeof option === 'object' ? option.name : getReportById(option)?.name || ""
+                            }
+                            isOptionEqualToValue={(option, value) =>
+                              option.id === (typeof value === 'object' ? value.id : value)
+                            }
+                            value={getReportById(field.value)}
                             onChange={(event, newValue) => {
-                              // Extract IDs from selected report objects
-                              const reportIds = newValue.map(item => item.id);
-                              field.onChange(reportIds);
+                              field.onChange(newValue?.id || null);
                             }}
+                            filterOptions={(options, { inputValue }) =>
+                              options.filter((option) =>
+                                option.name.toLowerCase().includes(inputValue.toLowerCase())
+                              )
+                            }
+                            renderTags={(tagValue, getTagProps) =>
+                              tagValue.map((option, index) => (
+                                <Chip
+                                  key={option.id}
+                                  label={option.name}
+                                  {...getTagProps({ index })}
+                                />
+                              ))
+                            }                            
                             renderInput={(params) => (
                               <TextField
                                 {...params}
                                 variant="outlined"
-                                placeholder="Search and Select Reports"
-                                error={Boolean(errors.reportIds)}
-                                helperText={errors.reportIds?.message}
+                                placeholder="Search and Select Report"
+                                error={Boolean(errors.reportId)}
+                                helperText={errors.reportId?.message}
                                 InputProps={{
                                   ...params.InputProps,
                                   endAdornment: (
@@ -325,20 +307,10 @@ const SurveyTypeForm = ({
                                 }}
                               />
                             )}
-                            renderTags={(tagValue, getTagProps) =>
-                              tagValue.map((option, index) => (
-                                <Chip
-                                  key={option.id}
-                                  variant="outlined"
-                                  label={option.name}
-                                  {...getTagProps({ index })}
-                                />
-                              ))
-                            }
-                            filterSelectedOptions
                           />
                         )}
                       />
+
                     </FormControl>
                   </Grid2>
                 </Grid2>
@@ -352,7 +324,7 @@ const SurveyTypeForm = ({
                   <CommonButton
                     type="submit"
                     variant="contained"
-                    text={isSubmitting ? "Saving..." : "Save"}
+                    text={isUpdate ? "UPDATE" : "SAVE"}
                     disabled={isSubmitting}
                   />
                   <CommonButton
