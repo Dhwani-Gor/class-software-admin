@@ -409,7 +409,7 @@ const ReportingForm = () => {
   const [showEndorsementField, setShowEndorsementField] = useState(false);
   const [showExtraEndorsementField, setShowExtraEndorsementField] = useState(false);
   const [activityId, setActivityId] = useState(null);
-
+  console.log(reportName,"report name")
   useEffect(() => {
     if (selectCertificate === "full_term") {
       setShowEndorsementField(true);
@@ -1294,9 +1294,7 @@ const ReportingForm = () => {
                   </Typography>
                 )}
               </Grid2>
-              {(showEndorsementField ||
-                reportDetails?.typeOfCertificate === "full_term" ||
-                reportDetails?.typeOfCertificate === "extended") && (
+              {showEndorsementField && (
                   // Render Endorsement Date field
                   <Grid2 size={{ md: 3 }}>
                     <Controller
@@ -1464,7 +1462,7 @@ const ReportingForm = () => {
       )}
 
       {
-        validReports.includes(reportName.trim()) && (
+        validReports.includes(reportName) && (
           <DialogForm
             open={open}
             onClose={() => setOpen(false)}
