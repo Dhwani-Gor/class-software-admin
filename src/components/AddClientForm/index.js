@@ -77,9 +77,9 @@ const schema = yup.object().shape({
   dateOfDelivery: yup.string().required("Date of Delivery required"),
   areaOfOperation: yup.string(),
   carryingCapacity: yup.string(),
-  hullNotation: yup.string(),
-  machineryNotation: yup.string(),
-  descriptiveNotation: yup.string(),
+  hullNotation: yup.string().optional(),
+  machineryNotation: yup.string().optional(),
+  descriptiveNotation: yup.string().optional(),
   ownerDetails: yup.object().shape({
     nameOfCompany: yup.string().required("Company Name is required"),
     companyAddress: yup.string().required("Complete Address is required"),
@@ -272,14 +272,11 @@ const AddSurveyType = ({
 
   const fetchClient = async () => {
     try {
-      // setIsDataLoading(true);
       const result = await getSpecificClient(clientId);
       if (result?.status === 200 && result.data?.data) {
-        // Format date fields before setting them in the form
         const clientData = result.data.data;
         setShipName(clientData.shipName);
 
-        // Format all date fields to YYYY-MM-DD format for input[type="date"]
         const dateFields = [
           "dateOfBuild",
           "keelLaidDate",
@@ -290,7 +287,6 @@ const AddSurveyType = ({
 
         dateFields.forEach(field => {
           if (clientData[field]) {
-            // Parse the date and format it as YYYY-MM-DD
             try {
               const date = new Date(clientData[field]);
               if (!isNaN(date.getTime())) {
@@ -439,85 +435,111 @@ const AddSurveyType = ({
   };
 
   const onSubmit = async (data) => {
-    if (!data.ownerDetails || !data.managerDetails || !data.invoicingDetails) {
-      toast.error("Missing required details. Please fill all required fields.");
-      return;
+  if (!data.ownerDetails || !data.managerDetails || !data.invoicingDetails) {
+    toast.error("Missing required details. Please fill all required fields.");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    let res;
+    console.log(data, "data");
+    
+    // Helper function to check if value should be included
+    const hasValue = (value) => {
+      return value !== null && value !== undefined && value !== '' && value !== 0;
+    };
+
+    // Base payload with required fields only
+    const payload = {
+      shipName: data.shipName,
+      imoNumber: data.imoNumber,
+      classId: data.classId,
+      flag: data.flag,
+      portOfRegistry: data.portOfRegistry,
+      grossTonnage: data.grossTonnage,
+      netTonnage: data.netTonnage,
+      lengthOfShip: data.lengthOfShip,
+      shipBuilder: data.shipBuilder,
+      countryOfBuild: data.countryOfBuild,
+      dateOfBuild: data.dateOfBuild,
+      callSign: data.callSign,
+      officialNo: data.officialNo,
+      deadweight: data.deadweight,
+      typeOfShip: data.typeOfShip,
+      dateOfDelivery: data.dateOfDelivery,
+
+      ownerDetails: {
+        nameOfCompany: data.ownerDetails.nameOfCompany,
+        companyAddress: data.ownerDetails.companyAddress,
+        phoneNumber: data.ownerDetails.phoneNumber,
+        email: data.ownerDetails.email,
+      },
+      managerDetails: {
+        nameOfCompany: data.managerDetails.nameOfCompany,
+        companyAddress: data.managerDetails.companyAddress,
+        phoneNumber: data.managerDetails.phoneNumber,
+        email: data.managerDetails.email,
+      },
+      invoicingDetails: {
+        nameOfCompany: data.invoicingDetails.nameOfCompany,
+        companyAddress: data.invoicingDetails.companyAddress,
+        phoneNumber: data.invoicingDetails.phoneNumber,
+        email: data.invoicingDetails.email,
+      }
+    };
+
+    if (hasValue(data.keelLaidDate)) {
+      payload.keelLaidDate = data.keelLaidDate;
+    }
+    if (hasValue(data.dateOfModification)) {
+      payload.dateOfModification = data.dateOfModification;
+    }
+    if (hasValue(data.dateOfBuildingContract)) {
+      payload.dateOfBuildingContract = data.dateOfBuildingContract;
+    }
+    if (hasValue(data.areaOfOperation)) {
+      payload.areaOfOperation = data.areaOfOperation;
+    }
+    if (hasValue(data.carryingCapacity)) {
+      payload.carryingCapacity = data.carryingCapacity;
+    }
+    if (hasValue(data.hullNotation)) {
+      payload.hullNotation = data.hullNotation;
+    }
+    if (hasValue(data.machineryNotation)) {
+      payload.machineryNotation = data.machineryNotation;
+    }
+    if (hasValue(data.descriptiveNotation)) {
+      payload.descriptiveNotation = data.descriptiveNotation;
+    }
+    if (hasValue(data.invoicingDetails.gstNo)) {
+      payload.invoicingDetails.gstNo = data.invoicingDetails.gstNo;
     }
 
-    try {
-      setLoading(true);
-      let res;
-
-      // Prepare the payload with the correct structure
-      const payload = {
-        shipName: data.shipName,
-        imoNumber: data.imoNumber || "",
-        classId: data.classId || "",
-        flag: data.flag || "",
-        portOfRegistry: data.portOfRegistry || "",
-        grossTonnage: data.grossTonnage || "",
-        netTonnage: data.netTonnage || "",
-        lengthOfShip: data.lengthOfShip || "",
-        shipBuilder: data.shipBuilder || "",
-        countryOfBuild: data.countryOfBuild || "",
-        dateOfBuild: data.dateOfBuild || "",
-        keelLaidDate: data.keelLaidDate || "",
-        callSign: data.callSign || "",
-        officialNo: data.officialNo || "",
-        deadweight: data.deadweight || "",
-        dateOfModification: data.dateOfModification || "",
-        typeOfShip: data.typeOfShip || "",
-        dateOfBuildingContract: data.dateOfBuildingContract || "",
-        dateOfDelivery: data.dateOfDelivery || "",
-        areaOfOperation: data.areaOfOperation || "",
-        carryingCapacity: data.carryingCapacity || "",
-        hullNotation: data.hullNotation || "",
-        machineryNotation: data.machineryNotation || "",
-        descriptiveNotation: data.descriptiveNotation || "",
-        ownerDetails: {
-          nameOfCompany: data.ownerDetails.nameOfCompany,
-          companyAddress: data.ownerDetails.companyAddress,
-          phoneNumber: data.ownerDetails.phoneNumber,
-          email: data.ownerDetails.email,
-        },
-        managerDetails: {
-          nameOfCompany: data.managerDetails.nameOfCompany,
-          companyAddress: data.managerDetails.companyAddress,
-          phoneNumber: data.managerDetails.phoneNumber,
-          email: data.managerDetails.email,
-        },
-        invoicingDetails: {
-          nameOfCompany: data.invoicingDetails.nameOfCompany,
-          companyAddress: data.invoicingDetails.companyAddress,
-          phoneNumber: data.invoicingDetails.phoneNumber,
-          email: data.invoicingDetails.email,
-          gstNo: data.invoicingDetails.gstNo || "",
-        }
-      };
-
-      if (clientId) {
-        res = await updateClient(clientId, { ...payload, message: editReason });
-      } else {
-        res = await createClient(payload);
-      }
-
-      if (res?.data?.status === "success") {
-        toast.success(clientId ? "Client updated successfully" : "Client created successfully");
-        router.push('/clients');
-      } else if (res?.response?.data?.status === "error") {
-        toast.error(res?.response?.data?.message);
-      }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      if (error.response && error.response.data && error.response.data.message) {
-        toast.error(error.response.data.message);
-      } else {
-        toast.error("An unexpected error occurred. Please try again later.");
-      }
-    } finally {
-      setLoading(false);
+    if (clientId) {
+      res = await updateClient(clientId, { ...payload, message: editReason });
+    } else {
+      res = await createClient(payload);
     }
-  };
+
+    if (res?.data?.status === "success") {
+      toast.success(clientId ? "Client updated successfully" : "Client created successfully");
+      router.push('/clients');
+    } else if (res?.response?.data?.status === "error") {
+      toast.error(res?.response?.data?.message);
+    }
+  } catch (error) {
+    console.error("Error submitting form:", error);
+    if (error.response && error.response.data && error.response.data.message) {
+      toast.error(error.response.data.message);
+    } else {
+      toast.error("An unexpected error occurred. Please try again later.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   const cancelBtn = () => {
     router.push("/clients");
