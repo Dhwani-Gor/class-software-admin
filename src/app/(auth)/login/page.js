@@ -114,6 +114,7 @@ const Login = () => {
                   fullWidth
                   label="Password"
                   type="password"
+                  autoComplete="off"
                   placeholder="Enter your password"
                   error={Boolean(errors.password)}
                   helperText={errors.password?.message}
