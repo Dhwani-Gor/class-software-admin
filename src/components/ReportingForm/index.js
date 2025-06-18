@@ -408,7 +408,6 @@ const ReportingForm = () => {
   const [reportName, setReportName] = useState("");
   const [showEndorsementField, setShowEndorsementField] = useState(false);
   const [showExtraEndorsementField, setShowExtraEndorsementField] = useState(false);
-  const [activityId, setActivityId] = useState(null);
   console.log(reportName,"report name")
   useEffect(() => {
     if (selectCertificate === "full_term") {
@@ -1452,7 +1451,7 @@ const ReportingForm = () => {
           ? `Remarks for ${fullScreenRemarksVisible.surveyTypes.name}`
           : "Remarks"}
       />
-      {reportName.trim() === "INTERNATIONAL TONNAGE CERTIFICATE" && (
+      {reportName?.trim() === "INTERNATIONAL TONNAGE CERTIFICATE" && (
         <InternationalTonnage
           open={open}
           onClose={() => setOpen(false)}
@@ -1462,7 +1461,7 @@ const ReportingForm = () => {
       )}
 
       {
-        validReports.includes(reportName.trim()) && (
+        validReports.includes(reportName?.trim()) && (
           <DialogForm
             open={open}
             onClose={() => setOpen(false)}
@@ -1472,7 +1471,7 @@ const ReportingForm = () => {
         )
       }
 
-      {reportName.trim() === "SUPPLEMENT TO THE INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" &&
+      {reportName?.trim() === "SUPPLEMENT TO THE INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" &&
         <div className="container">
           <IOPPForm
             open={open}
@@ -1482,7 +1481,7 @@ const ReportingForm = () => {
           />
         </div>
       }
-      {reportName.trim() === "RECORD OF EQUIPMENT FOR CARGO SHIP SAFETY" &&
+      {reportName?.trim() === "RECORD OF EQUIPMENT FOR CARGO SHIP SAFETY" &&
         <CSSForm
           open={open}
           onClose={() => setOpen(false)}
@@ -1490,7 +1489,7 @@ const ReportingForm = () => {
           fields={underscoreFields}
         />
       }
-      {reportName.trim() === "INTERNATIONAL LOAD LINE CERTIFICATE" &&
+      {reportName?.trim() === "INTERNATIONAL LOAD LINE CERTIFICATE" &&
         <LoadLineCertificateForm
           open={open}
           onClose={() => setOpen(false)}
@@ -1498,7 +1497,7 @@ const ReportingForm = () => {
           fields={underscoreFields}
         />
       }
-      {reportName.trim() === "International Anti-Fouling System Certificate" &&
+      {reportName?.trim() === "International Anti-Fouling System Certificate" &&
         <AntiFoulingCertificateForm
           open={open}
           onClose={() => setOpen(false)}
@@ -1506,7 +1505,7 @@ const ReportingForm = () => {
           fields={underscoreFields}
         />
       }
-      {reportName.trim() === "RECORD OF CONSTRUCTION AND EQUIPMENT" &&
+      {reportName?.trim() === "RECORD OF CONSTRUCTION AND EQUIPMENT" &&
         <IAPPForm
           open={open}
           onClose={() => setOpen(false)}
