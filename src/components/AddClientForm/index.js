@@ -270,41 +270,86 @@ const AddSurveyType = ({
     }
   }, [managerDetail, isInvoiceSameAsManager, setValue, getValues, manuallyEditedInvoice]);
 
+  const normalizeValue = (value, defaultValue = "") => {
+    return value === null || value === undefined ? defaultValue : value;
+  };
+
+  const normalizeClientData = (data) => {
+    const normalized = {
+      ...data,
+      dateOfBuild: normalizeValue(data.dateOfBuild),
+      keelLaidDate: normalizeValue(data.keelLaidDate),
+      dateOfModification: normalizeValue(data.dateOfModification),
+      dateOfBuildingContract: normalizeValue(data.dateOfBuildingContract),
+      dateOfDelivery: normalizeValue(data.dateOfDelivery),
+      callSign: normalizeValue(data.callSign),
+      officialNo: normalizeValue(data.officialNo),
+      deadweight: normalizeValue(data.deadweight),
+      areaOfOperation: normalizeValue(data.areaOfOperation),
+      carryingCapacity: normalizeValue(data.carryingCapacity),
+      hullNotation: normalizeValue(data.hullNotation),
+      machineryNotation: normalizeValue(data.machineryNotation),
+      descriptiveNotation: normalizeValue(data.descriptiveNotation),
+
+      // Nested fields
+      ownerDetails: {
+        nameOfCompany: normalizeValue(data.ownerDetails?.companyName),
+        companyAddress: normalizeValue(data.ownerDetails?.companyAddress),
+        phoneNumber: normalizeValue(data.ownerDetails?.phoneNumber),
+        email: normalizeValue(data.ownerDetails?.email),
+      },
+      managerDetails: {
+        nameOfCompany: normalizeValue(data.managerDetails?.companyName),
+        companyAddress: normalizeValue(data.managerDetails?.companyAddress),
+        phoneNumber: normalizeValue(data.managerDetails?.phoneNumber),
+        email: normalizeValue(data.managerDetails?.email),
+      },
+      invoicingDetails: {
+        nameOfCompany: normalizeValue(data.invoicingDetails?.companyName),
+        companyAddress: normalizeValue(data.invoicingDetails?.companyAddress),
+        phoneNumber: normalizeValue(data.invoicingDetails?.phoneNumber),
+        email: normalizeValue(data.invoicingDetails?.email),
+        gstNo: normalizeValue(data.invoicingDetails?.gstNo),
+      }
+    };
+
+    // Format date fields
+    const dateFields = [
+      "dateOfBuild",
+      "keelLaidDate",
+      "dateOfModification",
+      "dateOfBuildingContract",
+      "dateOfDelivery"
+    ];
+    dateFields.forEach(field => {
+      if (normalized[field]) {
+        try {
+          const date = new Date(normalized[field]);
+          if (!isNaN(date.getTime())) {
+            normalized[field] = date.toISOString().split("T")[0];
+          }
+        } catch (e) {
+          console.error(`Error formatting date for ${field}:`, e);
+        }
+      }
+    });
+
+    return normalized;
+  };
+
   const fetchClient = async () => {
     try {
       const result = await getSpecificClient(clientId);
       if (result?.status === 200 && result.data?.data) {
-        const clientData = result.data.data;
-        setShipName(clientData.shipName);
+        const normalizedData = normalizeClientData(result.data.data);
 
-        const dateFields = [
-          "dateOfBuild",
-          "keelLaidDate",
-          "dateOfModification",
-          "dateOfBuildingContract",
-          "dateOfDelivery"
-        ];
+        setShipName(normalizedData.shipName);
+        reset(normalizedData);
+        setOwnerInputValue(normalizedData.ownerDetails.nameOfCompany);
 
-        dateFields.forEach(field => {
-          if (clientData[field]) {
-            try {
-              const date = new Date(clientData[field]);
-              if (!isNaN(date.getTime())) {
-                const formattedDate = date.toISOString().split('T')[0];
-                clientData[field] = formattedDate;
-              }
-            } catch (e) {
-              console.error(`Error formatting date for ${field}:`, e);
-            }
-          }
-        });
-
-        reset(clientData);
-        setOwnerInputValue(clientData.ownerDetails?.companyName || '');
-        setValue("ownerDetails.nameOfCompany", clientData.ownerDetails?.companyName || '');
-        setValue('managerDetails.nameOfCompany', clientData.managerDetails?.companyName || '');
-        setValue('invoicingDetails.nameOfCompany', clientData.invoicingDetails?.companyName || '');
-
+        setValue("ownerDetails.nameOfCompany", normalizedData.ownerDetails.nameOfCompany);
+        setValue("managerDetails.nameOfCompany", normalizedData.managerDetails.nameOfCompany);
+        setValue("invoicingDetails.nameOfCompany", normalizedData.invoicingDetails.nameOfCompany);
       } else {
         toast.error("Something went wrong! Please try again after some time");
       }
@@ -314,7 +359,8 @@ const AddSurveyType = ({
     } finally {
       setIsDataLoading(false);
     }
-  }
+  };
+
 
   useEffect(() => {
     if (clientId) {
@@ -435,111 +481,111 @@ const AddSurveyType = ({
   };
 
   const onSubmit = async (data) => {
-  if (!data.ownerDetails || !data.managerDetails || !data.invoicingDetails) {
-    toast.error("Missing required details. Please fill all required fields.");
-    return;
-  }
+    if (!data.ownerDetails || !data.managerDetails || !data.invoicingDetails) {
+      toast.error("Missing required details. Please fill all required fields.");
+      return;
+    }
 
-  try {
-    setLoading(true);
-    let res;
-    console.log(data, "data");
-    
-    // Helper function to check if value should be included
-    const hasValue = (value) => {
-      return value !== null && value !== undefined && value !== '' && value !== 0;
-    };
+    try {
+      setLoading(true);
+      let res;
+      console.log(data, "data");
 
-    // Base payload with required fields only
-    const payload = {
-      shipName: data.shipName,
-      imoNumber: data.imoNumber,
-      classId: data.classId,
-      flag: data.flag,
-      portOfRegistry: data.portOfRegistry,
-      grossTonnage: data.grossTonnage,
-      netTonnage: data.netTonnage,
-      lengthOfShip: data.lengthOfShip,
-      shipBuilder: data.shipBuilder,
-      countryOfBuild: data.countryOfBuild,
-      dateOfBuild: data.dateOfBuild,
-      callSign: data.callSign,
-      officialNo: data.officialNo,
-      deadweight: data.deadweight,
-      typeOfShip: data.typeOfShip,
-      dateOfDelivery: data.dateOfDelivery,
+      // Helper function to check if value should be included
+      const hasValue = (value) => {
+        return value !== null && value !== undefined && value !== '' && value !== 0;
+      };
 
-      ownerDetails: {
-        nameOfCompany: data.ownerDetails.nameOfCompany,
-        companyAddress: data.ownerDetails.companyAddress,
-        phoneNumber: data.ownerDetails.phoneNumber,
-        email: data.ownerDetails.email,
-      },
-      managerDetails: {
-        nameOfCompany: data.managerDetails.nameOfCompany,
-        companyAddress: data.managerDetails.companyAddress,
-        phoneNumber: data.managerDetails.phoneNumber,
-        email: data.managerDetails.email,
-      },
-      invoicingDetails: {
-        nameOfCompany: data.invoicingDetails.nameOfCompany,
-        companyAddress: data.invoicingDetails.companyAddress,
-        phoneNumber: data.invoicingDetails.phoneNumber,
-        email: data.invoicingDetails.email,
+      // Base payload with required fields only
+      const payload = {
+        shipName: data.shipName,
+        imoNumber: data.imoNumber,
+        classId: data.classId,
+        flag: data.flag,
+        portOfRegistry: data.portOfRegistry,
+        grossTonnage: data.grossTonnage,
+        netTonnage: data.netTonnage,
+        lengthOfShip: data.lengthOfShip,
+        shipBuilder: data.shipBuilder,
+        countryOfBuild: data.countryOfBuild,
+        dateOfBuild: data.dateOfBuild,
+        callSign: data.callSign,
+        officialNo: data.officialNo,
+        deadweight: data.deadweight,
+        typeOfShip: data.typeOfShip,
+        dateOfDelivery: data.dateOfDelivery,
+
+        ownerDetails: {
+          nameOfCompany: data.ownerDetails.nameOfCompany,
+          companyAddress: data.ownerDetails.companyAddress,
+          phoneNumber: data.ownerDetails.phoneNumber,
+          email: data.ownerDetails.email,
+        },
+        managerDetails: {
+          nameOfCompany: data.managerDetails.nameOfCompany,
+          companyAddress: data.managerDetails.companyAddress,
+          phoneNumber: data.managerDetails.phoneNumber,
+          email: data.managerDetails.email,
+        },
+        invoicingDetails: {
+          nameOfCompany: data.invoicingDetails.nameOfCompany,
+          companyAddress: data.invoicingDetails.companyAddress,
+          phoneNumber: data.invoicingDetails.phoneNumber,
+          email: data.invoicingDetails.email,
+        }
+      };
+
+      if (hasValue(data.keelLaidDate)) {
+        payload.keelLaidDate = data.keelLaidDate;
       }
-    };
+      if (hasValue(data.dateOfModification)) {
+        payload.dateOfModification = data.dateOfModification;
+      }
+      if (hasValue(data.dateOfBuildingContract)) {
+        payload.dateOfBuildingContract = data.dateOfBuildingContract;
+      }
+      if (hasValue(data.areaOfOperation)) {
+        payload.areaOfOperation = data.areaOfOperation;
+      }
+      if (hasValue(data.carryingCapacity)) {
+        payload.carryingCapacity = data.carryingCapacity;
+      }
+      if (hasValue(data.hullNotation)) {
+        payload.hullNotation = data.hullNotation;
+      }
+      if (hasValue(data.machineryNotation)) {
+        payload.machineryNotation = data.machineryNotation;
+      }
+      if (hasValue(data.descriptiveNotation)) {
+        payload.descriptiveNotation = data.descriptiveNotation;
+      }
+      if (hasValue(data.invoicingDetails.gstNo)) {
+        payload.invoicingDetails.gstNo = data.invoicingDetails.gstNo;
+      }
 
-    if (hasValue(data.keelLaidDate)) {
-      payload.keelLaidDate = data.keelLaidDate;
-    }
-    if (hasValue(data.dateOfModification)) {
-      payload.dateOfModification = data.dateOfModification;
-    }
-    if (hasValue(data.dateOfBuildingContract)) {
-      payload.dateOfBuildingContract = data.dateOfBuildingContract;
-    }
-    if (hasValue(data.areaOfOperation)) {
-      payload.areaOfOperation = data.areaOfOperation;
-    }
-    if (hasValue(data.carryingCapacity)) {
-      payload.carryingCapacity = data.carryingCapacity;
-    }
-    if (hasValue(data.hullNotation)) {
-      payload.hullNotation = data.hullNotation;
-    }
-    if (hasValue(data.machineryNotation)) {
-      payload.machineryNotation = data.machineryNotation;
-    }
-    if (hasValue(data.descriptiveNotation)) {
-      payload.descriptiveNotation = data.descriptiveNotation;
-    }
-    if (hasValue(data.invoicingDetails.gstNo)) {
-      payload.invoicingDetails.gstNo = data.invoicingDetails.gstNo;
-    }
+      if (clientId) {
+        res = await updateClient(clientId, { ...payload, message: editReason });
+      } else {
+        res = await createClient(payload);
+      }
 
-    if (clientId) {
-      res = await updateClient(clientId, { ...payload, message: editReason });
-    } else {
-      res = await createClient(payload);
+      if (res?.data?.status === "success") {
+        toast.success(clientId ? "Client updated successfully" : "Client created successfully");
+        router.push('/clients');
+      } else if (res?.response?.data?.status === "error") {
+        toast.error(res?.response?.data?.message);
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      if (error.response && error.response.data && error.response.data.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("An unexpected error occurred. Please try again later.");
+      }
+    } finally {
+      setLoading(false);
     }
-
-    if (res?.data?.status === "success") {
-      toast.success(clientId ? "Client updated successfully" : "Client created successfully");
-      router.push('/clients');
-    } else if (res?.response?.data?.status === "error") {
-      toast.error(res?.response?.data?.message);
-    }
-  } catch (error) {
-    console.error("Error submitting form:", error);
-    if (error.response && error.response.data && error.response.data.message) {
-      toast.error(error.response.data.message);
-    } else {
-      toast.error("An unexpected error occurred. Please try again later.");
-    }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const cancelBtn = () => {
     router.push("/clients");
