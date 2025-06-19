@@ -214,14 +214,14 @@ const Certificates = () => {
         </Typography>
       )
     },
-    {
-      field: "surveyType",
-      headerName: "Survey Type",
-      flex: 1,
-      renderCell: (params) => (
-        <Typography>{params.value?.replace('_', ' ') || 'N/A'}</Typography>
-      )
-    },
+    // {
+    //   field: "surveyType",
+    //   headerName: "Survey Type",
+    //   flex: 1,
+    //   renderCell: (params) => (
+    //     <Typography>{params.value?.replace('_', ' ') || 'N/A'}</Typography>
+    //   )
+    // },
     {
       field: "surveyDate",
       headerName: "Survey Date",

@@ -2,13 +2,16 @@
 import React, { useState, useEffect } from "react";
 import {
   Dialog, DialogContent, DialogActions, TextField, Box, Typography, IconButton,
-  Grid, Divider, Button, Accordion, AccordionSummary, AccordionDetails,
-  Grid2
+  Grid2, Divider, Button, Accordion, AccordionSummary, AccordionDetails
 } from "@mui/material";
 import {
   Close as CloseIcon, ExpandMore as ExpandMoreIcon,
   CheckCircle as CheckIcon, Waves as WavesIcon
 } from "@mui/icons-material";
+
+// 🔠 Strikethrough Utility
+const applyStrikethrough = (text) =>
+  text.split("").map((c) => c + "\u0336").join("");
 
 const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
   const [formValues, setFormValues] = useState({});
@@ -33,20 +36,39 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
     setFormValues(prev => ({ ...prev, [fieldName]: value }));
   };
 
+ 
+  const applyStrikethrough = (text) =>
+    text.split("").map(c => c + "\u0336").join("");
+  
   const handleSubmit = () => {
     const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
-      if (typeof value === "boolean") {
-        acc[key] = value === true ? "\u2611" : "\u2610";
+      if (key.startsWith("_st_")) {
+        const [, raw] = key.split("_st_");
+        const [opt1Raw, opt2Raw] = raw.split("_");
+        const opt1 = opt1Raw.replace(/-/g, " ");
+        const opt2 = opt2Raw.replace(/-/g, " ");
+  
+        if (!value) {
+          acc[key] = `{{${key}}}`;
+        } else {
+          const finalLine =
+            value === opt1
+              ? `${opt1} / ${applyStrikethrough(opt2)}`
+              : `${applyStrikethrough(opt1)} / ${opt2}`;
+  
+          acc[key] = finalLine;
+        }
+      } else if (typeof value === "boolean") {
+        acc[key] = value ? "☑" : "☐";
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       }
+  
       return acc;
     }, {});
+  
     onSubmit(filledValues);
   };
-
-  const formatLabel = (attribute) =>
-    attribute.replace(/^_/, "").replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
 
   const categorizeFields = (fields) => {
     const categories = {
@@ -55,7 +77,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
       allowance: [],
       others: []
     };
-  
+
     fields.forEach(field => {
       const attr = field.attribute.toLowerCase();
       if (/_tropical_|_summer_|_winter_|_wna/.test(attr)) {
@@ -68,7 +90,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
         categories.others.push(field);
       }
     });
-  
+
     return categories;
   };
 
@@ -80,32 +102,74 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
         const attr = field.attribute;
         const isDate = attr.includes("date");
         const isCheckbox = attr.startsWith("_checkbox");
-        return (
-          <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={field.attribute}>
-            {isCheckbox ? (
+        const isStrikethroughRadio = attr.startsWith("_st_");
+
+        if (isCheckbox) {
+          return (
+            <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={attr}>
               <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
                 <input
                   type="checkbox"
-                  checked={!!formValues[field.attribute]}
-                  onChange={(e) => handleInputChange(field.attribute, e.target.checked)}
+                  checked={!!formValues[attr]}
+                  onChange={(e) => handleInputChange(attr, e.target.checked)}
                 />
                 <Typography variant="body2" sx={{ ml: 1 }}>
                   {field.label}
                 </Typography>
               </Box>
-            ) : (
-              <TextField
-                fullWidth
-                size="small"
-                label={field.label}
-                value={formValues[field.attribute] || ""}
-                onChange={(e) => handleInputChange(field.attribute, e.target.value)}
-                type={isDate ? "date" : "text"}
-                InputLabelProps={isDate ? { shrink: true } : undefined}
-              />
-            )}
+            </Grid2>
+          );
+        }
+
+        if (isStrikethroughRadio) {
+          const [, rawOptions] = attr.split("_st_");
+          const [option1, option2] = rawOptions.split("_");
+          const label1 = option1.replace(/-/g, " ");
+          const label2 = option2.replace(/-/g, " ");
+          const value = formValues[attr] || "";
+
+          return (
+            <Grid2 size={{ xs: 12, sm: 12, md: 6 }} key={attr}>
+              <Typography variant="body2" sx={{ mb: 1 }}>{field.label}</Typography>
+              <Box display="flex" flexDirection="column" gap={1}>
+                <label>
+                  <input
+                    type="radio"
+                    name={attr}
+                    value={label1}
+                    checked={value === label1}
+                    onChange={() => handleInputChange(attr, label1)}
+                  />{label1}
+                  
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name={attr}
+                    value={label2}
+                    checked={value === label2}
+                    onChange={() => handleInputChange(attr, label2)}
+                  />{" "}
+                  {label2}
+                </label>
+              </Box>
+            </Grid2>
+          );
+        }
+
+        return (
+          <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={attr}>
+            <TextField
+              fullWidth
+              size="small"
+              label={field.label}
+              value={formValues[attr] || ""}
+              onChange={(e) => handleInputChange(attr, e.target.value)}
+              type={isDate ? "date" : "text"}
+              InputLabelProps={isDate ? { shrink: true } : undefined}
+            />
           </Grid2>
-        )
+        );
       })}
     </Grid2>
   );
@@ -122,7 +186,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
           <Typography variant="h6">
             {title}
             <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
-              ({fieldList.filter(f => formValues[f.attribute]?.trim()).length}/{fieldList.length})
+              ({fieldList.filter(f => formValues[f.attribute]?.toString().trim()).length}/{fieldList.length})
             </Typography>
           </Typography>
         </AccordionSummary>
