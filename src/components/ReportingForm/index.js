@@ -415,8 +415,13 @@ const ReportingForm = () => {
   const validReports = [
     "CARGO SHIP SAFETY CONSTRUCTION CERTIFICATE",
     "INTERNATIONAL SEWAGE POLLUTION PREVENTION CERTIFICATE",
-    "INTERNATIONAL BALLAST WATER MANAGEMENT CERTIFICATE"
-  ];
+    "INTERNATIONAL BALLAST WATER MANAGEMENT CERTIFICATE",
+    "CERTIFICATE OF CLASS",
+    "CARGO SHIP SAFETY EQUIPMENT CERTIFICATE",
+    "CARGO SHIP SAFETY RADIO CERTIFICATE",
+    "INTERNATIONAL ENERGY EFFICIENCY CERTIFICATE",
+    "INTERNATIONAL AIR POLLUTION PREVENTION CERTIFICATE"
+];
 
   const {
     control,
@@ -583,13 +588,13 @@ const ReportingForm = () => {
 
   const handleFullReportGeneration = async () => {
     try {
-      if (underscoreFields.length > 0 && reportDetails?.data?.length < 0) {
+      if (underscoreFields.length > 0) {
         setOpen(true);
       } else {
         setLoadingReport(true);
         const result = await generateFullReport({
           reportDetailId: reportDetails?.id,
-          data: { ...reportDetails.data, endorsementValues }
+          // data: { ...reportDetails.data, endorsementValues }
 
         });
 
@@ -724,7 +729,7 @@ const ReportingForm = () => {
 
       if (endorsements?.length > 0) {
         setEndorsementTitle(endorsements);
-        setOpenEndrosemet(true);
+        // setOpenEndrosemet(true);
       }
       const data = extractUnderscoreFields(row);
       setUnderscoreFields(data)
@@ -1503,7 +1508,7 @@ const ReportingForm = () => {
           fields={underscoreFields}
         />
       }
-      {reportDetails?.typeOfCertificate === "full_term" &&
+      {/* {reportDetails?.typeOfCertificate === "full_term" &&
         openEndrosemet &&
         !!reportDetails?.endorsementDate && (
           <EndorsementDialog
@@ -1513,7 +1518,7 @@ const ReportingForm = () => {
             endorsementList={endorsementTitle}
             reportDetailsId={reportDetails?.id}
           />
-        )}
+        )} */}
       {loadingReport && (
         <Box
           position="fixed"
