@@ -631,6 +631,15 @@ export const updateActivityDetails = async (id, payload) => {
   return result;
 };
 
+export const getSelectedReportDetails = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/reportDetails/${id}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
 
 export const getAllActivityReportDetails = async (filterKey, filterValue) => {
   let result;

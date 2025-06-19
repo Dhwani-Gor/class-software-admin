@@ -541,13 +541,10 @@ const ReportingForm = () => {
       surveyDate: values.surveydate ? formatDate(values.surveydate) : null,
       issuedBy: Number(values.issuedBy) || null,
       place: values.place || null,
-      ...(selectCertificate === "full_term" || selectCertificate === "extended"
-        ? {
-          endorsementDate: values.endorsementdate
-            ? formatDate(values.endorsementdate)
-            : null,
-        }
-        : {}),
+      ...(selectCertificate === "full_term" || selectCertificate === "extended") &&
+      values.endorsementdate
+        ? { endorsementDate: formatDate(values.endorsementdate) }
+        : {}, 
       ...(selectCertificate === "extended"
         ? {
           newValidityDate: values.newValidityDate
