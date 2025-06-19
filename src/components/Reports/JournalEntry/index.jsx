@@ -99,6 +99,7 @@ const JournalEntryForm = ({ journalId = null }) => {
   const [isJournalLocked, setIsJournalLocked] = useState(false);
   const [surveyTypes, setSurveyTypes] = useState([]);
   const [surveyors, setSurveyors] = useState([]);
+  const [selectedJournalType, setSelectedJournalType] = useState(null);
 
   const {
     control,
@@ -703,6 +704,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                           onChange={(e) => {
                             if (isJournalLocked) return;
                             field.onChange(e.target.value);
+                            setSelectedJournalType(e.target.value);
                           }}
                         >
                           {journalTypeOptions.map((type) => (
@@ -993,6 +995,7 @@ const JournalEntryForm = ({ journalId = null }) => {
         onClose={handleCloseActivityModal}
         onSave={handleSaveActivity}
         defaultValues={editActivity}
+        journalType={selectedJournalType}
       />
     </Box>
   );
