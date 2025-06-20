@@ -198,6 +198,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
         formData.append("type", formValues.type);
         formData.append("abbreviation", formValues.abbreviation);
 
+        // Add all document types that have files
         if (formValues.fullTermDocument instanceof File) {
           formData.append("fullTermDocument", formValues.fullTermDocument);
         }
@@ -208,46 +209,15 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           formData.append("interimDocument", formValues.interimDocument);
         }
 
-        // if (additionalFields?.length > 0) {
-        //   const validFields = additionalFields.filter(
-        //     (field) => field.attribute.trim() && field.label.trim()
-        //   );
-        //   if (validFields.length > 0) {
-        //     formData.append("fields", JSON.stringify(validFields));
-        //   }
-        // }
-
-        // Add endorsements
-        // if (endorsements?.length > 0) {
-        //   const validEndorsements = endorsements.filter(
-        //     (endorsement) => endorsement.title?.trim() || endorsement.endorsedby_1?.trim() || 
-        //                     endorsement.endorsed_place?.trim() || endorsement.issuance_date?.trim()
-        //   );
-        //   if (validEndorsements.length > 0) {
-        //     formData.append("endorsements", JSON.stringify(validEndorsements));
-        //   }
-        // }
-        const validFields = additionalFields?.filter(
-          (field) => field.attribute?.trim() && field.label?.trim()
-        ) || [];
-
-        const validEndorsements = endorsements?.filter(
-          (endorsement) =>
-            endorsement.title?.trim() ||
-            endorsement.endorsedby_1?.trim() ||
-            endorsement.endorsed_place?.trim() ||
-            endorsement.issuance_date?.trim() ||
-            endorsement.validity_date?.trim()
-        ) || [];
-
-        // Combine into single fields array
-        const combinedFields = [...validFields];
-
-        if (validEndorsements.length > 0) {
-          combinedFields.push({ endorsements: validEndorsements });
+        if (additionalFields?.length > 0) {
+          const validFields = additionalFields.filter(
+            (field) => field.attribute.trim() && field.label.trim()
+          );
+          if (validFields.length > 0) {
+            formData.append("fields", JSON.stringify(validFields));
+          }
         }
 
-        formData.append("fields", JSON.stringify(combinedFields));
         response = await createDocument(formData);
       } else {
         const hasFiles =
@@ -273,7 +243,15 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
 
           if (editReason) formData.append("reason", editReason);
 
-          
+          if (additionalFields?.length > 0) {
+            const validFields = additionalFields.filter(
+              (field) => field.attribute.trim() && field.label.trim()
+            );
+            if (validFields.length > 0) {
+              formData.append("fields", JSON.stringify(validFields));
+            }
+          }
+
           response = await updateDocument(documentId, formData);
         } else {
           const payload = {
@@ -283,6 +261,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
             ...(editReason && { reason: editReason }),
           };
 
+          // Add existing document paths if they exist
           if (formValues.fullTermDocument && typeof formValues.fullTermDocument === 'string') {
             payload.fullTermDocument = formValues.fullTermDocument;
           }
@@ -293,49 +272,20 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
             payload.interimDocument = formValues.interimDocument;
           }
 
-          // if (additionalFields?.length > 0) {
-          //   const validFields = additionalFields.filter(
-          //     (field) => field.attribute.trim() && field.label.trim()
-          //   );
-          //   if (validFields.length > 0) {
-          //     payload.fields = JSON.stringify(validFields);
-          //   }
-          // }
-
-          // // Add endorsements to payload
-          // if (endorsements?.length > 0) {
-          //   const validEndorsements = endorsements.filter(
-          //     (endorsement) => endorsement.title?.trim() || endorsement.endorsedby?.trim() ||
-          //       endorsement.endorsed_place?.trim() || endorsement.issuance_date?.trim() || endorsement.validity_date?.trim()
-          //   );
-          //   if (validEndorsements.length > 0) {
-          //     payload.endorsements = JSON.stringify(validEndorsements);
-          //   }
-          // }
-          const validFields = additionalFields?.filter(
-            (field) => field.attribute?.trim() && field.label?.trim()
-          ) || [];
-          
-          const validEndorsements = endorsements?.filter(
-            (endorsement) =>
-              endorsement.title?.trim() ||
-              endorsement.endorsedby_1?.trim() ||
-              endorsement.endorsed_place?.trim() ||
-              endorsement.issuance_date?.trim() ||
-              endorsement.validity_date?.trim()
-          ) || [];
-          
-          // Build a single fields array
-          const combinedFields = [...validFields];
-          if (validEndorsements.length > 0) {
-            combinedFields.push({ endorsements: validEndorsements });
+          if (additionalFields?.length > 0) {
+            const validFields = additionalFields.filter(
+              (field) => field.attribute.trim() && field.label.trim()
+            );
+            if (validFields.length > 0) {
+              payload.fields = JSON.stringify(validFields);
+            }
           }
-          
-          payload.fields = JSON.stringify(combinedFields);
+
           response = await updateDocument(documentId, payload);
         }
       }
 
+      // ✅ Common success handling
       if (response?.status === 200 || response?.status === 201) {
         toast.success(
           mode === "duplicate"
@@ -633,6 +583,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                     </IconButton>
                   </Box>
                 ))}
+
 
               <CommonButton
                 text="Add Attribute"
