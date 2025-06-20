@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   Dialog, DialogContent, DialogActions,
   Button, TextField, Grid2, Box, Typography, IconButton,
-  Fade, Slide, Divider, InputAdornment
+  Fade, Slide, Divider
 } from "@mui/material";
 import {
   Close as CloseIcon,
@@ -14,42 +14,37 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
+const strikeText = (text) => text.split('').map(c => c + '\u0336').join('');
+
 export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
   const [formData, setFormData] = useState({});
-  const [focusedField, setFocusedField] = useState(null);
-  console.log(fields,"fields")
 
   const handleInputChange = (fieldName, value) => {
     setFormData(prev => ({ ...prev, [fieldName]: value }));
   };
 
-  const handleChange = (key) => (e) => {
-    const value = e.target.value;
-    if (typeof value === "boolean") {
-      setFormData((prev) => ({
-        ...prev,
-        [key]: value === true ? "\u2611" : "\u2610",
-      }));
-    } else if (typeof value === "string" && value.trim()) {
-      setFormData((prev) => ({
-        ...prev,
-        [key]: value,
-      }));
-    }
-  };
-
   const handleSubmit = () => {
     const filledValues = Object.entries(formData).reduce((acc, [key, value]) => {
-    if (typeof value === "boolean") {
-      acc[key] = value === true ? "\u2611" : "\u2610";
-  } else if (typeof value === "string" && value.trim()) {
-    acc[key] = value;
-  }
-  return acc;
-}, {});
-   onSubmit(filledValues);
-   onClose();
-   setFormData({}); 
+      if (key.startsWith('_st_')) {
+        const parts = key.replace('_st_', '').split('_');
+        const [option1, option2] = parts;
+        if (value === option1) {
+          acc[key] = `${option1} / ${strikeText(option2)}`;
+        } else if (value === option2) {
+          acc[key] = `${strikeText(option1)} / ${option2}`;
+        } else {
+          acc[key] = `{{${key}}}`;
+        }
+      } else if (typeof value === "boolean") {
+        acc[key] = value === true ? "\u2611" : "\u2610";
+      } else if (typeof value === "string" && value.trim()) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+    onSubmit(filledValues);
+    onClose();
+    setFormData({});
   };
 
   useEffect(() => {
@@ -62,22 +57,9 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
     }
   }, [fields, open]);
 
-  const handleSave = () => {
-    onSubmit(formData);
-    onClose();
-    setFormData({});
-  };
-
   const handleClose = () => {
     onClose();
     setFormData({});
-  };
-
-  const getFieldIcon = (field) => {
-    const fieldLower = field?.toLowerCase();
-    if (fieldLower.includes('report') || fieldLower.includes('title')) {
-      return <ReportIcon sx={{ color: 'primary.main' }} />;
-    }
   };
 
   return (
@@ -97,140 +79,116 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
         }
       }}
     >
-      {/* Custom Header with Gradient Background */}
-      <Box
-        sx={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          p: 3,
-          position: 'relative'
-        }}
-      >
+      <Box sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', p: 3, position: 'relative' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box
-              sx={{
-                width: 48,
-                height: 48,
-                borderRadius: '12px',
-                background: 'rgba(255,255,255,0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backdropFilter: 'blur(10px)'
-              }}
-            >
+            <Box sx={{ width: 48, height: 48, borderRadius: '12px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }}>
               <ReportIcon sx={{ fontSize: 24, color: 'white' }} />
             </Box>
             <Box>
-              <Typography variant="h5" fontWeight={700} sx={{ mb: 0.5 }}>
-                Report Details
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                Provide additional information to generate your report
-              </Typography>
+              <Typography variant="h5" fontWeight={700} sx={{ mb: 0.5 }}>Report Details</Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>Provide additional information to generate your report</Typography>
             </Box>
           </Box>
-          <IconButton
-            onClick={handleClose}
-            sx={{
-              color: 'white',
-              background: 'rgba(255,255,255,0.1)',
-              '&:hover': {
-                background: 'rgba(255,255,255,0.2)',
-                transform: 'scale(1.05)'
-              },
-              transition: 'all 0.2s ease'
-            }}
-          >
+          <IconButton onClick={handleClose} sx={{ color: 'white', background: 'rgba(255,255,255,0.1)', '&:hover': { background: 'rgba(255,255,255,0.2)', transform: 'scale(1.05)' }, transition: 'all 0.2s ease' }}>
             <CloseIcon />
           </IconButton>
         </Box>
       </Box>
 
-      {/* Content Area */}
-      <DialogContent
-        sx={{
-          p: 4,
-          background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
-          minHeight: '300px',
-        }}
-      >
-
+      <DialogContent sx={{ p: 4, background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)', minHeight: '300px' }}>
         <Fade in={open} timeout={600}>
           <Grid2 container spacing={2}>
             {fields.map((field, index) => {
               const attr = field.attribute;
               const isCheckbox = attr.startsWith("_checkbox");
               const isDate = attr.includes("date");
+              const isTextArea = attr.startsWith("_tx_");
+              const isRadioWithStrike = attr.startsWith("_st_");
+
               return (
-              <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={field.attribute}>
-                <Fade in={open} timeout={800 + (index * 100)}>
-                  <Box>
-                    {isCheckbox ? (
-                      <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
-                        <input
-                          type="checkbox"
-                          checked={!!formData[field.attribute]}
-                          onChange={(e) => handleInputChange(field.attribute, e.target.checked)}
+                <Grid2 size={{ xs: 12, sm: 12, md: 6 }} key={attr}>
+                  <Fade in={open} timeout={800 + (index * 100)}>
+                    <Box>
+                      {isCheckbox ? (
+                        <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
+                          <input
+                            type="checkbox"
+                            checked={!!formData[attr]}
+                            onChange={(e) => handleInputChange(attr, e.target.checked)}
                           />
-                        <Typography variant="body2" sx={{ ml: 1 }}>
-                          {field.label}
-                        </Typography>
+                          <Typography variant="body2" sx={{ ml: 1 }}>{field.label}</Typography>
+                        </Box>
+                      ) : isTextArea ? (
+                        <Grid2 size={{ xs: 12 }} key={attr}>
+                          <Typography variant="body2" sx={{ mb: 1 }}>
+                            {field.label || formatLabel(attr)}
+                          </Typography>
+                          <TextareaAutosize
+                            style={{ width: '100%' }}
+                            minRows={4}
+                            multiline
+                            label={field.label || formatLabel(attr)}
+                            value={formValues[attr] || ""}
+                            onChange={(e) => handleInputChange(attr, e.target.value)}
+                            placeholder={formatLabel(attr).toLowerCase()}
+                          />
+                        </Grid2>
+                      ) : isRadioWithStrike ? (
+                        (() => {
+                          const [label1, label2] = attr.replace('_st_', '').split('_');
+                      const selected = formData[attr];
+                      return (
+                      <Box display="flex" flexDirection="column" gap={1}>
+                        <label>
+                          <input
+                            type="radio"
+                            name={attr}
+                            value={label1}
+                            checked={selected === label1}
+                            onChange={() => handleInputChange(attr, label1)}
+                          /> {label1}
+                        </label>
+                        <label>
+                          <input
+                            type="radio"
+                            name={attr}
+                            value={label2}
+                            checked={selected === label2}
+                            onChange={() => handleInputChange(attr, label2)}
+                          /> {label2}
+                        </label>
                       </Box>
-                    ) : (
+                      );
+                        })()
+                      ) : (
                       <TextField
-                      fullWidth
-                      label={field.label}
-                      variant="outlined"
-                      value={formData[field.attribute] || ""}
-                      onChange={(e) => handleInputChange(field.attribute, e.target.value)}
-                      onFocus={() => setFocusedField(field)}
-                      onBlur={() => setFocusedField(null)}
-                      placeholder={field.label}
-                      type={isDate ? "date" : "text"}
-                      InputLabelProps={isDate ? { shrink: true } : undefined}
-                    />
-                  )}
-                </Box>
-                </Fade>
-              </Grid2>
-            )})}
+                        fullWidth
+                        label={field.label}
+                        variant="outlined"
+                        value={formData[attr] || ""}
+                        onChange={(e) => handleInputChange(attr, e.target.value)}
+                        type={isDate ? "date" : "text"}
+                        InputLabelProps={isDate ? { shrink: true } : undefined}
+                      />
+                      )}
+                    </Box>
+                  </Fade>
+                </Grid2>
+              );
+            })}
           </Grid2>
         </Fade>
       </DialogContent>
 
       <Divider sx={{ borderColor: 'rgba(102, 126, 234, 0.1)' }} />
 
-      {/* Enhanced Action Buttons */}
-      <DialogActions
-        sx={{
-          p: 3,
-          background: 'white',
-          gap: 2,
-          justifyContent: 'flex-end'
-        }}
-      >
+      <DialogActions sx={{ p: 3, background: 'white', gap: 2, justifyContent: 'flex-end' }}>
         <Button
           onClick={handleClose}
           variant="outlined"
           size="large"
-          sx={{
-            borderRadius: 2,
-            px: 3,
-            py: 1.5,
-            textTransform: 'none',
-            fontWeight: 600,
-            borderColor: 'rgba(102, 126, 234, 0.3)',
-            color: 'text.secondary',
-            '&:hover': {
-              borderColor: 'primary.main',
-              background: 'rgba(102, 126, 234, 0.04)',
-              transform: 'translateY(-1px)',
-              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
-            },
-            transition: 'all 0.2s ease'
-          }}
+          sx={{ borderRadius: 2, px: 3, py: 1.5, textTransform: 'none', fontWeight: 600, borderColor: 'rgba(102, 126, 234, 0.3)', color: 'text.secondary', '&:hover': { borderColor: 'primary.main', background: 'rgba(102, 126, 234, 0.04)', transform: 'translateY(-1px)', boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)' }, transition: 'all 0.2s ease' }}
         >
           Cancel
         </Button>
@@ -239,21 +197,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
           variant="contained"
           size="large"
           startIcon={<CheckIcon />}
-          sx={{
-            borderRadius: 2,
-            px: 4,
-            py: 1.5,
-            textTransform: 'none',
-            fontWeight: 600,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
-              transform: 'translateY(-2px)',
-              boxShadow: '0 8px 25px rgba(102, 126, 234, 0.6)'
-            },
-            transition: 'all 0.2s ease'
-          }}
+          sx={{ borderRadius: 2, px: 4, py: 1.5, textTransform: 'none', fontWeight: 600, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)', '&:hover': { background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)', transform: 'translateY(-2px)', boxShadow: '0 8px 25px rgba(102, 126, 234, 0.6)' }, transition: 'all 0.2s ease' }}
         >
           Generate Report
         </Button>

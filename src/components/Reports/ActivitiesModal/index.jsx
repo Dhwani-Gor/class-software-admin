@@ -17,8 +17,12 @@ import CommonButton from "@/components/CommonButton";
 
 // Validation Schema
 const activitySchema = yup.object().shape({
-  typeOfSurvey: yup.string().required("Required"),
+  typeOfSurvey: yup
+    .array()
+    .of(yup.string())
+    .min(1, "At least one survey type is required"),
 });
+
 
 const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes }) => {
   const [surveyInputValue, setSurveyInputValue] = useState("");
@@ -32,42 +36,44 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes }) 
     reset,
   } = useForm({
     resolver: yupResolver(activitySchema),
-    defaultValues: { typeOfSurvey: "" },
+    defaultValues: { typeOfSurvey: [] },
   });
 
   useEffect(() => {
-    reset(defaultValues || { typeOfSurvey: "" });
-
+    reset(defaultValues || { typeOfSurvey: [] });
+  
     if (defaultValues?.surveyTypes && surveyTypes?.length) {
-      const surveyOption = surveyTypes.find(
-        (option) => option.id === defaultValues.surveyTypes.id
-      );
-
-      if (surveyOption) {
-        setSurveyInputValue(surveyOption.name);
-        
-        setValue("typeOfSurvey", surveyOption.id);
-      }
+      const surveyTypeList = Array.isArray(defaultValues.surveyTypes)
+        ? defaultValues.surveyTypes
+        : [defaultValues.surveyTypes]; // wrap single object as array
+    
+        const ids = surveyTypeList.map((s) => Number(s.id));
+        setValue("typeOfSurvey", ids);
+        setSurveyInputValue("");
     }
   }, [defaultValues, reset, surveyTypes, setValue]);
 
-
   const onSubmit = (data) => {
-    onSave(data);
+    onSave({
+      ...data,
+      typeOfSurvey: JSON.stringify(data.typeOfSurvey),
+    });
     reset();
     onClose();
   };
+  
 
   // Transform surveyTypes for Autocomplete
   const surveyOptions = surveyTypes?.map(survey => ({
     label: survey.name,
-    value: survey.id,
+    value: Number(survey.id),
   })) || [];
 
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>
         {defaultValues ? "Edit Activity" : "Add Activity"}
+
       </DialogTitle>
       <DialogContent sx={{ minWidth: "50vw" }}>
         <Grid2 container spacing={2} sx={{ mt: 1 }}>
@@ -77,30 +83,11 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes }) 
               control={control}
               render={({ field }) => (
                 <Autocomplete
-                  id="type-of-survey-autocomplete"
+                  multiple
                   options={surveyOptions}
-                  inputValue={surveyInputValue}
-                  value={surveyOptions.find(option => option.value === field.value) || null}
-                  onInputChange={(event, newInputValue) => {
-                    setSurveyInputValue(newInputValue);
-
-                    // Directly update the form value when typing
-                    if (newInputValue) {
-                      setIsSearching(true);
-                    } else {
-                      setIsSearching(false);
-                    }
-                  }}
+                  value={surveyOptions.filter(option => field.value.includes(option.value))}
                   onChange={(event, newValue) => {
-                    setIsSearching(false);
-                    if (typeof newValue === "string") {
-                      field.onChange(newValue);
-                    } else if (newValue && newValue.value) {
-                      field.onChange(newValue.value);
-                    } else if (newValue === null) {
-                      // Handle clearing the field
-                      field.onChange("");
-                    }
+                    field.onChange(newValue.map(v => v.value));
                   }}
                   getOptionLabel={(option) => {
                     if (typeof option === "string") return option;
@@ -112,22 +99,12 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes }) 
                       label="Type of Survey"
                       error={!!errors.typeOfSurvey}
                       helperText={errors.typeOfSurvey?.message}
-                      InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                          <React.Fragment>
-                            {isSearching ? (
-                              <CircularProgress color="inherit" size={20} />
-                            ) : null}
-                            {params.InputProps.endAdornment}
-                          </React.Fragment>
-                        ),
-                      }}
                     />
                   )}
                 />
               )}
             />
+
           </Grid2>
 
         </Grid2>

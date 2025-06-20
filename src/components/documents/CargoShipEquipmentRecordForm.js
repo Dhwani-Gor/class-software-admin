@@ -1,8 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import {
-  Dialog,DialogContent, DialogActions,
+  Dialog, DialogContent, DialogActions,
   TextField, Box, Typography, IconButton, Grid2, Divider, Button, Accordion, AccordionSummary, AccordionDetails,
+  TextareaAutosize,
 } from "@mui/material";
 import {
   Close as CloseIcon, ExpandMore as ExpandMoreIcon,
@@ -32,10 +33,25 @@ const CSSForm = ({ open, onClose, onSubmit, fields }) => {
     setFormValues(prev => ({ ...prev, [fieldName]: value }));
   };
 
+  const strikeThrough = (text) => text.split("").map(char => char + "̶").join("");
+
   const handleSubmit = () => {
     const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
       if (typeof value === "boolean") {
-        acc[key] = value === true ? "\u2611" : "\u2610";
+        acc[key] = value === true ? "☑" : "☐";
+      } else if (key.startsWith("_st_")) {
+        const [, raw] = key.split("_st_");
+        const [opt1Raw, opt2Raw] = raw.split("_");
+        const opt1 = opt1Raw.replace(/-/g, " ");
+        const opt2 = opt2Raw.replace(/-/g, " ");
+
+        if (value === opt1) {
+          acc[key] = `${opt1} / ${strikeThrough(opt2)}`;
+        } else if (value === opt2) {
+          acc[key] = `${strikeThrough(opt1)} / ${opt2}`;
+        } else {
+          acc[key] = `{{${key}}}`;
+        }
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       }
@@ -51,52 +67,119 @@ const CSSForm = ({ open, onClose, onSubmit, fields }) => {
     const categories = {
       lifeSaving: [],
       navigation: [],
+      uncategorized: [], // <-- add uncategorized fallback
     };
+  
     fields.forEach((field) => {
-      if (field.attribute.startsWith("_CSS_nav_")) {
+      const attr = field.attribute;
+      if (attr.startsWith("_CSS_nav_")) {
         categories.navigation.push(field);
-      } else if (field.attribute.startsWith("_CSS_")) {
+      } else if (attr.startsWith("_CSS_")) {
         categories.lifeSaving.push(field);
+      } else {
+        categories.uncategorized.push(field); // catch remaining ones
       }
     });
+  
     return categories;
   };
+  
 
-  const { lifeSaving, navigation } = categorizeFields(fields);
+  const { lifeSaving, navigation, uncategorized } = categorizeFields(fields);
 
   const renderFields = (fieldList) => (
     <Grid2 container spacing={2}>
-      {fieldList.map(field => {
+      {fieldList?.map(field => {
         const attr = field.attribute;
         const isCheckbox = attr.startsWith("_checkbox");
         const isDate = attr.includes("date");
-        return (
-          <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={attr}>
-            {isCheckbox ? (
+        const isStrikethroughRadio = attr.startsWith("_st_");
+        const isTextarea = attr.startsWith("_ta_");
+
+        if (isCheckbox) {
+          return (
+            <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={attr}>
               <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
                 <input
                   type="checkbox"
-                  checked={!!formValues[field.attribute]}
-                  onChange={(e) => handleInputChange(field.attribute, e.target.checked)}
+                  checked={!!formValues[attr]}
+                  onChange={(e) => handleInputChange(attr, e.target.checked)}
                 />
                 <Typography variant="body2" sx={{ ml: 1 }}>
                   {field.label}
                 </Typography>
               </Box>
-            ) : (
-              <TextField
-                fullWidth
-                size="small"
+            </Grid2>
+          );
+        }
+
+        if (isStrikethroughRadio) {
+          const [, raw] = attr.split("_st_");
+          const [opt1Raw, opt2Raw] = raw.split("_");
+          const label1 = opt1Raw.replace(/-/g, " ");
+          const label2 = opt2Raw.replace(/-/g, " ");
+          const value = formValues[attr];
+
+          return (
+            <Grid2 size={{ xs: 12, sm: 12, md: 6 }} key={attr}>
+              <Typography variant="body2" sx={{ mb: 1 }}>{field.label || formatLabel(attr)}</Typography>
+              <Box display="flex" alignItems="center" gap={2}>
+                <label>
+                  <input
+                    type="radio"
+                    name={attr}
+                    value={label1}
+                    checked={value === label1}
+                    onChange={() => handleInputChange(attr, label1)}
+                  /> {label1}
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name={attr}
+                    value={label2}
+                    checked={value === label2}
+                    onChange={() => handleInputChange(attr, label2)}
+                  /> {label2}
+                </label>
+              </Box>
+            </Grid2>
+          );
+        }
+
+        if (isTextarea) {
+          return (
+            <Grid2 size={{ xs: 12 }} key={attr}>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                {field.label || formatLabel(attr)}
+              </Typography>
+              <TextareaAutosize
+                style={{ width: '100%' }}
+                minRows={4}
+                multiline
                 label={field.label || formatLabel(attr)}
-                value={formValues[field.attribute] || ""}
-                onChange={(e) => handleInputChange(field.attribute, e.target.value)}
-                placeholder={`Enter ${field.label.toLowerCase()}`}
-                type={isDate ? "date" : "text"}
-                InputLabelProps={isDate ? { shrink: true } : undefined}
+                value={formValues[attr] || ""}
+                onChange={(e) => handleInputChange(attr, e.target.value)}
+                placeholder={formatLabel(attr).toLowerCase()}
               />
-            )}
-          </Grid2>
-        )
+            </Grid2>
+          );
+        }
+
+      return (
+      <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={attr}>
+        <TextField
+          fullWidth
+          size="small"
+          label={field.label || formatLabel(attr)}
+          value={formValues[attr] || ""}
+          onChange={(e) => handleInputChange(attr, e.target.value)}
+          placeholder={`Enter ${field.label.toLowerCase()}`}
+          type={isDate ? "date" : "text"}
+          InputLabelProps={isDate ? { shrink: true } : undefined}
+        />
+      </Grid2>
+      );
       })}
     </Grid2>
   );
@@ -144,6 +227,8 @@ const CSSForm = ({ open, onClose, onSubmit, fields }) => {
       <DialogContent dividers sx={{ p: 3 }}>
         {renderCategoryAccordion("Life-Saving Appliances", "lifeSaving", lifeSaving)}
         {renderCategoryAccordion("Navigational Systems", "navigation", navigation)}
+        {renderCategoryAccordion("Other Fields", "uncategorized", uncategorized)}
+
       </DialogContent>
 
       <Divider />
