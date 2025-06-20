@@ -277,6 +277,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                                     fullWidth
                                     size="small"
                                     label={field.label}
+                                    title={field.label}
                                     value={value || ""}
                                     onChange={(e) => handleInputChange(attr, e.target.value)}
                                     placeholder={field.label}

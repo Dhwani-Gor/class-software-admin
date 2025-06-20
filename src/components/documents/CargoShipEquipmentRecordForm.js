@@ -171,6 +171,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields }) => {
         <TextField
           fullWidth
           size="small"
+          title={field.label || formatLabel(attr)}
           label={field.label || formatLabel(attr)}
           value={formValues[attr] || ""}
           onChange={(e) => handleInputChange(attr, e.target.value)}

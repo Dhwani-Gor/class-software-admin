@@ -96,105 +96,125 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
 
   const { systemInfo, facilityInfo, sealerInfo } = categorizeFields(cleanFields);
 
-  const renderFields = (fieldList) => (
-    <Grid2 container spacing={2}>
-      {fieldList.map(field => {
-        const attr = field.attribute;
-        const isCheckbox = attr.startsWith("_checkbox");
-        const isDate = attr.includes("date");
-        const isStrikethroughRadio = attr.startsWith("_st_");
-        const isTextarea = attr.startsWith("_ta_");
-
-        if (isCheckbox) {
-          return (
-            <Grid2 size={{ xs: 12, sm: 6, md: 3 }} key={attr}>
-              <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
-                <input
-                  type="checkbox"
-                  checked={!!formValues[attr]}
-                  onChange={(e) => handleInputChange(attr, e.target.checked)}
-                />
-                <Typography sx={{ ml: 1 }}>{field.label || formatLabel(attr)}</Typography>
-              </Box>
-            </Grid2>
-          );
-        }
-
-        if (isStrikethroughRadio) {
-          const [, raw] = attr.split("_st_");
-          const [opt1Raw, opt2Raw] = raw.split("_");
-          const label1 = opt1Raw.replace(/-/g, " ");
-          const label2 = opt2Raw.replace(/-/g, " ");
-          const value = formValues[attr];
-
-          return (
-            <Grid2 size={{ xs: 12, sm: 6, md: 6 }} key={attr}>
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                {field.label || formatLabel(attr)}
-              </Typography>
-              <Box display="flex" alignItems="center" gap={2}>
-                <label>
-                  <input
-                    type="radio"
-                    name={attr}
-                    value={label1}
-                    checked={value === label1}
-                    onChange={() => handleInputChange(attr, label1)}
-                  />{" "}
-                  {label1}
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name={attr}
-                    value={label2}
-                    checked={value === label2}
-                    onChange={() => handleInputChange(attr, label2)}
-                  />{" "}
-                  {label2}
-                </label>
-              </Box>
-            </Grid2>
-          );
-        }
-
-        if (isTextarea) {
-          return (
-            <Grid2 size={{ xs: 12 }} key={attr}>
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                {field.label || formatLabel(attr)}
-              </Typography>
-                <TextareaAutosize
-                  style={{ width: '100%' }}
-                  minRows={4}
-                  multiline
+  const renderFields = (fieldList) => {
+    const checkboxes = [];
+    const others = [];
+  
+    fieldList.forEach(field => {
+      const attr = field.attribute;
+      const isCheckbox = attr.startsWith("_checkbox");
+      if (isCheckbox) checkboxes.push(field);
+      else others.push(field);
+    });
+  
+    return (
+      <>
+        {/* Group all checkboxes in one row */}
+        {checkboxes.length > 0 && (
+          <Grid2 container spacing={2} sx={{ mb: 5 }}>
+            {checkboxes.map(field => {
+              const attr = field.attribute;
+              return (
+                <Grid2 key={attr} xs={12} sm={6} md={3}>
+                  <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
+                    <input
+                      type="checkbox"
+                      checked={!!formValues[attr]}
+                      onChange={(e) => handleInputChange(attr, e.target.checked)}
+                    />
+                    <Typography sx={{ ml: 1 }}>{field.label || formatLabel(attr)}</Typography>
+                  </Box>
+                </Grid2>
+              );
+            })}
+          </Grid2>
+        )}
+  
+        {/* Render the remaining fields in a separate group */}
+        <Grid2 container spacing={2}>
+          {others.map(field => {
+            const attr = field.attribute;
+            const isDate = attr.includes("date");
+            const isStrikethroughRadio = attr.startsWith("_st_");
+            const isTextarea = attr.startsWith("_ta_");
+  
+            if (isStrikethroughRadio) {
+              const [, raw] = attr.split("_st_");
+              const [opt1Raw, opt2Raw] = raw.split("_");
+              const label1 = opt1Raw.replace(/-/g, " ");
+              const label2 = opt2Raw.replace(/-/g, " ");
+              const value = formValues[attr];
+  
+              return (
+                <Grid2 size={{ xs: 12, sm: 6, md: 6 }} key={attr}>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    {field.label || formatLabel(attr)}
+                  </Typography>
+                  <Box display="flex" alignItems="center" gap={2}>
+                    <label>
+                      <input
+                        type="radio"
+                        name={attr}
+                        value={label1}
+                        checked={value === label1}
+                        onChange={() => handleInputChange(attr, label1)}
+                      />{" "}
+                      {label1}
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name={attr}
+                        value={label2}
+                        checked={value === label2}
+                        onChange={() => handleInputChange(attr, label2)}
+                      />{" "}
+                      {label2}
+                    </label>
+                  </Box>
+                </Grid2>
+              );
+            }
+  
+            if (isTextarea) {
+              return (
+                <Grid2 size={{ xs: 12, sm: 6, md: 12 }} key={attr}>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    {field.label || formatLabel(attr)}
+                  </Typography>
+                  <TextareaAutosize
+                    style={{ width: '100%' }}
+                    minRows={4}
+                    multiline
+                    label={field.label || formatLabel(attr)}
+                    value={formValues[attr] || ""}
+                    onChange={(e) => handleInputChange(attr, e.target.value)}
+                    placeholder={formatLabel(attr).toLowerCase()}
+                  />
+                </Grid2>
+              );
+            }
+  
+            return (
+              <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={attr}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  title={field.label || formatLabel(attr)}
                   label={field.label || formatLabel(attr)}
                   value={formValues[attr] || ""}
                   onChange={(e) => handleInputChange(attr, e.target.value)}
                   placeholder={formatLabel(attr).toLowerCase()}
+                  type={isDate ? "date" : "text"}
+                  InputLabelProps={isDate ? { shrink: true } : undefined}
                 />
-            </Grid2>
-          );
-        }
-
-        return (
-          <Grid2 size={{ xs: 12, sm: 6, md: 3 }} key={attr}>
-            <TextField
-              fullWidth
-              size="small"
-              label={field.label || formatLabel(attr)}
-              value={formValues[attr] || ""}
-              onChange={(e) => handleInputChange(attr, e.target.value)}
-              placeholder={formatLabel(attr).toLowerCase()}
-              type={isDate ? "date" : "text"}
-              InputLabelProps={isDate ? { shrink: true } : undefined}
-            />
-          </Grid2>
-        );
-      })}
-    </Grid2>
-  );
-
+              </Grid2>
+            );
+          })}
+        </Grid2>
+      </>
+    );
+  };
 
   const renderCategoryAccordion = (title, key, fieldList) => {
     if (!fieldList?.length) return null;

@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from "react";
 import {
   Dialog, DialogContent, DialogActions, TextField, Box, Typography, IconButton,
-  Divider, Button, Accordion, AccordionSummary, AccordionDetails
+  Divider, Button, Accordion, AccordionSummary, AccordionDetails,
+  TextareaAutosize
 } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import {
@@ -162,10 +163,10 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
                   style={{ width: '100%' }}
                   minRows={4}
                   multiline
-                  label={field.label || formatLabel(attr)}
+                  label={field.label}
                   value={formValues[attr] || ""}
                   onChange={(e) => handleInputChange(attr, e.target.value)}
-                  placeholder={formatLabel(attr).toLowerCase()}
+                  placeholder={field.label}
                 />
             </Grid2>
           );
@@ -177,6 +178,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
               fullWidth
               size="small"
               label={field.label}
+              title={field.label}
               value={formValues[attr] || ""}
               onChange={(e) => handleInputChange(attr, e.target.value)}
               type={isDate ? "date" : "text"}
