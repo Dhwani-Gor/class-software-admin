@@ -2,14 +2,14 @@
 import React, { useState, useEffect } from "react";
 import {
   Dialog, DialogContent, DialogActions, TextField, Box, Typography, IconButton,
-  Grid2, Divider, Button, Accordion, AccordionSummary, AccordionDetails
+  Divider, Button, Accordion, AccordionSummary, AccordionDetails
 } from "@mui/material";
+import Grid2 from "@mui/material/Grid2";
 import {
   Close as CloseIcon, ExpandMore as ExpandMoreIcon,
   CheckCircle as CheckIcon, Waves as WavesIcon
 } from "@mui/icons-material";
 
-// 🔠 Strikethrough Utility
 const applyStrikethrough = (text) =>
   text.split("").map((c) => c + "\u0336").join("");
 
@@ -36,10 +36,6 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
     setFormValues(prev => ({ ...prev, [fieldName]: value }));
   };
 
- 
-  const applyStrikethrough = (text) =>
-    text.split("").map(c => c + "\u0336").join("");
-  
   const handleSubmit = () => {
     const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
       if (key.startsWith("_st_")) {
@@ -47,7 +43,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
         const [opt1Raw, opt2Raw] = raw.split("_");
         const opt1 = opt1Raw.replace(/-/g, " ");
         const opt2 = opt2Raw.replace(/-/g, " ");
-  
+
         if (!value) {
           acc[key] = `{{${key}}}`;
         } else {
@@ -55,18 +51,18 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
             value === opt1
               ? `${opt1} / ${applyStrikethrough(opt2)}`
               : `${applyStrikethrough(opt1)} / ${opt2}`;
-  
+
           acc[key] = finalLine;
         }
       } else if (typeof value === "boolean") {
-        acc[key] = value ? "☑" : "☐";
+        acc[key] = value ? "\u2611" : "\u2610";
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       }
-  
+
       return acc;
     }, {});
-  
+
     onSubmit(filledValues);
   };
 
@@ -103,6 +99,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
         const isDate = attr.includes("date");
         const isCheckbox = attr.startsWith("_checkbox");
         const isStrikethroughRadio = attr.startsWith("_st_");
+        const isTextarea = attr.startsWith("_ta_");
 
         if (isCheckbox) {
           return (
@@ -139,8 +136,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
                     value={label1}
                     checked={value === label1}
                     onChange={() => handleInputChange(attr, label1)}
-                  />{label1}
-                  
+                  /> {label1}
                 </label>
                 <label>
                   <input
@@ -149,10 +145,28 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
                     value={label2}
                     checked={value === label2}
                     onChange={() => handleInputChange(attr, label2)}
-                  />{" "}
-                  {label2}
+                  /> {label2}
                 </label>
               </Box>
+            </Grid2>
+          );
+        }
+
+        if (isTextarea) {
+          return (
+            <Grid2 size={{ xs: 12 }} key={attr}>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                {field.label || formatLabel(attr)}
+              </Typography>
+                <TextareaAutosize
+                  style={{ width: '100%' }}
+                  minRows={4}
+                  multiline
+                  label={field.label || formatLabel(attr)}
+                  value={formValues[attr] || ""}
+                  onChange={(e) => handleInputChange(attr, e.target.value)}
+                  placeholder={formatLabel(attr).toLowerCase()}
+                />
             </Grid2>
           );
         }

@@ -23,7 +23,8 @@ import {
     IconButton,
     DialogContent,
     FormControlLabel,
-    Checkbox
+    Checkbox,
+    TextareaAutosize
 } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, Science as ScienceIcon, Close as CloseIcon, CheckCircle as CheckIcon } from '@mui/icons-material';
 
@@ -56,17 +57,37 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
         }));
     };
 
-    const handleSubmit = () => {
-        const filledValues = Object?.entries(formValues).reduce((acc, [key, value]) => {
-            if (typeof value === "boolean") {
-                acc[key] = value === true ? "\u2611" : "\u2610";
-            } else if (typeof value === "string" && value.trim()) {
-                acc[key] = value;
-            }
-            return acc;
-        }, {});
+    const applyStrikethrough = (text) =>
+        text.split("").map(c => c + "\u0336").join("");
 
-        onSubmit(filledValues);
+    const handleSubmit = () => {
+        const finalPayload = {};
+
+        fields.forEach(({ attribute }) => {
+            const value = formValues[attribute];
+
+            if (attribute.startsWith("_st_")) {
+                const [, raw] = attribute.split("_st_");
+                const [opt1Raw, opt2Raw] = raw.split("_");
+                const opt1 = opt1Raw.replace(/-/g, " ");
+                const opt2 = opt2Raw.replace(/-/g, " ");
+
+                if (!value) {
+                    finalPayload[attribute] = `{{${attribute}}}`;
+                } else {
+                    finalPayload[attribute] =
+                        value === opt1
+                            ? `${opt1} / ${applyStrikethrough(opt2)}`
+                            : `${applyStrikethrough(opt1)} / ${opt2}`;
+                }
+            } else if (attribute.startsWith("_checkbox")) {
+                finalPayload[attribute] = value === true ? "\u2611" : "\u2610";
+            } else {
+                finalPayload[attribute] = value || "";
+            }
+        });
+
+        onSubmit(finalPayload);
     };
 
     const engineFields = [];
@@ -91,6 +112,14 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
             field.attribute.includes('checkbox') ||
             field.attribute.startsWith('_checkbox')
         )
+    );
+
+    const radioFields = fields.filter(field =>
+        field.attribute && field.attribute.startsWith('_st_')
+    );
+
+    const remarksFields = fields.filter(field =>
+        field.attribute && field.attribute.startsWith('_ta_')
     );
 
     const groupedOzoneFields = [];
@@ -162,7 +191,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
 
     const renderBasicFields = (fieldList, title) => {
         return (
-            <Grid2 container spacing={2}>
+            <Box sx={{ mb: 3 }}>
                 <Typography variant="h6" gutterBottom color="primary">
                     {title}
                 </Typography>
@@ -171,37 +200,97 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                         const attr = field.attribute;
                         const isCheckbox = attr?.includes("checkbox") || attr?.startsWith("_checkbox");
                         const isDate = attr?.includes("date") || attr?.endsWith("_date");
+                        const isTextarea = attr.startsWith("_ta_");
+                        const isStrikethroughRadio = attr.startsWith("_st_");
+                        const value = formValues[attr];
 
-                        return (
-                            <Grid2 item xs={12} sm={6} md={4} key={field.attribute}>
-                                {isCheckbox ? (
+                        if (isCheckbox) {
+                            return (
+                                <Grid2 item xs={12} sm={6} md={4} key={attr}>
                                     <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
                                         <input
                                             type="checkbox"
-                                            checked={!!formValues[field.attribute]}
-                                            onChange={(e) => handleInputChange(field.attribute, e.target.checked)}
+                                            checked={!!value}
+                                            onChange={(e) => handleInputChange(attr, e.target.checked)}
                                         />
-                                        <Typography sx={{ ml: 1 }}>{field.label || formatLabel(field.attribute)}</Typography>
+                                        <Typography sx={{ ml: 1 }}>{field.label || formatLabel(attr)}</Typography>
                                     </Box>
-                                ) : (
-                                    <TextField
-                                        fullWidth
-                                        size="small"
-                                        label={field.label}
-                                        value={formValues[field.attribute] || ""}
-                                        onChange={(e) => handleInputChange(field.attribute, e.target.value)}
+                                </Grid2>
+                            );
+                        }
+
+                        if (isStrikethroughRadio) {
+                            const [, raw] = attr.split("_st_");
+                            const [opt1Raw, opt2Raw] = raw.split("_");
+                            const opt1 = opt1Raw.replace(/-/g, " ");
+                            const opt2 = opt2Raw.replace(/-/g, " ");
+
+                            return (
+                                <Grid2 item xs={12} sm={6} md={4} key={attr}>
+                                    <Typography variant="body2" sx={{ mb: 1 }}>{field.label}</Typography>
+                                    <Box display="flex" flexDirection="column" gap={1}>
+                                        <label>
+                                            <input
+                                                type="radio"
+                                                name={attr}
+                                                value={opt1}
+                                                checked={value === opt1}
+                                                onChange={() => handleInputChange(attr, opt1)}
+                                            /> {opt1}
+                                        </label>
+                                        <label>
+                                            <input
+                                                type="radio"
+                                                name={attr}
+                                                value={opt2}
+                                                checked={value === opt2}
+                                                onChange={() => handleInputChange(attr, opt2)}
+                                            /> {opt2}
+                                        </label>
+                                    </Box>
+                                </Grid2>
+                            );
+                        }
+
+                        if (isTextarea) {
+                            return (
+                                <>
+                                    <Typography variant="body2">
+                                        {field.label}
+                                    </Typography>
+                                    <Box sx={{width: '100%'}}>
+                                    <TextareaAutosize
+                                        style={{ width: '100%' }}
+                                        minRows={4}
+                                        value={value || ""}
+                                        onChange={(e) => handleInputChange(attr, e.target.value)}
                                         placeholder={field.label}
-                                        type={isDate ? "date" : "text"}
-                                        InputLabelProps={isDate ? { shrink: true } : undefined}
                                     />
-                                )}
+                                    </Box>
+                                    </>
+                            );
+                        }
+
+                        return (
+                            <Grid2 item xs={12} sm={6} md={4} key={attr}>
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    label={field.label}
+                                    value={value || ""}
+                                    onChange={(e) => handleInputChange(attr, e.target.value)}
+                                    placeholder={field.label}
+                                    type={isDate ? "date" : "text"}
+                                    InputLabelProps={isDate ? { shrink: true } : undefined}
+                                />
                             </Grid2>
-                        )
+                        );
                     })}
                 </Grid2>
-            </Grid2>
+            </Box>
         );
     };
+
 
     const renderTableWithGroups = (groups, title, columns) => (
         <Card variant="outlined" sx={{ mb: 2 }}>
@@ -573,9 +662,8 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                         <Typography variant="h6">
                             Nitrogen Oxides (NOx) - Engine Information
                             <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
-                                <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
-                                    ({getEngineFieldStats().filled}/{getEngineFieldStats().total})
-                                </Typography>                            </Typography>
+                                ({getEngineFieldStats().filled}/{getEngineFieldStats().total})
+                            </Typography>
                         </Typography>
                     </AccordionSummary>
                     <AccordionDetails>
@@ -607,12 +695,14 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                         <Typography variant="h6">Shipboard incineration (Regulation 12)
                             <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
-                                ({checkboxFields?.filter(f => formValues[f.attribute])?.length}/{checkboxFields?.length})
+                                ({checkboxFields?.filter(f => formValues[f.attribute])?.length}/{checkboxFields?.length + radioFields?.length + remarksFields?.length})
                             </Typography>
                         </Typography>
                     </AccordionSummary>
                     <AccordionDetails>
                         {renderBasicFields([...checkboxFields])}
+                        {renderBasicFields([...radioFields])}
+                        {renderBasicFields([...remarksFields])}
                     </AccordionDetails>
                 </Accordion>
                 <Accordion
