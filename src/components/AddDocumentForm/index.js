@@ -53,6 +53,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
     fields: false,
   });
   const [additionalFields, setAdditionalFields] = useState([]);
+  const [endorsements, setEndorsements] = useState([]);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [previewState, setPreviewState] = useState({
     open: false,
@@ -60,6 +61,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
     fileUrl: null,
     title: ''
   });
+
   const handleSelectChange = (e) => {
     const { name, value } = e.target;
     setFormValues((prev) => ({
@@ -106,24 +108,35 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
 
         if (documentData.fields) {
           try {
-            let parsed = documentData.fields;
+            let parsedFields = documentData.fields;
 
-            if (typeof parsed === 'string') {
-              parsed = JSON.parse(parsed);
+            if (typeof parsedFields === 'string') {
+              parsedFields = JSON.parse(parsedFields);
             }
 
-            if (!Array.isArray(parsed)) {
-              parsed = [parsed];
+            if (!Array.isArray(parsedFields)) {
+              parsedFields = [parsedFields];
             }
 
-            const validFields = parsed.filter(f => f.attribute && f.label);
-            setAdditionalFields(validFields);
+            const extractedEndorsements = [];
+            const extractedAdditionalFields = [];
+
+            parsedFields.forEach((item) => {
+              if (item.endorsements && Array.isArray(item.endorsements)) {
+                extractedEndorsements.push(...item.endorsements);
+              } else if (item.attribute && item.label) {
+                extractedAdditionalFields.push(item);
+              }
+            });
+
+            setAdditionalFields(extractedAdditionalFields);
+            setEndorsements(extractedEndorsements);
           } catch (err) {
             console.error("Failed to parse fields:", err);
             setAdditionalFields([]);
+            setEndorsements([]);
           }
         }
-
       } else {
         toast.error("Error fetching document details");
       }
@@ -134,6 +147,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
       console.error(error);
     }
   }
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormValues((prev) => ({
@@ -184,7 +198,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
         formData.append("type", formValues.type);
         formData.append("abbreviation", formValues.abbreviation);
 
-        // Add all document types that have files
         if (formValues.fullTermDocument instanceof File) {
           formData.append("fullTermDocument", formValues.fullTermDocument);
         }
@@ -195,15 +208,46 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           formData.append("interimDocument", formValues.interimDocument);
         }
 
-        if (additionalFields?.length > 0) {
-          const validFields = additionalFields.filter(
-            (field) => field.attribute.trim() && field.label.trim()
-          );
-          if (validFields.length > 0) {
-            formData.append("fields", JSON.stringify(validFields));
-          }
+        // if (additionalFields?.length > 0) {
+        //   const validFields = additionalFields.filter(
+        //     (field) => field.attribute.trim() && field.label.trim()
+        //   );
+        //   if (validFields.length > 0) {
+        //     formData.append("fields", JSON.stringify(validFields));
+        //   }
+        // }
+
+        // Add endorsements
+        // if (endorsements?.length > 0) {
+        //   const validEndorsements = endorsements.filter(
+        //     (endorsement) => endorsement.title?.trim() || endorsement.endorsedby_1?.trim() || 
+        //                     endorsement.endorsed_place?.trim() || endorsement.issuance_date?.trim()
+        //   );
+        //   if (validEndorsements.length > 0) {
+        //     formData.append("endorsements", JSON.stringify(validEndorsements));
+        //   }
+        // }
+        const validFields = additionalFields?.filter(
+          (field) => field.attribute?.trim() && field.label?.trim()
+        ) || [];
+
+        const validEndorsements = endorsements?.filter(
+          (endorsement) =>
+            endorsement.title?.trim() ||
+            endorsement.endorsedby_1?.trim() ||
+            endorsement.endorsed_place?.trim() ||
+            endorsement.issuance_date?.trim() ||
+            endorsement.validity_date?.trim()
+        ) || [];
+
+        // Combine into single fields array
+        const combinedFields = [...validFields];
+
+        if (validEndorsements.length > 0) {
+          combinedFields.push({ endorsements: validEndorsements });
         }
 
+        formData.append("fields", JSON.stringify(combinedFields));
         response = await createDocument(formData);
       } else {
         const hasFiles =
@@ -229,15 +273,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
 
           if (editReason) formData.append("reason", editReason);
 
-          if (additionalFields?.length > 0) {
-            const validFields = additionalFields.filter(
-              (field) => field.attribute.trim() && field.label.trim()
-            );
-            if (validFields.length > 0) {
-              formData.append("fields", JSON.stringify(validFields));
-            }
-          }
-
+          
           response = await updateDocument(documentId, formData);
         } else {
           const payload = {
@@ -247,7 +283,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
             ...(editReason && { reason: editReason }),
           };
 
-          // Add existing document paths if they exist
           if (formValues.fullTermDocument && typeof formValues.fullTermDocument === 'string') {
             payload.fullTermDocument = formValues.fullTermDocument;
           }
@@ -258,20 +293,49 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
             payload.interimDocument = formValues.interimDocument;
           }
 
-          if (additionalFields?.length > 0) {
-            const validFields = additionalFields.filter(
-              (field) => field.attribute.trim() && field.label.trim()
-            );
-            if (validFields.length > 0) {
-              payload.fields = JSON.stringify(validFields);
-            }
-          }
+          // if (additionalFields?.length > 0) {
+          //   const validFields = additionalFields.filter(
+          //     (field) => field.attribute.trim() && field.label.trim()
+          //   );
+          //   if (validFields.length > 0) {
+          //     payload.fields = JSON.stringify(validFields);
+          //   }
+          // }
 
+          // // Add endorsements to payload
+          // if (endorsements?.length > 0) {
+          //   const validEndorsements = endorsements.filter(
+          //     (endorsement) => endorsement.title?.trim() || endorsement.endorsedby?.trim() ||
+          //       endorsement.endorsed_place?.trim() || endorsement.issuance_date?.trim() || endorsement.validity_date?.trim()
+          //   );
+          //   if (validEndorsements.length > 0) {
+          //     payload.endorsements = JSON.stringify(validEndorsements);
+          //   }
+          // }
+          const validFields = additionalFields?.filter(
+            (field) => field.attribute?.trim() && field.label?.trim()
+          ) || [];
+          
+          const validEndorsements = endorsements?.filter(
+            (endorsement) =>
+              endorsement.title?.trim() ||
+              endorsement.endorsedby_1?.trim() ||
+              endorsement.endorsed_place?.trim() ||
+              endorsement.issuance_date?.trim() ||
+              endorsement.validity_date?.trim()
+          ) || [];
+          
+          // Build a single fields array
+          const combinedFields = [...validFields];
+          if (validEndorsements.length > 0) {
+            combinedFields.push({ endorsements: validEndorsements });
+          }
+          
+          payload.fields = JSON.stringify(combinedFields);
           response = await updateDocument(documentId, payload);
         }
       }
 
-      // ✅ Common success handling
       if (response?.status === 200 || response?.status === 201) {
         toast.success(
           mode === "duplicate"
@@ -333,6 +397,39 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
     updatedFields.splice(index, 1);
     setAdditionalFields(updatedFields);
     toast.success("Field removed successfully");
+  };
+
+  // Endorsement handlers
+  const handleEndorsementChange = (index, field, value) => {
+    const updatedEndorsements = [...endorsements];
+    updatedEndorsements[index] = {
+      ...updatedEndorsements[index],
+      [field]: value
+    };
+    setEndorsements(updatedEndorsements);
+  };
+
+  const handleAddEndorsement = () => {
+    const lastEndorsement = endorsements[endorsements.length - 1];
+    if (!endorsements.length ||
+      (lastEndorsement && (lastEndorsement.title?.trim() || lastEndorsement.endorsedby_1?.trim() ||
+        lastEndorsement.endorsed_place?.trim() || lastEndorsement.issuance_date?.trim()))) {
+      setEndorsements((prev) => [...prev, {
+        title: "",
+        endorsedby_1: "",
+        endorsed_place: "",
+        issuance_date: ""
+      }]);
+    } else {
+      toast.error("Please fill at least one field in the current endorsement before adding another.");
+    }
+  };
+
+  const handleDeleteEndorsement = (index) => {
+    const updatedEndorsements = [...endorsements];
+    updatedEndorsements.splice(index, 1);
+    setEndorsements(updatedEndorsements);
+    toast.success("Endorsement removed successfully");
   };
 
   const getSubmitButtonText = () => {
@@ -541,6 +638,82 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                 text="Add Attribute"
                 variant="outlined"
                 onClick={handleAddField}
+                sx={{ alignSelf: "flex-start" }}
+              />
+            </Stack>
+
+            {/* Endorsements Section */}
+            <Typography variant="h6">Endorsements</Typography>
+            <Stack spacing={2}>
+              {Array.isArray(endorsements) && endorsements.length > 0 &&
+                endorsements.map((endorsement, index) => (
+                  <Box key={index} sx={{
+                    border: '1px solid #e0e0e0',
+                    borderRadius: 2,
+                    p: 2,
+                    backgroundColor: '#f9f9f9'
+                  }}>
+                    <Stack spacing={2}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="subtitle2" color="primary">
+                          Endorsement {index + 1}
+                        </Typography>
+                        <IconButton
+                          color="error"
+                          onClick={() => handleDeleteEndorsement(index)}
+                          aria-label="delete endorsement"
+                          size="small"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+
+                      <TextField
+                        label="Title"
+                        value={endorsement.title || ""}
+                        onChange={(e) => handleEndorsementChange(index, "title", e.target.value)}
+                        fullWidth
+                        size="small"
+                      />
+                      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+
+                        <TextField
+                          label="Endorsed By"
+                          value={endorsement.endorsedby_1 || ""}
+                          onChange={(e) => handleEndorsementChange(index, "endorsedby_1", e.target.value)}
+                          fullWidth
+                          size="small"
+                        />
+                        <TextField
+                          label="Endorsed Place"
+                          value={endorsement.endorsed_place || ""}
+                          onChange={(e) => handleEndorsementChange(index, "endorsed_place", e.target.value)}
+                          fullWidth
+                          size="small"
+                        />
+                        <TextField
+                          label="Issuance Date"
+                          value={endorsement.issuance_date || ""}
+                          onChange={(e) => handleEndorsementChange(index, "issuance_date", e.target.value)}
+                          fullWidth
+                          size="small"
+                        />
+                        <TextField
+                          label="Validity Date"
+                          value={endorsement.validity_date || ""}
+                          onChange={(e) => handleEndorsementChange(index, "validity_date", e.target.value)}
+                          fullWidth
+                          size="small"
+                        />
+                      </Box>
+                    </Stack>
+                  </Box>
+                ))}
+
+              <CommonButton
+                text="Add Endorsement"
+                variant="outlined"
+                onClick={handleAddEndorsement}
                 sx={{ alignSelf: "flex-start" }}
               />
             </Stack>

@@ -214,6 +214,14 @@ const Certificates = () => {
         </Typography>
       )
     },
+    // {
+    //   field: "surveyType",
+    //   headerName: "Survey Type",
+    //   flex: 1,
+    //   renderCell: (params) => (
+    //     <Typography>{params.value?.replace('_', ' ') || 'N/A'}</Typography>
+    //   )
+    // },
     {
       field: "surveyDate",
       headerName: "Survey Date",
@@ -311,7 +319,7 @@ const Certificates = () => {
             ))}
           </Select>
 
-          <TextField
+          {/* <TextField
             label="Place"
             size="small"
             value={placeFilter}
@@ -323,7 +331,7 @@ const Certificates = () => {
             size="small"
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          />
+          /> */}
           <TextField
             label="Survey Date From"
             type="date"

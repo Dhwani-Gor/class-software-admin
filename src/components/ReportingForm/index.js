@@ -15,7 +15,6 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import Paper from "@mui/material/Paper";
 import CommonInput from "@/components/CommonInput";
 import IconButton from "@mui/material/IconButton";
 import DescriptionIcon from "@mui/icons-material/Description";
@@ -40,15 +39,14 @@ import moment from "moment";
 import { Stack } from "@mui/material";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from 'yup';
-import { Diversity2, PreviewOutlined, PreviewTwoTone } from "@mui/icons-material";
 import { DialogForm } from "../documents/CommonDocumentForm";
 import InternationalTonnage from "../documents/TonnageCertificateForm";
-import DocumentForm from "../AddDocumentForm";
 import IOPPForm from "../documents/OilPollutionPreventionCertificateForm";
 import CSSForm from "../documents/CargoShipEquipmentRecordForm";
 import LoadLineCertificateForm from "../documents/LoadLineCertificateForm";
 import AntiFoulingCertificateForm from "../documents/AntiFoulingCertificateForm";
 import IAPPForm from "../documents/RecordOfConstructioCertificate";
+import EndorsementDialog from "../documents/EndorsementDialog";
 
 // Updated schema with correct field names
 const reportSchema = yup.object().shape({
@@ -135,7 +133,6 @@ const DocumentUploadDialog = ({
     return 'Unknown file';
   };
 
-  // Safe remove function with validation
   const handleSafeRemoveDocument = (docId) => {
     if (!docId) {
       toast.error("Cannot remove document: Invalid document ID");
@@ -149,7 +146,6 @@ const DocumentUploadDialog = ({
     }
   };
 
-  // Safe preview function with validation
   const handleSafePreviewDocument = (doc) => {
     if (!doc) {
       toast.error("Cannot preview document: Invalid document");
@@ -254,32 +250,22 @@ const DocumentUploadDialog = ({
   );
 };
 
-// Document Preview Modal Component
 const DocumentPreviewModal = ({ open, onClose, document, loading }) => {
   let fileUrl
   let fileType
-  
-  const handleDownload = () => {
-    // const link = document.createElement('a');
-    // link.href = document.filePath;
-    // link.download = document.filePath.split('/').pop();
-    // document.body.appendChild(link);
-    // link.click();
-    // document.body.removeChild(link);
-    // const blob =  fileUrl.blob();
-        const filename = fileUrl.split('/').pop();
 
-        const blobUrl = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        link.download = document.filePath;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(blobUrl);
+  const handleDownload = () => {
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = document.filePath;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
 
   };
-  
+
   const getPreviewContent = () => {
     if (!document) return null;
     fileUrl = document.filePath;
@@ -350,9 +336,6 @@ const DocumentPreviewModal = ({ open, onClose, document, loading }) => {
             onClick={handleDownload}
             style={{ float: 'right', textDecoration: 'none' }}
           >
-            {/* <Button variant="outlined" size="small">
-              Download
-            </Button> */}
           </Box>
         )}
       </DialogTitle>
@@ -408,7 +391,10 @@ const ReportingForm = () => {
   const [reportName, setReportName] = useState("");
   const [showEndorsementField, setShowEndorsementField] = useState(false);
   const [showExtraEndorsementField, setShowExtraEndorsementField] = useState(false);
-  console.log(reportName,"report name")
+  const [endorsementTitle, setEndorsementTitle] = useState([]);
+  const [openEndrosemet, setOpenEndrosemet] = useState(false);
+  const [endorsementValues, setEndorsementValues] = useState({});
+
   useEffect(() => {
     if (selectCertificate === "full_term") {
       setShowEndorsementField(true);
@@ -429,8 +415,13 @@ const ReportingForm = () => {
   const validReports = [
     "CARGO SHIP SAFETY CONSTRUCTION CERTIFICATE",
     "INTERNATIONAL SEWAGE POLLUTION PREVENTION CERTIFICATE",
-    "INTERNATIONAL BALLAST WATER MANAGEMENT CERTIFICATE"
-  ];
+    "INTERNATIONAL BALLAST WATER MANAGEMENT CERTIFICATE",
+    "CERTIFICATE OF CLASS",
+    "CARGO SHIP SAFETY EQUIPMENT CERTIFICATE",
+    "CARGO SHIP SAFETY RADIO CERTIFICATE",
+    "INTERNATIONAL ENERGY EFFICIENCY CERTIFICATE",
+    "INTERNATIONAL AIR POLLUTION PREVENTION CERTIFICATE"
+];
 
   const {
     control,
@@ -541,13 +532,10 @@ const ReportingForm = () => {
       surveyDate: values.surveydate ? formatDate(values.surveydate) : null,
       issuedBy: Number(values.issuedBy) || null,
       place: values.place || null,
-      ...(selectCertificate === "full_term" || selectCertificate === "extended"
-        ? {
-          endorsementDate: values.endorsementdate
-            ? formatDate(values.endorsementdate)
-            : null,
-        }
-        : {}),
+      ...(selectCertificate === "full_term" || selectCertificate === "extended") &&
+        values.endorsementdate
+        ? { endorsementDate: formatDate(values.endorsementdate) }
+        : {},
       ...(selectCertificate === "extended"
         ? {
           newValidityDate: values.newValidityDate
@@ -606,6 +594,8 @@ const ReportingForm = () => {
         setLoadingReport(true);
         const result = await generateFullReport({
           reportDetailId: reportDetails?.id,
+          // data: { ...reportDetails.data, endorsementValues }
+
         });
 
         const fileUrl = result?.data?.data;
@@ -735,7 +725,12 @@ const ReportingForm = () => {
       setLoading(true);
       const result = await getSelectedActivityReportDetails(row?.id);
       setReportName(row?.surveyTypes?.report?.name);
+      const endorsements = row?.surveyTypes?.report?.fields?.[0]?.endorsements || [];
 
+      if (endorsements?.length > 0) {
+        setEndorsementTitle(endorsements);
+        // setOpenEndrosemet(true);
+      }
       const data = extractUnderscoreFields(row);
       setUnderscoreFields(data)
 
@@ -965,9 +960,9 @@ const ReportingForm = () => {
           fields.push({
             label: field.label,
             attribute: field.attribute
-            });
-          }
-        });
+          });
+        }
+      });
     }
     return fields;
   };
@@ -1294,26 +1289,26 @@ const ReportingForm = () => {
                 )}
               </Grid2>
               {showEndorsementField && (
-                  // Render Endorsement Date field
-                  <Grid2 size={{ md: 3 }}>
-                    <Controller
-                      name="endorsementdate"
-                      control={control}
-                      render={({ field }) => (
-                        <CommonInput
-                          {...field}
-                          type="date"
-                          label={<>Endorsement Date</>}
-                          onChange={(e) => {
-                            field.onChange(e);
-                            handleFieldChange('endorsementdate', e.target.value);
-                          }}
-                        />
-                      )}
-                    />
+                // Render Endorsement Date field
+                <Grid2 size={{ md: 3 }}>
+                  <Controller
+                    name="endorsementdate"
+                    control={control}
+                    render={({ field }) => (
+                      <CommonInput
+                        {...field}
+                        type="date"
+                        label={<>Endorsement Date</>}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          handleFieldChange('endorsementdate', e.target.value);
+                        }}
+                      />
+                    )}
+                  />
 
-                  </Grid2>
-                )}
+                </Grid2>
+              )}
               {(
                 showExtraEndorsementField ||
                 reportDetails?.typeOfCertificate === "extended"
@@ -1513,6 +1508,17 @@ const ReportingForm = () => {
           fields={underscoreFields}
         />
       }
+      {/* {reportDetails?.typeOfCertificate === "full_term" &&
+        openEndrosemet &&
+        !!reportDetails?.endorsementDate && (
+          <EndorsementDialog
+            open={openEndrosemet}
+            onClose={() => setOpenEndrosemet(false)}
+            onSubmit={handleSubmitReport}
+            endorsementList={endorsementTitle}
+            reportDetailsId={reportDetails?.id}
+          />
+        )} */}
       {loadingReport && (
         <Box
           position="fixed"
