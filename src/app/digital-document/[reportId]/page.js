@@ -4,7 +4,7 @@ import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import CommonCard from "@/components/CommonCard";
 import { Container, IconButton, Box, Paper, Dialog, DialogTitle, DialogContent, DialogActions, Button, Alert } from "@mui/material";
-import { CheckCircle, Download, PictureAsPdf, Close, Error, Warning } from "@mui/icons-material";
+import { CheckCircle, Download, PictureAsPdf, Close, Error as ErrorIcon, Warning } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { getActivity, getAllActivityReportDetails, getSelectedReportDetails, getSpecificClient } from "@/api";
 import { toast } from "react-toastify";
@@ -23,14 +23,14 @@ const DigitalDocument = ({ params }) => {
       return {
         status: 'INVALID',
         color: '#f44336',
-        icon: Error,
+        icon: ErrorIcon,
         message: 'No validity date found'
       };
     }
 
     const currentDate = new Date();
     const validity = new Date(validityDate);
-    
+
     // Reset time to compare only dates
     currentDate.setHours(0, 0, 0, 0);
     validity.setHours(0, 0, 0, 0);
@@ -45,7 +45,7 @@ const DigitalDocument = ({ params }) => {
     } else {
       return {
         status: 'EXPIRED',
-        color: 'red',
+        color: '#ff9800',
         icon: Warning,
         message: 'Certificate has expired'
       };
@@ -63,7 +63,7 @@ const DigitalDocument = ({ params }) => {
       if (result?.status === 200 && result?.data?.data?.journal?.clientId) {
         const clientId = result.data.data.journal.clientId;
         const response = await getSpecificClient(clientId);
-        
+
         if (response?.status === 200 && response?.data?.data) {
           setAdditionalDetails(response.data.data);
         } else {
@@ -89,9 +89,9 @@ const DigitalDocument = ({ params }) => {
     try {
       setLoading(true);
       setError(null);
-      
-      const result = await getAllActivityReportDetails('id', params.reportId);
-      
+
+      const result = await getAllActivityReportDetails('id', params?.reportId);
+
       if (result?.status === 200 && result?.data?.data && result.data.data.length > 0) {
         const reportData = result.data.data[0];
         setReportDetails(reportData);
@@ -126,19 +126,34 @@ const DigitalDocument = ({ params }) => {
 
     try {
       setDownloadError(null);
-      
-      // Validate URL
-      const url = new URL(reportDetails.generatedDoc);
-      
+
+      // Validate URL - mobile-safe approach
+      let isValidUrl = false;
+      try {
+        const testUrl = reportDetails.generatedDoc;
+        if (typeof testUrl === 'string' && (testUrl.startsWith('http://') || testUrl.startsWith('https://'))) {
+          isValidUrl = true;
+        }
+      } catch (e) {
+        isValidUrl = false;
+      }
+
+      if (!isValidUrl) {
+        const errorMessage = 'Invalid document URL';
+        setDownloadError(errorMessage);
+        toast.error(errorMessage);
+        return;
+      }
+
       const a = document.createElement('a');
       a.href = reportDetails.generatedDoc;
       a.download = reportDetails.generatedDoc.split('/').pop() || 'certificate.pdf';
       a.target = '_blank'; // Fallback for some browsers
-      
+
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      
+
     } catch (error) {
       console.error('Download error:', error);
       const errorMessage = 'Failed to download document. Please try again.';
@@ -152,11 +167,15 @@ const DigitalDocument = ({ params }) => {
       toast.error('No document available for preview');
       return;
     }
-    
+
     try {
-      // Validate URL before opening preview
-      new URL(reportDetails.generatedDoc);
-      setPreviewOpen(true);
+      // Validate URL - mobile-safe approach
+      const testUrl = reportDetails.generatedDoc;
+      if (typeof testUrl === 'string' && (testUrl.startsWith('http://') || testUrl.startsWith('https://'))) {
+        setPreviewOpen(true);
+      } else {
+        toast.error('Invalid document URL');
+      }
     } catch (error) {
       console.error('Invalid document URL:', error);
       toast.error('Invalid document URL');
@@ -165,11 +184,11 @@ const DigitalDocument = ({ params }) => {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    
+
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return 'Invalid Date';
-      
+
       return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: '2-digit',
@@ -188,7 +207,7 @@ const DigitalDocument = ({ params }) => {
         <CommonCard sx={{ mt: 0, pl: 2 }}>
           <Stack direction={'row'} alignItems={'center'} gap={2}>
             <Typography variant="h6" fontWeight={"700"}>
-              Document Validator  
+              Document Validator
             </Typography>
           </Stack>
         </CommonCard>
@@ -206,7 +225,7 @@ const DigitalDocument = ({ params }) => {
         <CommonCard sx={{ mt: 0, pl: 2 }}>
           <Stack direction={'row'} alignItems={'center'} gap={2}>
             <Typography variant="h6" fontWeight={"700"}>
-              Document Validator  
+              Document Validator
             </Typography>
           </Stack>
         </CommonCard>
@@ -217,8 +236,8 @@ const DigitalDocument = ({ params }) => {
             </Typography>
           </Alert>
           <Box display="flex" justifyContent="center">
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               onClick={fetchReportDetails}
               disabled={loading}
             >
@@ -238,7 +257,7 @@ const DigitalDocument = ({ params }) => {
       {/* Document Content */}
       <Box>
         <Paper elevation={2} sx={{ p: 3, borderRadius: 2, backgroundColor: '#f8f9fa' }}>
-          
+
           {/* Header */}
           <Stack direction="row" alignItems="center" spacing={2} mb={3}>
             <Typography variant="h6" fontWeight="bold">
@@ -247,9 +266,9 @@ const DigitalDocument = ({ params }) => {
           </Stack>
 
           {/* Verification Status - Dynamic based on validity date */}
-          <Box 
-            sx={{ 
-              p: 2, 
+          <Box
+            sx={{
+              p: 2,
               mb: 3,
               backgroundColor: 'white',
               borderRadius: 1
@@ -257,18 +276,18 @@ const DigitalDocument = ({ params }) => {
           >
             <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
               <StatusIcon sx={{ color: certificateStatus.color, fontSize: 20 }} />
-              <Typography 
-                variant="body1" 
-                color={certificateStatus.color} 
+              <Typography
+                variant="body1"
+                color={certificateStatus.color}
                 fontWeight="600"
               >
                 {certificateStatus.status}
               </Typography>
             </Stack>
             {certificateStatus.message && (
-              <Typography 
+              <Typography
                 fontWeight={600}
-                display="block" 
+                display="block"
                 textAlign="center"
                 mt={0.5}
               >
@@ -298,9 +317,9 @@ const DigitalDocument = ({ params }) => {
           </Box>
 
           {/* Verification Source */}
-          <Box 
-            sx={{ 
-              p: 2, 
+          <Box
+            sx={{
+              p: 2,
               mb: 3,
               textAlign: 'center',
               backgroundColor: 'white',
@@ -328,13 +347,13 @@ const DigitalDocument = ({ params }) => {
                   </Typography>
                 </Stack>
               )}
-              
+
               <Stack direction="row" justifyContent="space-between">
                 <Typography variant="body2" color="text.secondary">
                   Valid Till
                 </Typography>
-                <Typography 
-                  variant="body2" 
+                <Typography
+                  variant="body2"
                   fontWeight="500"
                   color={certificateStatus.status === 'EXPIRED' ? 'error.main' : 'text.primary'}
                 >
@@ -355,8 +374,8 @@ const DigitalDocument = ({ params }) => {
                     <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
                       {reportDetails.generatedDoc.split('/').pop() || 'certificate.pdf'}
                     </Typography>
-                    <IconButton 
-                      size="small" 
+                    <IconButton
+                      size="small"
                       color="primary"
                       onClick={handleDownload}
                       disabled={!reportDetails.generatedDoc}
@@ -364,14 +383,14 @@ const DigitalDocument = ({ params }) => {
                       <Download />
                     </IconButton>
                   </Stack>
-                  
+
                   {/* Certificate Thumbnail */}
-                  <Box 
-                    sx={{ 
-                      mt: 2, 
-                      p: 2, 
-                      border: '1px solid #e0e0e0', 
-                      borderRadius: 1, 
+                  <Box
+                    sx={{
+                      mt: 2,
+                      p: 2,
+                      border: '1px solid #e0e0e0',
+                      borderRadius: 1,
                       cursor: 'pointer',
                       '&:hover': { backgroundColor: '#f5f5f5' }
                     }}
@@ -424,8 +443,8 @@ const DigitalDocument = ({ params }) => {
         </Paper>
 
         {/* Preview Dialog */}
-        <Dialog 
-          open={previewOpen} 
+        <Dialog
+          open={previewOpen}
           onClose={() => setPreviewOpen(false)}
           maxWidth="md"
           fullWidth
@@ -454,11 +473,11 @@ const DigitalDocument = ({ params }) => {
                 />
               </Box>
             ) : (
-              <Box 
-                sx={{ 
-                  height: 400, 
-                  display: 'flex', 
-                  alignItems: 'center', 
+              <Box
+                sx={{
+                  height: 400,
+                  display: 'flex',
+                  alignItems: 'center',
                   justifyContent: 'center',
                   backgroundColor: '#f5f5f5',
                   borderRadius: 1
@@ -474,8 +493,8 @@ const DigitalDocument = ({ params }) => {
             <Button onClick={() => setPreviewOpen(false)}>
               Close
             </Button>
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               startIcon={<Download />}
               onClick={handleDownload}
               disabled={!reportDetails?.generatedDoc}
