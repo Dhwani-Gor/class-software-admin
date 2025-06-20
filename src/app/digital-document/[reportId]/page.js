@@ -11,7 +11,6 @@ import { toast } from "react-toastify";
 
 const DigitalDocument = ({ params }) => {
   const [reportDetails, setReportDetails] = useState(null);
-  const [additionalDetails, setAdditionalDetails] = useState(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -52,32 +51,6 @@ const DigitalDocument = ({ params }) => {
     }
   };
 
-  const fetchClientDetails = async (activityId) => {
-    if (!activityId) {
-      console.warn('No activity ID provided for client details fetch');
-      return;
-    }
-
-    try {
-      const result = await getActivity(activityId);
-      if (result?.status === 200 && result?.data?.data?.journal?.clientId) {
-        const clientId = result.data.data.journal.clientId;
-        const response = await getSpecificClient(clientId);
-
-        if (response?.status === 200 && response?.data?.data) {
-          setAdditionalDetails(response.data.data);
-        } else {
-          console.warn('Failed to fetch client details - invalid response');
-        }
-      } else {
-        console.warn('Failed to fetch activity details - invalid response');
-      }
-    } catch (error) {
-      console.error('Error fetching client details:', error);
-      // Don't show toast for this as it's not critical - client name will just show as N/A
-    }
-  };
-
   const fetchReportDetails = async () => {
     if (!params?.reportId) {
       setError('No report ID provided');
@@ -91,15 +64,9 @@ const DigitalDocument = ({ params }) => {
       setError(null);
 
       const result = await getAllActivityReportDetails('id', params?.reportId);
-
       if (result?.status === 200 && result?.data?.data && result.data.data.length > 0) {
         const reportData = result.data.data[0];
         setReportDetails(reportData);
-
-        // Fetch client details if activity ID exists
-        if (reportData?.activityId) {
-          await fetchClientDetails(reportData.activityId);
-        }
       } else {
         throw new Error('Report not found or invalid response');
       }
@@ -337,16 +304,14 @@ const DigitalDocument = ({ params }) => {
           {/* Certificate Details */}
           <Box sx={{ backgroundColor: 'white', p: 2, borderRadius: 1 }}>
             <Stack spacing={2}>
-              {additionalDetails?.shipName && (
-                <Stack direction="row" justifyContent="space-between">
-                  <Typography variant="body2" color="text.secondary">
-                    Vessel/Company Name
-                  </Typography>
-                  <Typography variant="body2" fontWeight="500" textAlign="right">
-                    {additionalDetails.shipName}
-                  </Typography>
-                </Stack>
-              )}
+              <Stack direction="row" justifyContent="space-between">
+                <Typography variant="body2" color="text.secondary">
+                  Vessel/Company Name
+                </Typography>
+                <Typography variant="body2" fontWeight="500" textAlign="right">
+                  {reportDetails?.activity?.journal?.client?.shipName}
+                </Typography>
+              </Stack>
 
               <Stack direction="row" justifyContent="space-between">
                 <Typography variant="body2" color="text.secondary">
