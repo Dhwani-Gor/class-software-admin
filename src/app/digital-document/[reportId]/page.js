@@ -45,7 +45,7 @@ const DigitalDocument = ({ params }) => {
     } else {
       return {
         status: 'EXPIRED',
-        color: '#ff9800',
+        color: 'red',
         icon: Warning,
         message: 'Certificate has expired'
       };
