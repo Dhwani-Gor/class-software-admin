@@ -414,6 +414,16 @@ export const updateActivity = async (payload, journalId) => {
   return result;
 };
 
+export const getActivity = async (activityId) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/activities/${activityId}`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
 export const deleteActivity = async (activityId) => {
   let result;
   try {
