@@ -56,7 +56,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
           acc[key] = finalLine;
         }
       } else if (typeof value === "boolean") {
-        acc[key] = value ? "\u2611" : "\u2610";
+        acc[key] = value ? "\u2611" : "\u2612";
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       }

@@ -36,7 +36,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
           acc[key] = `{{${key}}}`;
         }
       } else if (typeof value === "boolean") {
-        acc[key] = value === true ? "\u2611" : "\u2610";
+        acc[key] = value === true ? "\u2611" : "\u2612";
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       }
@@ -51,7 +51,11 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
     if (fields && fields.length > 0) {
       const initialValues = {};
       fields.forEach(field => {
-        initialValues[field.attribute] = "";
+        if (field.attribute.startsWith("_checkbox")) {
+          initialValues[field.attribute] = false;
+        } else {
+          initialValues[field.attribute] = "";
+        }
       });
       setFormData(initialValues);
     }

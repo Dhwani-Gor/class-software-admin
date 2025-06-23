@@ -122,7 +122,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields }) => {
   const handleSubmit = () => {
     const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
       if (typeof value === "boolean") {
-        acc[key] = value === true ? "☑" : "☐";
+        acc[key] = value === true ? "☑" : "☒";
       } else if (key.startsWith("_st_")) {
         const [, raw] = key.split("_st_");
         const [opt1Raw, opt2Raw] = raw.split("_");
