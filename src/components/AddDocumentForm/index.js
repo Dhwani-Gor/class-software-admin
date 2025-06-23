@@ -100,7 +100,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
         setFormValues({
           name: mode === "duplicate" ? `${documentData.name} (Copy)` : documentData.name || "",
           type: documentData.type || "",
-          abbreviation: mode === "duplicate" ? "" : documentData.abbreviation,
+          abbreviation: mode === "duplicate" ? "" : documentData.abbreviation || "",
           fullTermDocument: mode === "duplicate" ? null : documentData.fullTermFilePath || null,
           shortTermDocument: mode === "duplicate" ? null : documentData.shortTermFilePath || null,
           interimDocument: mode === "duplicate" ? null : documentData.interimFilePath || null,

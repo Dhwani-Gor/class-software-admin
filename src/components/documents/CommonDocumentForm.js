@@ -134,44 +134,50 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
                             placeholder={formatLabel(attr).toLowerCase()}
                           />
                         </Grid2>
-                      ) : isRadioWithStrike ? (
-                        (() => {
-                          const [label1, label2] = attr.replace('_st_', '').split('_');
-                      const selected = formData[attr];
-                      return (
-                      <Box display="flex" flexDirection="column" gap={1}>
-                        <label>
-                          <input
-                            type="radio"
-                            name={attr}
-                            value={label1}
-                            checked={selected === label1}
-                            onChange={() => handleInputChange(attr, label1)}
-                          /> {label1}
-                        </label>
-                        <label>
-                          <input
-                            type="radio"
-                            name={attr}
-                            value={label2}
-                            checked={selected === label2}
-                            onChange={() => handleInputChange(attr, label2)}
-                          /> {label2}
-                        </label>
-                      </Box>
-                      );
-                        })()
-                      ) : (
-                      <TextField
-                        fullWidth
-                        label={field.label}
-                        variant="outlined"
-                        value={formData[attr] || ""}
-                        onChange={(e) => handleInputChange(attr, e.target.value)}
-                        type={isDate ? "date" : "text"}
-                        InputLabelProps={isDate ? { shrink: true } : undefined}
-                      />
-                      )}
+                      ) : isRadioWithStrike ?
+                        (
+                          (() => {
+                            const [label1, label2] = attr.replace('_st_', '').split('_');
+                            const selected = formData[attr];
+                            return (
+
+                              <Box display="flex" flexDirection="column" gap={1}>
+                                <Typography variant="body2" sx={{ mb: 1 }}>
+                                  {field.label || formatLabel(attr)}
+                                </Typography>
+                                <label>
+                                  <input
+                                    type="radio"
+                                    name={attr}
+                                    value={label1}
+                                    checked={selected === label1}
+                                    onChange={() => handleInputChange(attr, label1)}
+                                  /> {label1}
+                                </label>
+                                <label>
+                                  <input
+                                    type="radio"
+                                    name={attr}
+                                    value={label2}
+                                    checked={selected === label2}
+                                    onChange={() => handleInputChange(attr, label2)}
+                                  /> {label2}
+                                </label>
+                              </Box>
+                            );
+                          })()
+                        ) : (
+                          <TextField
+                            fullWidth
+                            label={field.label}
+                            title={field.label}
+                            variant="outlined"
+                            value={formData[attr] || ""}
+                            onChange={(e) => handleInputChange(attr, e.target.value)}
+                            type={isDate ? "date" : "text"}
+                            InputLabelProps={isDate ? { shrink: true } : undefined}
+                          />
+                        )}
                     </Box>
                   </Fade>
                 </Grid2>
