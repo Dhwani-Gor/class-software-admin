@@ -15,12 +15,26 @@ const AuthProvider = ({ children }) => {
   const router = useRouter();
   const pathname = usePathname()
 
-  const allowedRoutesRole1 = ["/clients","staff","/journal", "/reporting", "/certificates", "/survey-types", "/documents", "/settings"]
+  const allowedRoutesRole1 = ["/clients","/staff","/journal", "/reporting", "/certificates", "/survey-types", "/documents", "/settings"]
   const allowedRoutesRole2 = ["/journal", "/reporting", "/certificates", "/settings"];
   const allowedRoutesRole3 = ["/reporting", "/certificates", "/settings"];
   
   // Define public routes that don't require authentication
   const publicRoutes = ["/login", "/digital-document"];
+
+  // Helper function to get default route for role
+  const getDefaultRouteForRole = (roleId) => {
+    switch (roleId) {
+      case "1":
+        return allowedRoutesRole1[0];
+      case "2":
+        return allowedRoutesRole2[0];
+      case "3":
+        return allowedRoutesRole3[0];
+      default:
+        return "/login";
+    }
+  };
 
   useEffect(() => {
     const token =
@@ -94,6 +108,10 @@ const AuthProvider = ({ children }) => {
     localStorage.setItem("roleId", data?.roleId);
     setIsAuthenticated(true);
     setRoleId(data?.roleId);
+
+    // Redirect to appropriate route based on role
+    const defaultRoute = getDefaultRouteForRole(data?.roleId);
+    router.replace(defaultRoute);
 
     // const decodedToken = jwtDecode(data?.token);
     // const currentTime = Math.floor(Date.now() / 1000);

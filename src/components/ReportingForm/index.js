@@ -1397,7 +1397,7 @@ const ReportingForm = () => {
               <CommonButton
                 onClick={handleFullReportGeneration}
                 sx={{ marginTop: 3 }}
-                text="Generate Full Report"
+                text="Generate Certificate"
                 isLoading={loading}
                 disabled={!reportDetails}
               />
