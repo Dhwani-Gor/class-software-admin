@@ -440,13 +440,10 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                     e.preventDefault();
                     setLoadingPreview(true);
 
-                    // ✅ Fixed: Get the correct file URL
                     let fileUrl = null;
                     if (typeof document === 'string') {
-                      // If it's a string, it's an existing file path from server
                       fileUrl = document;
                     } else if (document instanceof File) {
-                      // If it's a File object, create a URL for preview
                       fileUrl = URL.createObjectURL(document);
                     }
 
@@ -594,7 +591,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
             </Stack>
 
             {/* Endorsements Section */}
-            <Typography variant="h6">Endorsements</Typography>
+            {/* <Typography variant="h6">Endorsements</Typography> */}
             <Stack spacing={2}>
               {Array.isArray(endorsements) && endorsements.length > 0 &&
                 endorsements.map((endorsement, index) => (
@@ -661,12 +658,12 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                   </Box>
                 ))}
 
-              <CommonButton
+              {/* <CommonButton
                 text="Add Endorsement"
                 variant="outlined"
                 onClick={handleAddEndorsement}
                 sx={{ alignSelf: "flex-start" }}
-              />
+              /> */}
             </Stack>
 
             <Stack

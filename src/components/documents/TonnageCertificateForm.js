@@ -88,7 +88,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
               : `${applyStrikethrough(opt1)} / ${opt2}`;
         }
       } else if (attribute.startsWith("_checkbox")) {
-        finalPayload[attribute] = value === true ? "\u2611" : "\u2610";
+        finalPayload[attribute] = value === true ? "\u2611" : "\u2612";
       } else {
         finalPayload[attribute] = value || "";
       }
