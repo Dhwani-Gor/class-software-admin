@@ -57,7 +57,7 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
           acc[key] = finalLine;
         }
       } else if (typeof value === "boolean") {
-        acc[key] = value ? "☑" : "☐";
+        acc[key] = value ? "☑" : "☒";
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       }
