@@ -138,16 +138,19 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
         if (isCheckbox) {
           return (
             <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={attr}>
-              <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
-                <input
-                  type="checkbox"
-                  checked={!!formValues[attr]}
-                  onChange={(e) => handleInputChange(attr, e.target.checked)}
-                />
-                <Typography variant="body2" sx={{ ml: 1 }}>
-                  {field.label}
-                </Typography>
-              </Box>
+              <Grid2 size={{ xs: 12 }}>
+                <Box display="flex" alignItems="center">
+                  <input
+                    type="checkbox"
+                    checked={!!formValues[attr]}
+                    onChange={(e) => handleInputChange(attr, e.target.checked)}
+                  />
+                  <Typography variant="body2" sx={{ ml: 1 }}>
+                    {field.label}
+                  </Typography>
+                </Box>
+              </Grid2>
+
             </Grid2>
           );
         }

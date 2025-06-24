@@ -417,11 +417,8 @@ const ReportingForm = () => {
     "INTERNATIONAL SEWAGE POLLUTION PREVENTION CERTIFICATE",
     "INTERNATIONAL BALLAST WATER MANAGEMENT CERTIFICATE",
     "CERTIFICATE OF CLASS",
-    "CARGO SHIP SAFETY EQUIPMENT CERTIFICATE",
     "CARGO SHIP SAFETY RADIO CERTIFICATE",
     "INTERNATIONAL ENERGY EFFICIENCY CERTIFICATE",
-    "INTERNATIONAL AIR POLLUTION PREVENTION CERTIFICATE",
-    "INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE"
 ];
 
   const {
@@ -1478,7 +1475,7 @@ const ReportingForm = () => {
         )
       }
 
-      {reportName?.trim() === "SUPPLEMENT TO THE INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" &&
+      {reportName?.trim() === "SUPPLEMENT TO THE INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" || reportName?.trim() === "INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE"&&
         <div className="container">
           <IOPPForm
             open={open}
@@ -1489,7 +1486,7 @@ const ReportingForm = () => {
           />
         </div>
       }
-      {reportName?.trim() === "RECORD OF EQUIPMENT FOR CARGO SHIP SAFETY" &&
+      {reportName?.trim() === "RECORD OF EQUIPMENT FOR CARGO SHIP SAFETY" || reportName?.trim() === "CARGO SHIP SAFETY EQUIPMENT CERTIFICATE" &&
         <CSSForm
           open={open}
           onClose={() => setOpen(false)}
@@ -1516,7 +1513,7 @@ const ReportingForm = () => {
           reportDetails={reportDetails?.data}
         />
       }
-      {reportName?.trim() === "RECORD OF CONSTRUCTION AND EQUIPMENT" &&
+      {reportName?.trim() === "RECORD OF CONSTRUCTION AND EQUIPMENT" || reportName?.trim() === "INTERNATIONAL AIR POLLUTION PREVENTION CERTIFICATE" &&
         <IAPPForm
           open={open}
           onClose={() => setOpen(false)}

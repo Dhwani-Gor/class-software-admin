@@ -156,14 +156,17 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
                   <Fade in={open} timeout={800 + (index * 100)}>
                     <Box>
                       {isCheckbox ? (
-                        <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
-                          <input
-                            type="checkbox"
-                            checked={!!formData[attr]}
-                            onChange={(e) => handleInputChange(attr, e.target.checked)}
-                          />
-                          <Typography variant="body2" sx={{ ml: 1 }}>{field.label}</Typography>
-                        </Box>
+                        <Grid2 size={{ xs: 12 }}>
+                          <Box display="flex" alignItems="center">
+                            <input
+                              type="checkbox"
+                              checked={!!formData[attr]}
+                              onChange={(e) => handleInputChange(attr, e.target.checked)}
+                            />
+                            <Typography variant="body2" sx={{ ml: 1 }}>{field.label}</Typography>
+                          </Box>
+                        </Grid2>
+
                       ) : isTextArea ? (
                         <Grid2 size={{ xs: 12 }} key={attr}>
                           <Typography variant="body2" sx={{ mb: 1 }}>
@@ -219,7 +222,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
                             variant="outlined"
                             value={isDate ? formatDate(formData[attr]) : formData[attr] || ""}
                             onChange={(e) => {
-                                handleInputChange(attr, e.target.value);
+                              handleInputChange(attr, e.target.value);
                             }}
                             type={isDate ? "date" : "text"}
                             InputLabelProps={isDate ? { shrink: true } : undefined}

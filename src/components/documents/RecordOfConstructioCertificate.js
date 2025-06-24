@@ -137,7 +137,6 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
         field.attribute && field.attribute.includes('_IAPP_VOC_')
     );
 
-    // Filter checkbox fields for VOC section
     const checkboxFields = fields.filter(field =>
         field.attribute && (
             field.attribute.includes('checkbox') ||
@@ -238,13 +237,15 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                         if (isCheckbox) {
                             return (
                                 <Grid2 item xs={12} sm={6} md={4} key={attr}>
-                                    <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={!!value}
-                                            onChange={(e) => handleInputChange(attr, e.target.checked)}
-                                        />
-                                        <Typography sx={{ ml: 1 }}>{field.label || formatLabel(attr)}</Typography>
+                                    <Box display="flex" alignItems="center">
+                                        <Grid2 size={{ xs: 12 }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={!!value}
+                                                onChange={(e) => handleInputChange(attr, e.target.checked)}
+                                            />
+                                            <Typography sx={{ ml: 1 }}>{field.label || formatLabel(attr)}</Typography>
+                                        </Grid2>
                                     </Box>
                                 </Grid2>
                             );

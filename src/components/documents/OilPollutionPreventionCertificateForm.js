@@ -70,7 +70,7 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                         initialValues[field.attribute] = "";
                     }
                 }
-                
+
             });
             setFormValues(initialValues);
         }
@@ -175,8 +175,8 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
                 if (isCheckbox) {
                     return (
-                        <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={attr}>
-                            <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
+                        <Grid2 size={{ xs: 12 }} key={attr}>
+                            <Box display="flex" alignItems="center">
                                 <input
                                     type="checkbox"
                                     checked={!!formValues[attr]}

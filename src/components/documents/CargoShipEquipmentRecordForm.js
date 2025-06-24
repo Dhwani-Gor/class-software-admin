@@ -15,7 +15,6 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [formValues, setFormValues] = useState({});
   const [expandedSection, setExpandedSection] = useState("lifeSaving");
 
-
   const handleClose = () => {
     onClose();
     setFormValues({});
@@ -58,6 +57,8 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
         fullWidth
         size="small"
         value={value}
+        label={field.label || formatLabel(attr)}
+        title={field.label || formatLabel(attr)}
         onChange={(e) => handleInputChange(attr, e.target.value)}
         placeholder={formatLabel(attr).toLowerCase()}
         type={isDate ? "date" : "text"}
@@ -121,7 +122,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
             </tr>
           </thead>
           <tbody>
-            {grouped.map(([baseKey, { label, port, starboard, other }], index) => (
+            {grouped.map(([baseKey, { label, port, starboard }], index) => (
               <tr key={baseKey} style={{ backgroundColor: index % 2 === 0 ? '#fafafa' : 'white' }}>
                 <td style={{ padding: '12px', fontWeight: 500 }}>{label}</td>
 
@@ -136,9 +137,9 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                   </>
                 ) : (
                   <>
-                    <td colSpan={2} style={{ padding: '12px' }}>
+                    {/* <td colSpan={2} style={{ padding: '12px' }}>
                       {other ? renderInputField(other) : ""}
-                    </td>
+                    </td> */}
                   </>
                 )}
               </tr>
@@ -154,36 +155,36 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
     text?.split("").map(c => c + "\u0336").join("");
 
   const handleSubmit = () => {
-      const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
-        if (key.startsWith("_st_")) {
-          const [, raw] = key.split("_st_");
-          const [opt1Raw, opt2Raw] = raw.split("_");
-          const opt1 = opt1Raw.replace(/-/g, " ");
-          const opt2 = opt2Raw.replace(/-/g, " ");
-  
-          if (!value) {
-            acc[key] = `{{${key}}}`;
-          } else {
-            const finalLine =
-              value === opt1
-                ? `${opt1} / ${applyStrikethrough(opt2)}*`
-                : `${applyStrikethrough(opt1)} / ${opt2}*`;
-  
-            acc[key] = finalLine;
-          }
-        } else if (typeof value === "boolean") {
-          acc[key] = value ? "☑" : "☒";
-        }else if (key.includes("date") && value) {
-          acc[key] = formattedDate(value);
-        } else if (typeof value === "string" && value.trim()) {
-          acc[key] = value;
+    const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
+      if (key.startsWith("_st_")) {
+        const [, raw] = key.split("_st_");
+        const [opt1Raw, opt2Raw] = raw.split("_");
+        const opt1 = opt1Raw.replace(/-/g, " ");
+        const opt2 = opt2Raw.replace(/-/g, " ");
+
+        if (!value) {
+          acc[key] = `{{${key}}}`;
+        } else {
+          const finalLine =
+            value === opt1
+              ? `${opt1} / ${applyStrikethrough(opt2)}*`
+              : `${applyStrikethrough(opt1)} / ${opt2}*`;
+
+          acc[key] = finalLine;
         }
-  
-        return acc;
-      }, {});
-  
-      onSubmit(filledValues);
-    };
+      } else if (typeof value === "boolean") {
+        acc[key] = value ? "☑" : "☒";
+      } else if (key.includes("date") && value) {
+        acc[key] = formattedDate(value);
+      } else if (typeof value === "string" && value.trim()) {
+        acc[key] = value;
+      }
+
+      return acc;
+    }, {});
+
+    onSubmit(filledValues);
+  };
 
   const formatLabel = (attribute) =>
     attribute.replace(/^_CSS_/, "").replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
@@ -191,6 +192,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const categorizeFields = (fields) => {
     const categories = {
       lifeSaving: [],
+      portStarboard: [],
       navigation: [],
       uncategorized: [],
     };
@@ -200,7 +202,11 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
       if (attr.startsWith("_CSS_nav_")) {
         categories.navigation.push(field);
       } else if (attr.startsWith("_CSS_")) {
-        categories.lifeSaving.push(field);
+        if (attr.endsWith("_P") || attr.endsWith("_S")) {
+          categories.portStarboard.push(field);
+        } else {
+          categories.lifeSaving.push(field);
+        }
       } else {
         categories.uncategorized.push(field);
       }
@@ -209,7 +215,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
     return categories;
   };
 
-  const { lifeSaving, navigation, uncategorized } = categorizeFields(fields);
+  const { lifeSaving, portStarboard, navigation, uncategorized } = categorizeFields(fields);
 
   const renderFields = (fieldList) => (
     <Box sx={{ width: '100%', overflowX: 'auto' }}>
@@ -239,14 +245,17 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                 </td>
                 <td style={{ padding: '12px', verticalAlign: 'top' }}>
                   {isCheckbox ? (
-                    <Box display="flex" alignItems="center">
-                      <input
-                        type="checkbox"
-                        checked={!!formValues[attr]}
-                        onChange={(e) => handleInputChange(attr, e.target.checked)}
-                        style={{ marginRight: '8px' }}
-                      />
-                    </Box>
+                    <Grid2 size={{ xs: 12 }}>
+                      <Box display="flex" alignItems="center">
+                        <input
+                          type="checkbox"
+                          checked={!!formValues[attr]}
+                          onChange={(e) => handleInputChange(attr, e.target.checked)}
+                          style={{ marginRight: '8px' }}
+                        />
+                      </Box>
+                    </Grid2>
+
                   ) : isStrikethroughRadio ? (
                     (() => {
                       const [, raw] = attr.split("_st_");
@@ -325,13 +334,11 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
           })}
         </tbody>
       </table>
-    </Box>
+    </Box >
   );
 
-  const renderCategoryAccordion = (title, key, fieldList) => {
+  const renderCategoryAccordion = (title, key, fieldList, useGroupedTable = false) => {
     if (!fieldList?.length) return null;
-
-    const isGroupedTable = key === "lifeSaving";
 
     return (
       <Accordion
@@ -346,8 +353,9 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          {isGroupedTable ? renderGroupedFields(fieldList) : renderFields(fieldList)}
+          {useGroupedTable ? renderGroupedFields(fieldList) : renderFields(fieldList)}
         </AccordionDetails>
+
       </Accordion>
     );
   };
@@ -374,6 +382,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
       </Box>
 
       <DialogContent dividers sx={{ p: 3 }}>
+        {renderCategoryAccordion("Port & Starboard Equipment", "portStarboard", portStarboard, true)}
         {renderCategoryAccordion("Life-Saving Appliances", "lifeSaving", lifeSaving)}
         {renderCategoryAccordion("Navigational Systems", "navigation", navigation)}
         {renderCategoryAccordion("Other Fields", "uncategorized", uncategorized)}
