@@ -62,7 +62,7 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                 else {
                     if (reportDetails && reportDetails[field.attribute]) {
                         if (field.attribute.includes("date")) {
-                            initialValues[field.attribute] = convertToInputDate(reportDetails[field.attribute]);
+                            initialValues[field.attribute] = formattedDate(reportDetails[field.attribute]);
                         } else {
                             initialValues[field.attribute] = reportDetails[field.attribute];
                         }
