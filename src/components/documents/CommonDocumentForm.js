@@ -9,7 +9,7 @@ import {
   Description as ReportIcon,
   CheckCircle as CheckIcon
 } from "@mui/icons-material";
-import { formattedDate } from "@/utils/date";
+import { formattedDate, formatDate } from "@/utils/date";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
@@ -216,7 +216,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
                             label={field.label}
                             title={field.label}
                             variant="outlined"
-                            value={formData[attr] || ""}
+                            value={isDate ? formatDate(formData[attr]) : formData[attr] || ""}
                             onChange={(e) => handleInputChange(attr, e.target.value)}
                             type={isDate ? "date" : "text"}
                             InputLabelProps={isDate ? { shrink: true } : undefined}

@@ -35,7 +35,7 @@ import {
   CheckCircle as CheckIcon,
   ExpandMore as ExpandMoreIcon
 } from "@mui/icons-material";
-import { formattedDate } from "@/utils/date";
+import { formattedDate, formatDate } from "@/utils/date";
 
 const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
   const [formValues, setFormValues] = useState({});
@@ -246,7 +246,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
                     fullWidth
                     label={getLabelFromFields(gtSpaces[index].spaceAttr)}
                     size="small"
-                    value={formValues[gtSpaces[index].spaceAttr] || ""}
+                    value={isDate ? formatDate(formValues[gtSpaces[index].spaceAttr]) : formValues[gtSpaces[index].spaceAttr] || ""}
                     onChange={(e) => handleInputChange(gtSpaces[index].spaceAttr, e.target.value)}
 
                   />
@@ -258,7 +258,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
                     fullWidth
                     label={getLabelFromFields(gtSpaces[index].locAttr)}
                     size="small"
-                    value={formValues[gtSpaces[index].locAttr] || ""}
+                    value={isDate ? formatDate(formValues[gtSpaces[index].locAttr]) : formValues[gtSpaces[index].locAttr] || ""}
                     onChange={(e) => handleInputChange(gtSpaces[index].locAttr, e.target.value)}
 
                   />
@@ -270,7 +270,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
                     fullWidth
                     label={getLabelFromFields(gtSpaces[index].lengthAttr)}
                     size="small"
-                    value={formValues[gtSpaces[index].lengthAttr] || ""}
+                    value={isDate ? formatDate(formValues[gtSpaces[index].lengthAttr]) : formValues[gtSpaces[index].lengthAttr] || ""}
                     onChange={(e) => handleInputChange(gtSpaces[index].lengthAttr, e.target.value)}
                     placeholder="Length"
                   />
@@ -284,7 +284,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
                     fullWidth
                     label={getLabelFromFields(ntSpaces[index].spaceAttr)}
                     size="small"
-                    value={formValues[ntSpaces[index].spaceAttr] || ""}
+                    value={isDate ? formatDate(formValues[ntSpaces[index].spaceAttr]) : formValues[ntSpaces[index].spaceAttr] || ""}
                     onChange={(e) => handleInputChange(ntSpaces[index].spaceAttr, e.target.value)}
                     placeholder="Space name"
 
@@ -297,7 +297,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
                     fullWidth
                     label={getLabelFromFields(ntSpaces[index].locAttr)}
                     size="small"
-                    value={formValues[ntSpaces[index].locAttr] || ""}
+                    value={isDate ? formatDate(formValues[ntSpaces[index].locAttr]) : formValues[ntSpaces[index].locAttr] || ""}
                     onChange={(e) => handleInputChange(ntSpaces[index].locAttr, e.target.value)}
                     placeholder="Location"
                   />
@@ -309,7 +309,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
                     fullWidth
                     label={getLabelFromFields(ntSpaces[index].lengthAttr)}
                     size="small"
-                    value={formValues[ntSpaces[index].lengthAttr] || ""}
+                    value={isDate ? formatDate(formValues[ntSpaces[index].lengthAttr]) : formValues[ntSpaces[index].lengthAttr] || ""}
                     onChange={(e) => handleInputChange(ntSpaces[index].lengthAttr, e.target.value)}
                     placeholder="Length"
                   />
@@ -405,7 +405,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
                 type={isDate ? "date" : "text"}
                 label={formatLabel(field.label)}
                 size="small"
-                value={value || ""}
+                value={isDate ? formatDate(value) : value || ""}
                 onChange={(e) => handleInputChange(attr, e.target.value)}
                 placeholder={`Enter ${formatLabel(field.label)?.toLowerCase()}`}
                 InputLabelProps={isDate ? { shrink: true } : undefined}

@@ -27,7 +27,7 @@ import {
     TextareaAutosize
 } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, Science as ScienceIcon, Close as CloseIcon, CheckCircle as CheckIcon } from '@mui/icons-material';
-import { formattedDate } from "@/utils/date";
+import { formattedDate, formatDate } from "@/utils/date";
 
 const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
     const [expandedSection, setExpandedSection] = useState("systemInfo");
@@ -309,7 +309,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                                     size="small"
                                     label={field.label}
                                     title={field.label}
-                                    value={value || ""}
+                                    value={isDate ? formatDate(value) : value || ""}
                                     onChange={(e) => handleInputChange(attr, e.target.value)}
                                     placeholder={field.label}
                                     type={isDate ? "date" : "text"}
@@ -373,7 +373,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                                                             fullWidth
                                                             size="small"
                                                             label={fieldObj?.label}
-                                                            value={formValues[fieldObj?.attribute] || ""}
+                                                            value={isDate ? formatDate(formValues[fieldObj?.attribute]) : formValues[fieldObj?.attribute] || ""}
                                                             onChange={(e) => handleInputChange(fieldObj?.attribute, e.target.value)}
                                                             placeholder={fieldObj?.label}
                                                             type={isDate ? "date" : "text"}
@@ -497,7 +497,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                                                             fullWidth
                                                             size="small"
                                                             label={attr.label}
-                                                            value={formValues[fieldKey] || ""}
+                                                            value={isDate ? formatDate(formValues[fieldKey]) : formValues[fieldKey] || ""}
                                                             onChange={(e) => handleInputChange(fieldKey, e.target.value)}
                                                             disabled={!fieldKey}
                                                             placeholder={!fieldKey ? "N/A" : ""}
@@ -562,7 +562,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                                                             fullWidth
                                                             size="small"
                                                             label={attr.label}
-                                                            value={formValues[fieldKey] || ""}
+                                                            value={isDate ? formatDate(formValues[fieldKey]) : formValues[fieldKey] || ""}
                                                             onChange={(e) => handleInputChange(fieldKey, e.target.value)}
                                                             disabled={!fieldKey}
                                                             placeholder={!fieldKey ? "N/A" : ""}

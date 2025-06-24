@@ -10,7 +10,7 @@ import {
   Close as CloseIcon, ExpandMore as ExpandMoreIcon,
   CheckCircle as CheckIcon, Science as ScienceIcon
 } from "@mui/icons-material";
-import { formattedDate } from "@/utils/date";
+import { formattedDate, formatDate } from "@/utils/date";
 
 const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [formValues, setFormValues] = useState({});
@@ -235,7 +235,7 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
                   size="small"
                   title={field.label || formatLabel(attr)}
                   label={field.label || formatLabel(attr)}
-                  value={formValues[attr] || ""}
+                  value={isDate ? formatDate(formValues[attr]) : formValues[attr] || ""}
                   onChange={(e) => handleInputChange(attr, e.target.value)}
                   placeholder={formatLabel(attr).toLowerCase()}
                   type={isDate ? "date" : "text"}

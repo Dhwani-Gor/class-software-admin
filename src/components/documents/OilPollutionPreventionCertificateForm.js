@@ -23,7 +23,7 @@ import {
     CheckCircle as CheckIcon,
     ExpandMore as ExpandMoreIcon
 } from "@mui/icons-material";
-import { formattedDate } from "@/utils/date";
+import { formattedDate, formatDate } from "@/utils/date";
 
 
 const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
@@ -61,11 +61,16 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                 }
                 else {
                     if (reportDetails && reportDetails[field.attribute]) {
-                        initialValues[field.attribute] = reportDetails[field.attribute];
+                        if (field.attribute.includes("date")) {
+                            initialValues[field.attribute] = convertToInputDate(reportDetails[field.attribute]);
+                        } else {
+                            initialValues[field.attribute] = reportDetails[field.attribute];
+                        }
                     } else {
                         initialValues[field.attribute] = "";
                     }
                 }
+                
             });
             setFormValues(initialValues);
         }
@@ -243,7 +248,7 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                             title={field.label}
                             size="small"
                             label={field.label}
-                            value={formValues[attr] || ""}
+                            value={isDate ? formatDate(formValues[attr]) : formValues[attr] || ""}
                             onChange={(e) => handleInputChange(attr, e.target.value)}
                             placeholder={field.label}
                             type={isDate ? "date" : "text"}
