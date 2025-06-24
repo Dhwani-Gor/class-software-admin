@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import {
   Dialog, DialogContent, DialogActions,
   Button, TextField, Grid2, Box, Typography, IconButton,
-  Fade, Slide, Divider
+  Fade, Slide, Divider,
+  TextareaAutosize
 } from "@mui/material";
 import {
   Close as CloseIcon,
@@ -147,7 +148,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
               const attr = field.attribute;
               const isCheckbox = attr.startsWith("_checkbox");
               const isDate = attr.includes("date");
-              const isTextArea = attr.startsWith("_tx_");
+              const isTextArea = attr.startsWith("_ta_");
               const isRadioWithStrike = attr.startsWith("_st_");
 
               return (
@@ -173,9 +174,9 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
                             minRows={4}
                             multiline
                             label={field.label || formatLabel(attr)}
-                            value={formValues[attr] || ""}
+                            value={formData[attr] || ""}
                             onChange={(e) => handleInputChange(attr, e.target.value)}
-                            placeholder={formatLabel(attr).toLowerCase()}
+                            placeholder={field.label}
                           />
                         </Grid2>
                       ) : isRadioWithStrike ?
@@ -217,7 +218,9 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
                             title={field.label}
                             variant="outlined"
                             value={isDate ? formatDate(formData[attr]) : formData[attr] || ""}
-                            onChange={(e) => handleInputChange(attr, e.target.value)}
+                            onChange={(e) => {
+                                handleInputChange(attr, e.target.value);
+                            }}
                             type={isDate ? "date" : "text"}
                             InputLabelProps={isDate ? { shrink: true } : undefined}
                           />
