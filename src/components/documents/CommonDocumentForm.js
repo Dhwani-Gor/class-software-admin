@@ -9,24 +9,38 @@ import {
   Description as ReportIcon,
   CheckCircle as CheckIcon
 } from "@mui/icons-material";
+import { formattedDate } from "@/utils/date";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
-const strikeText = (text) => text.split('').map(c => c + '\u0336').join('');
+const strikeText = (text) => text?.split('').map(c => c + '\u0336').join('');
 
-export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
+const isStrikethroughText = (text) => text?.split('').some(c => c === '\u0336');
+
+
+export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [formData, setFormData] = useState({});
 
   const handleInputChange = (fieldName, value) => {
     setFormData(prev => ({ ...prev, [fieldName]: value }));
   };
 
+  // useEffect(() => {
+  //   console.log(reportDetails,"report details in common component")
+  //   if (reportDetails) {
+  //     setFormData(prev => ({
+  //       ...prev,
+  //       parseReportDetails(reportDetails)
+  //     }));
+  //   }
+  // }, [reportDetails]);
+
   const handleSubmit = () => {
     const filledValues = Object.entries(formData).reduce((acc, [key, value]) => {
       if (key.startsWith('_st_')) {
-        const parts = key.replace('_st_', '').split('_');
+        const parts = key.replace('_st_', '')?.split('_');
         const [option1, option2] = parts;
         if (value === option1) {
           acc[key] = `${option1} / ${strikeText(option2)}`;
@@ -37,6 +51,8 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
         }
       } else if (typeof value === "boolean") {
         acc[key] = value === true ? "\u2611" : "\u2612";
+      } else if (key.includes("date") && value) {
+        acc[key] = formattedDate(value);
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       }
@@ -52,9 +68,33 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
       const initialValues = {};
       fields.forEach(field => {
         if (field.attribute.startsWith("_checkbox")) {
-          initialValues[field.attribute] = false;
-        } else {
-          initialValues[field.attribute] = "";
+          if (reportDetails && reportDetails[field.attribute] === "\u2611") {
+            initialValues[field.attribute] = true;
+          } else {
+            initialValues[field.attribute] = false;
+          }
+        } else if (field.attribute.startsWith("_st")) {
+          if (reportDetails && reportDetails[field.attribute]) {
+
+            const parts = reportDetails[field.attribute]?.split('/').map(s => s.trim());
+            const [option1, option2] = parts;
+            if (isStrikethroughText(option1)) {
+              initialValues[field.attribute] = option2;
+            } else if (isStrikethroughText(option2)) {
+              initialValues[field.attribute] = option1;
+            } else {
+              initialValues[field.attribute] = "";
+            }
+          } else {
+            initialValues[field.attribute] = "";
+          }
+        }
+        else {
+          if (reportDetails && reportDetails[field.attribute]) {
+            initialValues[field.attribute] = reportDetails[field.attribute];
+          } else {
+            initialValues[field.attribute] = "";
+          }
         }
       });
       setFormData(initialValues);
@@ -141,7 +181,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
                       ) : isRadioWithStrike ?
                         (
                           (() => {
-                            const [label1, label2] = attr.replace('_st_', '').split('_');
+                            const [label1, label2] = attr.replace('_st_', '')?.split('_');
                             const selected = formData[attr];
                             return (
 

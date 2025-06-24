@@ -10,23 +10,54 @@ import {
   Close as CloseIcon, ExpandMore as ExpandMoreIcon,
   CheckCircle as CheckIcon, Waves as WavesIcon
 } from "@mui/icons-material";
+import { formattedDate } from "@/utils/date";
 
 const applyStrikethrough = (text) =>
-  text.split("").map((c) => c + "\u0336").join("");
+  text?.split("").map((c) => c + "\u0336").join("");
 
-const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
+const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [formValues, setFormValues] = useState({});
   const [expandedSection, setExpandedSection] = useState("freeboard");
 
+  const isStrikethroughText = (text) => text?.split('').some(c => c === '\u0336');
+
   useEffect(() => {
-    if (fields?.length) {
+    if (fields && fields.length > 0) {
       const initialValues = {};
       fields.forEach(field => {
-        initialValues[field?.attribute] = "";
+        if (field.attribute.startsWith("_checkbox")) {
+          if (reportDetails && reportDetails[field.attribute] === "\u2611") {
+            initialValues[field.attribute] = true;
+          } else {
+            initialValues[field.attribute] = false;
+          }
+        } else if (field.attribute.startsWith("_st")) {
+          if (reportDetails && reportDetails[field.attribute]) {
+
+            const parts = reportDetails[field.attribute]?.split('/').map(s => s.trim());
+            const [option1, option2] = parts;
+            if (isStrikethroughText(option1)) {
+              initialValues[field.attribute] = option2;
+            } else if (isStrikethroughText(option2)) {
+              initialValues[field.attribute] = option1;
+            } else {
+              initialValues[field.attribute] = "";
+            }
+          } else {
+            initialValues[field.attribute] = "";
+          }
+        }
+        else {
+          if (reportDetails && reportDetails[field.attribute]) {
+            initialValues[field.attribute] = reportDetails[field.attribute];
+          } else {
+            initialValues[field.attribute] = "";
+          }
+        }
       });
       setFormValues(initialValues);
     }
-  }, [fields]);
+  }, [fields, open]);
 
   const handleClose = () => {
     onClose();
@@ -57,6 +88,8 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
         }
       } else if (typeof value === "boolean") {
         acc[key] = value ? "\u2611" : "\u2612";
+      } else if (key.includes("date") && value) {
+        acc[key] = formattedDate(value);
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       }
@@ -159,15 +192,15 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields }) => {
               <Typography variant="body2" sx={{ mb: 1 }}>
                 {field.label || formatLabel(attr)}
               </Typography>
-                <TextareaAutosize
-                  style={{ width: '100%' }}
-                  minRows={4}
-                  multiline
-                  label={field.label}
-                  value={formValues[attr] || ""}
-                  onChange={(e) => handleInputChange(attr, e.target.value)}
-                  placeholder={field.label}
-                />
+              <TextareaAutosize
+                style={{ width: '100%' }}
+                minRows={4}
+                multiline
+                label={field.label}
+                value={formValues[attr] || ""}
+                onChange={(e) => handleInputChange(attr, e.target.value)}
+                placeholder={field.label}
+              />
             </Grid2>
           );
         }

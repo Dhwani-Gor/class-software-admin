@@ -37,7 +37,7 @@ const UpdateDocument = ({ params }) => {
         </Stack>
       </CommonCard>
       <Stack>
-        <DocumentForm mode={mode} documentId={params?.update} editReason={editReason} />
+        <DocumentForm mode={mode} documentId={params?.update || null} editReason={editReason} />
       </Stack>
     </Layout>
   );

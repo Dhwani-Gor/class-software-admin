@@ -23,20 +23,53 @@ import {
     CheckCircle as CheckIcon,
     ExpandMore as ExpandMoreIcon
 } from "@mui/icons-material";
+import { formattedDate } from "@/utils/date";
 
-const SuppForm = ({ open, onClose, onSubmit, fields }) => {
+
+const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
     const [formValues, setFormValues] = useState({});
     const [expandedSection, setExpandedSection] = useState("basicInfo");
 
+
+    const isStrikethroughText = (text) => text?.split('').some(c => c === '\u0336');
+
     useEffect(() => {
-        if (fields?.length) {
+        if (fields && fields.length > 0) {
             const initialValues = {};
             fields.forEach(field => {
-                initialValues[field?.attribute] = "";
+                if (field.attribute.startsWith("_checkbox")) {
+                    if (reportDetails && reportDetails[field.attribute] === "\u2611") {
+                        initialValues[field.attribute] = true;
+                    } else {
+                        initialValues[field.attribute] = false;
+                    }
+                } else if (field.attribute.startsWith("_st")) {
+                    if (reportDetails && reportDetails[field.attribute]) {
+
+                        const parts = reportDetails[field.attribute]?.split('/').map(s => s.trim());
+                        const [option1, option2] = parts;
+                        if (isStrikethroughText(option1)) {
+                            initialValues[field.attribute] = option2;
+                        } else if (isStrikethroughText(option2)) {
+                            initialValues[field.attribute] = option1;
+                        } else {
+                            initialValues[field.attribute] = "";
+                        }
+                    } else {
+                        initialValues[field.attribute] = "";
+                    }
+                }
+                else {
+                    if (reportDetails && reportDetails[field.attribute]) {
+                        initialValues[field.attribute] = reportDetails[field.attribute];
+                    } else {
+                        initialValues[field.attribute] = "";
+                    }
+                }
             });
             setFormValues(initialValues);
         }
-    }, [fields]);
+    }, [fields, open]);
 
     const handleClose = () => {
         onClose();
@@ -47,7 +80,7 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
         setFormValues(prev => ({ ...prev, [fieldName]: value }));
     };
     const applyStrikethrough = (text) =>
-        text.split("").map(c => c + "\u0336").join("");
+        text?.split("").map(c => c + "\u0336").join("");
 
     const handleSubmit = () => {
         const finalPayload = {};
@@ -56,7 +89,7 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
             const value = formValues[attribute];
 
             if (attribute.startsWith("_st_")) {
-                const [, raw] = attribute.split("_st_");
+                const [, raw] = attribute?.split("_st_");
                 const [opt1Raw, opt2Raw] = raw.split("_");
                 const opt1 = opt1Raw.replace(/-/g, " ");
                 const opt2 = opt2Raw.replace(/-/g, " ");
@@ -71,6 +104,8 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
                 }
             } else if (attribute.startsWith("_checkbox")) {
                 finalPayload[attribute] = value === true ? "\u2611" : "\u2612";
+            } else if (attribute.includes("date") && value) {
+                finalPayload[attribute] = formattedDate(value);
             } else {
                 finalPayload[attribute] = value || "";
             }
@@ -149,10 +184,10 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
                 }
 
                 if (isStrikethroughRadio) {
-                    const [, raw] = attr.split("_st_");
-                    const [opt1Raw, opt2Raw] = raw.split("_");
-                    const opt1 = opt1Raw.replace(/-/g, " ");
-                    const opt2 = opt2Raw.replace(/-/g, " ");
+                    const [, raw] = attr?.split("_st_");
+                    const [opt1Raw, opt2Raw] = raw?.split("_");
+                    const opt1 = opt1Raw?.replace(/-/g, " ");
+                    const opt2 = opt2Raw?.replace(/-/g, " ");
                     const value = formValues[attr];
 
                     return (
@@ -183,7 +218,6 @@ const SuppForm = ({ open, onClose, onSubmit, fields }) => {
                 }
 
                 if (isTextarea) {
-                    console.log(isTextarea, "is textarea")
                     return (
                         <Grid2 size={{ xs: 12 }} key={attr}>
                             <Typography variant="body2" sx={{ mb: 1 }}>

@@ -45,7 +45,7 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes }) 
     if (defaultValues?.surveyTypes && surveyTypes?.length) {
       const surveyTypeList = Array.isArray(defaultValues.surveyTypes)
         ? defaultValues.surveyTypes
-        : [defaultValues.surveyTypes]; // wrap single object as array
+        : [defaultValues.surveyTypes];
     
         const ids = surveyTypeList.map((s) => Number(s.id));
         setValue("typeOfSurvey", ids);
@@ -54,10 +54,7 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes }) 
   }, [defaultValues, reset, surveyTypes, setValue]);
 
   const onSubmit = (data) => {
-    onSave({
-      ...data,
-      typeOfSurvey: JSON.stringify(data.typeOfSurvey),
-    });
+    onSave(data);
     reset();
     onClose();
   };
