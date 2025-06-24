@@ -344,7 +344,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
 
           if (isCheckbox) {
             return (
-              <Grid2 item xs={12} sm={6} md={4} key={attr}>
+              <Grid2 item xs={12} key={attr}>
                 <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
                   <input
                     type="checkbox"
