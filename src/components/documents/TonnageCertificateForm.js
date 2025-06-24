@@ -37,50 +37,54 @@ import {
 } from "@mui/icons-material";
 import { formattedDate, formatDate } from "@/utils/date";
 
-const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
+const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [formValues, setFormValues] = useState({});
   const [expandedSection, setExpandedSection] = useState("basicInfo");
 
-  const isStrikethroughText = (text) => text.split('').some(c => c === '\u0336');
+  const isDateField = (attribute) => {
+    return attribute?.includes("date") || attribute?.endsWith("_date");
+  };
 
-  useEffect(() => {
-    if (fields && fields.length > 0) {
-      const initialValues = {};
-      fields.forEach(field => {
-        if (field.attribute.startsWith("_checkbox")) {
-          if (reportDetails && reportDetails[field.attribute] === "\u2611") {
-            initialValues[field.attribute] = true;
-          } else {
-            initialValues[field.attribute] = false;
-          }
-        } else if (field.attribute.startsWith("_st")) {
-          if (reportDetails && reportDetails[field.attribute]) {
+  const isStrikethroughText = (text) => text?.split('').some(c => c === '\u0336');
 
-            const parts = reportDetails[field.attribute].split('/').map(s => s.trim());
-            const [option1, option2] = parts;
-            if (isStrikethroughText(option1)) {
-              initialValues[field.attribute] = option2;
-            } else if (isStrikethroughText(option2)) {
-              initialValues[field.attribute] = option1;
+   useEffect(() => {
+      if (fields && fields.length > 0) {
+        const initialValues = {};
+        fields.forEach(field => {
+          if (field.attribute.startsWith("_checkbox")) {
+            if (reportDetails && reportDetails[field.attribute] === "\u2611") {
+              initialValues[field.attribute] = true;
+            } else {
+              initialValues[field.attribute] = false;
+            }
+          } else if (field.attribute.startsWith("_st")) {
+            if (reportDetails && reportDetails[field.attribute]) {
+  
+              const parts = reportDetails[field.attribute]?.split('/').map(s => s.trim());
+              const [option1, option2] = parts;
+              if (isStrikethroughText(option1)) {
+                initialValues[field.attribute] = option2;
+              } else if (isStrikethroughText(option2)) {
+                initialValues[field.attribute] = option1;
+              } else {
+                initialValues[field.attribute] = "";
+              }
             } else {
               initialValues[field.attribute] = "";
             }
-          } else {
-            initialValues[field.attribute] = "";
           }
-        }
-        else {
-          if (reportDetails && reportDetails[field.attribute]) {
-            initialValues[field.attribute] = reportDetails[field.attribute];
-          } else {
-            initialValues[field.attribute] = "";
+          else {
+            if (reportDetails && reportDetails[field.attribute]) {
+              initialValues[field.attribute] = reportDetails[field.attribute];
+            } else {
+              initialValues[field.attribute] = "";
+            }
           }
-        }
-      });
-      setFormValues(initialValues);
-    }
-  }, [fields, open]);
-
+        });
+        setFormValues(initialValues);
+      }
+    }, [fields, open]);
+  
   const handleClose = () => {
     onClose();
     setFormValues({});
@@ -94,7 +98,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
   };
 
   const applyStrikethrough = (text) =>
-    text.split("").map(c => c + "\u0336").join("");
+    text?.split("").map(c => c + "\u0336").join("");
 
   const handleSubmit = () => {
     const finalPayload = {};
@@ -246,7 +250,8 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
                     fullWidth
                     label={getLabelFromFields(gtSpaces[index].spaceAttr)}
                     size="small"
-                    value={isDate ? formatDate(formValues[gtSpaces[index].spaceAttr]) : formValues[gtSpaces[index].spaceAttr] || ""}
+                    type={isDateField(gtSpaces[index].spaceAttr) ? "date" : "text"}
+                    value={isDateField(gtSpaces[index].spaceAttr) ? formatDate(formValues[gtSpaces[index].spaceAttr]) : formValues[gtSpaces[index].spaceAttr] || ""}
                     onChange={(e) => handleInputChange(gtSpaces[index].spaceAttr, e.target.value)}
 
                   />
@@ -258,7 +263,8 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
                     fullWidth
                     label={getLabelFromFields(gtSpaces[index].locAttr)}
                     size="small"
-                    value={isDate ? formatDate(formValues[gtSpaces[index].locAttr]) : formValues[gtSpaces[index].locAttr] || ""}
+                    type={isDateField(gtSpaces[index].locAttr) ? "date" : "text"}
+                    value={isDateField(gtSpaces[index].locAttr) ? formatDate(formValues[gtSpaces[index].locAttr]) : formValues[gtSpaces[index].locAttr] || ""}
                     onChange={(e) => handleInputChange(gtSpaces[index].locAttr, e.target.value)}
 
                   />
@@ -270,7 +276,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
                     fullWidth
                     label={getLabelFromFields(gtSpaces[index].lengthAttr)}
                     size="small"
-                    value={isDate ? formatDate(formValues[gtSpaces[index].lengthAttr]) : formValues[gtSpaces[index].lengthAttr] || ""}
+                    value={isDateField(gtSpaces[index].lengthAttr) ? formatDate(formValues[gtSpaces[index].lengthAttr]) : formValues[gtSpaces[index].lengthAttr] || ""}
                     onChange={(e) => handleInputChange(gtSpaces[index].lengthAttr, e.target.value)}
                     placeholder="Length"
                   />
@@ -284,7 +290,8 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
                     fullWidth
                     label={getLabelFromFields(ntSpaces[index].spaceAttr)}
                     size="small"
-                    value={isDate ? formatDate(formValues[ntSpaces[index].spaceAttr]) : formValues[ntSpaces[index].spaceAttr] || ""}
+                    type={isDateField(ntSpaces[index].spaceAttr) ? "date" : "text"}
+                    value={isDateField(ntSpaces[index].spaceAttr) ? formatDate(formValues[ntSpaces[index].spaceAttr]) : formValues[ntSpaces[index].spaceAttr] || ""}
                     onChange={(e) => handleInputChange(ntSpaces[index].spaceAttr, e.target.value)}
                     placeholder="Space name"
 
@@ -297,7 +304,8 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
                     fullWidth
                     label={getLabelFromFields(ntSpaces[index].locAttr)}
                     size="small"
-                    value={isDate ? formatDate(formValues[ntSpaces[index].locAttr]) : formValues[ntSpaces[index].locAttr] || ""}
+                    type={isDateField(ntSpaces[index].locAttr) ? "date" : "text"}
+                    value={isDateField(ntSpaces[index].locAttr) ? formatDate(formValues[ntSpaces[index].locAttr]) : formValues[ntSpaces[index].locAttr] || ""}
                     onChange={(e) => handleInputChange(ntSpaces[index].locAttr, e.target.value)}
                     placeholder="Location"
                   />
@@ -309,7 +317,8 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
                     fullWidth
                     label={getLabelFromFields(ntSpaces[index].lengthAttr)}
                     size="small"
-                    value={isDate ? formatDate(formValues[ntSpaces[index].lengthAttr]) : formValues[ntSpaces[index].lengthAttr] || ""}
+                    type={isDateField(ntSpaces[index].lengthAttr) ? "date" : "text"}
+                    value={isDateField(ntSpaces[index].lengthAttr) ? formatDate(formValues[ntSpaces[index].lengthAttr]) : formValues[ntSpaces[index].lengthAttr] || ""}
                     onChange={(e) => handleInputChange(ntSpaces[index].lengthAttr, e.target.value)}
                     placeholder="Length"
                   />
@@ -402,13 +411,13 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
             <Grid2 item xs={12} sm={6} md={3} key={attr}>
               <TextField
                 fullWidth
-                type={isDate ? "date" : "text"}
+                type={isDateField(attr) ? "date" : "text"}
                 label={formatLabel(field.label)}
                 size="small"
-                value={isDate ? formatDate(value) : value || ""}
+                value={isDateField(attr) ? formatDate(value) : value || ""}
                 onChange={(e) => handleInputChange(attr, e.target.value)}
                 placeholder={`Enter ${formatLabel(field.label)?.toLowerCase()}`}
-                InputLabelProps={isDate ? { shrink: true } : undefined}
+                InputLabelProps={isDateField(attr) ? { shrink: true } : undefined}
               />
             </Grid2>
           );

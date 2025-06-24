@@ -1462,6 +1462,7 @@ const ReportingForm = () => {
           onClose={() => setOpen(false)}
           onSubmit={handleSubmitReport}
           fields={underscoreFields}
+          reportDetails={reportDetails?.data}
         />
       )}
 
