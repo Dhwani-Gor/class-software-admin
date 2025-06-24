@@ -9,7 +9,7 @@ import {
   Close as CloseIcon, ExpandMore as ExpandMoreIcon,
   CheckCircle as CheckIcon, Report as ReportIcon
 } from "@mui/icons-material";
-import { formattedDate } from "@/utils/date";
+import { formattedDate, formatDate } from "@/utils/date";
 
 const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [formValues, setFormValues] = useState({});
@@ -69,8 +69,6 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const isStrikethroughText = (text) => text?.split('').some(c => c === '\u0336');
 
   useEffect(() => {
-    console.log('fields in cargo', fields)
-    console.log('reportDetails in cargo', reportDetails)
     if (fields && fields.length > 0) {
       const initialValues = {};
       fields.forEach(field => {
@@ -152,34 +150,40 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
     );
   };
 
-  const handleSubmit = () => {
-    const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
-      if (typeof value === "boolean") {
-        acc[key] = value === true ? "☑" : "☒";
-      } else if (key.startsWith("_st_")) {
-        const [, raw] = key.split("_st_");
-        const [opt1Raw, opt2Raw] = raw.split("_");
-        const opt1 = opt1Raw.replace(/-/g, " ");
-        const opt2 = opt2Raw.replace(/-/g, " ");
+  const applyStrikethrough = (text) =>
+    text?.split("").map(c => c + "\u0336").join("");
 
-        if (value === opt1) {
-          acc[key] = `${opt1} / ${strikeThrough(opt2)}`;
-        } else if (value === opt2) {
-          acc[key] = `${strikeThrough(opt1)} / ${opt2}`;
-        } else {
-          acc[key] = `{{${key}}}`;
+  const handleSubmit = () => {
+      const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
+        if (key.startsWith("_st_")) {
+          const [, raw] = key.split("_st_");
+          const [opt1Raw, opt2Raw] = raw.split("_");
+          const opt1 = opt1Raw.replace(/-/g, " ");
+          const opt2 = opt2Raw.replace(/-/g, " ");
+  
+          if (!value) {
+            acc[key] = `{{${key}}}`;
+          } else {
+            const finalLine =
+              value === opt1
+                ? `${opt1} / ${applyStrikethrough(opt2)}*`
+                : `${applyStrikethrough(opt1)} / ${opt2}*`;
+  
+            acc[key] = finalLine;
+          }
+        } else if (typeof value === "boolean") {
+          acc[key] = value ? "☑" : "☒";
+        }else if (key.includes("date") && value) {
+          acc[key] = formattedDate(value);
+        } else if (typeof value === "string" && value.trim()) {
+          acc[key] = value;
         }
-      }
-      else if (key.includes("date") && value) {
-        acc[key] = formattedDate(value);
-      }
-      else if (typeof value === "string" && value.trim()) {
-        acc[key] = value;
-      }
-      return acc;
-    }, {});
-    onSubmit(filledValues);
-  };
+  
+        return acc;
+      }, {});
+  
+      onSubmit(filledValues);
+    };
 
   const formatLabel = (attribute) =>
     attribute.replace(/^_CSS_/, "").replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
@@ -300,7 +304,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                         size="small"
                         title={field.label || formatLabel(attr)}
                         label={field.label || formatLabel(attr)}
-                        value={formValues[attr] || ""}
+                        value={isDate ? formatDate(formValues[attr]) : formValues[attr] || ""}
                         onChange={(e) => handleInputChange(attr, e.target.value)}
                         placeholder={formatLabel(attr).toLowerCase()}
                         type={isDate ? "date" : "text"}

@@ -10,7 +10,7 @@ import {
   Close as CloseIcon, ExpandMore as ExpandMoreIcon,
   CheckCircle as CheckIcon, Waves as WavesIcon
 } from "@mui/icons-material";
-import { formattedDate } from "@/utils/date";
+import { formattedDate, formatDate } from "@/utils/date";
 
 const applyStrikethrough = (text) =>
   text?.split("").map((c) => c + "\u0336").join("");
@@ -212,7 +212,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
               size="small"
               label={field.label}
               title={field.label}
-              value={formValues[attr] || ""}
+              value={isDate ? formatDate(formValues[attr]) : formValues[attr] || ""}
               onChange={(e) => handleInputChange(attr, e.target.value)}
               type={isDate ? "date" : "text"}
               InputLabelProps={isDate ? { shrink: true } : undefined}
