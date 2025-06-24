@@ -10,15 +10,16 @@ import {
   Close as CloseIcon, ExpandMore as ExpandMoreIcon,
   CheckCircle as CheckIcon, Waves as WavesIcon
 } from "@mui/icons-material";
+import { formattedDate } from "@/utils/date";
 
 const applyStrikethrough = (text) =>
-  text.split("").map((c) => c + "\u0336").join("");
+  text?.split("").map((c) => c + "\u0336").join("");
 
 const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [formValues, setFormValues] = useState({});
   const [expandedSection, setExpandedSection] = useState("freeboard");
 
-  const isStrikethroughText = (text) => text.split('').some(c => c === '\u0336');
+  const isStrikethroughText = (text) => text?.split('').some(c => c === '\u0336');
 
   useEffect(() => {
     if (fields && fields.length > 0) {
@@ -33,7 +34,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
         } else if (field.attribute.startsWith("_st")) {
           if (reportDetails && reportDetails[field.attribute]) {
 
-            const parts = reportDetails[field.attribute].split('/').map(s => s.trim());
+            const parts = reportDetails[field.attribute]?.split('/').map(s => s.trim());
             const [option1, option2] = parts;
             if (isStrikethroughText(option1)) {
               initialValues[field.attribute] = option2;
@@ -87,6 +88,8 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
         }
       } else if (typeof value === "boolean") {
         acc[key] = value ? "\u2611" : "\u2612";
+      } else if (key.includes("date") && value) {
+        acc[key] = formattedDate(value);
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       }

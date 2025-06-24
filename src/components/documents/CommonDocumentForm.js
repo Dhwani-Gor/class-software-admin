@@ -9,14 +9,15 @@ import {
   Description as ReportIcon,
   CheckCircle as CheckIcon
 } from "@mui/icons-material";
+import { formattedDate } from "@/utils/date";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
-const strikeText = (text) => text.split('').map(c => c + '\u0336').join('');
+const strikeText = (text) => text?.split('').map(c => c + '\u0336').join('');
 
-const isStrikethroughText = (text) => text.split('').some(c => c === '\u0336');
+const isStrikethroughText = (text) => text?.split('').some(c => c === '\u0336');
 
 
 export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
@@ -39,7 +40,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
   const handleSubmit = () => {
     const filledValues = Object.entries(formData).reduce((acc, [key, value]) => {
       if (key.startsWith('_st_')) {
-        const parts = key.replace('_st_', '').split('_');
+        const parts = key.replace('_st_', '')?.split('_');
         const [option1, option2] = parts;
         if (value === option1) {
           acc[key] = `${option1} / ${strikeText(option2)}`;
@@ -50,6 +51,8 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
         }
       } else if (typeof value === "boolean") {
         acc[key] = value === true ? "\u2611" : "\u2612";
+      } else if (key.includes("date") && value) {
+        acc[key] = formattedDate(value);
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       }
@@ -73,7 +76,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
         } else if (field.attribute.startsWith("_st")) {
           if (reportDetails && reportDetails[field.attribute]) {
 
-            const parts = reportDetails[field.attribute].split('/').map(s => s.trim());
+            const parts = reportDetails[field.attribute]?.split('/').map(s => s.trim());
             const [option1, option2] = parts;
             if (isStrikethroughText(option1)) {
               initialValues[field.attribute] = option2;
@@ -178,7 +181,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
                       ) : isRadioWithStrike ?
                         (
                           (() => {
-                            const [label1, label2] = attr.replace('_st_', '').split('_');
+                            const [label1, label2] = attr.replace('_st_', '')?.split('_');
                             const selected = formData[attr];
                             return (
 

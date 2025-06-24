@@ -10,12 +10,13 @@ import {
   Close as CloseIcon, ExpandMore as ExpandMoreIcon,
   CheckCircle as CheckIcon, Science as ScienceIcon
 } from "@mui/icons-material";
+import { formattedDate } from "@/utils/date";
 
 const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [formValues, setFormValues] = useState({});
   const [expandedSection, setExpandedSection] = useState("systemInfo");
 
-  const isStrikethroughText = (text) => text.split('').some(c => c === '\u0336');
+  const isStrikethroughText = (text) => text?.split('').some(c => c === '\u0336');
 
   useEffect(() => {
     if (fields && fields.length > 0) {
@@ -30,7 +31,7 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
         } else if (field.attribute.startsWith("_st")) {
           if (reportDetails && reportDetails[field.attribute]) {
 
-            const parts = reportDetails[field.attribute].split('/').map(s => s.trim());
+            const parts = reportDetails[field.attribute]?.split('/').map(s => s.trim());
             const [option1, option2] = parts;
             if (isStrikethroughText(option1)) {
               initialValues[field.attribute] = option2;
@@ -65,7 +66,7 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
   };
 
   const applyStrikethrough = (text) =>
-    text.split("").map(c => c + "\u0336").join("");
+    text?.split("").map(c => c + "\u0336").join("");
 
 
   const handleSubmit = () => {
@@ -88,6 +89,8 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
         }
       } else if (typeof value === "boolean") {
         acc[key] = value ? "☑" : "☒";
+      }else if (key.includes("date") && value) {
+        acc[key] = formattedDate(value);
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       }

@@ -27,14 +27,14 @@ import {
     TextareaAutosize
 } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, Science as ScienceIcon, Close as CloseIcon, CheckCircle as CheckIcon } from '@mui/icons-material';
+import { formattedDate } from "@/utils/date";
 
 const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
     const [expandedSection, setExpandedSection] = useState("systemInfo");
 
     const [formValues, setFormValues] = useState({});
-    console.log(fields, "fields");
 
-    const isStrikethroughText = (text) => text.split('').some(c => c === '\u0336');
+    const isStrikethroughText = (text) => text?.split('').some(c => c === '\u0336');
 
     useEffect(() => {
         if (fields && fields.length > 0) {
@@ -49,7 +49,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                 } else if (field.attribute.startsWith("_st")) {
                     if (reportDetails && reportDetails[field.attribute]) {
 
-                        const parts = reportDetails[field.attribute].split('/').map(s => s.trim());
+                        const parts = reportDetails[field.attribute]?.split('/').map(s => s.trim());
                         const [option1, option2] = parts;
                         if (isStrikethroughText(option1)) {
                             initialValues[field.attribute] = option2;
@@ -87,7 +87,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
     };
 
     const applyStrikethrough = (text) =>
-        text.split("").map(c => c + "\u0336").join("");
+        text?.split("").map(c => c + "\u0336").join("");
 
     const handleSubmit = () => {
         const finalPayload = {};
@@ -111,6 +111,8 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                 }
             } else if (attribute.startsWith("_checkbox")) {
                 finalPayload[attribute] = value === true ? "\u2611" : "\u2612";
+            } else if (attribute.includes("date") && value) {
+                finalPayload[attribute] = formattedDate(value);
             } else {
                 finalPayload[attribute] = value || "";
             }
@@ -640,7 +642,15 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                         <Typography variant="h6">
                             Ozone-Depleting Substances (Regulation 12)
                             <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
-                                ({groupedOzoneFields?.filter(f => formValues[f.attribute])?.length}/{groupedOzoneFields?.length})
+                                <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                                    ({
+                                        groupedOzoneFields?.filter(group =>
+                                            (group.equipment && formValues[group.equipment.attribute]) ||
+                                            (group.location && formValues[group.location.attribute]) ||
+                                            (group.substance && formValues[group.substance.attribute])
+                                        ).length
+                                    }/{groupedOzoneFields?.length})
+                                </Typography>
                             </Typography>
                         </Typography>
                     </AccordionSummary>
@@ -666,8 +676,15 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                         <Typography variant="h6">
                             HCFC Systems (Regulation 12)
                             <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
-                                ({groupedHcfcFields?.filter(f => formValues[f.attribute])?.length}/{groupedHcfcFields?.length})
+                                ({
+                                    groupedHcfcFields?.filter(group =>
+                                        (group.equipment && formValues[group.equipment.attribute]) ||
+                                        (group.location && formValues[group.location.attribute]) ||
+                                        (group.substance && formValues[group.substance.attribute])
+                                    ).length
+                                }/{groupedHcfcFields?.length})
                             </Typography>
+
                         </Typography>
                     </AccordionSummary>
                     <AccordionDetails>
@@ -743,8 +760,15 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                         <Typography variant="h6">Equivalent Arrangements (Regulation 4)
                             <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
-                                ({groupedEquivalentFields?.filter(f => formValues[f.attribute])?.length}/{groupedEquivalentFields?.length})
+                                ({
+                                    groupedEquivalentFields?.filter(group =>
+                                        (group.equipment && formValues[group.equipment.attribute]) ||
+                                        (group.location && formValues[group.location.attribute]) ||
+                                        (group.reference && formValues[group.reference.attribute])
+                                    ).length
+                                }/{groupedEquivalentFields?.length})
                             </Typography>
+
                         </Typography>
                     </AccordionSummary>
                     <AccordionDetails>

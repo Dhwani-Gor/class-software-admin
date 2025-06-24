@@ -9,6 +9,7 @@ import {
   Close as CloseIcon, ExpandMore as ExpandMoreIcon,
   CheckCircle as CheckIcon, Report as ReportIcon
 } from "@mui/icons-material";
+import { formattedDate } from "@/utils/date";
 
 const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [formValues, setFormValues] = useState({});
@@ -65,7 +66,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
     );
   };
 
-  const isStrikethroughText = (text) => text.split('').some(c => c === '\u0336');
+  const isStrikethroughText = (text) => text?.split('').some(c => c === '\u0336');
 
   useEffect(() => {
     console.log('fields in cargo', fields)
@@ -82,7 +83,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
         } else if (field.attribute.startsWith("_st")) {
           if (reportDetails && reportDetails[field.attribute]) {
 
-            const parts = reportDetails[field.attribute].split('/').map(s => s.trim());
+            const parts = reportDetails[field.attribute]?.split('/').map(s => s.trim());
             const [option1, option2] = parts;
             if (isStrikethroughText(option1)) {
               initialValues[field.attribute] = option2;
@@ -168,7 +169,11 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
         } else {
           acc[key] = `{{${key}}}`;
         }
-      } else if (typeof value === "string" && value.trim()) {
+      }
+      else if (key.includes("date") && value) {
+        acc[key] = formattedDate(value);
+      }
+      else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       }
       return acc;

@@ -35,7 +35,7 @@ import {
   CheckCircle as CheckIcon,
   ExpandMore as ExpandMoreIcon
 } from "@mui/icons-material";
-
+import { formattedDate } from "@/utils/date";
 
 const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
   const [formValues, setFormValues] = useState({});
@@ -118,6 +118,9 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
         }
       } else if (attribute.startsWith("_checkbox")) {
         finalPayload[attribute] = value === true ? "\u2611" : "\u2612";
+      } 
+      else if (attribute.includes("date") && value) {
+        finalPayload[attribute] = formattedDate(value);
       } else {
         finalPayload[attribute] = value || "";
       }
