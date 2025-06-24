@@ -4,7 +4,7 @@ import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import CommonCard from "@/components/CommonCard";
 import { Container, IconButton, Box, Paper, Dialog, DialogTitle, DialogContent, DialogActions, Button, Alert } from "@mui/material";
-import { CheckCircle, Download, PictureAsPdf, Close, Error as ErrorIcon, Warning } from "@mui/icons-material";
+import { CheckCircle, Download, PictureAsPdf, Close, Error as ErrorIcon, Warning, OpenInNew } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { getActivity, getAllActivityReportDetails, getSelectedReportDetails, getSpecificClient } from "@/api";
 import { toast } from "react-toastify";
@@ -15,6 +15,22 @@ const DigitalDocument = ({ params }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [downloadError, setDownloadError] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+
+  // Detect mobile and iOS
+  useEffect(() => {
+    const checkDevice = () => {
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+      const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+      const isIOSDevice = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+      
+      setIsMobile(isMobileDevice);
+      setIsIOS(isIOSDevice);
+    };
+    
+    checkDevice();
+  }, []);
 
   // Function to determine certificate status based on validity date
   const getCertificateStatus = (validityDate) => {
@@ -112,14 +128,19 @@ const DigitalDocument = ({ params }) => {
         return;
       }
 
-      const a = document.createElement('a');
-      a.href = reportDetails.generatedDoc;
-      a.download = reportDetails.generatedDoc.split('/').pop() || 'certificate.pdf';
-      a.target = '_blank'; // Fallback for some browsers
+      // For mobile devices, especially iOS, open in new tab instead of downloading
+      if (isMobile) {
+        window.open(reportDetails.generatedDoc, '_blank');
+      } else {
+        const a = document.createElement('a');
+        a.href = reportDetails.generatedDoc;
+        a.download = reportDetails.generatedDoc.split('/').pop() || 'certificate.pdf';
+        a.target = '_blank';
 
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
 
     } catch (error) {
       console.error('Download error:', error);
@@ -139,13 +160,24 @@ const DigitalDocument = ({ params }) => {
       // Validate URL - mobile-safe approach
       const testUrl = reportDetails.generatedDoc;
       if (typeof testUrl === 'string' && (testUrl.startsWith('http://') || testUrl.startsWith('https://'))) {
-        setPreviewOpen(true);
+        // For iOS, directly open in new tab instead of modal
+        if (isIOS) {
+          window.open(reportDetails.generatedDoc, '_blank');
+        } else {
+          setPreviewOpen(true);
+        }
       } else {
         toast.error('Invalid document URL');
       }
     } catch (error) {
       console.error('Invalid document URL:', error);
       toast.error('Invalid document URL');
+    }
+  };
+
+  const handleOpenInNewTab = () => {
+    if (reportDetails?.generatedDoc) {
+      window.open(reportDetails.generatedDoc, '_blank');
     }
   };
 
@@ -339,14 +371,28 @@ const DigitalDocument = ({ params }) => {
                     <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
                       {reportDetails.generatedDoc.split('/').pop() || 'certificate.pdf'}
                     </Typography>
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={handleDownload}
-                      disabled={!reportDetails.generatedDoc}
-                    >
-                      <Download />
-                    </IconButton>
+                    <Stack direction="row" spacing={1}>
+                      {/* Open in new tab button for mobile */}
+                      {isMobile && (
+                        <IconButton
+                          size="small"
+                          color="secondary"
+                          onClick={handleOpenInNewTab}
+                          title="Open in new tab"
+                        >
+                          <OpenInNew />
+                        </IconButton>
+                      )}
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        onClick={handleDownload}
+                        disabled={!reportDetails.generatedDoc}
+                        title={isMobile ? "Open PDF" : "Download PDF"}
+                      >
+                        <Download />
+                      </IconButton>
+                    </Stack>
                   </Stack>
 
                   {/* Certificate Thumbnail */}
@@ -385,7 +431,7 @@ const DigitalDocument = ({ params }) => {
                           Certificate Preview
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          Click to view full document
+                          {isIOS ? 'Tap to open in Safari' : 'Click to view full document'}
                         </Typography>
                       </Box>
                     </Stack>
@@ -407,67 +453,101 @@ const DigitalDocument = ({ params }) => {
 
         </Paper>
 
-        {/* Preview Dialog */}
-        <Dialog
-          open={previewOpen}
-          onClose={() => setPreviewOpen(false)}
-          maxWidth="md"
-          fullWidth
-          fullScreen
-        >
-          <DialogTitle>
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Typography variant="h6">Certificate Preview</Typography>
-              <IconButton onClick={() => setPreviewOpen(false)}>
-                <Close />
-              </IconButton>
-            </Stack>
-          </DialogTitle>
-          <DialogContent>
-            {reportDetails?.generatedDoc ? (
-              <Box sx={{ height: '100%', width: '100%' }}>
-                <iframe
-                  src={`${reportDetails.generatedDoc}#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&scrollbar=0`}
-                  width="100%"
-                  height="100%"
-                  style={{ border: 'none', borderRadius: 4 }}
-                  title="Certificate Preview"
-                  onError={() => {
-                    toast.error('Failed to load document preview');
+        {/* Preview Dialog - Only show for non-iOS devices */}
+        {!isIOS && (
+          <Dialog
+            open={previewOpen}
+            onClose={() => setPreviewOpen(false)}
+            maxWidth="md"
+            fullWidth
+            fullScreen={isMobile}
+          >
+            <DialogTitle>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="h6">Certificate Preview</Typography>
+                <Stack direction="row" spacing={1}>
+                  <IconButton 
+                    onClick={handleOpenInNewTab}
+                    title="Open in new tab"
+                    size="small"
+                  >
+                    <OpenInNew />
+                  </IconButton>
+                  <IconButton onClick={() => setPreviewOpen(false)}>
+                    <Close />
+                  </IconButton>
+                </Stack>
+              </Stack>
+            </DialogTitle>
+            <DialogContent sx={{ p: 0 }}>
+              {reportDetails?.generatedDoc ? (
+                <Box sx={{ height: isMobile ? '100vh' : '80vh', width: '100%' }}>
+                  {/* For Android and desktop, use enhanced iframe */}
+                  <iframe
+                    src={`${reportDetails.generatedDoc}${reportDetails.generatedDoc.includes('?') ? '&' : '#'}toolbar=1&navpanes=1&scrollbar=1&page=1&zoom=page-fit&view=FitH`}
+                    width="100%"
+                    height="100%"
+                    style={{ 
+                      border: 'none', 
+                      borderRadius: 4,
+                      backgroundColor: '#f5f5f5'
+                    }}
+                    title="Certificate Preview"
+                    allow="fullscreen"
+                    loading="lazy"
+                    onError={(e) => {
+                      console.error('iframe failed to load:', e);
+                      toast.error('Failed to load document preview. Try opening in new tab.');
+                    }}
+                    onLoad={(e) => {
+                      // Try to focus the iframe to enable keyboard navigation
+                      try {
+                        e.target.focus();
+                      } catch (err) {
+                        console.log('Could not focus iframe');
+                      }
+                    }}
+                  />
+                </Box>
+              ) : (
+                <Box
+                  sx={{
+                    height: 400,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#f5f5f5',
+                    borderRadius: 1
                   }}
-                />
-              </Box>
-            ) : (
-              <Box
-                sx={{
-                  height: 400,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: '#f5f5f5',
-                  borderRadius: 1
-                }}
+                >
+                  <Typography color="text.secondary">
+                    No document available for preview
+                  </Typography>
+                </Box>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setPreviewOpen(false)}>
+                Close
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<OpenInNew />}
+                onClick={handleOpenInNewTab}
               >
-                <Typography color="text.secondary">
-                  No document available for preview
-                </Typography>
-              </Box>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setPreviewOpen(false)}>
-              Close
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<Download />}
-              onClick={handleDownload}
-              disabled={!reportDetails?.generatedDoc}
-            >
-              Download
-            </Button>
-          </DialogActions>
-        </Dialog>
+                Open in New Tab
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<Download />}
+                onClick={handleDownload}
+                disabled={!reportDetails?.generatedDoc}
+              >
+                {isMobile ? 'Open PDF' : 'Download'}
+              </Button>
+            </DialogActions>
+          </Dialog>
+        )}
       </Box>
     </Container>
   );
