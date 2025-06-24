@@ -28,22 +28,51 @@ import {
 } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, Science as ScienceIcon, Close as CloseIcon, CheckCircle as CheckIcon } from '@mui/icons-material';
 
-const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
+const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
     const [expandedSection, setExpandedSection] = useState("systemInfo");
 
     const [formValues, setFormValues] = useState({});
     console.log(fields, "fields");
 
+    const isStrikethroughText = (text) => text.split('').some(c => c === '\u0336');
+
     useEffect(() => {
-        if (fields && fields?.length > 0) {
+        if (fields && fields.length > 0) {
             const initialValues = {};
             fields.forEach(field => {
-                const isCheckbox = field.attribute?.includes("checkbox") || field.attribute?.startsWith("_checkbox");
-                initialValues[field?.attribute] = isCheckbox ? false : "";
+                if (field.attribute.startsWith("_checkbox")) {
+                    if (reportDetails && reportDetails[field.attribute] === "\u2611") {
+                        initialValues[field.attribute] = true;
+                    } else {
+                        initialValues[field.attribute] = false;
+                    }
+                } else if (field.attribute.startsWith("_st")) {
+                    if (reportDetails && reportDetails[field.attribute]) {
+
+                        const parts = reportDetails[field.attribute].split('/').map(s => s.trim());
+                        const [option1, option2] = parts;
+                        if (isStrikethroughText(option1)) {
+                            initialValues[field.attribute] = option2;
+                        } else if (isStrikethroughText(option2)) {
+                            initialValues[field.attribute] = option1;
+                        } else {
+                            initialValues[field.attribute] = "";
+                        }
+                    } else {
+                        initialValues[field.attribute] = "";
+                    }
+                }
+                else {
+                    if (reportDetails && reportDetails[field.attribute]) {
+                        initialValues[field.attribute] = reportDetails[field.attribute];
+                    } else {
+                        initialValues[field.attribute] = "";
+                    }
+                }
             });
             setFormValues(initialValues);
         }
-    }, [fields]);
+    }, [fields, open]);
 
     const handleClose = () => {
         onClose();
@@ -258,16 +287,16 @@ const IAPPForm = ({ open, onClose, onSubmit, fields }) => {
                                     <Typography variant="body2">
                                         {field.label}
                                     </Typography>
-                                    <Box sx={{width: '100%'}}>
-                                    <TextareaAutosize
-                                        style={{ width: '100%' }}
-                                        minRows={4}
-                                        value={value || ""}
-                                        onChange={(e) => handleInputChange(attr, e.target.value)}
-                                        placeholder={field.label}
-                                    />
+                                    <Box sx={{ width: '100%' }}>
+                                        <TextareaAutosize
+                                            style={{ width: '100%' }}
+                                            minRows={4}
+                                            value={value || ""}
+                                            onChange={(e) => handleInputChange(attr, e.target.value)}
+                                            placeholder={field.label}
+                                        />
                                     </Box>
-                                    </>
+                                </>
                             );
                         }
 

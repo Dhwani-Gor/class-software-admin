@@ -16,12 +16,25 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 
 const strikeText = (text) => text.split('').map(c => c + '\u0336').join('');
 
-export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
+const isStrikethroughText = (text) => text.split('').some(c => c === '\u0336');
+
+
+export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [formData, setFormData] = useState({});
 
   const handleInputChange = (fieldName, value) => {
     setFormData(prev => ({ ...prev, [fieldName]: value }));
   };
+
+  // useEffect(() => {
+  //   console.log(reportDetails,"report details in common component")
+  //   if (reportDetails) {
+  //     setFormData(prev => ({
+  //       ...prev,
+  //       parseReportDetails(reportDetails)
+  //     }));
+  //   }
+  // }, [reportDetails]);
 
   const handleSubmit = () => {
     const filledValues = Object.entries(formData).reduce((acc, [key, value]) => {
@@ -52,9 +65,33 @@ export const DialogForm = ({ open, onClose, onSubmit, fields }) => {
       const initialValues = {};
       fields.forEach(field => {
         if (field.attribute.startsWith("_checkbox")) {
-          initialValues[field.attribute] = false;
-        } else {
-          initialValues[field.attribute] = "";
+          if (reportDetails && reportDetails[field.attribute] === "\u2611") {
+            initialValues[field.attribute] = true;
+          } else {
+            initialValues[field.attribute] = false;
+          }
+        } else if (field.attribute.startsWith("_st")) {
+          if (reportDetails && reportDetails[field.attribute]) {
+
+            const parts = reportDetails[field.attribute].split('/').map(s => s.trim());
+            const [option1, option2] = parts;
+            if (isStrikethroughText(option1)) {
+              initialValues[field.attribute] = option2;
+            } else if (isStrikethroughText(option2)) {
+              initialValues[field.attribute] = option1;
+            } else {
+              initialValues[field.attribute] = "";
+            }
+          } else {
+            initialValues[field.attribute] = "";
+          }
+        }
+        else {
+          if (reportDetails && reportDetails[field.attribute]) {
+            initialValues[field.attribute] = reportDetails[field.attribute];
+          } else {
+            initialValues[field.attribute] = "";
+          }
         }
       });
       setFormData(initialValues);

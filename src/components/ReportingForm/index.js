@@ -30,7 +30,7 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
 import { useRouter } from "next/navigation";
-import { createReportDetail, deleteAttachment, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, updateReportDetail } from "@/api";
+import { createReportDetail, deleteAttachment, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { updateActivityDetails } from "@/api";
@@ -798,8 +798,17 @@ const ReportingForm = () => {
     }
   };
 
+  const fetchReportDetails = async () => {
+    console.log(reportDetails,"report details")
+    const response = await getSelectedReportDetails(reportDetails?.id)
+    // setReportDetails(response?.data?.data)
+    console.log(response?.data?.data,"report details data")
+
+  }
+
   useEffect(() => {
     fetchClients();
+    fetchReportDetails()
   }, []);
 
   const fetchAllJournals = async () => {
@@ -1330,9 +1339,9 @@ const ReportingForm = () => {
                         />
                       )}
                     />
-                    {errors.new_validity_date && (
+                    {errors.newValidityDate && (
                       <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                        {errors.new_validity_date.message}
+                        {errors.newValidityDate.message}
                       </Typography>
                     )}
                   </Grid2>
@@ -1463,6 +1472,7 @@ const ReportingForm = () => {
             onClose={() => setOpen(false)}
             onSubmit={handleSubmitReport}
             fields={underscoreFields}
+            reportDetails={reportDetails?.data}
           />
         )
       }
@@ -1474,6 +1484,7 @@ const ReportingForm = () => {
             onClose={() => setOpen(false)}
             onSubmit={handleSubmitReport}
             fields={underscoreFields}
+            reportDetails={reportDetails?.data}
           />
         </div>
       }
@@ -1483,6 +1494,7 @@ const ReportingForm = () => {
           onClose={() => setOpen(false)}
           onSubmit={handleSubmitReport}
           fields={underscoreFields}
+          reportDetails={reportDetails?.data}
         />
       }
       {reportName?.trim() === "INTERNATIONAL LOAD LINE CERTIFICATE" &&
@@ -1491,6 +1503,7 @@ const ReportingForm = () => {
           onClose={() => setOpen(false)}
           onSubmit={handleSubmitReport}
           fields={underscoreFields}
+          reportDetails={reportDetails?.data}
         />
       }
       {reportName?.trim() === "International Anti-Fouling System Certificate" &&
@@ -1499,6 +1512,7 @@ const ReportingForm = () => {
           onClose={() => setOpen(false)}
           onSubmit={handleSubmitReport}
           fields={underscoreFields}
+          reportDetails={reportDetails?.data}
         />
       }
       {reportName?.trim() === "RECORD OF CONSTRUCTION AND EQUIPMENT" &&
@@ -1507,6 +1521,7 @@ const ReportingForm = () => {
           onClose={() => setOpen(false)}
           onSubmit={handleSubmitReport}
           fields={underscoreFields}
+          reportDetails={reportDetails?.data}
         />
       }
       {/* {reportDetails?.typeOfCertificate === "full_term" &&

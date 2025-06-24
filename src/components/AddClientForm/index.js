@@ -535,33 +535,16 @@ const AddSurveyType = ({
         }
       };
 
-      if (hasValue(data.keelLaidDate)) {
-        payload.keelLaidDate = data.keelLaidDate;
-      }
-      if (hasValue(data.dateOfModification)) {
-        payload.dateOfModification = data.dateOfModification;
-      }
-      if (hasValue(data.dateOfBuildingContract)) {
-        payload.dateOfBuildingContract = data.dateOfBuildingContract;
-      }
-      if (hasValue(data.areaOfOperation)) {
-        payload.areaOfOperation = data.areaOfOperation;
-      }
-      if (hasValue(data.carryingCapacity)) {
-        payload.carryingCapacity = data.carryingCapacity;
-      }
-      if (hasValue(data.hullNotation)) {
-        payload.hullNotation = data.hullNotation;
-      }
-      if (hasValue(data.machineryNotation)) {
-        payload.machineryNotation = data.machineryNotation;
-      }
-      if (hasValue(data.descriptiveNotation)) {
-        payload.descriptiveNotation = data.descriptiveNotation;
-      }
-      if (hasValue(data.invoicingDetails.gstNo)) {
-        payload.invoicingDetails.gstNo = data.invoicingDetails.gstNo;
-      }
+      payload.keelLaidDate = hasValue(data.keelLaidDate) ? data.keelLaidDate : null;
+      payload.dateOfModification = hasValue(data.dateOfModification) ? data.dateOfModification : null;
+      payload.dateOfBuildingContract = hasValue(data.dateOfBuildingContract) ? data.dateOfBuildingContract : null;
+      payload.areaOfOperation = hasValue(data.areaOfOperation) ? data.areaOfOperation : null;
+      payload.carryingCapacity = hasValue(data.carryingCapacity) ? data.carryingCapacity : null;
+      payload.hullNotation = hasValue(data.hullNotation) ? data.hullNotation : null;
+      payload.machineryNotation = hasValue(data.machineryNotation) ? data.machineryNotation : null;
+      payload.descriptiveNotation = hasValue(data.descriptiveNotation) ? data.descriptiveNotation : null;
+      payload.invoicingDetails.gstNo = hasValue(data.invoicingDetails.gstNo) ? data.invoicingDetails.gstNo : null;
+
 
       if (clientId) {
         res = await updateClient(clientId, { ...payload, message: editReason });

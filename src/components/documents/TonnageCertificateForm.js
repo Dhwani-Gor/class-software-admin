@@ -41,16 +41,45 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
   const [formValues, setFormValues] = useState({});
   const [expandedSection, setExpandedSection] = useState("basicInfo");
 
-  // Initialize form values
+  const isStrikethroughText = (text) => text.split('').some(c => c === '\u0336');
+
   useEffect(() => {
-    if (fields && fields?.length > 0) {
+    if (fields && fields.length > 0) {
       const initialValues = {};
       fields.forEach(field => {
-        initialValues[field?.attribute] = "";
+        if (field.attribute.startsWith("_checkbox")) {
+          if (reportDetails && reportDetails[field.attribute] === "\u2611") {
+            initialValues[field.attribute] = true;
+          } else {
+            initialValues[field.attribute] = false;
+          }
+        } else if (field.attribute.startsWith("_st")) {
+          if (reportDetails && reportDetails[field.attribute]) {
+
+            const parts = reportDetails[field.attribute].split('/').map(s => s.trim());
+            const [option1, option2] = parts;
+            if (isStrikethroughText(option1)) {
+              initialValues[field.attribute] = option2;
+            } else if (isStrikethroughText(option2)) {
+              initialValues[field.attribute] = option1;
+            } else {
+              initialValues[field.attribute] = "";
+            }
+          } else {
+            initialValues[field.attribute] = "";
+          }
+        }
+        else {
+          if (reportDetails && reportDetails[field.attribute]) {
+            initialValues[field.attribute] = reportDetails[field.attribute];
+          } else {
+            initialValues[field.attribute] = "";
+          }
+        }
       });
       setFormValues(initialValues);
     }
-  }, [fields]);
+  }, [fields, open]);
 
   const handleClose = () => {
     onClose();
@@ -300,7 +329,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
           const isStrikethroughRadio = attr?.startsWith("_st_");
           const isCheckbox = attr?.includes("checkbox") || attr?.startsWith("_checkbox");
           const isDate = attr?.includes("date") || attr?.endsWith("_date");
-  
+
           if (isCheckbox) {
             return (
               <Grid2 item xs={12} sm={6} md={4} key={attr}>
@@ -315,13 +344,13 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
               </Grid2>
             );
           }
-  
+
           if (isStrikethroughRadio) {
             const [, raw] = attr.split("_st_");
             const [opt1Raw, opt2Raw] = raw.split("_");
             const opt1 = opt1Raw.replace(/-/g, " ");
             const opt2 = opt2Raw.replace(/-/g, " ");
-  
+
             return (
               <Grid2 item xs={12} sm={6} md={4} key={attr}>
                 <Typography variant="body2" sx={{ mb: 1 }}>{field.label}</Typography>
@@ -348,10 +377,10 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
               </Grid2>
             );
           }
-  
+
           if (isTextarea) {
             return (
-              <Box  sx={{width:'100%'}} key={attr}>
+              <Box sx={{ width: '100%' }} key={attr}>
                 <Typography variant="body2" sx={{ mb: 1 }}>
                   {field.label}
                 </Typography>
@@ -365,7 +394,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
               </Box>
             );
           }
-  
+
           return (
             <Grid2 item xs={12} sm={6} md={3} key={attr}>
               <TextField
@@ -385,310 +414,310 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields }) => {
     );
   };
 
-return (
-  <Dialog
-    open={open}
-    onClose={onClose}
-    maxWidth="xl"
-    fullWidth
-    PaperProps={{
-      sx: { height: '95vh', maxHeight: '1000px' }
-    }}
-  >
-
-    <Box
-      sx={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        p: 3,
-        position: 'relative'
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="xl"
+      fullWidth
+      PaperProps={{
+        sx: { height: '95vh', maxHeight: '1000px' }
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Box
+
+      <Box
+        sx={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          p: 3,
+          position: 'relative'
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: '12px',
+                background: 'rgba(255,255,255,0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backdropFilter: 'blur(10px)'
+              }}
+            >
+              <ReportIcon sx={{ fontSize: 24, color: 'white' }} />
+            </Box>
+            <Box>
+              <Typography variant="h5" fontWeight={700} sx={{ mb: 0.5 }}>
+                International Tonnage Certificate
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                Fill out ship-related details including identification, measurements, capacities, key dates, construction specifications, and additional information.
+              </Typography>
+            </Box>
+          </Box>
+          <IconButton
+            onClick={handleClose}
             sx={{
-              width: 48,
-              height: 48,
-              borderRadius: '12px',
-              background: 'rgba(255,255,255,0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backdropFilter: 'blur(10px)'
+              color: 'white',
+              background: 'rgba(255,255,255,0.1)',
+              '&:hover': {
+                background: 'rgba(255,255,255,0.2)',
+                transform: 'scale(1.05)'
+              },
+              transition: 'all 0.2s ease'
             }}
           >
-            <ReportIcon sx={{ fontSize: 24, color: 'white' }} />
-          </Box>
-          <Box>
-            <Typography variant="h5" fontWeight={700} sx={{ mb: 0.5 }}>
-              International Tonnage Certificate
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9 }}>
-              Fill out ship-related details including identification, measurements, capacities, key dates, construction specifications, and additional information.
-            </Typography>
-          </Box>
+            <CloseIcon />
+          </IconButton>
         </Box>
-        <IconButton
+      </Box>
+
+      <DialogContent dividers sx={{ p: 3 }}>
+        {/* Basic Information Section */}
+        {fieldCategories.basic.length > 0 && (
+          <Accordion
+            expanded={expandedSection === "basic"}
+            onChange={() => setExpandedSection(expandedSection === "basic" ? null : "basic")}
+            sx={{ mb: 2 }}
+          >
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                Basic Information
+                <Typography
+                  component="span"
+                  variant="body2"
+                  color="primary"
+                  sx={{ ml: 1, fontWeight: 'medium' }}
+                >
+                  ({fieldCategories.basic.filter(f => formValues[f.attribute]?.trim()).length}/{fieldCategories.basic.length})
+                </Typography>
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              {renderFieldCategory(fieldCategories.basic)}
+            </AccordionDetails>
+          </Accordion>
+        )}
+
+        {/* Measurements Section */}
+        {fieldCategories.measurements.length > 0 && (
+          <Accordion
+            expanded={expandedSection === "measurements"}
+            onChange={() => setExpandedSection(expandedSection === "measurements" ? null : "measurements")}
+            sx={{ mb: 2 }}
+          >
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                Measurements & Dimensions
+                <Typography
+                  component="span"
+                  variant="body2"
+                  color="primary"
+                  sx={{ ml: 1, fontWeight: 'medium' }}
+                >
+                  ({fieldCategories.measurements.filter(f => formValues[f.attribute]?.trim()).length}/{fieldCategories.measurements.length})
+                </Typography>
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              {renderFieldCategory(fieldCategories.measurements)}
+            </AccordionDetails>
+          </Accordion>
+        )}
+
+        {/* Spaces Information Section */}
+        <Accordion
+          expanded={expandedSection === "spaces"}
+          onChange={() => setExpandedSection(expandedSection === "spaces" ? null : "spaces")}
+          sx={{ mb: 2 }}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="h6" sx={{ fontWeight: 500 }}>
+              Spaces Included in Tonnage
+              <Typography
+                component="span"
+                variant="body2"
+                color="primary"
+                sx={{ ml: 1, fontWeight: 'medium' }}
+              >
+                ({[...gtSpaces, ...ntSpaces].filter(space =>
+                  formValues[space.spaceAttr]?.trim() ||
+                  formValues[space.locAttr]?.trim() ||
+                  formValues[space.lengthAttr]?.trim()
+                ).length}/{gtSpaces.length + ntSpaces.length})
+              </Typography>
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails sx={{ p: 0 }}>
+            {renderSpacesTable()}
+          </AccordionDetails>
+        </Accordion>
+
+        {/* Passenger Information Section */}
+        {fieldCategories.passengers.length > 0 && (
+          <Accordion
+            expanded={expandedSection === "passengers"}
+            onChange={() => setExpandedSection(expandedSection === "passengers" ? null : "passengers")}
+            sx={{ mb: 2 }}
+          >
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                Passenger Information
+                <Typography
+                  component="span"
+                  variant="body2"
+                  color="primary"
+                  sx={{ ml: 1, fontWeight: 'medium' }}
+                >
+                  ({fieldCategories.passengers.filter(f => formValues[f.attribute]?.trim()).length}/{fieldCategories.passengers.length})
+                </Typography>
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              {renderFieldCategory(fieldCategories.passengers)}
+            </AccordionDetails>
+          </Accordion>
+        )}
+
+        {/* Construction Details Section */}
+        {fieldCategories.construction.length > 0 && (
+          <Accordion
+            expanded={expandedSection === "construction"}
+            onChange={() => setExpandedSection(expandedSection === "construction" ? null : "construction")}
+            sx={{ mb: 2 }}
+          >
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                Construction Details
+                <Typography
+                  component="span"
+                  variant="body2"
+                  color="primary"
+                  sx={{ ml: 1, fontWeight: 'medium' }}
+                >
+                  ({fieldCategories.construction.filter(f => formValues[f.attribute]?.trim()).length}/{fieldCategories.construction.length})
+                </Typography>
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              {renderFieldCategory(fieldCategories.construction)}
+            </AccordionDetails>
+          </Accordion>
+        )}
+
+        {/* Dates & Measurements Section */}
+        {fieldCategories.dates.length > 0 && (
+          <Accordion
+            expanded={expandedSection === "dates"}
+            onChange={() => setExpandedSection(expandedSection === "dates" ? null : "dates")}
+            sx={{ mb: 2 }}
+          >
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                Dates & Historical Data
+                <Typography
+                  component="span"
+                  variant="body2"
+                  color="primary"
+                  sx={{ ml: 1, fontWeight: 'medium' }}
+                >
+                  ({fieldCategories.dates.filter(f => formValues[f.attribute]?.trim()).length}/{fieldCategories.dates.length})
+                </Typography>
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              {renderFieldCategory(fieldCategories.dates)}
+            </AccordionDetails>
+          </Accordion>
+        )}
+
+        {/* Other Information Section */}
+        {fieldCategories.other.length > 0 && (
+          <Accordion
+            expanded={expandedSection === "other"}
+            onChange={() => setExpandedSection(expandedSection === "other" ? null : "other")}
+            sx={{ mb: 2 }}
+          >
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                Other Information
+                <Typography
+                  component="span"
+                  variant="body2"
+                  color="primary"
+                  sx={{ ml: 1, fontWeight: 'medium' }}
+                >
+                  ({fieldCategories.other.filter(f => formValues[f.attribute]?.trim()).length}/{fieldCategories.other.length})
+                </Typography>
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              {renderFieldCategory(fieldCategories.other)}
+            </AccordionDetails>
+          </Accordion>
+        )}
+      </DialogContent>
+      <Divider sx={{ borderColor: 'rgba(102, 126, 234, 0.1)' }} />
+      <DialogActions
+        sx={{
+          p: 3,
+          background: 'white',
+          gap: 2,
+          justifyContent: 'flex-end'
+        }}
+      >
+        <Button
           onClick={handleClose}
+          variant="outlined"
+          size="large"
           sx={{
-            color: 'white',
-            background: 'rgba(255,255,255,0.1)',
+            borderRadius: 2,
+            px: 3,
+            py: 1.5,
+            textTransform: 'none',
+            fontWeight: 600,
+            borderColor: 'rgba(102, 126, 234, 0.3)',
+            color: 'text.secondary',
             '&:hover': {
-              background: 'rgba(255,255,255,0.2)',
-              transform: 'scale(1.05)'
+              borderColor: 'primary.main',
+              background: 'rgba(102, 126, 234, 0.04)',
+              transform: 'translateY(-1px)',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
             },
             transition: 'all 0.2s ease'
           }}
         >
-          <CloseIcon />
-        </IconButton>
-      </Box>
-    </Box>
-
-    <DialogContent dividers sx={{ p: 3 }}>
-      {/* Basic Information Section */}
-      {fieldCategories.basic.length > 0 && (
-        <Accordion
-          expanded={expandedSection === "basic"}
-          onChange={() => setExpandedSection(expandedSection === "basic" ? null : "basic")}
-          sx={{ mb: 2 }}
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          size="large"
+          startIcon={<CheckIcon />}
+          sx={{
+            borderRadius: 2,
+            px: 4,
+            py: 1.5,
+            textTransform: 'none',
+            fontWeight: 600,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 8px 25px rgba(102, 126, 234, 0.6)'
+            },
+            transition: 'all 0.2s ease'
+          }}
         >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="h6" sx={{ fontWeight: 500 }}>
-              Basic Information
-              <Typography
-                component="span"
-                variant="body2"
-                color="primary"
-                sx={{ ml: 1, fontWeight: 'medium' }}
-              >
-                ({fieldCategories.basic.filter(f => formValues[f.attribute]?.trim()).length}/{fieldCategories.basic.length})
-              </Typography>
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            {renderFieldCategory(fieldCategories.basic)}
-          </AccordionDetails>
-        </Accordion>
-      )}
-
-      {/* Measurements Section */}
-      {fieldCategories.measurements.length > 0 && (
-        <Accordion
-          expanded={expandedSection === "measurements"}
-          onChange={() => setExpandedSection(expandedSection === "measurements" ? null : "measurements")}
-          sx={{ mb: 2 }}
-        >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="h6" sx={{ fontWeight: 500 }}>
-              Measurements & Dimensions
-              <Typography
-                component="span"
-                variant="body2"
-                color="primary"
-                sx={{ ml: 1, fontWeight: 'medium' }}
-              >
-                ({fieldCategories.measurements.filter(f => formValues[f.attribute]?.trim()).length}/{fieldCategories.measurements.length})
-              </Typography>
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            {renderFieldCategory(fieldCategories.measurements)}
-          </AccordionDetails>
-        </Accordion>
-      )}
-
-      {/* Spaces Information Section */}
-      <Accordion
-        expanded={expandedSection === "spaces"}
-        onChange={() => setExpandedSection(expandedSection === "spaces" ? null : "spaces")}
-        sx={{ mb: 2 }}
-      >
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6" sx={{ fontWeight: 500 }}>
-            Spaces Included in Tonnage
-            <Typography
-              component="span"
-              variant="body2"
-              color="primary"
-              sx={{ ml: 1, fontWeight: 'medium' }}
-            >
-              ({[...gtSpaces, ...ntSpaces].filter(space =>
-                formValues[space.spaceAttr]?.trim() ||
-                formValues[space.locAttr]?.trim() ||
-                formValues[space.lengthAttr]?.trim()
-              ).length}/{gtSpaces.length + ntSpaces.length})
-            </Typography>
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails sx={{ p: 0 }}>
-          {renderSpacesTable()}
-        </AccordionDetails>
-      </Accordion>
-
-      {/* Passenger Information Section */}
-      {fieldCategories.passengers.length > 0 && (
-        <Accordion
-          expanded={expandedSection === "passengers"}
-          onChange={() => setExpandedSection(expandedSection === "passengers" ? null : "passengers")}
-          sx={{ mb: 2 }}
-        >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="h6" sx={{ fontWeight: 500 }}>
-              Passenger Information
-              <Typography
-                component="span"
-                variant="body2"
-                color="primary"
-                sx={{ ml: 1, fontWeight: 'medium' }}
-              >
-                ({fieldCategories.passengers.filter(f => formValues[f.attribute]?.trim()).length}/{fieldCategories.passengers.length})
-              </Typography>
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            {renderFieldCategory(fieldCategories.passengers)}
-          </AccordionDetails>
-        </Accordion>
-      )}
-
-      {/* Construction Details Section */}
-      {fieldCategories.construction.length > 0 && (
-        <Accordion
-          expanded={expandedSection === "construction"}
-          onChange={() => setExpandedSection(expandedSection === "construction" ? null : "construction")}
-          sx={{ mb: 2 }}
-        >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="h6" sx={{ fontWeight: 500 }}>
-              Construction Details
-              <Typography
-                component="span"
-                variant="body2"
-                color="primary"
-                sx={{ ml: 1, fontWeight: 'medium' }}
-              >
-                ({fieldCategories.construction.filter(f => formValues[f.attribute]?.trim()).length}/{fieldCategories.construction.length})
-              </Typography>
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            {renderFieldCategory(fieldCategories.construction)}
-          </AccordionDetails>
-        </Accordion>
-      )}
-
-      {/* Dates & Measurements Section */}
-      {fieldCategories.dates.length > 0 && (
-        <Accordion
-          expanded={expandedSection === "dates"}
-          onChange={() => setExpandedSection(expandedSection === "dates" ? null : "dates")}
-          sx={{ mb: 2 }}
-        >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="h6" sx={{ fontWeight: 500 }}>
-              Dates & Historical Data
-              <Typography
-                component="span"
-                variant="body2"
-                color="primary"
-                sx={{ ml: 1, fontWeight: 'medium' }}
-              >
-                ({fieldCategories.dates.filter(f => formValues[f.attribute]?.trim()).length}/{fieldCategories.dates.length})
-              </Typography>
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            {renderFieldCategory(fieldCategories.dates)}
-          </AccordionDetails>
-        </Accordion>
-      )}
-
-      {/* Other Information Section */}
-      {fieldCategories.other.length > 0 && (
-        <Accordion
-          expanded={expandedSection === "other"}
-          onChange={() => setExpandedSection(expandedSection === "other" ? null : "other")}
-          sx={{ mb: 2 }}
-        >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="h6" sx={{ fontWeight: 500 }}>
-              Other Information
-              <Typography
-                component="span"
-                variant="body2"
-                color="primary"
-                sx={{ ml: 1, fontWeight: 'medium' }}
-              >
-                ({fieldCategories.other.filter(f => formValues[f.attribute]?.trim()).length}/{fieldCategories.other.length})
-              </Typography>
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            {renderFieldCategory(fieldCategories.other)}
-          </AccordionDetails>
-        </Accordion>
-      )}
-    </DialogContent>
-    <Divider sx={{ borderColor: 'rgba(102, 126, 234, 0.1)' }} />
-    <DialogActions
-      sx={{
-        p: 3,
-        background: 'white',
-        gap: 2,
-        justifyContent: 'flex-end'
-      }}
-    >
-      <Button
-        onClick={handleClose}
-        variant="outlined"
-        size="large"
-        sx={{
-          borderRadius: 2,
-          px: 3,
-          py: 1.5,
-          textTransform: 'none',
-          fontWeight: 600,
-          borderColor: 'rgba(102, 126, 234, 0.3)',
-          color: 'text.secondary',
-          '&:hover': {
-            borderColor: 'primary.main',
-            background: 'rgba(102, 126, 234, 0.04)',
-            transform: 'translateY(-1px)',
-            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
-          },
-          transition: 'all 0.2s ease'
-        }}
-      >
-        Cancel
-      </Button>
-      <Button
-        onClick={handleSubmit}
-        variant="contained"
-        size="large"
-        startIcon={<CheckIcon />}
-        sx={{
-          borderRadius: 2,
-          px: 4,
-          py: 1.5,
-          textTransform: 'none',
-          fontWeight: 600,
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-          '&:hover': {
-            background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
-            transform: 'translateY(-2px)',
-            boxShadow: '0 8px 25px rgba(102, 126, 234, 0.6)'
-          },
-          transition: 'all 0.2s ease'
-        }}
-      >
-        Generate Report
-      </Button>
-    </DialogActions>
-  </Dialog>
-);
+          Generate Report
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 };
 
 export default InternationalTonnage;

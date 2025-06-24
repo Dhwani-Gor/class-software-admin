@@ -10,19 +10,10 @@ import {
   CheckCircle as CheckIcon, Report as ReportIcon
 } from "@mui/icons-material";
 
-const CSSForm = ({ open, onClose, onSubmit, fields }) => {
+const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [formValues, setFormValues] = useState({});
   const [expandedSection, setExpandedSection] = useState("lifeSaving");
 
-  useEffect(() => {
-    if (fields?.length) {
-      const initialValues = {};
-      fields.forEach(field => {
-        initialValues[field?.attribute] = "";
-      });
-      setFormValues(initialValues);
-    }
-  }, [fields]);
 
   const handleClose = () => {
     onClose();
@@ -32,8 +23,6 @@ const CSSForm = ({ open, onClose, onSubmit, fields }) => {
   const handleInputChange = (fieldName, value) => {
     setFormValues(prev => ({ ...prev, [fieldName]: value }));
   };
-
-  const strikeThrough = (text) => text.split("").map(char => char + "̶").join("");
 
   const groupByBaseLabel = (fieldList) => {
     const grouped = {};
@@ -55,7 +44,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields }) => {
       }
     });
 
-    return Object.entries(grouped); // [ [baseKey, {label, port, starboard}], ... ]
+    return Object.entries(grouped);
   };
 
   const renderInputField = (field) => {
@@ -75,6 +64,49 @@ const CSSForm = ({ open, onClose, onSubmit, fields }) => {
       />
     );
   };
+
+  const isStrikethroughText = (text) => text.split('').some(c => c === '\u0336');
+
+  useEffect(() => {
+    console.log('fields in cargo', fields)
+    console.log('reportDetails in cargo', reportDetails)
+    if (fields && fields.length > 0) {
+      const initialValues = {};
+      fields.forEach(field => {
+        if (field.attribute.startsWith("_checkbox")) {
+          if (reportDetails && reportDetails[field.attribute] === "\u2611") {
+            initialValues[field.attribute] = true;
+          } else {
+            initialValues[field.attribute] = false;
+          }
+        } else if (field.attribute.startsWith("_st")) {
+          if (reportDetails && reportDetails[field.attribute]) {
+
+            const parts = reportDetails[field.attribute].split('/').map(s => s.trim());
+            const [option1, option2] = parts;
+            if (isStrikethroughText(option1)) {
+              initialValues[field.attribute] = option2;
+            } else if (isStrikethroughText(option2)) {
+              initialValues[field.attribute] = option1;
+            } else {
+              initialValues[field.attribute] = "";
+            }
+          } else {
+            initialValues[field.attribute] = "";
+          }
+        }
+        else {
+          if (reportDetails && reportDetails[field.attribute]) {
+            initialValues[field.attribute] = reportDetails[field.attribute];
+          } else {
+            initialValues[field.attribute] = "";
+          }
+        }
+      });
+      setFormValues(initialValues);
+    }
+  }, [fields, open]);
+
 
   const renderGroupedFields = (fieldList) => {
     const grouped = groupByBaseLabel(fieldList);
@@ -167,7 +199,6 @@ const CSSForm = ({ open, onClose, onSubmit, fields }) => {
 
     return categories;
   };
-
 
   const { lifeSaving, navigation, uncategorized } = categorizeFields(fields);
 

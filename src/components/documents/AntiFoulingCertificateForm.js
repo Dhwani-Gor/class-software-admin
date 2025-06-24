@@ -11,20 +11,49 @@ import {
   CheckCircle as CheckIcon, Science as ScienceIcon
 } from "@mui/icons-material";
 
-const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
+const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [formValues, setFormValues] = useState({});
   const [expandedSection, setExpandedSection] = useState("systemInfo");
 
+  const isStrikethroughText = (text) => text.split('').some(c => c === '\u0336');
+
   useEffect(() => {
-    if (fields?.length) {
+    if (fields && fields.length > 0) {
       const initialValues = {};
       fields.forEach(field => {
-        const attr = field.attribute;
-        initialValues[attr] = attr.startsWith("_checkbox") ? false : "";
+        if (field.attribute.startsWith("_checkbox")) {
+          if (reportDetails && reportDetails[field.attribute] === "\u2611") {
+            initialValues[field.attribute] = true;
+          } else {
+            initialValues[field.attribute] = false;
+          }
+        } else if (field.attribute.startsWith("_st")) {
+          if (reportDetails && reportDetails[field.attribute]) {
+
+            const parts = reportDetails[field.attribute].split('/').map(s => s.trim());
+            const [option1, option2] = parts;
+            if (isStrikethroughText(option1)) {
+              initialValues[field.attribute] = option2;
+            } else if (isStrikethroughText(option2)) {
+              initialValues[field.attribute] = option1;
+            } else {
+              initialValues[field.attribute] = "";
+            }
+          } else {
+            initialValues[field.attribute] = "";
+          }
+        }
+        else {
+          if (reportDetails && reportDetails[field.attribute]) {
+            initialValues[field.attribute] = reportDetails[field.attribute];
+          } else {
+            initialValues[field.attribute] = "";
+          }
+        }
       });
       setFormValues(initialValues);
     }
-  }, [fields]);
+  }, [fields, open]);
 
   const handleClose = () => {
     onClose();
@@ -37,6 +66,7 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
 
   const applyStrikethrough = (text) =>
     text.split("").map(c => c + "\u0336").join("");
+
 
   const handleSubmit = () => {
     const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
@@ -99,14 +129,14 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
   const renderFields = (fieldList) => {
     const checkboxes = [];
     const others = [];
-  
+
     fieldList.forEach(field => {
       const attr = field.attribute;
       const isCheckbox = attr.startsWith("_checkbox");
       if (isCheckbox) checkboxes.push(field);
       else others.push(field);
     });
-  
+
     return (
       <>
         {/* Group all checkboxes in one row */}
@@ -129,7 +159,7 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
             })}
           </Grid2>
         )}
-  
+
         {/* Render the remaining fields in a separate group */}
         <Grid2 container spacing={2}>
           {others.map(field => {
@@ -137,14 +167,14 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
             const isDate = attr.includes("date");
             const isStrikethroughRadio = attr.startsWith("_st_");
             const isTextarea = attr.startsWith("_ta_");
-  
+
             if (isStrikethroughRadio) {
               const [, raw] = attr.split("_st_");
               const [opt1Raw, opt2Raw] = raw.split("_");
               const label1 = opt1Raw.replace(/-/g, " ");
               const label2 = opt2Raw.replace(/-/g, " ");
               const value = formValues[attr];
-  
+
               return (
                 <Grid2 size={{ xs: 12, sm: 6, md: 6 }} key={attr}>
                   <Typography variant="body2" sx={{ mb: 1 }}>
@@ -175,15 +205,15 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
                 </Grid2>
               );
             }
-  
+
             if (isTextarea) {
               return (
-                <Grid2 size={{ xs: 12, sm: 6, md: 12 }} key={attr}>
+                <Box sx={{ minWidth: '100%' }} key={attr}>
                   <Typography variant="body2" sx={{ mb: 1 }}>
                     {field.label || formatLabel(attr)}
                   </Typography>
                   <TextareaAutosize
-                    style={{ width: '100%' }}
+                    style={{ minWidth: '100%' }}
                     minRows={4}
                     multiline
                     label={field.label || formatLabel(attr)}
@@ -191,10 +221,10 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields }) => {
                     onChange={(e) => handleInputChange(attr, e.target.value)}
                     placeholder={formatLabel(attr).toLowerCase()}
                   />
-                </Grid2>
+                </Box>
               );
             }
-  
+
             return (
               <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={attr}>
                 <TextField
