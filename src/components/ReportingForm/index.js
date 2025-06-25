@@ -592,6 +592,9 @@ const ReportingForm = () => {
         setLoadingReport(true);
         const result = await generateFullReport({
           reportDetailId: reportDetails?.id,
+          // type:"image",
+          // image:7,
+          // stamp:7
           // data: { ...reportDetails.data, endorsementValues }
 
         });
@@ -640,7 +643,13 @@ const ReportingForm = () => {
 
       const payload = {
         reportDetailId: reportDetails?.id,
-        data: { ...extraFields }
+        
+        data: { ...extraFields,
+          image:7,
+          type:'image',
+          stamp:7,
+          companyText: 8       
+      }
       };
 
       const result = await generateFullReport(payload);
@@ -711,7 +720,7 @@ const ReportingForm = () => {
         toast.success("Remarks updated successfully.");
       } else {
         toast.error("Something went wrong ! Please try again after some time")
-      }
+      } 
     } catch (error) {
       toast.error("Something went wrong ! Please try again after some time", error)
     }

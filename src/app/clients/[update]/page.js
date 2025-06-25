@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { use } from "react";
 import Typography from "@mui/material/Typography";
 import Layout from "@/Layout";
 import Stack from "@mui/material/Stack";
@@ -11,53 +12,90 @@ import { useRouter } from "next/navigation";
 import CommonButton from "@/components/CommonButton";
 import EditingReasonDialog from "@/components/Dialogs/EditingReasonDialog";
 import EditHistoryDialog from "@/components/Dialogs/EditHistoryDialog";
-import { getClientHistory } from "@/api";
+import { getClientHistory, getSpecificClient } from "@/api";
 import { toast } from "react-toastify";
 import { transformData } from "@/utils/helper";
 
 const UpdateClient = ({ params }) => {
+  const { update } = use(params); // ✅ unwrap the promise
   const router = useRouter();
   const [editHistoryDialog, setEditHistoryDialog] = useState(false);
   const [isEditDialogVisible, setIsEditDialogVisible] = useState(false);
   const [editingAllowed, setEditingAllowed] = useState(false);
   const [changeHistory, setChangeHistory] = useState([]);
   const [editReason, setEditReason] = useState('');
+  const [reportDetails, setReportDetails] = useState();
 
   const fetchClientsHistory = async () => {
     try {
-      const result = await getClientHistory(params?.update);
+      const result = await getClientHistory(update);
       if (result?.status === 200) {
         const newData = transformData(result.data.data);
-        setChangeHistory(newData)
-      } else {
-        // toast.error("Something went wrong ! Please try again after some time")
+        setChangeHistory(newData);
       }
-
     } catch (error) {
-      toast.error(error)
+      toast.error(error.message || "Error fetching client history");
     }
-  }
+  };
+
+  const getClient = async () => {
+    try {
+      const result = await getSpecificClient(update);
+      if (result?.status === 200) {
+        const isReportAvailable = result.data.data.isReportDetailAvailable;
+        setReportDetails(isReportAvailable);
+        if (!isReportAvailable) {
+          setEditingAllowed(true);
+        }
+      } else {
+        toast.error("Something went wrong! Please try again after some time");
+      }
+    } catch (error) {
+      toast.error(error.message || "Error fetching client");
+    }
+  };
 
   useEffect(() => {
     fetchClientsHistory();
-  }, [])
+    getClient();
+  }, []);
 
   return (
     <Layout>
       <CommonCard sx={{ mt: 0, pl: 2 }}>
-        <Stack direction={'row'} alignItems={'center'} gap={2}>
-          <IconButton size="small" onClick={() => router.push('/clients')}>
+        <Stack direction="row" alignItems="center" gap={2}>
+          <IconButton size="small" onClick={() => router.push("/clients")}>
             <ArrowBack />
           </IconButton>
           <Typography variant="h6" fontWeight={"700"}>
             Clients
           </Typography>
-          <CommonButton sx={{ ml: 'auto' }} variant="outlined" text="Edit History" onClick={() => setEditHistoryDialog(true)} />
-          <CommonButton text="Edit" variant="outlined" color="secondary" onClick={() => setIsEditDialogVisible(true)} />
+          {reportDetails && (
+            <>
+              <CommonButton
+                sx={{ ml: "auto" }}
+                variant="outlined"
+                text="Edit History"
+                onClick={() => setEditHistoryDialog(true)}
+              />
+              <CommonButton
+                text="Edit"
+                variant="outlined"
+                color="secondary"
+                onClick={() => setIsEditDialogVisible(true)}
+              />
+            </>
+          )}
         </Stack>
       </CommonCard>
       <Stack>
-        <AddClientForm editReason={editReason} editingAllowed={editingAllowed} mode="update" clientId={params?.update} role="client" />
+        <AddClientForm
+          editReason={editReason}
+          editingAllowed={editingAllowed}
+          mode="update"
+          clientId={update}
+          role="client"
+        />
       </Stack>
       {isEditDialogVisible && (
         <EditingReasonDialog
@@ -66,7 +104,7 @@ const UpdateClient = ({ params }) => {
           onConfirm={(value) => {
             setEditingAllowed(true);
             setIsEditDialogVisible(false);
-            setEditReason(value)
+            setEditReason(value);
           }}
           title="Please mention the Reason of Updating Client Details to continue Editing."
         />
