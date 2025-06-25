@@ -82,8 +82,8 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
         } else {
           const finalLine =
             value === opt1
-              ? `${opt1} / ${applyStrikethrough(opt2)}*`
-              : `${applyStrikethrough(opt1)} / ${opt2}*`;
+              ? `${opt1} / ${applyStrikethrough(opt2)}`
+              : `${applyStrikethrough(opt1)} / ${opt2}`;
 
           acc[key] = finalLine;
         }
