@@ -236,17 +236,14 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
                         if (isCheckbox) {
                             return (
-                                <Grid2 item xs={12} sm={6} md={4} key={attr}>
-                                    <Box display="flex" alignItems="center">
-                                        <Grid2 size={{ xs: 12 }}>
-                                            <input
-                                                type="checkbox"
-                                                checked={!!value}
-                                                onChange={(e) => handleInputChange(attr, e.target.checked)}
-                                            />
-                                            <Typography sx={{ ml: 1 }}>{field.label || formatLabel(attr)}</Typography>
-                                        </Grid2>
-                                    </Box>
+                                <Grid2 key={attr} size={{ xs: 12 }}>
+                                    <Box display="flex" alignItems="center">        <input
+                                        type="checkbox"
+                                        checked={!!value}
+                                        onChange={(e) => handleInputChange(attr, e.target.checked)}
+                                    />
+                                    <Typography sx={{ ml: 1 }}>{field.label || formatLabel(attr)}</Typography>
+                                </Box>
                                 </Grid2>
                             );
                         }

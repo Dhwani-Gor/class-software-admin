@@ -214,14 +214,22 @@ const Certificates = () => {
         </Typography>
       )
     },
-    // {
-    //   field: "surveyType",
-    //   headerName: "Survey Type",
-    //   flex: 1,
-    //   renderCell: (params) => (
-    //     <Typography>{params.value?.replace('_', ' ') || 'N/A'}</Typography>
-    //   )
-    // },
+    {
+      field: "surveyType",
+      headerName: "Survey Type",
+      flex: 1,
+      renderCell: (params) => (
+        <Typography
+          sx={{
+            whiteSpace: 'normal',
+            wordBreak: 'break-word',
+            width: '120px',
+          }}
+        >
+          {params.row.activity?.surveyTypes?.name || 'N/A'}
+        </Typography>
+      )
+    },
     {
       field: "surveyDate",
       headerName: "Survey Date",

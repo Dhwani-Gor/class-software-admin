@@ -419,7 +419,7 @@ const ReportingForm = () => {
     "CERTIFICATE OF CLASS",
     "CARGO SHIP SAFETY RADIO CERTIFICATE",
     "INTERNATIONAL ENERGY EFFICIENCY CERTIFICATE",
-];
+  ];
 
   const {
     control,
@@ -590,14 +590,28 @@ const ReportingForm = () => {
         setOpen(true);
       } else {
         setLoadingReport(true);
-        const result = await generateFullReport({
-          reportDetailId: reportDetails?.id,
-          // type:"image",
-          // image:7,
-          // stamp:7
-          // data: { ...reportDetails.data, endorsementValues }
 
-        });
+        const payload = {
+          reportDetailId: reportDetails?.id,
+
+          data: {
+            image: 7,
+            type: 'image',
+            stamp: 7,
+            companyText: 8
+          }
+        };
+
+        // const result = await generateFullReport({
+        //   reportDetailId: reportDetails?.id,
+        //   // type:"image",
+        //   // image:7,
+        //   // stamp:7
+        //   // data: { ...reportDetails.data, endorsementValues }
+
+        // });
+
+        const result = await generateFullReport(payload);
 
         const fileUrl = result?.data?.data;
 
@@ -643,13 +657,14 @@ const ReportingForm = () => {
 
       const payload = {
         reportDetailId: reportDetails?.id,
-        
-        data: { ...extraFields,
-          image:7,
-          type:'image',
-          stamp:7,
-          companyText: 8       
-      }
+
+        data: {
+          ...extraFields,
+          image: 7,
+          type: 'image',
+          stamp: 7,
+          companyText: 8
+        }
       };
 
       const result = await generateFullReport(payload);
@@ -720,7 +735,7 @@ const ReportingForm = () => {
         toast.success("Remarks updated successfully.");
       } else {
         toast.error("Something went wrong ! Please try again after some time")
-      } 
+      }
     } catch (error) {
       toast.error("Something went wrong ! Please try again after some time", error)
     }
@@ -805,10 +820,10 @@ const ReportingForm = () => {
   };
 
   const fetchReportDetails = async () => {
-    console.log(reportDetails,"report details")
+    console.log(reportDetails, "report details")
     const response = await getSelectedReportDetails(reportDetails?.id)
     // setReportDetails(response?.data?.data)
-    console.log(response?.data?.data,"report details data")
+    console.log(response?.data?.data, "report details data")
 
   }
 
@@ -1484,7 +1499,7 @@ const ReportingForm = () => {
         )
       }
 
-      {reportName?.trim() === "SUPPLEMENT TO THE INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" || reportName?.trim() === "INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE"&&
+      {reportName?.trim() === "SUPPLEMENT TO THE INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" || reportName?.trim() === "INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" &&
         <div className="container">
           <IOPPForm
             open={open}
