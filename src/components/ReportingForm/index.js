@@ -419,7 +419,7 @@ const ReportingForm = () => {
     "CERTIFICATE OF CLASS",
     "CARGO SHIP SAFETY RADIO CERTIFICATE",
     "INTERNATIONAL ENERGY EFFICIENCY CERTIFICATE",
-];
+  ];
 
   const {
     control,
@@ -643,13 +643,14 @@ const ReportingForm = () => {
 
       const payload = {
         reportDetailId: reportDetails?.id,
-        
-        data: { ...extraFields,
-          image:7,
-          type:'image',
-          stamp:7,
-          companyText: 8       
-      }
+
+        data: {
+          ...extraFields,
+          image: 7,
+          type: 'image',
+          stamp: 7,
+          companyText: 8
+        }
       };
 
       const result = await generateFullReport(payload);
@@ -720,7 +721,7 @@ const ReportingForm = () => {
         toast.success("Remarks updated successfully.");
       } else {
         toast.error("Something went wrong ! Please try again after some time")
-      } 
+      }
     } catch (error) {
       toast.error("Something went wrong ! Please try again after some time", error)
     }
@@ -805,10 +806,10 @@ const ReportingForm = () => {
   };
 
   const fetchReportDetails = async () => {
-    console.log(reportDetails,"report details")
+    console.log(reportDetails, "report details")
     const response = await getSelectedReportDetails(reportDetails?.id)
     // setReportDetails(response?.data?.data)
-    console.log(response?.data?.data,"report details data")
+    console.log(response?.data?.data, "report details data")
 
   }
 
@@ -1410,13 +1411,13 @@ const ReportingForm = () => {
                 text="Save"
                 isLoading={loading}
               />
-              <CommonButton
+              {selectedRow?.status === 'Completed' && <CommonButton
                 onClick={handleFullReportGeneration}
                 sx={{ marginTop: 3 }}
                 text="Generate Certificate"
                 isLoading={loading}
                 disabled={!reportDetails}
-              />
+              />}
             </Stack>
           </CommonCard>
         </Box>
@@ -1484,7 +1485,7 @@ const ReportingForm = () => {
         )
       }
 
-      {reportName?.trim() === "SUPPLEMENT TO THE INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" || reportName?.trim() === "INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE"&&
+      {reportName?.trim() === "SUPPLEMENT TO THE INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" || reportName?.trim() === "INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" &&
         <div className="container">
           <IOPPForm
             open={open}
