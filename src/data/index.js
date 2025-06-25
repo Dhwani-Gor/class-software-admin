@@ -29,7 +29,7 @@ export const sidemenu_items = [
   },
   {
     label: "Settings",
-    to: "/settings",
+    to: "/system-variables",
   },
 ];
  

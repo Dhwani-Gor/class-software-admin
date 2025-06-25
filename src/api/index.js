@@ -729,4 +729,79 @@ export const deleteAttachment = async (activityId, attachmentId) => {
   }
   return result;
 }
+// API functions for System Variables CRUD operations
+
+export const createSystemVariable = async (payload) => {
+  let result;
+  try {
+    const config = {};
+    
+    // If payload is FormData (for image upload), set appropriate headers
+    if (payload instanceof FormData) {
+      config.headers = {
+        'Content-Type': 'multipart/form-data',
+      };
+    }
+    
+    result = await axiosInstance.post(`/api/systemData`, payload, config);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const getAllSystemVariables = async (page, limit, search) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/systemData`, {
+      params: {
+        page: page,
+        limit: limit,
+        search: search,
+      },
+    });
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const deleteSystemVariable = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.delete(`/api/systemData/${payload.id}`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const getSystemVariableDetails = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/systemData/${id}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const updateSystemVariable = async (id, payload) => {
+  let result;
+  try {
+    const config = {};
+    
+    // If payload is FormData (for image upload), set appropriate headers
+    if (payload instanceof FormData) {
+      config.headers = {
+        'Content-Type': 'multipart/form-data',
+      };
+    }
+    
+    result = await axiosInstance.patch(`/api/systemData/${id}`, payload, config);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
 

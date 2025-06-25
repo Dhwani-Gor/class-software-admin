@@ -15,10 +15,10 @@ const AuthProvider = ({ children }) => {
   const router = useRouter();
   const pathname = usePathname()
 
-  const allowedRoutesRole1 = ["/clients","/staff","/journal", "/reporting", "/certificates", "/survey-types", "/documents", "/settings"]
+  const allowedRoutesRole1 = ["/clients", "/staff", "/journal", "/reporting", "/certificates", "/survey-types", "/documents", "/system-variables", "/settings"]
   const allowedRoutesRole2 = ["/journal", "/reporting", "/certificates", "/settings"];
   const allowedRoutesRole3 = ["/reporting", "/certificates", "/settings"];
-  
+
   // Define public routes that don't require authentication
   const publicRoutes = ["/login", "/digital-document"];
 
@@ -70,7 +70,7 @@ const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Check if current route is public
     const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
-    
+
     if (!isAuthenticated && !isLoading && !isPublicRoute) {
       router.replace("/login");
     }
@@ -79,13 +79,13 @@ const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Check if current route is public
     const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
-    
+
     // Only apply role-based routing for authenticated users on non-public routes
     if (isAuthenticated && roleId && !isPublicRoute) {
       const isAllowedRoute = (allowedRoutes) => {
         return allowedRoutes.some((route) => pathname.startsWith(route) || pathname.includes(route));
       };
-  
+
       if (roleId === "1") {
         if (!isAllowedRoute(allowedRoutesRole1)) {
           router.replace(allowedRoutesRole1[0]);
@@ -101,7 +101,7 @@ const AuthProvider = ({ children }) => {
       }
     }
   }, [isAuthenticated, roleId, pathname, router]);
-  
+
 
   const login = (data) => {
     localStorage.setItem("token", data?.token);
