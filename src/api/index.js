@@ -779,7 +779,7 @@ export const deleteSystemVariable = async (payload) => {
 export const getSystemVariableDetails = async (id) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/systemData/${id}`);
+    result = await axiosInstance.get(`/api/systemData?filterKey=id&filterValue=${id}`);
   } catch (error) {
     result = error;
   }

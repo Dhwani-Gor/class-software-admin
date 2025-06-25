@@ -14,10 +14,13 @@ import {
   DialogTitle,
   DialogActions,
   Button,
+  Alert,
+  Modal,
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
@@ -30,8 +33,12 @@ const SystemVariables = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState(""); // Debounced search state
-  const [snackBar, setSnackBar] = useState({ open: false, message: "" });
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [snackBar, setSnackBar] = useState({ 
+    open: false, 
+    message: "", 
+    severity: "success" 
+  });
   const [systemVariablesList, setSystemVariablesList] = useState([]);
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [limit, setLimit] = useState(10);
@@ -39,9 +46,11 @@ const SystemVariables = () => {
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedVariableId, setSelectedVariableId] = useState(null);
+  const [selectedVariableName, setSelectedVariableName] = useState("");
+  const [previewModal, setPreviewModal] = useState({ open: false, url: "", name: "" });
 
   const snackbarClose = () => {
-    setSnackBar({ open: false, message: "" });
+    setSnackBar({ open: false, message: "", severity: "success" });
   };
 
   useEffect(() => {
@@ -54,23 +63,26 @@ const SystemVariables = () => {
 
   const fetchSystemVariablesData = async (page, limit, searchQuery) => {
     setLoading(true);
-    await getAllSystemVariables(page, limit, searchQuery)
-      .then((res) => {
-        if (res?.data?.data?.length > 0) {
-          const sortedData = res?.data?.data?.sort((a, b) => a?.id - b?.id);
-          setSystemVariablesList(sortedData);
-          setTotalRows(res?.data?.total || sortedData.length);
-        } else {
-          setSystemVariablesList([]);
-          setTotalRows(0);
-        }
-      })
-      .catch((e) => {
-        console.log(e);
-      })
-      .finally(() => {
-        setLoading(false);
+    try {
+      const res = await getAllSystemVariables(page, limit, searchQuery);
+      if (res?.data?.data?.length > 0) {
+        const sortedData = res.data.data.sort((a, b) => a?.id - b?.id);
+        setSystemVariablesList(sortedData);
+        setTotalRows(res.data.total || sortedData.length);
+      } else {
+        setSystemVariablesList([]);
+        setTotalRows(0);
+      }
+    } catch (e) {
+      console.error("Error fetching system variables:", e);
+      setSnackBar({
+        open: true,
+        message: "Failed to fetch system variables",
+        severity: "error"
       });
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -87,28 +99,50 @@ const SystemVariables = () => {
     setSearch(event.target.value);
   };
 
-  const handleDeleteClick = (variableId) => {
+  const handleDeleteClick = (variableId, variableName) => {
     setSelectedVariableId(variableId);
+    setSelectedVariableName(variableName);
     setOpenDialog(true);
   };
 
   const handleConfirmDelete = async () => {
     setOpenDialog(false);
     if (!selectedVariableId) return;
+    
     try {
       const res = await deleteSystemVariable({ id: selectedVariableId });
       if (res?.data?.message) {
-        setSnackBar({ open: true, message: res.data.message });
+        setSnackBar({ 
+          open: true, 
+          message: res.data.message, 
+          severity: "success" 
+        });
+      } else {
+        setSnackBar({ 
+          open: true, 
+          message: "System Variable deleted successfully", 
+          severity: "success" 
+        });
       }
+      
+      // Refresh the data
       fetchSystemVariablesData(page, limit, debouncedSearch);
     } catch (e) {
       console.error("Error deleting System Variable:", e.response?.data || e.message);
-      setSnackBar({ open: true, message: "Failed to delete System Variable." });
+      setSnackBar({ 
+        open: true, 
+        message: e.response?.data?.message || "Failed to delete System Variable.", 
+        severity: "error" 
+      });
+    } finally {
+      setSelectedVariableId(null);
+      setSelectedVariableName("");
     }
   };
 
   const handleCancelDelete = () => {
     setSelectedVariableId(null);
+    setSelectedVariableName("");
     setOpenDialog(false);
   };
 
@@ -117,42 +151,108 @@ const SystemVariables = () => {
     router.push(`/system-variables?page=${value}&limit=${limit}`);
   };
 
+  const isValidImageUrl = (url) => {
+    if (!url || typeof url !== 'string') return false;
+    const imageExtensions = /\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$/i;
+    return imageExtensions.test(url) || url.includes('data:image/');
+  };
+
+  const handlePreviewClick = (information, name) => {
+    if (isValidImageUrl(information)) {
+      setPreviewModal({ open: true, url: information, name: name || "Image Preview" });
+    }
+  };
+
+  const closePreview = () => {
+    setPreviewModal({ open: false, url: "", name: "" });
+  };
+
+  const renderInformationCell = (params) => {
+    const { information, name } = params.row;
+    const isImage = isValidImageUrl(information);
+    
+    return (
+      <Stack direction="row" alignItems="center" spacing={1}>
+        <Tooltip title={information || "No information"} arrow>
+          <Typography
+            variant="body2"
+            sx={{
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              maxWidth: isImage ? "150px" : "200px",
+              cursor: isImage ? "pointer" : "default",
+              color: isImage ? "primary.main" : "inherit",
+              textDecoration: isImage ? "underline" : "none",
+            }}
+            onClick={() => isImage && handlePreviewClick(information, name)}
+          >
+            {information || "No information"}
+          </Typography>
+        </Tooltip>
+        {isImage && (
+          <IconButton
+            size="small"
+            color="primary"
+            onClick={() => handlePreviewClick(information, name)}
+          >
+            <VisibilityIcon fontSize="small" />
+          </IconButton>
+        )}
+      </Stack>
+    );
+  };
+
   const columns = [
     {
       field: "id",
-      headerName: "Id",
-      flex: 1,
+      headerName: "ID",
+      flex: 0.5,
+      minWidth: 60,
     },
-    { 
-      field: "type", 
-      headerName: "Type", 
-      flex: 1.5 
+    // {
+    //   field: "name",
+    //   headerName: "Name",
+    //   flex: 1,
+    //   minWidth: 150,
+    // },
+    {
+      field: "type",
+      headerName: "Type",
+      flex: 0.8,
+      minWidth: 100,
     },
     {
       field: "information",
       headerName: "Information",
       flex: 2,
+      minWidth: 200,
+      renderCell: renderInformationCell,
+      sortable: false,
     },
     {
       field: "actions",
       headerName: "Actions",
-      width: 100,
+      width: 120,
+      sortable: false,
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
           <Tooltip title="Edit System Variable">
             <IconButton
               color="primary"
-              onClick={() => router.push(`/system-variables/${params?.id}`)}
+              size="small"
+              onClick={() => router.push(`/system-variables/${params.row.id}`)}
             >
-              <EditIcon />
+              <EditIcon fontSize="small" />
             </IconButton>
           </Tooltip>
           <Tooltip title="Delete System Variable">
             <IconButton
               color="error"
-              onClick={() => handleDeleteClick(params?.id)}
+              size="small"
+              onClick={() => handleDeleteClick(params.row.id, params.row.name)}
             >
-              <DeleteIcon />
+              <DeleteIcon fontSize="small" />
             </IconButton>
           </Tooltip>
         </Stack>
@@ -184,12 +284,13 @@ const SystemVariables = () => {
 
       <CommonCard>
         <CommonInput
-          placeholder="Search System Variables by type or information"
+          placeholder="Search System Variables by name, type, or information"
           fullWidth
           value={search}
           onChange={handleSearchChange}
           sx={{ marginBottom: 2 }}
         />
+        
         <Box sx={{ width: "100%", mt: 4 }}>
           {loading ? (
             <Box
@@ -215,35 +316,141 @@ const SystemVariables = () => {
               sx={{
                 backgroundColor: "#fff",
                 border: "none",
+                "& .MuiDataGrid-row": {
+                  minHeight: "52px !important",
+                  "&:hover": {
+                    backgroundColor: "rgba(0, 0, 0, 0.04)",
+                  },
+                },
+                "& .MuiDataGrid-cell": {
+                  padding: "8px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                },
               }}
             />
           ) : (
-            <Typography
-              variant="h6"
-              align="center"
-              sx={{ color: "gray", padding: 3 }}
-            >
-              No Data Found
-            </Typography>
+            <Box textAlign="center" py={4}>
+              <Typography
+                variant="h6"
+                color="text.secondary"
+                sx={{ mb: 1 }}
+              >
+                No Data Found
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {search ? 
+                  "No system variables match your search criteria." : 
+                  "Start by creating your first system variable."
+                }
+              </Typography>
+            </Box>
           )}
         </Box>
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-          <Pagination
-            count={Math.ceil(totalRows / limit)}
-            page={page}
-            onChange={handlePageChange}
-            color="primary"
-            variant="outlined"
-            shape="rounded"
-            sx={{ marginTop: "10px" }}
-          />
-        </Box>
+        
+        {totalRows > 0 && (
+          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
+            <Pagination
+              count={Math.ceil(totalRows / limit)}
+              page={page}
+              onChange={handlePageChange}
+              color="primary"
+              variant="outlined"
+              shape="rounded"
+              sx={{ marginTop: "10px" }}
+            />
+          </Box>
+        )}
       </CommonCard>
 
-      <Dialog open={openDialog} onClose={handleCancelDelete}>
-        <DialogTitle>Are you sure you want to delete this System Variable?</DialogTitle>
-        <DialogActions>
-          <Button onClick={handleCancelDelete} color="primary">
+      {/* Image Preview Modal */}
+      <Modal
+        open={previewModal.open}
+        onClose={closePreview}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Box
+          sx={{
+            position: 'relative',
+            maxWidth: '90vw',
+            maxHeight: '90vh',
+            bgcolor: 'background.paper',
+            borderRadius: 2,
+            boxShadow: 24,
+            p: 2,
+            outline: 'none',
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
+            {previewModal.name}
+          </Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              maxHeight: '70vh',
+              overflow: 'hidden',
+            }}
+          >
+            <img
+              src={previewModal.url}
+              alt={previewModal.name}
+              style={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain',
+                borderRadius: '4px',
+              }}
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'block';
+              }}
+            />
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ display: 'none', textAlign: 'center' }}
+            >
+              Failed to load image
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            <Button onClick={closePreview} variant="outlined">
+              Close
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog 
+        open={openDialog} 
+        onClose={handleCancelDelete}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Delete System Variable
+        </DialogTitle>
+        <Box sx={{ px: 3, pb: 2 }}>
+          <Typography variant="body1">
+            Are you sure you want to delete the system variable "{selectedVariableName}"?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            This action cannot be undone.
+          </Typography>
+        </Box>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button 
+            onClick={handleCancelDelete} 
+            color="primary"
+            variant="outlined"
+          >
             Cancel
           </Button>
           <Button
@@ -252,25 +459,35 @@ const SystemVariables = () => {
               backgroundColor: "#ed2b1c",
               color: "white",
               fontWeight: "500",
+              "&:hover": {
+                backgroundColor: "#d32f2f",
+              },
             }}
+            variant="contained"
           >
             Delete
           </Button>
         </DialogActions>
       </Dialog>
 
+      {/* Snackbar for notifications */}
       <Snackbar
         open={snackBar.open}
-        autoHideDuration={2000}
-        message={snackBar.message}
+        autoHideDuration={4000}
+        onClose={snackbarClose}
         anchorOrigin={{
           vertical: "top",
           horizontal: "center",
         }}
-        onClose={snackbarClose}
-        className="snackBarColor"
-        key="snackbar"
-      />
+      >
+        <Alert 
+          onClose={snackbarClose} 
+          severity={snackBar.severity} 
+          sx={{ width: '100%' }}
+        >
+          {snackBar.message}
+        </Alert>
+      </Snackbar>
     </Layout>
   );
 };

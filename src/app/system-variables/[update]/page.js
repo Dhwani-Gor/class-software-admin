@@ -25,7 +25,7 @@ const UpdateSystemVariable = ({ params }) => {
         </Stack>
       </CommonCard>
       <Stack>
-        <SystemVariableForm mode="update" variableId={params?.id} />
+        <SystemVariableForm mode="update" variableId={params?.update} />
       </Stack>
     </Layout>
   );

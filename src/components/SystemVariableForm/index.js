@@ -1,80 +1,93 @@
-"use client";
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
-  Grid,
-  Snackbar,
-  CircularProgress,
   Stack,
+  Snackbar,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  FormHelperText,
-  Button
+  Button,
+  CircularProgress,
+  Paper,
+  Alert,
 } from "@mui/material";
-import { CloudUpload } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import CommonCard from "@/components/CommonCard";
-import CommonButton from "@/components/CommonButton";
 import CommonInput from "@/components/CommonInput";
-import {
-  createSystemVariable,
-  updateSystemVariable,
-  getSystemVariableDetails
+import CommonButton from "@/components/CommonButton";
+import { 
+  createSystemVariable, 
+  updateSystemVariable, 
+  getSystemVariableDetails 
 } from "@/api";
 
-const SystemVariableForm = ({ mode, variableId }) => {
+const SystemVariableForm = ({ mode = "create", variableId = null }) => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [snackBar, setSnackBar] = useState({ open: false, message: "" });
+  const [fetchLoading, setFetchLoading] = useState(false);
+  const [snackBar, setSnackBar] = useState({ open: false, message: "", severity: "success" });
+  
+  // Form state
   const [formData, setFormData] = useState({
+    name: "",
     type: "",
     information: "",
+    file: null
   });
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [filePreview, setFilePreview] = useState(null);
+  
   const [errors, setErrors] = useState({});
+  const [fileName, setFileName] = useState("");
 
   const snackbarClose = () => {
-    setSnackBar({ open: false, message: "" });
+    setSnackBar({ open: false, message: "", severity: "success" });
   };
 
-  // Fetch system variable details for update mode
+  // Fetch existing data for edit mode
   useEffect(() => {
     if (mode === "update" && variableId) {
-      fetchSystemVariableDetails();
+      fetchSystemVariable();
     }
   }, [mode, variableId]);
 
-  const fetchSystemVariableDetails = async () => {
-    setLoading(true);
+  const fetchSystemVariable = async () => {
+    console.log(variableId)
+    setFetchLoading(true);
     try {
-      const res = await getSystemVariableDetails(variableId);
-      if (res?.data?.data) {
+      const response = await getSystemVariableDetails(variableId);
+      console.log("API Response:", response); // Debug log
+      
+      if (response?.data) {
+        const data = response.data.data[0];
+        console.log("Fetched data:", data); // Debug log
+        
         setFormData({
-          type: res.data.data.type || "",
-          information: res.data.data.information || "",
+          name: data.name || "",
+          type: data.type || "",
+          information: data.information || "", 
+          file: data.information || ""
         });
+      ``
       }
-    } catch (e) {
-      console.error("Error fetching system variable details:", e);
+    } catch (error) {
+      console.error("Error fetching system variable:", error);
       setSnackBar({
         open: true,
-        message: "Failed to fetch system variable details."
+        message: "Failed to fetch system variable data",
+        severity: "error"
       });
     } finally {
-      setLoading(false);
+      setFetchLoading(false);
     }
   };
 
-  const handleInputChange = (field) => (event) => {
+  const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
-      [field]: event.target.value
+      [field]: value
     }));
-
+    
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({
@@ -82,51 +95,58 @@ const SystemVariableForm = ({ mode, variableId }) => {
         [field]: ""
       }));
     }
+  };
 
-    // Clear file when type changes from image to text
-    if (field === "type" && event.target.value === "text") {
-      setSelectedFile(null);
-      setFilePreview(null);
-    }
+  const handleTypeChange = (event) => {
+    const newType = event.target.value;
+    setFormData(prev => ({
+      ...prev,
+      type: newType,
+      information: "", // Clear information when type changes
+      file: null // Clear file when type changes
+    }));
+    setFileName("");
+    
+    // Clear errors
+    setErrors({});
   };
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
-      // Validate file type
-      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-      if (!validTypes.includes(file.type)) {
+      // Validate file type (images only)
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
         setSnackBar({
           open: true,
-          message: "Please select a valid image file (JPEG, PNG, GIF, or WebP)"
+          message: "Please select a valid image file (JPEG, PNG, GIF, WebP)",
+          severity: "error"
         });
         return;
       }
-
+      
       // Validate file size (e.g., max 5MB)
       const maxSize = 5 * 1024 * 1024; // 5MB
       if (file.size > maxSize) {
         setSnackBar({
           open: true,
-          message: "File size should be less than 5MB"
+          message: "File size should not exceed 5MB",
+          severity: "error"
         });
         return;
       }
-
-      setSelectedFile(file);
-
-      // Create preview for image
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setFilePreview(e.target.result);
-      };
-      reader.readAsDataURL(file);
-
-      // Clear error
-      if (errors.information) {
+      
+      setFormData(prev => ({
+        ...prev,
+        file: file
+      }));
+      setFileName(file.name);
+      
+      // Clear file error
+      if (errors.file) {
         setErrors(prev => ({
           ...prev,
-          information: ""
+          file: ""
         }));
       }
     }
@@ -134,81 +154,80 @@ const SystemVariableForm = ({ mode, variableId }) => {
 
   const validateForm = () => {
     const newErrors = {};
-
-    if (!formData.type.trim()) {
+    
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required";
+    }
+    
+    if (!formData.type) {
       newErrors.type = "Type is required";
     }
-
-    if (formData.type === "text") {
-      if (!formData.information.trim()) {
-        newErrors.information = "Information is required";
-      }
-    } else if (formData.type === "image") {
-      if (mode === "create" && !selectedFile) {
-        newErrors.information = "Please select an image file";
-      }
+    
+    if (formData.type === "text" && !formData.information.trim()) {
+      newErrors.information = "Information is required for text type";
     }
-
+    
+    if (formData.type === "image") {
+      // For create mode, file is required
+      if (mode === "create" && !formData.file) {
+        newErrors.file = "File is required for image type";
+      }
+      // For update mode, file is optional (can keep existing file)
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    
     if (!validateForm()) {
       return;
     }
-
+    
     setLoading(true);
+    
     try {
-      let res;
-
-      if (formData.type === "image") {
-        // Handle FormData for image upload
-        const formDataPayload = new FormData();
-        formDataPayload.append("type", formData.type);
-
-        if (selectedFile) {
-          formDataPayload.append("information", selectedFile);
-        } else if (mode === "update") {
-          // Keep existing image information if no new file selected
-          formDataPayload.append("information", formData.information);
-        }
-
-        if (mode === "create") {
-          res = await createSystemVariable(formDataPayload);
-        } else {
-          res = await updateSystemVariable(variableId, formDataPayload);
-        }
-      } else {
-        // Handle regular JSON payload for text
-        const payload = {
-          type: formData.type.trim(),
-          information: formData.information.trim(),
-        };
-
-        if (mode === "create") {
-          res = await createSystemVariable(payload);
-        } else {
-          res = await updateSystemVariable(variableId, payload);
+      // Prepare form data for API
+      const apiData = new FormData();
+      apiData.append("name", formData.name.trim());
+      apiData.append("type", formData.type);
+      
+      if (formData.type === "text") {
+        apiData.append("information", formData.information.trim());
+      } else if (formData.type === "image") {
+        if (formData.file) {
+          apiData.append("file", formData.file);
         }
       }
-
-      if (res?.data?.message) {
+      
+      let response;
+      if (mode === "create") {
+        response = await createSystemVariable(apiData);
+      } else {
+        apiData.append("id", variableId);
+        response = await updateSystemVariable(variableId, apiData);
+      }
+      
+      if (response?.data) {
         setSnackBar({
           open: true,
-          message: res.data.message
+          message: response.data.message || `System Variable ${mode === "create" ? "created" : "updated"} successfully`,
+          severity: "success"
         });
-
-        // Redirect after successful operation
+        
+        // Redirect after a short delay
         setTimeout(() => {
           router.push("/system-variables");
         }, 1500);
       }
-    } catch (e) {
-      console.error("Error saving system variable:", e);
+    } catch (error) {
+      console.error(`Error ${mode === "create" ? "creating" : "updating"} system variable:`, error);
       setSnackBar({
         open: true,
-        message: `Failed to ${mode} system variable.`
+        message: error.response?.data?.message || `Failed to ${mode === "create" ? "create" : "update"} system variable`,
+        severity: "error"
       });
     } finally {
       setLoading(false);
@@ -219,9 +238,9 @@ const SystemVariableForm = ({ mode, variableId }) => {
     router.push("/system-variables");
   };
 
-  if (loading && mode === "update") {
+  if (fetchLoading) {
     return (
-      <Layout>
+      <CommonCard>
         <Box
           display="flex"
           justifyContent="center"
@@ -230,152 +249,173 @@ const SystemVariableForm = ({ mode, variableId }) => {
         >
           <CircularProgress />
         </Box>
-      </Layout>
+      </CommonCard>
     );
   }
 
   return (
     <CommonCard>
-      <Typography variant="h5" fontWeight={600} mb={3}>
-        {mode === "create" ? "Add System Variable" : "Update System Variable"}
+      <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
+        {mode === "create" ? "Create" : "Update"} System Variable
       </Typography>
-
-
-      <FormControl fullWidth error={!!errors.type}>
-        <InputLabel>Type *</InputLabel>
-        <Select
-          value={formData.type}
-          onChange={handleInputChange("type")}
-          label="Type *"
-        >
-          <MenuItem value="text">Text</MenuItem>
-          <MenuItem value="image">Image</MenuItem>
-        </Select>
-        {errors.type && <FormHelperText>{errors.type}</FormHelperText>}
-      </FormControl>
-
-      <Box mt={3}>
-        {formData.type === "text" ? (
-          <CommonInput
-            label="Information"
-            placeholder="Enter information"
-            fullWidth
-            multiline
-            value={formData.information}
-            onChange={handleInputChange("information")}
-            error={!!errors.information}
-            helperText={errors.information}
-            required
-          />
-        ) : formData.type === "image" ? (
+      
+      <Box component="form" onSubmit={handleSubmit}>
+        <Stack spacing={3}>
+          {/* Name Field */}
           <Box>
-            <Typography variant="body2" color="text.secondary" mb={1}>
-              Image Upload *
-            </Typography>
-            <input
-              accept="image/*"
-              style={{ display: 'none' }}
-              id="image-upload"
-              type="file"
-              onChange={handleFileChange}
+            <CommonInput
+              label="Name"
+              placeholder="Enter system variable name"
+              fullWidth
+              value={formData.name}
+              onChange={(e) => handleInputChange("name", e.target.value)}
+              error={!!errors.name}
+              helperText={errors.name}
+              required
             />
-            <label htmlFor="image-upload">
-              <Button
-                variant="outlined"
-                component="span"
-                startIcon={<CloudUpload />}
+          </Box>
+
+          {/* Type Field */}
+          <Box>
+            <FormControl fullWidth error={!!errors.type} required>
+              <InputLabel>Type</InputLabel>
+              <Select
+                value={formData.type}
+                onChange={handleTypeChange}
+                label="Type"
+              >
+                <MenuItem value="text">Text</MenuItem>
+                <MenuItem value="image">Image</MenuItem>
+              </Select>
+              {errors.type && (
+                <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 2 }}>
+                  {errors.type}
+                </Typography>
+              )}
+            </FormControl>
+          </Box>
+
+          {/* Conditional Field - Information or File */}
+          {formData.type === "text" && (
+            <Box>
+              <CommonInput
+                label="Information"
+                placeholder="Enter information"
                 fullWidth
+                multiline
+                value={formData.information}
+                onChange={(e) => handleInputChange("information", e.target.value)}
+                error={!!errors.information}
+                helperText={errors.information}
+                required
+              />
+            </Box>
+          )}
+
+          {formData.type === "image" && (
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                File {mode === "create" ? "*" : "(Optional - leave empty to keep existing file)"}
+              </Typography>
+              
+              {/* Show existing file name in edit mode */}
+              {mode === "update" && fileName && !formData.file && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  Current file: {fileName}
+                  {formData.information && (
+                    <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                      File URL: {formData.information}
+                    </Typography>
+                  )}
+                </Alert>
+              )}
+              
+              <Paper
+                variant="outlined"
                 sx={{
                   p: 2,
-                  borderStyle: 'dashed',
-                  borderColor: errors.information ? 'error.main' : 'divider'
+                  border: errors.file ? "1px solid #d32f2f" : "1px dashed #ccc",
+                  backgroundColor: "#fafafa",
+                  cursor: "pointer",
+                  "&:hover": {
+                    backgroundColor: "#f5f5f5"
+                  }
                 }}
               >
-                {selectedFile ? selectedFile.name : "Choose Image File"}
-              </Button>
-            </label>
-            {errors.information && (
-              <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
-                {errors.information}
-              </Typography>
-            )}
-
-            {filePreview && (
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="body2" color="text.secondary" mb={1}>
-                  Preview:
-                </Typography>
-                <Box
-                  component="img"
-                  src={filePreview}
-                  alt="Preview"
-                  sx={{
-                    maxWidth: '100%',
-                    maxHeight: 200,
-                    objectFit: 'contain',
-                    border: 1,
-                    borderColor: 'divider',
-                    borderRadius: 1
-                  }}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  style={{ display: "none" }}
+                  id="file-upload"
                 />
-              </Box>
-            )}
-
-            {mode === "update" && !selectedFile && formData.information && (
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="body2" color="text.secondary" mb={1}>
-                  Current Image:
+                <label htmlFor="file-upload" style={{ cursor: "pointer", width: "100%" }}>
+                  <Box textAlign="center">
+                    {formData.file ? (
+                      <Typography color="primary">
+                        Selected: {formData.file}
+                      </Typography>
+                    ) : fileName ? (
+                      <Typography color="text.secondary">
+                        Current: {fileName} - Click to change
+                      </Typography>
+                    ) : (
+                      <Typography color="text.secondary">
+                        Click to select an image file
+                      </Typography>
+                    )}
+                  </Box>
+                </label>
+              </Paper>
+              
+              {errors.file && (
+                <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                  {errors.file}
                 </Typography>
-                <Box
-                  component="img"
-                  src={formData.information}
-                  alt="Current"
-                  sx={{
-                    maxWidth: '100%',
-                    maxHeight: 200,
-                    objectFit: 'contain',
-                    border: 1,
-                    borderColor: 'divider',
-                    borderRadius: 1
-                  }}
-                />
-              </Box>
-            )}
-          </Box>
-        ) : null}
+              )}
+            </Box>
+          )}
+
+          {/* Action Buttons */}
+          <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
+            <CommonButton
+              variant="contained"
+              type="submit"
+              disabled={loading}
+              sx={{ minWidth: 120 }}
+            >
+              {loading ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                mode === "create" ? "Create" : "Update"
+              )}
+            </CommonButton>
+            
+            <Button
+              variant="outlined"
+              onClick={handleCancel}
+              disabled={loading}
+              sx={{ minWidth: 120 }}
+            >
+              Cancel
+            </Button>
+          </Stack>
+        </Stack>
       </Box>
-
-
-
-      <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
-        <CommonButton
-          text={mode === "create" ? "Create" : "Update"}
-          variant="contained"
-          onClick={handleSubmit}
-          disabled={loading}
-          sx={{ minWidth: 120 }}
-        />
-        <CommonButton
-          text="Cancel"
-          variant="outlined"
-          onClick={handleCancel}
-          disabled={loading}
-          sx={{ minWidth: 120 }}
-        />
-      </Stack>
 
       <Snackbar
         open={snackBar.open}
-        autoHideDuration={3000}
-        message={snackBar.message}
+        autoHideDuration={4000}
+        onClose={snackbarClose}
         anchorOrigin={{
           vertical: "top",
           horizontal: "center",
         }}
-        onClose={snackbarClose}
-        className="snackBarColor"
-        key="snackbar"
-      />
+      >
+        <Alert onClose={snackbarClose} severity={snackBar.severity} sx={{ width: '100%' }}>
+          {snackBar.message}
+        </Alert>
+      </Snackbar>
     </CommonCard>
   );
 };
