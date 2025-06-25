@@ -148,8 +148,8 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
             {checkboxes.map(field => {
               const attr = field.attribute;
               return (
-                <Grid2 key={attr} xs={12} sm={6} md={3}>
-                  <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
+                <Grid2 key={attr} size={{ xs: 12 }}>
+                  <Box display="flex" alignItems="center">
                     <input
                       type="checkbox"
                       checked={!!formValues[attr]}
