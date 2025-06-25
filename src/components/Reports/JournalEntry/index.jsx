@@ -951,11 +951,11 @@ const JournalEntryForm = ({ journalId = null }) => {
                           {/* <TableCell>{activity.initialOfSurveyors}</TableCell> */}
                           {!isJournalLocked && (
                             <TableCell align="right">
-                              <IconButton
+                              {/* <IconButton
                                 onClick={() => handleEditActivity(activity)}
                               >
                                 <EditIcon />
-                              </IconButton>
+                              </IconButton> */}
                               <IconButton
                                 onClick={() =>
                                   handleActivityDelete(activity)
@@ -996,6 +996,7 @@ const JournalEntryForm = ({ journalId = null }) => {
         onSave={handleSaveActivity}
         defaultValues={editActivity}
         journalType={selectedJournalType}
+        activityList={activitiesList}
       />
     </Box>
   );

@@ -24,10 +24,13 @@ const activitySchema = yup.object().shape({
 });
 
 
-const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes }) => {
+const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes, activityList }) => {
+  console.log(activityList,"activity list")
   const [surveyInputValue, setSurveyInputValue] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
+  const filterOptions=activityList?.map((item)=> item.surveyTypes.name)
+  console.log(filterOptions,"filter options")
   const {
     control,
     handleSubmit,
@@ -59,12 +62,13 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes }) 
     onClose();
   };
   
-
-  // Transform surveyTypes for Autocomplete
-  const surveyOptions = surveyTypes?.map(survey => ({
-    label: survey.name,
-    value: Number(survey.id),
-  })) || [];
+  const usedSurveyLabels = activityList?.map((item) => item.surveyTypes.name);
+  const surveyOptions = surveyTypes
+    ?.filter((survey) => !usedSurveyLabels?.includes(survey.name))
+    .map((survey) => ({
+      label: survey.name,
+      value: Number(survey.id),
+    })) || [];
 
   return (
     <Dialog open={open} onClose={onClose}>
