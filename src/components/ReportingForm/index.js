@@ -1079,7 +1079,7 @@ const ReportingForm = () => {
                       sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                     >
                       <TableCell component="th" scope="row">
-                        {row.id}
+                        {index + 1}
                       </TableCell>
                       <TableCell>{getSurveyTitle(row.surveyTypes.name)}</TableCell>
                       <TableCell>
