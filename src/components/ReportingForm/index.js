@@ -590,14 +590,28 @@ const ReportingForm = () => {
         setOpen(true);
       } else {
         setLoadingReport(true);
-        const result = await generateFullReport({
-          reportDetailId: reportDetails?.id,
-          // type:"image",
-          // image:7,
-          // stamp:7
-          // data: { ...reportDetails.data, endorsementValues }
 
-        });
+        const payload = {
+          reportDetailId: reportDetails?.id,
+
+          data: {
+            image: 7,
+            type: 'image',
+            stamp: 7,
+            companyText: 8
+          }
+        };
+
+        // const result = await generateFullReport({
+        //   reportDetailId: reportDetails?.id,
+        //   // type:"image",
+        //   // image:7,
+        //   // stamp:7
+        //   // data: { ...reportDetails.data, endorsementValues }
+
+        // });
+
+        const result = await generateFullReport(payload);
 
         const fileUrl = result?.data?.data;
 
