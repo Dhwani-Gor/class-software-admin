@@ -765,7 +765,7 @@ const ReportingForm = () => {
         setShowForm(true);
         setSelectedRow(row);
 
-        clearErrors();  
+        clearErrors();
 
         setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
         setSurveyorName(getSurveyTitle(row.surveyTypes));
@@ -1489,7 +1489,7 @@ const ReportingForm = () => {
       )}
 
       {
-        !validReports.includes(reportName?.trim()) && (
+        validReports.includes(reportName?.trim()) ? (
           <DialogForm
             open={open}
             onClose={() => setOpen(false)}
@@ -1497,7 +1497,13 @@ const ReportingForm = () => {
             fields={underscoreFields}
             reportDetails={reportDetails?.data}
           />
-        )
+        ) : <DialogForm
+          open={open}
+          onClose={() => setOpen(false)}
+          onSubmit={handleSubmitReport}
+          fields={underscoreFields}
+          reportDetails={reportDetails?.data}
+        />
       }
 
       {reportName?.trim() === "SUPPLEMENT TO THE INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" || reportName?.trim() === "INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" &&
