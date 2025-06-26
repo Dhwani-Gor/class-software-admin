@@ -177,11 +177,10 @@ const Certificates = () => {
   const columns = [
     {
       field: "id",
-      headerName: "S.No",
+      headerName: "No.",
       width: 80,
       renderCell: (params) => {
-        const rowIndex = certificatesList.findIndex(row => row.id === params.id);
-        return <Typography>{rowIndex + 1 + (page - 1) * limit}</Typography>;
+        return <Typography fontSize="14px">{(page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1}</Typography>;
       },
     },
     {
@@ -189,7 +188,7 @@ const Certificates = () => {
       headerName: "Report No",
       flex: 1,
       renderCell: (params) => (
-        <Typography>
+        <Typography fontSize="14px">
           {params.row.activity?.journal?.journalTypeId || 'N/A'}
         </Typography>
       )
@@ -199,7 +198,7 @@ const Certificates = () => {
       headerName: "Ship Name",
       flex: 1,
       renderCell: (params) => (
-        <Typography>
+        <Typography fontSize="14px">
           {params.row.activity?.journal?.client?.shipName || 'N/A'}
         </Typography>
       )
@@ -209,7 +208,7 @@ const Certificates = () => {
       headerName: "Certificate Type",
       flex: 1,
       renderCell: (params) => (
-        <Typography sx={{ textTransform: 'capitalize' }}>
+        <Typography fontSize="14px" sx={{ textTransform: 'capitalize' }}>
           {params.value?.replace('_', ' ') || 'N/A'}
         </Typography>
       )
@@ -219,7 +218,7 @@ const Certificates = () => {
       headerName: "Survey Type",
       flex: 1,
       renderCell: (params) => (
-        <Typography
+        <Typography fontSize="14px"
           sx={{
             whiteSpace: 'normal',
             wordBreak: 'break-word',
@@ -235,7 +234,7 @@ const Certificates = () => {
       headerName: "Survey Date",
       flex: 1,
       renderCell: (params) => (
-        <Typography>{formatDate(params.value)}</Typography>
+        <Typography fontSize="14px">{formatDate(params.value)}</Typography>
       )
     },
     {
@@ -364,11 +363,11 @@ const Certificates = () => {
             }}
           />
 
-          {(selectedReportNumber || placeFilter || statusFilter) && (
+          {(selectedReportNumber || placeFilter || statusFilter || startDate || endDate) && (
             <CommonButton
               variant="contained"
               size="small"
-              sx={{ textTransform: "uppercase", padding: "6px 10px", fontSize: "11px" }}
+              sx={{ textTransform: "uppercase", padding: "12px 10px", fontSize: "14px" }}
               text="Clear Filters"
               onClick={() => {
                 handleClearFilter();

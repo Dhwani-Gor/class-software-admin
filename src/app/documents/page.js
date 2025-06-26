@@ -154,12 +154,16 @@ const Documents = () => {
 
   const columns = [
     {
-      field: "id",
-      headerName: "Id",
-      flex: 1,
-    },
+      field: "index",
+      headerName: "No.",
+      flex: 0.3,
+      sortable: false,
+      renderCell: (params) => {
+        return (page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1;
+      }
+    },    
     { field: "name", headerName: "Document Name", flex: 1.5 },
-    { field: "type", headerName: "Document Type", flex: 1 },
+    { field: "type", headerName: "Document Type", flex: 0.5 },
     // {
     //   field: "fullTermFilePath || interimFilePath || shortTermFilePath",
     //   headerName: "File Preview",

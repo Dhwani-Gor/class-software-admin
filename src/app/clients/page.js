@@ -106,10 +106,14 @@ const Clients = () => {
 
   const columns = [
     {
-      field: "id",
-      headerName: "Id",
+      field: "index",
+      headerName: "No.",
       flex: 1,
-    },
+      sortable: false,
+      renderCell: (params) => {
+        return (page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1;
+      }
+    },    
     { field: "shipName", headerName: "Ship Name", flex: 1.5 },
     { field: "imoNumber", headerName: "IMO Number", flex: 1 },
     {
