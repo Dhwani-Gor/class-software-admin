@@ -8,29 +8,36 @@ import {
   Grid2,
   Autocomplete,
   TextField,
-  CircularProgress,
+  Box,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import CommonButton from "@/components/CommonButton";
 
-// Validation Schema
+// Validation schema for dropdown (array of IDs)
 const activitySchema = yup.object().shape({
   typeOfSurvey: yup
     .array()
-    .of(yup.string())
+    .of(yup.number())
     .min(1, "At least one survey type is required"),
 });
 
-
 const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes, activityList }) => {
-  console.log(activityList,"activity list")
   const [surveyInputValue, setSurveyInputValue] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
+  const [isManualInput, setIsManualInput] = useState(false);
 
-  const filterOptions=activityList?.map((item)=> item.surveyTypes.name)
-  console.log(filterOptions,"filter options")
+  const usedSurveyLabels = activityList
+    ?.map((item) => item.surveyTypes?.name)
+    .filter((name) => name);
+
+  const surveyOptions = surveyTypes
+    ?.filter((survey) => !usedSurveyLabels?.includes(survey.name))
+    .map((survey) => ({
+      label: survey.name,
+      value: Number(survey.id),
+    })) || [];
+
   const {
     control,
     handleSubmit,
@@ -44,41 +51,61 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes, ac
 
   useEffect(() => {
     reset(defaultValues || { typeOfSurvey: [] });
-  
+
     if (defaultValues?.surveyTypes && surveyTypes?.length) {
       const surveyTypeList = Array.isArray(defaultValues.surveyTypes)
         ? defaultValues.surveyTypes
         : [defaultValues.surveyTypes];
-    
-        const ids = surveyTypeList.map((s) => Number(s.id));
-        setValue("typeOfSurvey", ids);
-        setSurveyInputValue("");
+
+      const ids = surveyTypeList.map((s) => Number(s.id));
+      setValue("typeOfSurvey", ids);
     }
+    setSurveyInputValue("");
+    setIsManualInput(false);
   }, [defaultValues, reset, surveyTypes, setValue]);
 
-  const onSubmit = (data) => {
-    onSave(data);
+  const handleAdd = (data) => {
+    onSave({ typeOfSurvey: data.typeOfSurvey });
     reset();
     onClose();
   };
-  
-  const usedSurveyLabels = activityList?.map((item) => item.surveyTypes.name);
-  const surveyOptions = surveyTypes
-    ?.filter((survey) => !usedSurveyLabels?.includes(survey.name))
-    .map((survey) => ({
-      label: survey.name,
-      value: Number(survey.id),
-    })) || [];
+
+  const handleSaveManual = () => {
+    if (!surveyInputValue.trim()) return;
+    onSave({ name: surveyInputValue.trim() });
+    setSurveyInputValue("");
+    setIsManualInput(false);
+    onClose();
+  };
 
   return (
     <Dialog open={open} onClose={onClose}>
-      <DialogTitle>
-        {defaultValues ? "Edit Activity" : "Add Activity"}
+      <DialogTitle>{defaultValues ? "Edit Activity" : "Add Activity"}</DialogTitle>
+      <DialogContent sx={{ minWidth: "500px", maxWidth: "1000px" }}>
+        <Box container spacing={2} sx={{ mt: 2 }} display="flex" flexDirection="column">
+          <Grid2 xs={12}>
+            <Box display="flex" alignItems="center" gap={2}>
+              <TextField
+                label="Custom Survey Name"
+                fullWidth
+                value={surveyInputValue}
+                onChange={(e) => {
+                  setSurveyInputValue(e.target.value);
+                  setIsManualInput(!!e.target.value);
+                }}
+                placeholder="Enter custom survey name if not in dropdown"
+              />
+              <CommonButton
+                onClick={handleSaveManual}
+                color="primary"
+                text="Save"
+                sx={{ whiteSpace: "nowrap", height: '50px' }}
+              />
+            </Box>
+          </Grid2>
 
-      </DialogTitle>
-      <DialogContent sx={{ minWidth: "50vw" }}>
-        <Grid2 container spacing={2} sx={{ mt: 1 }}>
-          <Grid2 size={{ xs: 12 }}>
+          {/* Dropdown */}
+          <Grid2 xs={12} sx={{ mt: 2 }}>
             <Controller
               name="typeOfSurvey"
               control={control}
@@ -86,18 +113,19 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes, ac
                 <Autocomplete
                   multiple
                   options={surveyOptions}
-                  value={surveyOptions.filter(option => field.value.includes(option.value))}
+                  value={surveyOptions.filter((option) =>
+                    field.value.includes(option.value)
+                  )}
                   onChange={(event, newValue) => {
-                    field.onChange(newValue.map(v => v.value));
+                    field.onChange(newValue.map((v) => v.value));
                   }}
-                  getOptionLabel={(option) => {
-                    if (typeof option === "string") return option;
-                    return option.label || "";
-                  }}
+                  getOptionLabel={(option) =>
+                    typeof option === "string" ? option : option.label
+                  }
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Type of Survey"
+                      label="Type of Survey (Dropdown)"
                       error={!!errors.typeOfSurvey}
                       helperText={errors.typeOfSurvey?.message}
                     />
@@ -105,11 +133,11 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes, ac
                 />
               )}
             />
-
           </Grid2>
+        </Box>
 
-        </Grid2>
       </DialogContent>
+
       <DialogActions>
         <CommonButton
           onClick={onClose}
@@ -117,8 +145,9 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes, ac
           text="Cancel"
           variant="outlined"
         />
+
         <CommonButton
-          onClick={handleSubmit(onSubmit)}
+          onClick={handleSubmit(handleAdd)}
           color="primary"
           text={defaultValues ? "Update" : "Add"}
         />
