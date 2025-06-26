@@ -701,6 +701,7 @@ const ReportingForm = () => {
   };
 
   const handleStatusChange = async (id, value) => {
+    setShowForm(false)
     setTableData((prevData) =>
       prevData.map((item) =>
         item.id === id ? { ...item, status: value } : item
@@ -764,7 +765,7 @@ const ReportingForm = () => {
         setShowForm(true);
         setSelectedRow(row);
 
-        clearErrors();
+        clearErrors();  
 
         setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
         setSurveyorName(getSurveyTitle(row.surveyTypes));
@@ -1488,7 +1489,7 @@ const ReportingForm = () => {
       )}
 
       {
-        validReports.includes(reportName?.trim()) && (
+        !validReports.includes(reportName?.trim()) && (
           <DialogForm
             open={open}
             onClose={() => setOpen(false)}
