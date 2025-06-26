@@ -108,10 +108,14 @@ const SurveyTypes = () => {
 
   const columns = [
     {
-      field: "id",
-      headerName: "Id",
-      flex: 1,
-    },
+      field: "index",
+      headerName: "No.",
+      flex: 0.5,
+      sortable: false,
+      renderCell: (params) => {
+        return (page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1;
+      }
+    },    
     { field: "name", headerName: "Survey Tpe", flex: 1.5 },
     { field: "abbreviation", headerName: "Abbreviation", flex: 1 },
     {

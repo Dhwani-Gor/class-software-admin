@@ -31,7 +31,15 @@ const Reports = () => {
   const [selectedJournalId, setSelectedJournalId] = useState(null);
 
   const [columns] = useState([
-    { field: "id", headerName: "ID", width: 90 },
+    {
+      field: "id",
+      headerName: "No.",
+      flex: 0.5,
+      renderCell: (params) => {
+        const rowIndex = params.api.getRowIndexRelativeToVisibleRows(params.id);
+        return (page - 1) * limit + rowIndex + 1;
+      }
+    },
     {
       field: "client",
       headerName: "Ship / Work",
@@ -87,7 +95,7 @@ const Reports = () => {
 
   const handlePageChange = (event, value) => {
     setPage(value);
-    router.push(`/journal?page=${page}&limit=${limit}`);
+    router.push(`/journal?page=${value}&limit=${limit}`);
   };
 
   const fetchAllJournals = async (search,page,limit) => {

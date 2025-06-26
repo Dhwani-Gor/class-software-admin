@@ -49,7 +49,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                 } else if (field.attribute.startsWith("_st")) {
                     if (reportDetails && reportDetails[field.attribute]) {
 
-                        const parts = reportDetails[field.attribute]?.split('/').map(s => s.trim());
+                        const parts = reportDetails[field.attribute]?.split(' / ').map(s => s.trim());
                         const [option1, option2] = parts;
                         if (isStrikethroughText(option1)) {
                             initialValues[field.attribute] = option2;

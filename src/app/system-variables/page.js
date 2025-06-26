@@ -34,10 +34,10 @@ const SystemVariables = () => {
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [snackBar, setSnackBar] = useState({ 
-    open: false, 
-    message: "", 
-    severity: "success" 
+  const [snackBar, setSnackBar] = useState({
+    open: false,
+    message: "",
+    severity: "success"
   });
   const [systemVariablesList, setSystemVariablesList] = useState([]);
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
@@ -108,31 +108,31 @@ const SystemVariables = () => {
   const handleConfirmDelete = async () => {
     setOpenDialog(false);
     if (!selectedVariableId) return;
-    
+
     try {
       const res = await deleteSystemVariable({ id: selectedVariableId });
       if (res?.data?.message) {
-        setSnackBar({ 
-          open: true, 
-          message: res.data.message, 
-          severity: "success" 
+        setSnackBar({
+          open: true,
+          message: res.data.message,
+          severity: "success"
         });
       } else {
-        setSnackBar({ 
-          open: true, 
-          message: "System Variable deleted successfully", 
-          severity: "success" 
+        setSnackBar({
+          open: true,
+          message: "System Variable deleted successfully",
+          severity: "success"
         });
       }
-      
+
       // Refresh the data
       fetchSystemVariablesData(page, limit, debouncedSearch);
     } catch (e) {
       console.error("Error deleting System Variable:", e.response?.data || e.message);
-      setSnackBar({ 
-        open: true, 
-        message: e.response?.data?.message || "Failed to delete System Variable.", 
-        severity: "error" 
+      setSnackBar({
+        open: true,
+        message: e.response?.data?.message || "Failed to delete System Variable.",
+        severity: "error"
       });
     } finally {
       setSelectedVariableId(null);
@@ -170,7 +170,7 @@ const SystemVariables = () => {
   const renderInformationCell = (params) => {
     const { information, name } = params.row;
     const isImage = isValidImageUrl(information);
-    
+
     return (
       <Stack direction="row" alignItems="center" spacing={1}>
         <Tooltip title={information || "No information"} arrow>
@@ -206,9 +206,12 @@ const SystemVariables = () => {
   const columns = [
     {
       field: "id",
-      headerName: "ID",
+      headerName: "No.",
       flex: 0.5,
       minWidth: 60,
+      renderCell: (params) => {
+        return <Typography fontSize="14px">{(page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1}</Typography>;
+      },
     },
     // {
     //   field: "name",
@@ -290,7 +293,7 @@ const SystemVariables = () => {
           onChange={handleSearchChange}
           sx={{ marginBottom: 2 }}
         />
-        
+
         <Box sx={{ width: "100%", mt: 4 }}>
           {loading ? (
             <Box
@@ -339,15 +342,15 @@ const SystemVariables = () => {
                 No Data Found
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {search ? 
-                  "No system variables match your search criteria." : 
+                {search ?
+                  "No system variables match your search criteria." :
                   "Start by creating your first system variable."
                 }
               </Typography>
             </Box>
           )}
         </Box>
-        
+
         {totalRows > 0 && (
           <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
             <Pagination
@@ -428,8 +431,8 @@ const SystemVariables = () => {
       </Modal>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog 
-        open={openDialog} 
+      <Dialog
+        open={openDialog}
         onClose={handleCancelDelete}
         maxWidth="sm"
         fullWidth
@@ -446,8 +449,8 @@ const SystemVariables = () => {
           </Typography>
         </Box>
         <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button 
-            onClick={handleCancelDelete} 
+          <Button
+            onClick={handleCancelDelete}
             color="primary"
             variant="outlined"
           >
@@ -480,9 +483,9 @@ const SystemVariables = () => {
           horizontal: "center",
         }}
       >
-        <Alert 
-          onClose={snackbarClose} 
-          severity={snackBar.severity} 
+        <Alert
+          onClose={snackbarClose}
+          severity={snackBar.severity}
           sx={{ width: '100%' }}
         >
           {snackBar.message}
