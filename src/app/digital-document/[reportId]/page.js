@@ -329,7 +329,7 @@ const DigitalDocument = ({ params }) => {
               The following details are confirmed by:
             </Typography>
             <Typography variant="body2" color="primary" fontWeight="bold">
-              INNOVOIL
+              Marine Classification Bureau Gambia Ltd
             </Typography>
           </Box>
 
@@ -447,7 +447,7 @@ const DigitalDocument = ({ params }) => {
               Previewing: {reportDetails.generatedDoc?.split('/').pop() || 'Document'}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              INNOVOIL
+              Marine Classification Bureau Gambia Ltd
             </Typography>
           </Box>
 
