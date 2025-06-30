@@ -947,7 +947,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                       {activitiesList.map((activity, index) => (
                         <TableRow key={activity.id}>
                           <TableCell>{index + 1}</TableCell>
-                          <TableCell>{activity.surveyTypes?.name}</TableCell>
+                          <TableCell>{activity.surveyTypes?.name || activity?.name}</TableCell>
                           {/* <TableCell>{activity.initialOfSurveyors}</TableCell> */}
                           {!isJournalLocked && (
                             <TableCell align="right">

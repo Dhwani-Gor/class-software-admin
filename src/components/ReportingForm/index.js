@@ -1106,7 +1106,7 @@ const ReportingForm = () => {
                       <TableCell component="th" scope="row">
                         {index + 1}
                       </TableCell>
-                      <TableCell>{getSurveyTitle(row.surveyTypes.name)}</TableCell>
+                      <TableCell>{getSurveyTitle(row?.surveyTypes?.name || row?.name)}</TableCell>
                       <TableCell>
                         <FormControl fullWidth size="small">
                           <Select
