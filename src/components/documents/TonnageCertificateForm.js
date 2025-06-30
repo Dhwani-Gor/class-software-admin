@@ -125,8 +125,10 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
       } 
       else if (attribute.includes("date") && value) {
         finalPayload[attribute] = formattedDate(value);
+      } else if (typeof value === "string" && value.trim()) {
+        finalPayload[attribute] = value;
       } else {
-        finalPayload[attribute] = value || "";
+        finalPayload[attribute] = "N/A";
       }
     });
 
