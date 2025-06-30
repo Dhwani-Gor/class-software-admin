@@ -94,7 +94,7 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       } else {
-        acc[key] = "N/A";
+        acc[key] = "-";
       }
 
       return acc;
