@@ -80,7 +80,7 @@ const Layout = ({ children }) => {
               <MenuIcon />
             </IconButton>
             <Typography variant="h4" fontWeight={"700"}>
-              INNOVOIL
+              MARINE ASSURE
               {/* <Image src={Logo} width={80} alt="visayard_logo" /> */}
             </Typography>
           </Box>
