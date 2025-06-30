@@ -29,7 +29,7 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes, ac
   const [surveyInputValue, setSurveyInputValue] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
-  const filterOptions=activityList?.map((item)=> item.surveyTypes.name)
+  const filterOptions=activityList?.map((item)=> item.surveyTypes?.name)
   console.log(filterOptions,"filter options")
   const {
     control,
@@ -62,12 +62,12 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes, ac
     onClose();
   };
   
-  const usedSurveyLabels = activityList?.map((item) => item.surveyTypes.name);
+  const usedSurveyLabels = activityList?.map((item) => item.surveyTypes?.name);
   const surveyOptions = surveyTypes
-    ?.filter((survey) => !usedSurveyLabels?.includes(survey.name))
+    ?.filter((survey) => !usedSurveyLabels?.includes(survey?.name))
     .map((survey) => ({
-      label: survey.name,
-      value: Number(survey.id),
+      label: survey?.name,
+      value: Number(survey?.id),
     })) || [];
 
   return (
@@ -105,9 +105,7 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes, ac
                 />
               )}
             />
-
           </Grid2>
-
         </Grid2>
       </DialogContent>
       <DialogActions>
