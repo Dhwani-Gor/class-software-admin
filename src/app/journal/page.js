@@ -15,7 +15,7 @@ import CommonInput from "@/components/CommonInput";
 import { deleteJournal, getAllJournals } from "@/api";
 import { Button, Dialog, DialogActions, DialogTitle, IconButton, Pagination, Tooltip } from "@mui/material";
 import moment from "moment";
-import { toast } from "react-toastify"; // Add this import
+import { toast } from "react-toastify";
 
 const Reports = () => {
   const router = useRouter();
@@ -32,12 +32,12 @@ const Reports = () => {
 
   const [columns] = useState([
     {
-      field: "id",
+      field: "serialNumber",
       headerName: "No.",
       flex: 0.5,
+      sortable: false,
       renderCell: (params) => {
-        const rowIndex = params.api.getRowIndexRelativeToVisibleRows(params.id);
-        return (page - 1) * limit + rowIndex + 1;
+        return params.value;
       }
     },
     {
@@ -98,7 +98,7 @@ const Reports = () => {
     router.push(`/journal?page=${value}&limit=${limit}`);
   };
 
-  const fetchAllJournals = async (search,page,limit) => {
+  const fetchAllJournals = async (search, page, limit) => {
     try {
       setLoading(true);
       const result = await getAllJournals({
@@ -108,8 +108,13 @@ const Reports = () => {
       });
 
       if (result?.status === 200) {
-        setJournals(result.data.data || []);
-        setTotalRows(result.data.total || result.data.results || 0); // Set total rows
+        const journalsWithSerialNumbers = (result.data.data || []).map((journal, index) => ({
+          ...journal,
+          serialNumber: (page - 1)  * limit + index + 1
+        }));
+
+        setJournals(journalsWithSerialNumbers); 
+        setTotalRows(result.data.total || result.data.results || 0);
       } else {
         toast.error("Something went wrong! Please try again after some time");
       }
@@ -130,8 +135,8 @@ const Reports = () => {
   }, [search]);
 
   useEffect(() => {
-    fetchAllJournals(debouncedSearch,page,limit);
-  }, [debouncedSearch,page,limit]);
+    fetchAllJournals(debouncedSearch, page, limit);
+  }, [debouncedSearch, page, limit]);
 
   const handleCancelDelete = () => {
     setSelectedClientId(null);
@@ -146,7 +151,7 @@ const Reports = () => {
       if (res) {
         toast.success("Journal deleted successfully");
       }
-      fetchAllJournals(search,page,limit);
+      fetchAllJournals(search, page, limit);
     } catch (e) {
       console.error("Error deleting Client:", e.response?.data || e.message);
       toast.error("Failed to delete Client.");
