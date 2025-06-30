@@ -17,10 +17,10 @@ import { useRouter } from "next/navigation";
 import CommonCard from "@/components/CommonCard";
 import CommonInput from "@/components/CommonInput";
 import CommonButton from "@/components/CommonButton";
-import { 
-  createSystemVariable, 
-  updateSystemVariable, 
-  getSystemVariableDetails 
+import {
+  createSystemVariable,
+  updateSystemVariable,
+  getSystemVariableDetails
 } from "@/api";
 
 const SystemVariableForm = ({ mode = "create", variableId = null }) => {
@@ -28,7 +28,7 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
   const [snackBar, setSnackBar] = useState({ open: false, message: "", severity: "success" });
-  
+
   // Form state
   const [formData, setFormData] = useState({
     name: "",
@@ -36,9 +36,9 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
     information: "",
     file: null
   });
-  
+
   const [errors, setErrors] = useState({});
-  const [fileName, setFileName] = useState("");
+  const [existingFileInfo, setExistingFileInfo] = useState(null); // Store existing file info separately
 
   const snackbarClose = () => {
     setSnackBar({ open: false, message: "", severity: "success" });
@@ -57,18 +57,25 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
     try {
       const response = await getSystemVariableDetails(variableId);
       console.log("API Response:", response); // Debug log
-      
+
       if (response?.data) {
         const data = response.data.data[0];
         console.log("Fetched data:", data); // Debug log
-        
+
         setFormData({
           name: data.name || "",
           type: data.type || "",
-          information: data.information || "", 
-          file: data.information || ""
+          information: data.information || "",
+          file: null // Always null for file input
         });
-      ``
+
+        // Store existing file info separately if it's an image type
+        if (data.type === "image" && data.information) {
+          setExistingFileInfo({
+            url: data.information,
+            name: data.information.split('/').pop() || 'existing-file' // Extract filename from URL
+          });
+        }
       }
     } catch (error) {
       console.error("Error fetching system variable:", error);
@@ -87,7 +94,7 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
       ...prev,
       [field]: value
     }));
-    
+
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({
@@ -105,8 +112,8 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
       information: "", // Clear information when type changes
       file: null // Clear file when type changes
     }));
-    setFileName("");
-    
+    setExistingFileInfo(null); // Clear existing file info
+
     // Clear errors
     setErrors({});
   };
@@ -122,9 +129,11 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
           message: "Please select a valid image file (JPEG, PNG, GIF, WebP)",
           severity: "error"
         });
+        // Reset the file input
+        event.target.value = '';
         return;
       }
-      
+
       // Validate file size (e.g., max 5MB)
       const maxSize = 5 * 1024 * 1024; // 5MB
       if (file.size > maxSize) {
@@ -133,15 +142,16 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
           message: "File size should not exceed 5MB",
           severity: "error"
         });
+        // Reset the file input
+        event.target.value = '';
         return;
       }
-      
+
       setFormData(prev => ({
         ...prev,
         file: file
       }));
-      setFileName(file.name);
-      
+
       // Clear file error
       if (errors.file) {
         setErrors(prev => ({
@@ -154,19 +164,19 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.name.trim()) {
       newErrors.name = "Name is required";
     }
-    
+
     if (!formData.type) {
       newErrors.type = "Type is required";
     }
-    
+
     if (formData.type === "text" && !formData.information.trim()) {
       newErrors.information = "Information is required for text type";
     }
-    
+
     if (formData.type === "image") {
       // For create mode, file is required
       if (mode === "create" && !formData.file) {
@@ -174,26 +184,26 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
       }
       // For update mode, file is optional (can keep existing file)
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
       // Prepare form data for API
       const apiData = new FormData();
       apiData.append("name", formData.name.trim());
       apiData.append("type", formData.type);
-      
+
       if (formData.type === "text") {
         apiData.append("information", formData.information.trim());
       } else if (formData.type === "image") {
@@ -201,7 +211,7 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
           apiData.append("file", formData.file);
         }
       }
-      
+
       let response;
       if (mode === "create") {
         response = await createSystemVariable(apiData);
@@ -209,14 +219,14 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
         apiData.append("id", variableId);
         response = await updateSystemVariable(variableId, apiData);
       }
-      
+
       if (response?.data) {
         setSnackBar({
           open: true,
           message: response.data.message || `System Variable ${mode === "create" ? "created" : "updated"} successfully`,
           severity: "success"
         });
-        
+
         // Redirect after a short delay
         setTimeout(() => {
           router.push("/system-variables");
@@ -258,7 +268,7 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
       <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
         {mode === "create" ? "Create" : "Update"} System Variable
       </Typography>
-      
+
       <Box component="form" onSubmit={handleSubmit}>
         <Stack spacing={3}>
           {/* Name Field */}
@@ -317,19 +327,17 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
               <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
                 File {mode === "create" ? "*" : "(Optional - leave empty to keep existing file)"}
               </Typography>
-              
-              {/* Show existing file name in edit mode */}
-              {mode === "update" && fileName && !formData.file && (
+
+              {/* Show existing file info in edit mode */}
+              {mode === "update" && existingFileInfo && !formData.file && (
                 <Alert severity="info" sx={{ mb: 2 }}>
-                  Current file: {fileName}
-                  {formData.information && (
-                    <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                      File URL: {formData.information}
-                    </Typography>
-                  )}
+                  Current file: {existingFileInfo.name}
+                  <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                    File URL: {existingFileInfo.url}
+                  </Typography>
                 </Alert>
               )}
-              
+
               <Paper
                 variant="outlined"
                 sx={{
@@ -353,11 +361,11 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
                   <Box textAlign="center">
                     {formData.file ? (
                       <Typography color="primary">
-                        Selected: {formData.file}
+                        Selected: {formData.file.name}
                       </Typography>
-                    ) : fileName ? (
+                    ) : existingFileInfo ? (
                       <Typography color="text.secondary">
-                        Current: {fileName} - Click to change
+                        Current: {existingFileInfo.name} - Click to change
                       </Typography>
                     ) : (
                       <Typography color="text.secondary">
@@ -367,7 +375,7 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
                   </Box>
                 </label>
               </Paper>
-              
+
               {errors.file && (
                 <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
                   {errors.file}
@@ -390,7 +398,7 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
                 mode === "create" ? "Create" : "Update"
               )}
             </CommonButton>
-            
+
             <Button
               variant="outlined"
               onClick={handleCancel}
