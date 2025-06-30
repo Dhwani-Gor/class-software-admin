@@ -93,7 +93,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       } else {
-        acc[key] = "N/A";
+        acc[key] = "-";
       }
 
       return acc;

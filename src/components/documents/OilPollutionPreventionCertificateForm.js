@@ -114,7 +114,7 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
             } else if (typeof value === "string" && value.trim()) {
                 finalPayload[attribute] = value;
             } else {
-                finalPayload[attribute] = "N/A";
+                finalPayload[attribute] = "-";
             }
         });
 
