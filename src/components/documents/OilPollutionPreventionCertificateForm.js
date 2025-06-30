@@ -111,8 +111,10 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                 finalPayload[attribute] = value === true ? "\u2611" : "\u2612";
             } else if (attribute.includes("date") && value) {
                 finalPayload[attribute] = formattedDate(value);
+            } else if (typeof value === "string" && value.trim()) {
+                finalPayload[attribute] = value;
             } else {
-                finalPayload[attribute] = value || "";
+                finalPayload[attribute] = "N/A";
             }
         });
 
