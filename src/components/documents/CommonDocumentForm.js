@@ -56,6 +56,8 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
         acc[key] = formattedDate(value);
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
+      } else {
+        acc[key] = "N/A";
       }
       return acc;
     }, {});

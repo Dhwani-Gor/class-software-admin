@@ -92,6 +92,8 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
         acc[key] = formattedDate(value);
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
+      } else {
+        acc[key] = "N/A";
       }
 
       return acc;
