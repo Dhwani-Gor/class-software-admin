@@ -213,12 +213,12 @@ const SystemVariables = () => {
         return <Typography fontSize="14px">{(page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1}</Typography>;
       },
     },
-    // {
-    //   field: "name",
-    //   headerName: "Name",
-    //   flex: 1,
-    //   minWidth: 150,
-    // },
+    {
+      field: "name",
+      headerName: "Name",
+      flex: 1,
+      minWidth: 150,
+    },
     {
       field: "type",
       headerName: "Type",
