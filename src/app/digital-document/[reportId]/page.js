@@ -299,7 +299,7 @@ const DigitalDocument = ({ params }) => {
           <Box display="flex" justifyContent="center" mb={3}>
             <Box
               component="img"
-              src="/assets/logo.jpeg"
+              src="/assets/logo-2.jpeg"
               alt="Marine Assure Logo"
               sx={{
                 width: 'auto',
