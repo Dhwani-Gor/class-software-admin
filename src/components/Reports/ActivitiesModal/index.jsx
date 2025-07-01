@@ -82,7 +82,7 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes, ac
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>{defaultValues ? "Edit Activity" : "Add Activity"}</DialogTitle>
-      <DialogContent sx={{ minWidth: "500px", maxWidth: "1000px" }}>
+      <DialogContent sx={{ minWidth: "600px", maxWidth: "500px",height: 'auto' }}>
         <Box container spacing={2} sx={{ mt: 2 }} display="flex" flexDirection="column">
           <Grid2 xs={12}>
             <Box display="flex" alignItems="center" gap={2}>
@@ -106,7 +106,7 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes, ac
           </Grid2>
 
           {/* Dropdown */}
-          <Grid2 xs={12} sx={{ mt: 2 }}>
+          <Grid2 xs={12} sx={{ mt: 2 }} >
             <Controller
               name="typeOfSurvey"
               control={control}
@@ -129,6 +129,7 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes, ac
                       label="Type of Activity"
                       error={!!errors.typeOfSurvey}
                       helperText={errors.typeOfSurvey?.message}
+                      variant="standard"
                     />
                   )}
                 />
