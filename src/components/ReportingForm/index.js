@@ -389,6 +389,7 @@ const ReportingForm = () => {
   const [previewDocument, setPreviewDocument] = useState(null);
   const [underscoreFields, setUnderscoreFields] = useState([]);
   const [reportName, setReportName] = useState("");
+  console.log(reportName, "report name")
   const [showEndorsementField, setShowEndorsementField] = useState(false);
   const [showExtraEndorsementField, setShowExtraEndorsementField] = useState(false);
   const [endorsementTitle, setEndorsementTitle] = useState([]);
@@ -412,14 +413,45 @@ const ReportingForm = () => {
   }, [selectCertificate]);
 
   const [loadingReport, setLoadingReport] = useState(false);
-  const validReports = [
-    "CARGO SHIP SAFETY CONSTRUCTION CERTIFICATE",
-    "INTERNATIONAL SEWAGE POLLUTION PREVENTION CERTIFICATE",
-    "INTERNATIONAL BALLAST WATER MANAGEMENT CERTIFICATE",
-    "CERTIFICATE OF CLASS",
-    "CARGO SHIP SAFETY RADIO CERTIFICATE",
-    "INTERNATIONAL ENERGY EFFICIENCY CERTIFICATE",
-  ];
+
+  const renderReportForm = () => {
+    const trimmedReportName = reportName?.trim();
+
+    const commonProps = {
+      open,
+      onClose: () => setOpen(false),
+      onSubmit: handleSubmitReport,
+      fields: underscoreFields,
+      reportDetails: reportDetails?.data
+    };
+
+    switch (trimmedReportName) {
+      case "INTERNATIONAL TONNAGE CERTIFICATE":
+        return <InternationalTonnage {...commonProps} />;
+
+      case "SUPPLEMENT TO THE INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE":
+      case "INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE":
+        return <IOPPForm {...commonProps} />;
+
+      case "RECORD OF EQUIPMENT FOR CARGO SHIP SAFETY":
+      case "CARGO SHIP SAFETY EQUIPMENT CERTIFICATE":
+        return <CSSForm {...commonProps} />;
+
+      case "INTERNATIONAL LOAD LINE CERTIFICATE":
+        return <LoadLineCertificateForm {...commonProps} />;
+
+      case "International Anti-Fouling System Certificate":
+        return <AntiFoulingCertificateForm {...commonProps} />;
+
+      case "RECORD OF CONSTRUCTION AND EQUIPMENT":
+      case "INTERNATIONAL AIR POLLUTION PREVENTION CERTIFICATE":
+        return <IAPPForm {...commonProps} />;
+
+      default:
+        return <DialogForm {...commonProps} />;
+    }
+  };
+
 
   const {
     control,
@@ -742,7 +774,6 @@ const ReportingForm = () => {
   };
 
   const handleReportClick = async (row) => {
-    console.log(row)
     try {
       setLoading(true);
       const result = await getSelectedActivityReportDetails(row?.id);
@@ -820,10 +851,8 @@ const ReportingForm = () => {
   };
 
   const fetchReportDetails = async () => {
-    console.log(reportDetails, "report details")
     const response = await getSelectedReportDetails(reportDetails?.id)
     // setReportDetails(response?.data?.data)
-    console.log(response?.data?.data, "report details data")
 
   }
 
@@ -1477,7 +1506,7 @@ const ReportingForm = () => {
           ? `Remarks for ${fullScreenRemarksVisible.surveyTypes.name}`
           : "Remarks"}
       />
-      {reportName?.trim() === "INTERNATIONAL TONNAGE CERTIFICATE" && (
+      {/* {reportName?.trim() === "INTERNATIONAL TONNAGE CERTIFICATE" && (
         <InternationalTonnage
           open={open}
           onClose={() => setOpen(false)}
@@ -1496,7 +1525,8 @@ const ReportingForm = () => {
             fields={underscoreFields}
             reportDetails={reportDetails?.data}
           />
-        ) : <DialogForm
+        ) : 
+        <DialogForm
           open={open}
           onClose={() => setOpen(false)}
           onSubmit={handleSubmitReport}
@@ -1551,7 +1581,7 @@ const ReportingForm = () => {
           fields={underscoreFields}
           reportDetails={reportDetails?.data}
         />
-      }
+      } */}
       {/* {reportDetails?.typeOfCertificate === "full_term" &&
         openEndrosemet &&
         !!reportDetails?.endorsementDate && (
@@ -1563,6 +1593,7 @@ const ReportingForm = () => {
             reportDetailsId={reportDetails?.id}
           />
         )} */}
+      {renderReportForm()}
       {loadingReport && (
         <Box
           position="fixed"
