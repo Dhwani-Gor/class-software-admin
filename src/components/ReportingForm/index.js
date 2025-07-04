@@ -622,6 +622,7 @@ const ReportingForm = () => {
         setOpen(true);
       } else {
         setLoadingReport(true);
+        const isCertificateOfClass = reportDetails?.activity?.surveyType?.report?.name?.toLowerCase() === 'certificate of class';
 
         const payload = {
           reportDetailId: reportDetails?.id,
@@ -630,7 +631,8 @@ const ReportingForm = () => {
             image: 7,
             stamp: 6,
             companyText: 8,
-            logo:6
+            ...(reportName.toLocaleLowerCase() === 'certificate of class' && { logo: 7 })
+
 
           }
         };
@@ -688,6 +690,8 @@ const ReportingForm = () => {
       const certType = selectCertificate || 'Type';
       const reportNo = selectedReportNumber?.journalTypeId || 'Unknown';
 
+      const isCertificateOfClass = reportDetails?.activity?.surveyType?.report?.name?.toLowerCase() === 'certificate of class';
+      console.log()
       const payload = {
         reportDetailId: reportDetails?.id,
 
@@ -697,7 +701,7 @@ const ReportingForm = () => {
           type: 'image',
           stamp: 6,
           companyText: 8,
-          logo:6
+          ...(reportName.toLocaleLowerCase() === 'certificate of class' && { logo: 7 })
         }
       };
 
