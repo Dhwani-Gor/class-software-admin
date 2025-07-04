@@ -629,7 +629,9 @@ const ReportingForm = () => {
           data: {
             image: 7,
             stamp: 6,
-            companyText: 8
+            companyText: 8,
+            logo:6
+
           }
         };
 
@@ -694,7 +696,8 @@ const ReportingForm = () => {
           image: 7,
           type: 'image',
           stamp: 6,
-          companyText: 8
+          companyText: 8,
+          logo:6
         }
       };
 
