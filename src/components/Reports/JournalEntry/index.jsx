@@ -401,13 +401,13 @@ const JournalEntryForm = ({ journalId = null }) => {
       if (editActivity) {
         setActivitiesList(
           activitiesList.map((activity) =>
-            activity.surveyTypes.name === editActivity.surveyTypes.name
+            activity.surveyTypes?.name === editActivity.surveyTypes?.name
               ? {
                 ...activity,
                 ...activityData,
                 id: editActivity.id,
                 surveyTypes: {
-                  name: survey.name,
+                  name: survey?.name,
                 },
               }
               : activity
@@ -419,7 +419,7 @@ const JournalEntryForm = ({ journalId = null }) => {
           {
             ...activityData,
             surveyTypes: {
-              name: survey.name,
+              name: survey?.name,
             },
           },
         ]);
