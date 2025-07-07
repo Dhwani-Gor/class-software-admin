@@ -805,3 +805,12 @@ export const updateSystemVariable = async (id, payload) => {
   return result;
 };
 
+export const getSurveyReportData = async (clientId) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/reportDetails?filterKey=activity.journal.clientId&filterValue=${clientId}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
