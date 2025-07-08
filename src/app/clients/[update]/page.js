@@ -64,6 +64,8 @@ const UpdateClient = ({ params }) => {
   }, []);
 
   const handleClick = () => {
+    localStorage.removeItem("classification");
+    localStorage.removeItem("statutory");
     router.push(`/survey-report/${update}`)
   };
 

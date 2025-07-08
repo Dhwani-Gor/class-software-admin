@@ -89,7 +89,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
       const result = await getDocumentDetails(documentId);
       if (result?.status === 200) {
         const documentData = result.data.data;
-        console.log(documentData, "document data")
         setLoadingPreview(true);
         setPreviewState({
           open: false,

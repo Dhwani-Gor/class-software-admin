@@ -171,8 +171,6 @@ const SurveyTypeForm = ({
 
   const getReportById = (id) => {
     if (!id) return null;
-    console.log("numericId", id);
-    console.log(reports.find(report => report.id === id));
     return reports.find(report => report.id === id) || null;
   };
 

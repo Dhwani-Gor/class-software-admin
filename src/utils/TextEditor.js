@@ -8,27 +8,29 @@ import moment from 'moment';
 import CommonButton from '@/components/CommonButton';
 import { Box } from '@mui/material';
 import SurveyDialog from '@/components/Dialogs/SurveyDialog';
+import Loader from '@/components/Loader';
 
 const TextEditor = ({ id }) => {
     const [reportDetails, setReportDetails] = useState(null);
     const [clientData, setClientData] = useState();
     const [loading, setLoading] = useState(true);
     const [editorContent, setEditorContent] = useState('');
-    const [open, setOpen] = useState(false);
     const [classificationData, setClassificationData] = useState([]);
     const [statutoryData, setStatutoryData] = useState([]);
-    const [systemVariables,setSystemVariables] = useState()
-    const [show,setShow] = useState(false);
-
-    useEffect(() => {
-        setShow(true)
-    },[])
+    const [systemVariables, setSystemVariables] = useState()
+    const [show, setShow] = useState(false);
+    const today = moment();
     const companyName = systemVariables?.data?.find(item => item.name === "company_name")?.information || '[companyName]';
     const companyLogo = systemVariables?.data?.find(item => item.name === "company_logo")?.information || '[logoUrl]';
 
     useEffect(() => {
         getSystemVariables()
-    },[])
+    }, [])
+
+    useEffect(() => {
+        setShow(true)
+    }, [id])
+
     const getSystemVariables = async () => {
         try {
             const response = await getAllSystemVariables();
@@ -39,28 +41,27 @@ const TextEditor = ({ id }) => {
             console.log(error);
         }
     }
-console.log(reportDetails,"reportDetails")
     const downloadEditorContentAsPdf = async () => {
         const iframe = document.querySelector("iframe.tox-edit-area__iframe");
         const contentDocument = iframe?.contentDocument;
         const contentBody = contentDocument?.body;
-    
+
         if (!contentBody) {
             console.error("Could not find editor content");
             return;
         }
-    
+
         const originalOverflow = contentBody.style.overflow;
         const originalHeight = contentBody.style.height;
         const originalMaxHeight = contentBody.style.maxHeight;
-    
+
         try {
             contentBody.style.overflow = 'visible';
             contentBody.style.height = 'auto';
             contentBody.style.maxHeight = 'none';
-    
+
             await new Promise(resolve => setTimeout(resolve, 100));
-    
+
             const canvas = await html2canvas(contentBody, {
                 scale: 2,
                 height: contentBody.scrollHeight,
@@ -72,36 +73,36 @@ console.log(reportDetails,"reportDetails")
                 windowWidth: contentBody.scrollWidth,
                 windowHeight: contentBody.scrollHeight
             });
-    
+
             const imgData = canvas.toDataURL("image/png");
             const pdfDoc = await PDFDocument.create();
-    
+
             const imgWidth = canvas.width;
             const imgHeight = canvas.height;
             const aspectRatio = imgHeight / imgWidth;
-    
+
             const pageWidth = 595.28;
             const pageHeight = 841.89;
             const margin = 40;
             const maxWidth = pageWidth - 2 * margin;
             const maxHeight = pageHeight - 2 * margin;
-    
+
             let scaledWidth = maxWidth;
             let scaledHeight = scaledWidth * aspectRatio;
-    
+
             if (scaledHeight > maxHeight) {
                 const pagesNeeded = Math.ceil(scaledHeight / maxHeight);
                 const heightPerPage = imgHeight / pagesNeeded;
-    
+
                 for (let i = 0; i < pagesNeeded; i++) {
                     const page = pdfDoc.addPage([pageWidth, pageHeight]);
-    
+
                     const croppedCanvas = document.createElement('canvas');
                     const croppedCtx = croppedCanvas.getContext('2d');
-    
+
                     croppedCanvas.width = imgWidth;
                     croppedCanvas.height = heightPerPage;
-    
+
                     croppedCtx.drawImage(
                         canvas,
                         0, i * heightPerPage,
@@ -109,12 +110,12 @@ console.log(reportDetails,"reportDetails")
                         0, 0,
                         imgWidth, heightPerPage
                     );
-    
+
                     const croppedImgData = croppedCanvas.toDataURL("image/png");
                     const pngImage = await pdfDoc.embedPng(croppedImgData);
-    
+
                     const croppedScaledHeight = (heightPerPage / imgWidth) * scaledWidth;
-    
+
                     page.drawImage(pngImage, {
                         x: margin,
                         y: pageHeight - margin - croppedScaledHeight,
@@ -125,7 +126,7 @@ console.log(reportDetails,"reportDetails")
             } else {
                 const page = pdfDoc.addPage([pageWidth, pageHeight]);
                 const pngImage = await pdfDoc.embedPng(imgData);
-    
+
                 page.drawImage(pngImage, {
                     x: margin,
                     y: pageHeight - margin - scaledHeight,
@@ -133,7 +134,7 @@ console.log(reportDetails,"reportDetails")
                     height: scaledHeight,
                 });
             }
-    
+
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes], { type: "application/pdf" });
             const url = URL.createObjectURL(blob);
@@ -142,16 +143,14 @@ console.log(reportDetails,"reportDetails")
             link.download = "survey-report.pdf";
             link.click();
             URL.revokeObjectURL(url);
-    
+
         } finally {
             contentBody.style.overflow = originalOverflow;
             contentBody.style.height = originalHeight;
             contentBody.style.maxHeight = originalMaxHeight;
         }
     };
-    const today = moment();
 
-    // Enhanced date calculations
     const calculateDueDate = (assignmentDate) => {
         return moment(assignmentDate).add(5, 'years');
     };
@@ -162,38 +161,28 @@ console.log(reportDetails,"reportDetails")
 
     const getClassName = (dueDate) => {
         if (!dueDate) return 'status-icon expiring3m';
-        
-        // Ensure we have a valid moment object
         const due = moment(dueDate);
-        
-        // Check if the date is valid
         if (!due.isValid()) {
             console.warn('Invalid date provided to getClassName:', dueDate);
             return 'status-icon expiring3m';
         }
-        
         const daysDiff = due.diff(today, 'days');
 
-        console.log('Date comparison:', {
-            inputDate: dueDate,
-            momentDate: due.format('DD-MM-YYYY'),
-            today: today.format('DD-MM-YYYY'),
-            daysDiff: daysDiff,
-            isBefore: due.isBefore(today),
-            isValid: due.isValid()
-        });
+        // console.log('Date comparison:', {
+        //     inputDate: dueDate,
+        //     momentDate: due.format('DD-MM-YYYY'),
+        //     today: today.format('DD-MM-YYYY'),
+        //     daysDiff: daysDiff,
+        //     isBefore: due.isBefore(today),
+        //     isValid: due.isValid()
+        // });
 
-        // If the date is in the past (overdue)
         if (daysDiff < 0) {
             return 'status-icon expired';
         }
-
-        // If expiring within 30 days
         if (daysDiff <= 30) {
             return 'status-icon expiring1m';
         }
-
-        // If expiring within 90 days
         if (daysDiff <= 90) {
             return 'status-icon expiring3m';
         }
@@ -204,14 +193,14 @@ console.log(reportDetails,"reportDetails")
 
     // const getStatusText = (dueDate) => {
     //     if (!dueDate) return 'No date set';
-        
+
     //     const due = moment(dueDate);
-        
+
     //     if (!due.isValid()) {
     //         console.warn('Invalid date provided to getStatusText:', dueDate);
     //         return 'Invalid date';
     //     }
-        
+
     //     const daysDiff = due.diff(today, 'days');
 
     //     console.log('Status calculation:', {
@@ -237,35 +226,31 @@ console.log(reportDetails,"reportDetails")
     const updateStatusIcons = (editor) => {
         const editorDoc = editor.getDoc();
         const currentToday = moment();
-        
-        // Function to parse date from various formats
+
         const parseDate = (dateStr) => {
             if (!dateStr) return null;
-            
-            // Clean the date string
+
             const cleanDateStr = dateStr.trim();
-            
-            // Try different formats
+
             const formats = ['DD/MM/YYYY', 'MM/DD/YYYY', 'DD-MM-YYYY', 'DD/MM/YY'];
             let parsedDate = null;
-            
+
             for (const format of formats) {
                 parsedDate = moment(cleanDateStr, format, true);
                 if (parsedDate.isValid()) {
                     break;
                 }
             }
-            
+
             return parsedDate && parsedDate.isValid() ? parsedDate : null;
         };
-        
-        // Function to get appropriate class based on date
+
         const getStatusClass = (dateStr) => {
             const date = parseDate(dateStr);
             if (!date) return 'status-icon expiring3m';
-            
+
             const daysDiff = date.diff(currentToday, 'days');
-            
+
             if (daysDiff < 0) {
                 return 'status-icon expired';
             }
@@ -277,14 +262,14 @@ console.log(reportDetails,"reportDetails")
             }
             return 'status-icon expiring3m';
         };
-        
+
         // Function to get status text
         const getDynamicStatusText = (dateStr) => {
             const date = parseDate(dateStr);
             if (!date) return 'No date set';
-            
+
             const daysDiff = date.diff(currentToday, 'days');
-            
+
             if (daysDiff < 0) {
                 // return `Overdue by ${Math.abs(daysDiff)} days`;
                 return '';
@@ -299,8 +284,7 @@ console.log(reportDetails,"reportDetails")
             }
             return '';
         };
-        
-        // Update certificate table icons
+
         const certificateTables = editorDoc.querySelectorAll('table');
         certificateTables.forEach(table => {
             const rows = table.querySelectorAll('tbody tr');
@@ -308,17 +292,17 @@ console.log(reportDetails,"reportDetails")
                 const cells = row.querySelectorAll('td');
                 if (cells.length >= 4) {
                     const iconCell = cells[1];
-                    const expiryCell = cells[3]; // Fourth column with expiry date
-                    const statusCell = cells[cells.length - 1]; // Last column with status
-                    
+                    const expiryCell = cells[3];
+                    const statusCell = cells[cells.length - 1];
+
                     const iconSpan = iconCell.querySelector('span.status-icon');
                     if (iconSpan && iconSpan.textContent === 'C') {
                         const expiryText = expiryCell.textContent.trim();
                         const newClass = getStatusClass(expiryText);
                         const newStatus = getDynamicStatusText(expiryText);
-                        
+
                         iconSpan.className = newClass;
-                        
+
                         if (statusCell) {
                             statusCell.textContent = newStatus;
                         }
@@ -326,27 +310,25 @@ console.log(reportDetails,"reportDetails")
                 }
             });
         });
-        
-        // Update survey table icons
+
         certificateTables.forEach(table => {
             const rows = table.querySelectorAll('tr');
             rows.forEach(row => {
                 const cells = row.querySelectorAll('td');
-                if (cells.length >= 6) {
+                if (cells.length >= 7) {
                     const lastCell = cells[1];
-                    const dueDateCell = cells[2];
-                    const statusCell = cells[5];
-                    
+                    const dueDateCell = cells[4];
+                    const statusCell = cells[6];
+
                     const iconSpan = lastCell.querySelector('span.status-icon');
                     if (iconSpan && iconSpan.textContent === 'S') {
                         const dueDateText = dueDateCell.textContent.trim();
                         const newClass = getStatusClass(dueDateText);
                         const newStatus = getDynamicStatusText(dueDateText);
-                        
+
                         iconSpan.className = newClass;
                         iconSpan.className = newClass;
-                        
-                        // Update status text
+
                         if (statusCell) {
                             statusCell.textContent = newStatus;
                         }
@@ -356,23 +338,32 @@ console.log(reportDetails,"reportDetails")
         });
     };
 
-    // Generate dynamic HTML content
+    const formatSurveyName = (name) => {
+        if (!name) return "";
+        return name
+            .replace(/_/g, " ")
+            .toLowerCase()
+            .replace(/\b\w/g, (c) => c.toUpperCase());
+    };
+
     const generateHtmlContent = useCallback(() => {
         if (!clientData || !reportDetails) return '';
-         const classificationRows = classificationData.map((row) => {
-            const surveyName = row.surveyName;
+        const classificationRows = classificationData.map((row) => {
+            const surveyName = formatSurveyName(row.surveyName);
+            const issuanceDate = row.issuanceDate;
             const surveyDate = row.surveyDate;
-            const assignmentDate = row.assignmentDate;
             let dueDate = row.dueDate;
             let rangeDate = row.rangeDate;
             const postponedDate = row.postponedDate;
-            const status=""
+            const status = ""
             // const status = row.status || getStatusText(dueDate) || "";
 
             return `
             <tr>
               <td>${surveyName}</td>
-              <td>${surveyDate ? `<span class="${getClassName(surveyDate)}">S</span> ${moment(surveyDate).format('DD/MM/YYYY')}` : ''}</td>
+              <td>${`<span class="${getClassName(surveyDate)}">S</span>`}</td>
+              <td>${surveyDate ? moment(surveyDate).format('DD/MM/YYYY') : ''}</td>
+              <td>${issuanceDate ? moment(issuanceDate).format('DD/MM/YYYY') : ''}</td>
               <td>${dueDate ? moment(dueDate).format('DD/MM/YYYY') : ''}</td>
               <td>${dueDate ? `${moment(dueDate).format('DD/MM/YYYY')} - ${moment(rangeDate).format('DD/MM/YYYY')}` : ''}</td>
               <td>${postponedDate}</td>
@@ -381,41 +372,41 @@ console.log(reportDetails,"reportDetails")
           `;
         }).join("");
 
-        // Process statutory data with proper date calculations
         const statutoryRows = statutoryData.map((row) => {
             const surveyName = row.surveyName;
+            const surveyDate = row.surveyDate;
+            const issuanceDate = row.issuanceDate;
             let dueDate = row.dueDate;
             let rangeDate = row.rangeDate;
             const postponedDate = row.postponedDate;
-            const assignmentDate = row.assignmentDate;
-const status=""
-         
+            const status = ""
+
             // const status = row.status || getStatusText(dueDate);
 
             return `
             <tr>
-              <td style="width: 280px;">${surveyName}</td>
-              <td>${dueDate ? `<span class="${getClassName(dueDate)}">S</span>` : ''}</td>
+              <td style="width: 250px;">${surveyName}</td>
+
+              <td><span class="${getClassName(dueDate)}">S</span></td>
+              <td>${surveyDate ? moment(surveyDate).format('DD/MM/YYYY') : ''}</td>
+              <td>${issuanceDate ? moment(issuanceDate).format('DD/MM/YYYY') : ''}</td>
               <td>${dueDate ? moment(dueDate).format('DD/MM/YYYY') : ''}</td>
-              <td>${dueDate ? `${moment(dueDate).format('DD/MM/YYYY')} - ${moment(rangeDate).format('DD/MM/YYYY')}` : ''}</td>
+              <td style="width: 150px;">${dueDate ? `${moment(dueDate).format('DD/MM/YYYY')} - ${moment(rangeDate).format('DD/MM/YYYY')}` : ''}</td>
               <td>${postponedDate}</td>
               <td>${status}</td>
             </tr>
           `;
         }).join("");
 
-        // Process certificates with proper date calculations
         const certificateRows = reportDetails
             ?.map((cert) => {
                 const name = cert?.activity?.surveyTypes?.report?.name || "[Certificate Name]";
                 const issued = cert.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : "";
                 const expiry = cert.validityDate;
                 let extendedDate = cert.extendedDate;
-                
-                // Ensure expiry date is properly formatted for comparison
+
                 const expiryFormatted = expiry ? moment(expiry).format('YYYY-MM-DD') : null;
-                
-                // Debug logging for certificate dates
+
                 console.log('Certificate processing:', {
                     name: name,
                     expiryRaw: expiry,
@@ -425,22 +416,21 @@ const status=""
                     daysDiff: moment(expiry).diff(today, 'days'),
                     className: getClassName(expiryFormatted)
                 });
-                
-               
+
+
 
                 const type = cert?.typeOfCertificate === "short_term"
-                ? "ST"
-                : cert?.typeOfCertificate === "full_term"
-                ? "FT"
-                : cert?.typeOfCertificate === "intrim"
-                ? "IT"
-                : cert?.typeOfCertificate === "extended"
-                ? "ET"
-                : cert?.typeOfCertificate || "[Type]";
-                
-                // Use the formatted date for status calculation
+                    ? "ST"
+                    : cert?.typeOfCertificate === "full_term"
+                        ? "FT"
+                        : cert?.typeOfCertificate === "intrim"
+                            ? "IT"
+                            : cert?.typeOfCertificate === "extended"
+                                ? "ET"
+                                : cert?.typeOfCertificate || "[Type]";
+
                 // const status = cert?.activity?.status;
-                const status="Completed"
+                const status = "Completed"
 
                 return `
             <tr>
@@ -486,7 +476,9 @@ const status=""
             <table class="">
                 <tr>
                     <th>Survey Name</th>
-                    <th>SurveyDate</th>
+                    <th></th>
+                    <th>Survey Date</th>
+                    <th>Issuance Date</th>
                     <th>Due Date</th>
                     <th>Range (from, to)</th>
                     <th>Postponed</th>
@@ -500,8 +492,10 @@ const status=""
             <div class="section-title">Statutory Surveys</div>
             <table>
                 <tr>
-                    <th>Survey name</th>
+                    <th>Survey Name</th>
                     <th></th>
+                    <th>SurveyDate</th>
+                    <th>Issuance Date</th>
                     <th>Due Date</th>
                     <th>Range (from, to)</th>
                     <th>Postponed</th>
@@ -651,11 +645,10 @@ const status=""
 `;
     }, [clientData, reportDetails, classificationData, statutoryData]);
 
-    // Load localStorage data on mount
     useEffect(() => {
         const classification = localStorage.getItem("classification");
         const statutory = localStorage.getItem("statutory");
-        
+
         if (classification) {
             try {
                 setClassificationData(JSON.parse(classification));
@@ -664,7 +657,7 @@ const status=""
                 setClassificationData([]);
             }
         }
-        
+
         if (statutory) {
             try {
                 setStatutoryData(JSON.parse(statutory));
@@ -673,9 +666,8 @@ const status=""
                 setStatutoryData([]);
             }
         }
-    }, []);
+    }, [show]);
 
-    // Update editor content when data changes
     useEffect(() => {
         if (clientData && reportDetails) {
             const newContent = generateHtmlContent();
@@ -692,7 +684,6 @@ const status=""
         try {
             setLoading(true);
             const result = await getSpecificClient(clientId);
-            console.log("API Result:", result.data.data);
 
             if (result?.status === 200) {
                 const data = result.data.data;
@@ -712,7 +703,6 @@ const status=""
         try {
             setLoading(true);
             const result = await getSurveyReportData(clientId);
-            console.log("API Result:", result.data.data);
 
             if (result?.status === 200) {
                 const data = result.data.data;
@@ -736,7 +726,7 @@ const status=""
     }, [id]);
 
     if (loading) {
-        return <div>Loading...</div>;
+        return <Box><Loader /></Box>;
     }
 
     return (
@@ -749,37 +739,33 @@ const status=""
                     disabled: false,
                     height: 600,
                     menubar: true,
+                    visual: false,
                     plugins: [
                         'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
                         'print', 'preview', 'searchreplace', 'wordcount', 'code', 'fullscreen'
                     ],
                     toolbar: 'undo redo | formatselect | bold italic | alignleft aligncenter alignright | outdent indent | link image | code fullscreen',
                     readonly: false,
-                    
-                    // Add setup function to handle events
+
                     setup: (editor) => {
-                        // Update icons when editor content changes
                         editor.on('input', () => {
                             setTimeout(() => {
                                 updateStatusIcons(editor);
                             }, 100);
                         });
-                        
-                        // Update icons when content is set
+
                         editor.on('SetContent', () => {
                             setTimeout(() => {
                                 updateStatusIcons(editor);
                             }, 100);
                         });
-                        
-                        // Update icons when editor is ready
+
                         editor.on('init', () => {
                             setTimeout(() => {
                                 updateStatusIcons(editor);
                             }, 500);
                         });
-                        
-                        // Update icons when user finishes typing (debounced)
+
                         let timeoutId;
                         editor.on('keyup', () => {
                             clearTimeout(timeoutId);
@@ -788,14 +774,13 @@ const status=""
                             }, 500);
                         });
 
-                        // Update icons when content changes via paste or other methods
                         editor.on('paste', () => {
                             setTimeout(() => {
                                 updateStatusIcons(editor);
                             }, 200);
                         });
                     },
-                    
+
                     content_style: `
                     body { 
                         font-family: Arial, sans-serif; 
@@ -1064,10 +1049,10 @@ const status=""
                 }}
             />
             <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-                <CommonButton onClick={() => setShow(true)} text="Back"/>
+                <CommonButton onClick={() => setShow(true)} text="Back" />
                 <CommonButton onClick={downloadEditorContentAsPdf} text="Download PDF" />
-
             </Box>
+            
             <SurveyDialog open={show} onClose={() => setShow(false)} update={id} surveyData={reportDetails} />
         </>
     );

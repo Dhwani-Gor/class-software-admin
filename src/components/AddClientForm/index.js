@@ -489,7 +489,6 @@ const AddSurveyType = ({
     try {
       setLoading(true);
       let res;
-      console.log(data, "data");
 
       // Helper function to check if value should be included
       const hasValue = (value) => {
@@ -794,7 +793,6 @@ const AddSurveyType = ({
               field.onChange(newValue);
             } else if (newValue && newValue.label) {
               field.onChange(newValue.value);
-              console.log(newValue, "newValue");
               // Update other owner fields
               setValue('invoicingDetails.companyAddress', newValue.companyAddress || '');
               setValue('invoicingDetails.phoneNumber', newValue.phoneNumber || '');

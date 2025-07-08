@@ -21,12 +21,12 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
 import { addYears, subMonths, format } from "date-fns";
 import { useRouter } from "next/navigation";
 import moment from "moment";
 import CommonButton from "../CommonButton";
 import DeleteIcon from "@mui/icons-material/Delete";
+import Loader from "../Loader";
 
 const surveyTypes = [
   { "label": "Special Survey Hull", "value": "special_survey_hull" },
@@ -57,91 +57,6 @@ export default function SurveyDialog({ open, onClose, update, surveyData }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  const populateClassificationRows = (surveyDataList) => {
-    if (!surveyDataList || surveyDataList.length === 0) return [createEmptyRow()];
-  
-    return surveyDataList.map((survey) => {
-      const surveyName = survey.activity?.surveyTypes?.name || "";
-      const surveyDate = survey.surveyDate ? format(new Date(survey.surveyDate), "yyyy-MM-dd") : "";
-      const issuanceDate = survey.issuanceDate ? format(new Date(survey.issuanceDate), "yyyy-MM-dd") : "";
-  
-      let dueDate = "";
-      let rangeDate = "";
-  
-      if (issuanceDate) {
-        const { dueDate: d, rangeDate: r } = calculateDates(issuanceDate);
-        dueDate = d;
-        rangeDate = r;
-      }
-  
-      return {
-        surveyName,
-        surveyDate,
-        issuanceDate,
-        dueDate,
-        rangeDate,
-        postponedDate: "",
-      };
-    });
-  };
-  
-  const populateStatutoryRows = (surveyDataList) => {
-    if (!surveyDataList || surveyDataList.length === 0) return [createEmptyRow()];
-  
-    return surveyDataList.map((survey) => {
-      const surveyName = survey.activity?.surveyTypes?.report?.name || "";
-      const surveyDate = survey.surveyDate ? format(new Date(survey.surveyDate), "yyyy-MM-dd") : "";
-      const issuanceDate = survey.issuanceDate ? format(new Date(survey.issuanceDate), "yyyy-MM-dd") : "";
-  
-      let dueDate = "";
-      let rangeDate = "";
-  
-      if (issuanceDate) {
-        const { dueDate: d, rangeDate: r } = calculateDates(issuanceDate);
-        dueDate = d;
-        rangeDate = r;
-      }
-  
-      return {
-        surveyName,
-        surveyDate,
-        issuanceDate,
-        dueDate,
-        rangeDate,
-        postponedDate: "",
-      };
-    });
-  };
- 
-  useEffect(() => {
-    setLoading(true);
-    if (surveyData && surveyData.length > 0) {
-      const statutory = populateStatutoryRows(surveyData);
-      setStatutoryRows(statutory);
-    }
-    setLoading(false);
-  }, [surveyData]);
-
-
-  const handleDeleteRow = (section, index) => {
-    if (section === "classification") {
-      const updated = [...classificationRows];
-      updated.splice(index, 1);
-      setClassificationRows(updated.length ? updated : [createEmptyRow()]);
-    } else {
-      const updated = [...statutoryRows];
-      updated.splice(index, 1);
-      setStatutoryRows(updated.length ? updated : [createEmptyRow()]);
-    }
-  };
-
-  useEffect(() => {
-    if (surveyData && surveyData.length > 0) {
-      const classification = populateClassificationRows(surveyData);
-      setClassificationRows(classification);
-    }
-  }, [surveyData]);
-
   const createEmptyRow = () => ({
     surveyName: "",
     surveyDate: "",
@@ -154,30 +69,96 @@ export default function SurveyDialog({ open, onClose, update, surveyData }) {
   const [classificationRows, setClassificationRows] = useState([createEmptyRow()]);
   const [statutoryRows, setStatutoryRows] = useState([createEmptyRow()]);
 
+  useEffect(() => {
+    setLoading(true);
+    if (surveyData && surveyData?.length > 0) {
+      const statutory = populateStatutoryRows(surveyData);
+      setStatutoryRows(statutory);
+    }
+    setLoading(false);
+  }, [surveyData]);
+
+  const populateStatutoryRows = (surveyDataList) => {
+    if (!surveyDataList || surveyDataList.length === 0) return [createEmptyRow()];
+  
+    // Step 1: Create a map to hold the latest survey per survey name
+    const surveyMap = {};
+  
+    surveyDataList.forEach((survey) => {
+      const surveyName = survey.activity?.surveyTypes?.report?.name || "";
+  
+      // Skip if no name
+      if (!surveyName) return;
+  
+      // Check if we already have this surveyName in map
+      if (!surveyMap[surveyName]) {
+        surveyMap[surveyName] = survey;
+      } else {
+        // Compare updatedAt to find the latest
+        const existing = surveyMap[surveyName];
+        const existingDate = new Date(existing.updatedAt);
+        const currentDate = new Date(survey.updatedAt);
+  
+        if (currentDate > existingDate) {
+          surveyMap[surveyName] = survey;
+        }
+      }
+    });
+  
+    // Step 2: Convert the map back to an array of surveys
+    const uniqueSurveys = Object.values(surveyMap);
+  
+    // Step 3: Map the surveys to your row format
+    return uniqueSurveys.map((survey) => {
+      const surveyName = survey.activity?.surveyTypes?.report?.name || "";
+      const surveyDate = survey.surveyDate ? format(new Date(survey.surveyDate), "yyyy-MM-dd") : "";
+      const issuanceDate = survey.issuanceDate ? format(new Date(survey.issuanceDate), "yyyy-MM-dd") : "";
+      console.log(survey.updatedAt, "survey updated at");
+  
+      let dueDate = "";
+      let rangeDate = "";
+  
+      if (issuanceDate) {
+        const { dueDate: d, rangeDate: r } = calculateDates(issuanceDate);
+        dueDate = d;
+        rangeDate = r;
+      }
+  
+      return {
+        surveyName,
+        surveyDate,
+        issuanceDate,
+        dueDate,
+        rangeDate,
+        postponedDate: "",
+      };
+    });
+  };
+  
+
   const calculateDates = (issuanceDate) => {
     if (!issuanceDate) return { dueDate: "", rangeDate: "" };
-  
+
     const issuanceDateObj = new Date(issuanceDate);
     const dueDateObj = addYears(issuanceDateObj, 5);
     const rangeDateObj = surveyData?.typeOfCertificate === "full_term" ? subMonths(dueDateObj, 6) : subMonths(dueDateObj, 3);
-  
+
     return {
       dueDate: format(dueDateObj, "yyyy-MM-dd"),
       rangeDate: format(rangeDateObj, "yyyy-MM-dd"),
     };
   };
-  
 
   const handleChange = (section, index, field, value) => {
     const updatedRows = section === "classification" ? [...classificationRows] : [...statutoryRows];
     updatedRows[index][field] = value;
-  
+
     if (field === "issuanceDate") {
       const { dueDate, rangeDate } = calculateDates(value);
       updatedRows[index].dueDate = dueDate;
       updatedRows[index].rangeDate = rangeDate;
     }
-  
+
     if (section === "classification") {
       setClassificationRows(updatedRows);
     } else {
@@ -185,14 +166,15 @@ export default function SurveyDialog({ open, onClose, update, surveyData }) {
     }
   };
 
-  const addRow = (section) => {
-    if (section === "classification") {
-      setClassificationRows([...classificationRows, createEmptyRow()]);
-    } else {
-      setStatutoryRows([...statutoryRows, createEmptyRow()]);
-    }
+  const addRow = () => {
+    setClassificationRows([...classificationRows, createEmptyRow()]);
   };
 
+  const handleDeleteRow = (index) => {
+    const updated = [...classificationRows];
+    updated.splice(index, 1);
+    setClassificationRows(updated.length ? updated : [createEmptyRow()]);
+  };
 
   const handleSave = () => {
     router.push(`/survey-report/${update}`);
@@ -200,22 +182,32 @@ export default function SurveyDialog({ open, onClose, update, surveyData }) {
   };
 
   useEffect(() => {
-    localStorage.setItem("classification", JSON.stringify(classificationRows));
+    if (classificationRows && classificationRows.length && classificationRows.some(row => row.surveyName)) {
+      localStorage.setItem("classification", JSON.stringify(classificationRows));
+    }
   }, [classificationRows]);
-  
+
+  useEffect(() => {
+    const savedClassification = localStorage.getItem("classification");
+    if (savedClassification) {
+      setClassificationRows(JSON.parse(savedClassification));
+    } else {
+      setClassificationRows([createEmptyRow()]);
+    }
+  }, [open]);
+
   useEffect(() => {
     localStorage.setItem("statutory", JSON.stringify(statutoryRows));
   }, [statutoryRows]);
-  
+
   return (
+    <>
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
       <DialogTitle>Survey Details</DialogTitle>
       <DialogContent>
         <Box mb={3}>
           <Typography variant="h6">Classification Surveys</Typography>
-          <IconButton onClick={() => addRow("classification")} size="small">
-            <AddIcon />
-          </IconButton>
+          
           <TableContainer>
             <Table>
               <TableHead>
@@ -226,14 +218,13 @@ export default function SurveyDialog({ open, onClose, update, surveyData }) {
                   <TableCell>Due Date</TableCell>
                   <TableCell>Range (Date)</TableCell>
                   <TableCell>Postponed (Date)</TableCell>
+                  <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {classificationRows.map((row, index) => (
                   <TableRow key={index}>
                     <TableCell>
-                    {row.surveyName}
-
                       <FormControl fullWidth size="small">
                         <InputLabel>Survey Type</InputLabel>
                         <Select
@@ -290,23 +281,20 @@ export default function SurveyDialog({ open, onClose, update, surveyData }) {
                       />
                     </TableCell>
                     <TableCell align="center">
-                      <IconButton onClick={() => handleDeleteRow("classification", index)} size="small" color="error">
+                      <IconButton onClick={() => handleDeleteRow(index)} size="small" color="error">
                         <DeleteIcon />
                       </IconButton>
                     </TableCell>
                   </TableRow>
-
                 ))}
               </TableBody>
             </Table>
           </TableContainer>
+          <CommonButton style={{ marginTop: "1rem" }} variant="contained" onClick={addRow} text="Add Classification Surveys" />
         </Box>
 
         <Box mb={3}>
           <Typography variant="h6">Statutory Surveys</Typography>
-          <IconButton onClick={() => addRow("statutory")} size="small">
-            <AddIcon />
-          </IconButton>
           <TableContainer>
             <Table>
               <TableHead>
@@ -322,66 +310,12 @@ export default function SurveyDialog({ open, onClose, update, surveyData }) {
               <TableBody>
                 {statutoryRows.map((row, index) => (
                   <TableRow key={index}>
-                    <TableCell>
-                      <TextField
-                        variant="outlined"
-                        size="small"
-                        title={row.surveyName}
-                        value={row.surveyName}
-                        disabled
-                        onChange={(e) => handleChange("statutory", index, "surveyName", e.target.value)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <TextField
-                        type="date"
-                        size="small"
-                        value={row.surveyDate}
-                        title={row.surveyDate}
-                        disabled
-                        onChange={(e) => handleChange("statutory", index, "surveyDate", e.target.value)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <TextField
-                        type="date"
-                        size="small"
-                        value={row.issuanceDate}
-                        title={row.issuanceDate}
-                        disabled
-                        onChange={(e) => handleChange("statutory", index, "issuanceDate", e.target.value)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <TextField
-                        size="small"
-                        value={moment(row.dueDate).format("DD/MM/YYYY")}
-                        InputProps={{ readOnly: true }}
-                        placeholder="Assignment Date + 5 years"
-                        title={row.dueDate}
-                        disabled
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <TextField
-                        size="small"
-                        value={moment(row.rangeDate).format("DD/MM/YYYY")}
-                        InputProps={{ readOnly: true }}
-                        placeholder="Due Date - 3 months"
-                        title={row.rangeDate}
-                        disabled
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <TextField
-                        type="date"
-                        size="small"
-                        value={row.postponedDate}
-                        title={row.postponedDate}
-                        disabled
-                        onChange={(e) => handleChange("statutory", index, "postponedDate", e.target.value)}
-                      />
-                    </TableCell>
+                    <TableCell width="35%">{row?.surveyName}</TableCell>
+                    <TableCell>{row?.surveyDate ? moment(row?.surveyDate).format("DD/MM/YYYY") : ""}</TableCell>
+                    <TableCell>{row?.issuanceDate ? moment(row?.issuanceDate).format("DD/MM/YYYY") : ""}</TableCell>
+                    <TableCell>{row?.dueDate ? moment(row?.dueDate).format("DD/MM/YYYY") : ""}</TableCell>
+                    <TableCell>{row?.rangeDate ? moment(row?.rangeDate).format("DD/MM/YYYY") : ""}</TableCell>
+                    <TableCell>{row?.postponedDate ? moment(row?.postponedDate).format("DD/MM/YYYY") : ""}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -394,5 +328,7 @@ export default function SurveyDialog({ open, onClose, update, surveyData }) {
         <CommonButton variant="contained" onClick={handleSave} text="Save" />
       </DialogActions>
     </Dialog>
+    {loading && <Box><Loader /></Box>}
+    </>
   );
 }
