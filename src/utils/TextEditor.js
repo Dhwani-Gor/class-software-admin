@@ -1,0 +1,1061 @@
+import { Editor } from '@tinymce/tinymce-react';
+import { useEffect, useState, useCallback } from "react";
+import { getAllSystemVariables, getSpecificClient, getSurveyReportData } from "../api";
+import { toast } from "react-toastify";
+import { PDFDocument } from "pdf-lib";
+import html2canvas from "html2canvas";
+import moment from 'moment';
+import CommonButton from '@/components/CommonButton';
+import { Box } from '@mui/material';
+import SurveyDialog from '@/components/Dialogs/SurveyDialog';
+import Loader from '@/components/Loader';
+
+const TextEditor = ({ id }) => {
+    const [reportDetails, setReportDetails] = useState(null);
+    const [clientData, setClientData] = useState();
+    const [loading, setLoading] = useState(true);
+    const [editorContent, setEditorContent] = useState('');
+    const [classificationData, setClassificationData] = useState([]);
+    const [statutoryData, setStatutoryData] = useState([]);
+    const [systemVariables, setSystemVariables] = useState()
+    const [show, setShow] = useState(false);
+    const today = moment();
+    const companyName = systemVariables?.data?.find(item => item.name === "company_name")?.information || '[companyName]';
+    const companyLogo = systemVariables?.data?.find(item => item.name === "company_logo")?.information || '[logoUrl]';
+
+    useEffect(() => {
+        getSystemVariables()
+    }, [])
+
+    useEffect(() => {
+        setShow(true)
+    }, [id])
+
+    const getSystemVariables = async () => {
+        try {
+            const response = await getAllSystemVariables();
+            if (response?.status === 200) {
+                setSystemVariables(response?.data);
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    }
+    const downloadEditorContentAsPdf = async () => {
+        const iframe = document.querySelector("iframe.tox-edit-area__iframe");
+        const contentDocument = iframe?.contentDocument;
+        const contentBody = contentDocument?.body;
+
+        if (!contentBody) {
+            console.error("Could not find editor content");
+            return;
+        }
+
+        const originalOverflow = contentBody.style.overflow;
+        const originalHeight = contentBody.style.height;
+        const originalMaxHeight = contentBody.style.maxHeight;
+
+        try {
+            contentBody.style.overflow = 'visible';
+            contentBody.style.height = 'auto';
+            contentBody.style.maxHeight = 'none';
+
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const canvas = await html2canvas(contentBody, {
+                scale: 2,
+                height: contentBody.scrollHeight,
+                width: contentBody.scrollWidth,
+                useCORS: true,
+                allowTaint: true,
+                scrollX: 0,
+                scrollY: 0,
+                windowWidth: contentBody.scrollWidth,
+                windowHeight: contentBody.scrollHeight
+            });
+
+            const imgData = canvas.toDataURL("image/png");
+            const pdfDoc = await PDFDocument.create();
+
+            const imgWidth = canvas.width;
+            const imgHeight = canvas.height;
+            const aspectRatio = imgHeight / imgWidth;
+
+            const pageWidth = 595.28;
+            const pageHeight = 841.89;
+            const margin = 40;
+            const maxWidth = pageWidth - 2 * margin;
+            const maxHeight = pageHeight - 2 * margin;
+
+            let scaledWidth = maxWidth;
+            let scaledHeight = scaledWidth * aspectRatio;
+
+            if (scaledHeight > maxHeight) {
+                const pagesNeeded = Math.ceil(scaledHeight / maxHeight);
+                const heightPerPage = imgHeight / pagesNeeded;
+
+                for (let i = 0; i < pagesNeeded; i++) {
+                    const page = pdfDoc.addPage([pageWidth, pageHeight]);
+
+                    const croppedCanvas = document.createElement('canvas');
+                    const croppedCtx = croppedCanvas.getContext('2d');
+
+                    croppedCanvas.width = imgWidth;
+                    croppedCanvas.height = heightPerPage;
+
+                    croppedCtx.drawImage(
+                        canvas,
+                        0, i * heightPerPage,
+                        imgWidth, heightPerPage,
+                        0, 0,
+                        imgWidth, heightPerPage
+                    );
+
+                    const croppedImgData = croppedCanvas.toDataURL("image/png");
+                    const pngImage = await pdfDoc.embedPng(croppedImgData);
+
+                    const croppedScaledHeight = (heightPerPage / imgWidth) * scaledWidth;
+
+                    page.drawImage(pngImage, {
+                        x: margin,
+                        y: pageHeight - margin - croppedScaledHeight,
+                        width: scaledWidth,
+                        height: croppedScaledHeight,
+                    });
+                }
+            } else {
+                const page = pdfDoc.addPage([pageWidth, pageHeight]);
+                const pngImage = await pdfDoc.embedPng(imgData);
+
+                page.drawImage(pngImage, {
+                    x: margin,
+                    y: pageHeight - margin - scaledHeight,
+                    width: scaledWidth,
+                    height: scaledHeight,
+                });
+            }
+
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes], { type: "application/pdf" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "survey-report.pdf";
+            link.click();
+            URL.revokeObjectURL(url);
+
+        } finally {
+            contentBody.style.overflow = originalOverflow;
+            contentBody.style.height = originalHeight;
+            contentBody.style.maxHeight = originalMaxHeight;
+        }
+    };
+
+    const calculateDueDate = (assignmentDate) => {
+        return moment(assignmentDate).add(5, 'years');
+    };
+
+    const calculateRangeDate = (dueDate) => {
+        return moment(dueDate).subtract(3, 'months');
+    };
+
+    const getClassName = (dueDate) => {
+        if (!dueDate) return 'status-icon expiring3m';
+        const due = moment(dueDate);
+        if (!due.isValid()) {
+            console.warn('Invalid date provided to getClassName:', dueDate);
+            return 'status-icon expiring3m';
+        }
+        const daysDiff = due.diff(today, 'days');
+
+        // console.log('Date comparison:', {
+        //     inputDate: dueDate,
+        //     momentDate: due.format('DD-MM-YYYY'),
+        //     today: today.format('DD-MM-YYYY'),
+        //     daysDiff: daysDiff,
+        //     isBefore: due.isBefore(today),
+        //     isValid: due.isValid()
+        // });
+
+        if (daysDiff < 0) {
+            return 'status-icon expired';
+        }
+        if (daysDiff <= 30) {
+            return 'status-icon expiring1m';
+        }
+        if (daysDiff <= 90) {
+            return 'status-icon expiring3m';
+        }
+
+        // Default case for dates further in the future
+        return 'status-icon expiring3m';
+    };
+
+    // const getStatusText = (dueDate) => {
+    //     if (!dueDate) return 'No date set';
+
+    //     const due = moment(dueDate);
+
+    //     if (!due.isValid()) {
+    //         console.warn('Invalid date provided to getStatusText:', dueDate);
+    //         return 'Invalid date';
+    //     }
+
+    //     const daysDiff = due.diff(today, 'days');
+
+    //     console.log('Status calculation:', {
+    //         inputDate: dueDate,
+    //         momentDate: due.format('YYYY-MM-DD'),
+    //         today: today.format('YYYY-MM-DD'),
+    //         daysDiff: daysDiff
+    //     });
+
+    //     if (daysDiff < 0) {
+    //         return `Overdue by ${Math.abs(daysDiff)} days`;
+    //     }
+    //     if (daysDiff <= 30) {
+    //         return 'Limit date in less than 1m.';
+    //     }
+    //     if (daysDiff <= 90) {
+    //         return 'Within range';
+    //     }
+    //     return 'Active';
+    // };
+
+    // Function to handle dynamic updates in TinyMCE
+    const updateStatusIcons = (editor) => {
+        const editorDoc = editor.getDoc();
+        const currentToday = moment();
+
+        const parseDate = (dateStr) => {
+            if (!dateStr) return null;
+
+            const cleanDateStr = dateStr.trim();
+
+            const formats = ['DD/MM/YYYY', 'MM/DD/YYYY', 'DD-MM-YYYY', 'DD/MM/YY'];
+            let parsedDate = null;
+
+            for (const format of formats) {
+                parsedDate = moment(cleanDateStr, format, true);
+                if (parsedDate.isValid()) {
+                    break;
+                }
+            }
+
+            return parsedDate && parsedDate.isValid() ? parsedDate : null;
+        };
+
+        const getStatusClass = (dateStr) => {
+            const date = parseDate(dateStr);
+            if (!date) return 'status-icon expiring3m';
+
+            const daysDiff = date.diff(currentToday, 'days');
+
+            if (daysDiff < 0) {
+                return 'status-icon expired';
+            }
+            if (daysDiff <= 30) {
+                return 'status-icon expiring1m';
+            }
+            if (daysDiff <= 90) {
+                return 'status-icon expiring3m';
+            }
+            return 'status-icon expiring3m';
+        };
+
+        // Function to get status text
+        const getDynamicStatusText = (dateStr) => {
+            const date = parseDate(dateStr);
+            if (!date) return 'No date set';
+
+            const daysDiff = date.diff(currentToday, 'days');
+
+            if (daysDiff < 0) {
+                // return `Overdue by ${Math.abs(daysDiff)} days`;
+                return '';
+            }
+            if (daysDiff <= 30) {
+                // return 'Limit date in less than 1m.';
+                return '';
+            }
+            if (daysDiff <= 90) {
+                // return 'Within range';
+                return '';
+            }
+            return '';
+        };
+
+        const certificateTables = editorDoc.querySelectorAll('table');
+        certificateTables.forEach(table => {
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length >= 4) {
+                    const iconCell = cells[1];
+                    const expiryCell = cells[3];
+                    const statusCell = cells[cells.length - 1];
+
+                    const iconSpan = iconCell.querySelector('span.status-icon');
+                    if (iconSpan && iconSpan.textContent === 'C') {
+                        const expiryText = expiryCell.textContent.trim();
+                        const newClass = getStatusClass(expiryText);
+                        const newStatus = getDynamicStatusText(expiryText);
+
+                        iconSpan.className = newClass;
+
+                        if (statusCell) {
+                            statusCell.textContent = newStatus;
+                        }
+                    }
+                }
+            });
+        });
+
+        certificateTables.forEach(table => {
+            const rows = table.querySelectorAll('tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length >= 7) {
+                    const lastCell = cells[1];
+                    const dueDateCell = cells[4];
+                    const statusCell = cells[6];
+
+                    const iconSpan = lastCell.querySelector('span.status-icon');
+                    if (iconSpan && iconSpan.textContent === 'S') {
+                        const dueDateText = dueDateCell.textContent.trim();
+                        const newClass = getStatusClass(dueDateText);
+                        const newStatus = getDynamicStatusText(dueDateText);
+
+                        iconSpan.className = newClass;
+                        iconSpan.className = newClass;
+
+                        if (statusCell) {
+                            statusCell.textContent = newStatus;
+                        }
+                    }
+                }
+            });
+        });
+    };
+
+    const formatSurveyName = (name) => {
+        if (!name) return "";
+        return name
+            .replace(/_/g, " ")
+            .toLowerCase()
+            .replace(/\b\w/g, (c) => c.toUpperCase());
+    };
+
+    const generateHtmlContent = useCallback(() => {
+        if (!clientData || !reportDetails) return '';
+        const classificationRows = classificationData.map((row) => {
+            const surveyName = formatSurveyName(row.surveyName);
+            const issuanceDate = row.issuanceDate;
+            const surveyDate = row.surveyDate;
+            let dueDate = row.dueDate;
+            let rangeDate = row.rangeDate;
+            const postponedDate = row.postponedDate;
+            const status = ""
+            // const status = row.status || getStatusText(dueDate) || "";
+
+            return `
+            <tr>
+              <td>${surveyName}</td>
+              <td>${`<span class="${getClassName(surveyDate)}">S</span>`}</td>
+              <td>${surveyDate ? moment(surveyDate).format('DD/MM/YYYY') : ''}</td>
+              <td>${issuanceDate ? moment(issuanceDate).format('DD/MM/YYYY') : ''}</td>
+              <td>${dueDate ? moment(dueDate).format('DD/MM/YYYY') : ''}</td>
+              <td>${dueDate ? `${moment(dueDate).format('DD/MM/YYYY')} - ${moment(rangeDate).format('DD/MM/YYYY')}` : ''}</td>
+              <td>${postponedDate}</td>
+              <td>${status}</td>
+            </tr>
+          `;
+        }).join("");
+
+        const statutoryRows = statutoryData.map((row) => {
+            const surveyName = row.surveyName;
+            const surveyDate = row.surveyDate;
+            const issuanceDate = row.issuanceDate;
+            let dueDate = row.dueDate;
+            let rangeDate = row.rangeDate;
+            const postponedDate = row.postponedDate;
+            const status = ""
+
+            // const status = row.status || getStatusText(dueDate);
+
+            return `
+            <tr>
+              <td style="width: 250px;">${surveyName}</td>
+
+              <td><span class="${getClassName(dueDate)}">S</span></td>
+              <td>${surveyDate ? moment(surveyDate).format('DD/MM/YYYY') : ''}</td>
+              <td>${issuanceDate ? moment(issuanceDate).format('DD/MM/YYYY') : ''}</td>
+              <td>${dueDate ? moment(dueDate).format('DD/MM/YYYY') : ''}</td>
+              <td style="width: 150px;">${dueDate ? `${moment(dueDate).format('DD/MM/YYYY')} - ${moment(rangeDate).format('DD/MM/YYYY')}` : ''}</td>
+              <td>${postponedDate}</td>
+              <td>${status}</td>
+            </tr>
+          `;
+        }).join("");
+
+        const certificateRows = reportDetails
+            ?.map((cert) => {
+                const name = cert?.activity?.surveyTypes?.report?.name || "[Certificate Name]";
+                const issued = cert.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : "";
+                const expiry = cert.validityDate;
+                let extendedDate = cert.extendedDate;
+
+                const expiryFormatted = expiry ? moment(expiry).format('YYYY-MM-DD') : null;
+
+                console.log('Certificate processing:', {
+                    name: name,
+                    expiryRaw: expiry,
+                    expiryFormatted: expiryFormatted,
+                    expiryMoment: moment(expiry).format('YYYY-MM-DD'),
+                    today: today.format('YYYY-MM-DD'),
+                    daysDiff: moment(expiry).diff(today, 'days'),
+                    className: getClassName(expiryFormatted)
+                });
+
+
+
+                const type = cert?.typeOfCertificate === "short_term"
+                    ? "ST"
+                    : cert?.typeOfCertificate === "full_term"
+                        ? "FT"
+                        : cert?.typeOfCertificate === "intrim"
+                            ? "IT"
+                            : cert?.typeOfCertificate === "extended"
+                                ? "ET"
+                                : cert?.typeOfCertificate || "[Type]";
+
+                // const status = cert?.activity?.status;
+                const status = "Completed"
+
+                return `
+            <tr>
+              <td>${name}</td>
+              <td><span class="${getClassName(expiryFormatted)}">C</span></td>
+              <td>${issued}</td>
+              <td>${expiry ? moment(expiry).format('DD/MM/YYYY') : ''}</td>
+              <td></td>
+              <td>${type}</td>
+              <td>${status}</td>
+            </tr>
+          `;
+            })
+            .join("");
+
+        const certificatesTableHtml = `
+      <h4>Certificates</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>Certificate Name</th>
+            <th></th>
+            <th>Issued</th>
+            <th>Expiry</th>
+            <th>Extended</th>
+            <th>Type</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${certificateRows}
+        </tbody>
+      </table>
+     <div class="legend">
+      <span class="legend-item"><span class="status-icon expired">C</span>Expired</span>
+      <span class="legend-item"><span class="status-icon expiring1m">C</span>Expires in less than 1 month</span>
+      <span class="legend-item"><span class="status-icon expiring3m">C</span>Expires in less than 3 months</span>
+      </div>
+      `;
+
+        const classificationSurveyTableHtml = `
+            <div class="section-title">Classification Surveys</div>
+            <table class="">
+                <tr>
+                    <th>Survey Name</th>
+                    <th></th>
+                    <th>Survey Date</th>
+                    <th>Issuance Date</th>
+                    <th>Due Date</th>
+                    <th>Range (from, to)</th>
+                    <th>Postponed</th>
+                    <th>Status</th>
+                </tr>
+                ${classificationRows}
+            </table>
+        `;
+
+        const statutorySurveyTableHtml = `
+            <div class="section-title">Statutory Surveys</div>
+            <table>
+                <tr>
+                    <th>Survey Name</th>
+                    <th></th>
+                    <th>SurveyDate</th>
+                    <th>Issuance Date</th>
+                    <th>Due Date</th>
+                    <th>Range (from, to)</th>
+                    <th>Postponed</th>
+                    <th>Status</th>
+                </tr>
+                ${statutoryRows}
+            </table>
+        `;
+
+        const htmlString = `
+      ${certificatesTableHtml}
+      
+      <h2 style="margin-top: 40px;">Conditions of Class / Statutory Status</h2>
+      <p class="subtitle">
+        The Conditions of Class / Statutory Status below shows the information available at the time the report is printed. 
+        This may not indicate certificates issued, surveys carried out or conditions of class / recommendations issued but not yet reported to MCB Head Office.
+      </p>
+
+      <h4>Classification</h4>
+      <p><i>Status: Active</i></p>
+      `;
+
+        return `
+    <div style="text-align: center; background-color: white; color: black; padding: 60px;">
+     <div style={{ textAlign: 'center', backgroundColor: 'white', color: 'black', padding: '60px' }}>
+  <img src=${companyLogo} alt="companyLogo" height="100" width="100" />
+  <p>${companyName}</p>
+</div>
+
+      <br />
+      <p>${clientData?.shipName || '[shipName]'}</p>
+
+      <br />
+
+      <div style="text-align: left; display: inline-block; margin-top: 10px;">
+        <p><strong>Reg. Owner:</strong> ${clientData?.ownerDetails?.companyName || '[Owner Name]'}</p>
+        <p><strong>IMO Number:</strong> ${clientData?.imoNumber || '[IMO Number]'}</p>
+        <p><strong>Vessel Type:</strong> ${clientData?.typeOfShip || '[Vessel Type]'}</p>
+        <p><strong>Gross Tonnage:</strong> ${clientData?.grossTonnage || '[Gross Tonnage]'}</p>
+        <p><strong>Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : '[Date of Build]'}</p>
+      </div>
+    </div>
+
+    <div class="page">
+        <h2>Ship Particulars</h2>
+        
+        <div class="section">
+            <h4>Identification</h4>
+            <div class="identification-row">
+                <div class="left"><em><strong>Ship Type:</strong></em> ${clientData?.typeOfShip || '[Ship Type]'}</div>
+                <div class="right"><em><strong>Flag:</strong></em> ${clientData?.flag || '[Flag]'}</div>
+            </div>
+            <div class="identification-row">
+                <div class="left"><em><strong>IMO Number:</strong></em> ${clientData?.imoNumber || '[IMO Number]'}</div>
+                <div class="right"><em><strong>Port of Registry:</strong></em> ${clientData?.portOfRegistry || '[Port of Registry]'}</div>
+            </div>
+            <div class="identification-row">
+                <div class="right"><em><strong>Call Sign:</strong></em> ${clientData?.callSign || '[Call Sign]'}</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h4>Classification</h4>
+            <div class="classification-row"><em><strong>Class Symbols:</strong></em> ${clientData?.classId || '[Class Symbols]'}</div>
+            <div class="classification-row"><em><strong>Descriptive Notations:</strong></em> ${clientData?.descriptiveNotation || '[Descriptive Notations]'}</div>
+            <div class="classification-row"><em><strong>Official Number:</strong></em> ${clientData?.officialNumber || '[Official Number]'}</div>
+            <div class="classification-row"><em><strong>Machinery Notation:</strong></em> ${clientData?.machineryNotation || '[Machinery Notation]'}</div>
+        </div>
+        
+        <div class="hull-section">
+            <h4>Hull</h4>
+            <div class="hull-row">
+                <div class="left"><em><strong>Gross Tonnage:</strong></em> ${clientData?.grossTonnage || '[Gross Tonnage]'}</div>
+                <div class="right"><strong>Ship Builder:</strong> ${clientData?.shipBuilder || '[Ship Builder]'}</div>
+            </div>
+            <div class="hull-row">
+                <div class="left"><em><strong>Net Tonnage:</strong></em> ${clientData?.netTonnage || '[Net Tonnage]'}</div>
+                <div class="right"><strong>Country of build:</strong> ${clientData?.countryOfBuild || '[Country of Build]'}</div>
+            </div>
+            <div class="hull-row">
+                <div class="left"><em><strong>Deadweight:</strong></em> ${clientData?.deadweight || '[Deadweight]'}</div>
+                <div class="right"><strong>Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : '[Date of Build]'}</div>
+            </div>
+            <div class="hull-row">
+                <div class="left"><strong>Keel Laid Date:</strong> ${clientData?.keelLaidDate ? moment(clientData?.keelLaidDate).format("DD/MM/YYYY") : '[Keel Laid Date]'}</div>
+                <div class="right"><strong>Date of building contract:</strong> ${clientData?.dateOfBuildingContract ? moment(clientData?.dateOfBuildingContract).format("DD/MM/YYYY") : '[Date of Building Contract]'}</div>
+            </div>
+            <div class="hull-row">
+                <div class="left"><em><strong>Length of ship:</strong></em> ${clientData?.lengthOfShip || '[Length of Ship]'}</div>
+                <div class="right"><strong>Area of operation:</strong> ${clientData?.areaOfOperation || '[Area of Operation]'}</div>
+            </div>
+            <div class="hull-row">
+                <div class="left"><em><strong>Date of delivery:</strong></em> ${clientData?.dateOfDelivery ? moment(clientData?.dateOfDelivery).format("DD/MM/YYYY") : '[Date of Delivery]'}</div>
+                <div class="right"><strong>Hull Info:</strong> ${clientData?.hullNotation || '[Hull Info]'}</div>
+            </div>
+           <div class="hull-row">
+                <div class="left"><em><strong>Date of modification:</strong></em> ${clientData?.dateOfModification ? moment(clientData?.dateOfModification).format("DD/MM/YYYY") : '[Date of Modification]'}</div>
+            </div>
+            <div class="hull-row">
+                <div class="left"><em><strong>Carrying capacity:</strong></em> ${clientData?.carryingCapacity || '[Carrying Capacity]'}</div>
+            </div>
+        </div>
+        
+        <div class="owner-section">
+            <h2>Owner / Manager Information</h2>
+            
+            <h4>Registered Owner</h4>
+            <div class="owner-info">
+                <div><em><strong>Company Name:</strong></em> ${clientData?.ownerDetails?.companyName || '[Owner Company Name]'}</div>
+                <div><em><strong>Phone Number:</strong></em> ${clientData?.ownerDetails?.phoneNumber || '[Phone Number]'}</div>
+                <div><em><strong>Email:</strong></em> ${clientData?.ownerDetails?.email || '[Email]'}</div>
+                <div><em><strong>Address:</strong></em> ${clientData?.ownerDetails?.companyAddress || '[Address]'}</div>
+            </div>
+            
+            <h4>Manager</h4>
+            <div class="owner-info">
+                <div><em><strong>Name:</strong></em> ${clientData?.managerDetails?.name || 'NIRRIS SHIPPING SA'}</div>
+                <div><em><strong>Company Name:</strong></em> ${clientData?.managerDetails?.companyName || '[Manager Company Name]'}</div>
+                <div><em><strong>Phone Number:</strong></em> ${clientData?.managerDetails?.phoneNumber || '[Phone Number]'}</div>
+                <div><em><strong>Email:</strong></em> ${clientData?.managerDetails?.email || '[Email]'}</div>
+                <div><em><strong>Address:</strong></em> ${clientData?.managerDetails?.companyAddress || '[Address]'}</div>
+            </div>
+        </div>
+        
+        ${htmlString}
+        
+        <div class="survey-container">
+            <h4>Surveys / Audits / Inspections</h4>
+            
+            ${classificationSurveyTableHtml}
+            
+            ${statutorySurveyTableHtml}
+
+           <div class="legend">
+          <span class="legend-item">
+            <span class="status-icon expired">S</span>Overdue
+          </span>
+          <span class="legend-item">
+            <span class="status-icon expiring1m">S</span>Overdue in less than 1 month
+          </span>
+          <span class="legend-item">
+            <span class="status-icon expiring3m">S</span>Within the range
+          </span>
+        </div>
+        <div style="margin-top: 22px; font-size: 16px;"><strong>Note: </strong>Format of date is DD/MM/YYYY</div>
+    </div>
+`;
+    }, [clientData, reportDetails, classificationData, statutoryData]);
+
+    useEffect(() => {
+        const classification = localStorage.getItem("classification");
+        const statutory = localStorage.getItem("statutory");
+
+        if (classification) {
+            try {
+                setClassificationData(JSON.parse(classification));
+            } catch (e) {
+                console.error('Error parsing classification data:', e);
+                setClassificationData([]);
+            }
+        }
+
+        if (statutory) {
+            try {
+                setStatutoryData(JSON.parse(statutory));
+            } catch (e) {
+                console.error('Error parsing statutory data:', e);
+                setStatutoryData([]);
+            }
+        }
+    }, [show]);
+
+    useEffect(() => {
+        if (clientData && reportDetails) {
+            const newContent = generateHtmlContent();
+            setEditorContent(newContent);
+        }
+    }, [clientData, reportDetails, classificationData, statutoryData, generateHtmlContent]);
+
+    const handleEditorChange = (content) => {
+        setEditorContent(content);
+        console.log('Editor content changed:', content);
+    };
+
+    const getShipData = async (clientId) => {
+        try {
+            setLoading(true);
+            const result = await getSpecificClient(clientId);
+
+            if (result?.status === 200) {
+                const data = result.data.data;
+                setClientData(data);
+            } else {
+                toast.error("Something went wrong! Please try again after some time");
+            }
+        } catch (error) {
+            console.error("Error fetching report details:", error);
+            toast.error(error.message || "Error fetching client data");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchActivityReportDetails = async (clientId) => {
+        try {
+            setLoading(true);
+            const result = await getSurveyReportData(clientId);
+
+            if (result?.status === 200) {
+                const data = result.data.data;
+                setReportDetails(data);
+            } else {
+                toast.error("Something went wrong! Please try again after some time");
+            }
+        } catch (error) {
+            console.error("Error fetching report details:", error);
+            toast.error(error.message || "Error fetching client data");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (id) {
+            getShipData(id);
+            fetchActivityReportDetails(id);
+        }
+    }, [id]);
+
+    if (loading) {
+        return <Box><Loader /></Box>;
+    }
+
+    return (
+        <>
+            <Editor
+                apiKey="p9j94lg0okz82u9rr4v3zhap0pimbq1hob48rzesv3c5dylj"
+                value={editorContent}
+                onEditorChange={handleEditorChange}
+                init={{
+                    disabled: false,
+                    height: 600,
+                    menubar: true,
+                    visual: false,
+                    plugins: [
+                        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
+                        'print', 'preview', 'searchreplace', 'wordcount', 'code', 'fullscreen'
+                    ],
+                    toolbar: 'undo redo | formatselect | bold italic | alignleft aligncenter alignright | outdent indent | link image | code fullscreen',
+                    readonly: false,
+
+                    setup: (editor) => {
+                        editor.on('input', () => {
+                            setTimeout(() => {
+                                updateStatusIcons(editor);
+                            }, 100);
+                        });
+
+                        editor.on('SetContent', () => {
+                            setTimeout(() => {
+                                updateStatusIcons(editor);
+                            }, 100);
+                        });
+
+                        editor.on('init', () => {
+                            setTimeout(() => {
+                                updateStatusIcons(editor);
+                            }, 500);
+                        });
+
+                        let timeoutId;
+                        editor.on('keyup', () => {
+                            clearTimeout(timeoutId);
+                            timeoutId = setTimeout(() => {
+                                updateStatusIcons(editor);
+                            }, 500);
+                        });
+
+                        editor.on('paste', () => {
+                            setTimeout(() => {
+                                updateStatusIcons(editor);
+                            }, 200);
+                        });
+                    },
+
+                    content_style: `
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        margin: 0;
+                        padding: 20px;
+                        line-height: 1.4;
+                        font-size: 14px;
+                    }
+                    
+                    .page {
+                        width: 8.5in;
+                        margin: 0 auto;
+                        padding: 20px;
+                        background-color: white;
+                        position: relative;
+                        margin-bottom: 20px;
+                    }
+
+                    h2 {
+                        color: #4884eb;
+                        text-align: center;
+                        font-size: 18px;
+                        margin: 0 0 30px 0;
+                        font-weight: bold;
+                    }
+
+                    h4 {
+                        color: #4884eb;
+                        font-size: 14px;
+                        margin: 20px 0 5px 0;
+                        padding-bottom: 2px;
+                        border-bottom: 1px solid #4884eb;
+                        font-weight: bold;
+                    }
+
+                    .section {
+                        margin-bottom: 25px;
+                    }
+
+                    .identification-row {
+                        display: flex;
+                        margin-bottom: 8px;
+                        font-size: 12px;
+                    }
+
+                    .identification-row .left {
+                        width: 250px;
+                    }
+
+                    .identification-row .right {
+                        flex: 1;
+                    }
+
+                    .classification-row {
+                        margin-bottom: 8px;
+                        font-size: 12px;
+                    }
+
+                    .hull-section {
+                        margin-top: 25px;
+                    }
+
+                    .hull-section h4 {
+                        border-bottom: 2px solid #4884eb;
+                    }
+
+                    .hull-row {
+                        display: flex;
+                        margin-bottom: 8px;
+                        font-size: 12px;
+                    }
+
+                    .hull-row .left {
+                        width: 400px;
+                        flex-shrink: 0;
+                    }
+
+                    .hull-row .right {
+                        flex: 1;
+                        padding-left: 20px;
+                    }
+
+                    .owner-section {
+                        margin-top: 40px;
+                        margin-bottom: 30px;
+                    }
+
+                    .owner-section h2 {
+                        color: #4884eb;
+                        font-size: 18px;
+                        margin-bottom: 20px;
+                    }
+
+                    .owner-section h4 {
+                        color: #4884eb;
+                        font-size: 14px;
+                        margin: 15px 0 5px 0;
+                        padding-bottom: 2px;
+                        border-bottom: 1px solid #4884eb;
+                    }
+
+                    .owner-info {
+                        font-size: 12px;
+                        line-height: 1.4;
+                    }
+
+                    .owner-info div {
+                        margin-bottom: 3px;
+                    }
+
+                    strong {
+                        font-weight: bold;
+                    }
+
+                    em {
+                        font-style: italic;
+                    }
+                    
+                    p.subtitle {
+                        font-size: 12px;
+                        text-align: center;
+                        margin: 5px 0 20px 0;
+                    }
+                    
+                    table {
+                        width: 100%;
+                        margin-top: 10px;
+                        font-size: 13px;
+                    }
+                    
+                    table th, table td {
+                        padding: 6px;
+                        text-align: left;
+                        vertical-align: top;
+                        border:none;
+                    }
+                    
+                    table th {
+                        color: #2f5597;
+                        border-bottom: 1px solid #2f5597;
+                    }
+                    
+                    table tr{
+                        border:none;
+                    }
+                    
+                    .status-icon {
+                        font-size: 14px;
+                        margin-right: 1px;
+                    }
+                    
+                    .expired {
+                        color:white;
+                        background-color: red;
+                        width: 16px;
+                        height: 16px;
+                        display: inline-flex;
+                        justify-content: center;
+                        align-items: center;
+                        font-size: 10px;
+                    }
+                    
+                    span.expiring1m{
+                        color:white;
+                        clip-path: polygon(50% 2%, 98% 50%, 50% 98%, 2% 50%);
+                        background-color: #ffc000;
+                        width: 16px;
+                        height: 20px;
+                        display: inline-flex;
+                        justify-content: center;
+                        align-items: center;
+                        font-size: 10px;
+                        border-radius: 50%;
+
+                    }
+                    
+                    span.expiring3m{
+                        color:white;
+                        border-radius: 50%;
+                        background-color: #00b050;
+                        width: 16px;
+                        height: 16px;
+                        display: inline-flex;
+                        justify-content: center;
+                        align-items: center;
+                        font-size: 10px;
+                        border-radius: 50%;
+
+                    }
+                    
+                    .expiring1m {
+                        color: #ffc000;
+                    }
+                    
+                    .expiring3m {
+                        color: #00b050;
+                    }
+                    
+                    .survey-container {
+                        font-family: Arial, sans-serif;
+                        font-size: 11px;
+                        background-color: white;
+                    }
+
+                    .main-heading {
+                        color: #0066cc;
+                        font-weight: bold;
+                        font-size: 12px;
+                        text-decoration: underline;
+                        margin-bottom: 15px;
+                    }
+
+                    .section-title {
+                        font-weight: bold;
+                        font-size: 14px;
+                        margin: 15px 0 5px 0;
+                        color: black;
+                        font-family: Arial, sans-serif;
+                    }
+
+                    .legend-item {
+                        margin: 2px 0;
+                        color: black;
+                    }
+
+                    .legend-overdue {
+                        color: #ff9900;
+                        font-weight: bold;
+                    }
+
+                    .legend-within {
+                        color: #009900;
+                        font-weight: bold;
+                    }
+                    .legend {
+                        display: flex;
+                        justify-content: start;
+                        align-items: center;
+                        gap: 20px;
+                        flex-wrap: wrap;
+                        margin-top:10px
+                    }
+
+                    .legend-item {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 6px;
+                        font-size: 14px;
+                    }
+
+                    @media print {
+                        .page {
+                            page-break-after: always;
+                            margin: 0;
+                            border: none;
+                            box-shadow: none;
+                        }
+                        body {
+                            padding: 0;
+                        }
+                    }
+                `
+                }}
+                setup={(editor) => {
+                    updateStatusIcons(editor);
+                }}
+            />
+            <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+                <CommonButton onClick={() => setShow(true)} text="Back" />
+                <CommonButton onClick={downloadEditorContentAsPdf} text="Download PDF" />
+            </Box>
+            
+            <SurveyDialog open={show} onClose={() => setShow(false)} update={id} surveyData={reportDetails} />
+        </>
+    );
+};
+
+export default TextEditor;

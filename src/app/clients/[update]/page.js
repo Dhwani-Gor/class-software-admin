@@ -12,12 +12,13 @@ import { useRouter } from "next/navigation";
 import CommonButton from "@/components/CommonButton";
 import EditingReasonDialog from "@/components/Dialogs/EditingReasonDialog";
 import EditHistoryDialog from "@/components/Dialogs/EditHistoryDialog";
-import { getClientHistory, getSpecificClient } from "@/api";
+import { getClientHistory, getSpecificClient, getSurveyReportData } from "@/api";
 import { toast } from "react-toastify";
 import { transformData } from "@/utils/helper";
+import SurveyDialog from "@/components/Dialogs/SurveyDialog";
 
 const UpdateClient = ({ params }) => {
-  const { update } = use(params); // ✅ unwrap the promise
+  const { update }= use(params); // ✅ unwrap the promise
   const router = useRouter();
   const [editHistoryDialog, setEditHistoryDialog] = useState(false);
   const [isEditDialogVisible, setIsEditDialogVisible] = useState(false);
@@ -25,6 +26,8 @@ const UpdateClient = ({ params }) => {
   const [changeHistory, setChangeHistory] = useState([]);
   const [editReason, setEditReason] = useState('');
   const [reportDetails, setReportDetails] = useState();
+  const [surveyData,setSurveyData]=useState();
+  const [loading,setLoading]=useState(false);
 
   const fetchClientsHistory = async () => {
     try {
@@ -60,16 +63,26 @@ const UpdateClient = ({ params }) => {
     getClient();
   }, []);
 
+  const handleClick = () => {
+    localStorage.removeItem("classification");
+    localStorage.removeItem("statutory");
+    router.push(`/survey-report/${update}`)
+  };
+
   return (
     <Layout>
       <CommonCard sx={{ mt: 0, pl: 2 }}>
-        <Stack direction="row" alignItems="center" gap={2}>
+        <Stack direction="row" alignItems="center" gap={2} justifyContent="space-between">
+          <Stack direction="row" alignItems="center" gap={2}>
           <IconButton size="small" onClick={() => router.push("/clients")}>
             <ArrowBack />
           </IconButton>
           <Typography variant="h6" fontWeight={"700"}>
             Clients
           </Typography>
+          </Stack>
+          
+
           {reportDetails && (
             <>
               <CommonButton
@@ -84,6 +97,13 @@ const UpdateClient = ({ params }) => {
                 color="secondary"
                 onClick={() => setIsEditDialogVisible(true)}
               />
+              {reportDetails && (
+                <CommonButton variant="contained" fontWeight={"700"} 
+                onClick={handleClick}
+                text="Generate Survey Report">
+                  Generate Report
+                </CommonButton>
+              )}
             </>
           )}
         </Stack>
