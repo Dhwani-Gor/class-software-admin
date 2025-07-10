@@ -314,13 +314,13 @@ const JournalEntryForm = ({ journalId = null }) => {
       if (result?.data?.status === "success") {
         toast.success("Activities updated successfully.")
         getAllActivity(result?.data?.data?.journalId);
-        // setActivitiesList(
-        //   activitiesList.map((activity) =>
-        //     activity.id === result?.data?.data.id
-        //       ? { ...activity, ...result?.data?.data }
-        //       : activity
-        //   )
-        // );
+        setActivitiesList(
+          activitiesList.map((activity) =>
+            activity.id === result?.data?.data.id
+              ? { ...activity, ...result?.data?.data }
+              : activity
+          )
+        );
       } else {
         toast.error("Something went wrong ! Please try again after some time");
       }
@@ -338,10 +338,10 @@ const JournalEntryForm = ({ journalId = null }) => {
       const result = await createActivity(payolad);
       if (result?.data?.status === "success") {
         getAllActivity(journalId);
-        // setActivitiesList([
-        //   ...activitiesList,
-        //   result?.data?.data,
-        // ]);
+        setActivitiesList([
+          ...activitiesList,
+          result?.data?.data,
+        ]);
         toast.success("Activities added successfully.")
       } else {
         toast.error("Something went wrong ! Please try again after some time");
@@ -379,7 +379,9 @@ const JournalEntryForm = ({ journalId = null }) => {
 
   const handleSaveActivity = (activityData) => {
     if (isJournalLocked) return;
+
     if (journalId) {
+      // Existing journal - API calls
       if (editActivity) {
         const payload = {
           journalId: activityData.journalId,
@@ -395,10 +397,12 @@ const JournalEntryForm = ({ journalId = null }) => {
         addActivities(payload);
       }
     } else {
-      const survey = surveyTypes.find(
-        (s) => s.id === activityData.typeOfSurvey
-      );
+      // New journal - local state management
       if (editActivity) {
+        // Handle edit for existing journal
+        const survey = surveyTypes.find(
+          (s) => s.id === activityData.typeOfSurvey
+        );
         setActivitiesList(
           activitiesList.map((activity) =>
             activity.surveyTypes?.name === editActivity.surveyTypes?.name
@@ -414,15 +418,33 @@ const JournalEntryForm = ({ journalId = null }) => {
           )
         );
       } else {
-        setActivitiesList([
-          ...activitiesList,
-          {
-            ...activityData,
-            surveyTypes: {
-              name: survey?.name,
+        // Handle adding new activities
+        if (activityData.name) {
+          // Manual input - single activity
+          setActivitiesList([
+            ...activitiesList,
+            {
+              id: Date.now(),
+              name: activityData.name,
+              surveyTypes: {
+                name: activityData.name,
+              },
             },
-          },
-        ]);
+          ]);
+        } else if (activityData.typeOfSurvey && Array.isArray(activityData.typeOfSurvey)) {
+          const newActivities = activityData.typeOfSurvey
+            .map((surveyId) => {
+              const survey = surveyTypes.find((s) => Number(s.id) === Number(surveyId));
+              if (!survey) return null;
+              return {
+                surveyTypes: { name: survey.name },
+                initialOfSurveyors: activityData.initialOfSurveyors || [],
+              };
+            })
+            .filter(Boolean);
+
+          setActivitiesList([...activitiesList, ...newActivities]);
+        }
       }
     }
 
