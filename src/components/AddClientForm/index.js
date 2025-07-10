@@ -85,8 +85,7 @@ const schema = yup.object().shape({
     companyAddress: yup.string().required("Complete Address is required"),
     phoneNumber: yup
       .string()
-      .required("Phone number is required")
-      .matches(/^\d{10}$/, "Enter a valid 10-digit Indian phone number"),
+      .required("Phone number is required"),
     email: yup.string().required("Email is required").email("Invalid email"),
   }),
   managerDetails: yup.object().shape({
@@ -94,8 +93,7 @@ const schema = yup.object().shape({
     companyAddress: yup.string().required("Complete Address is required"),
     phoneNumber: yup
       .string()
-      .required("Phone number is required")
-      .matches(/^\d{10}$/, "Enter a valid 10-digit Indian phone number"),
+      .required("Phone number is required"),
     email: yup.string().required("Email is required").email("Invalid email"),
   }),
   invoicingDetails: yup.object().shape({
@@ -103,8 +101,7 @@ const schema = yup.object().shape({
     companyAddress: yup.string().required("Complete Address is required"),
     phoneNumber: yup
       .string()
-      .required("Phone number is required")
-      .matches(/^\d{10}$/, "Enter a valid 10-digit Indian phone number"),
+      .required("Phone number is required"),
     email: yup.string().required("Email is required").email("Invalid email"),
   }),
 });
