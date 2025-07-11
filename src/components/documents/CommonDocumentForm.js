@@ -37,18 +37,26 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
   //     }));
   //   }
   // }, [reportDetails]);
+  const applyStrikethrough = (text) =>
+    text?.split("").map(c => c + "\u0336").join("");
 
   const handleSubmit = () => {
     const filledValues = Object.entries(formData).reduce((acc, [key, value]) => {
-      if (key.startsWith('_st_')) {
-        const parts = key.replace('_st_', '')?.split('_');
-        const [option1, option2] = parts;
-        if (value === option1) {
-          acc[key] = `${option1} / ${strikeText(option2)}`;
-        } else if (value === option2) {
-          acc[key] = `${strikeText(option1)} / ${option2}`;
+      if (key.startsWith("_st_")) {
+        const [, raw] = key.split("_st_");
+        const [opt1Raw, opt2Raw] = raw.split("_");
+        const opt1 = opt1Raw.replace(/-/g, " ");
+        const opt2 = opt2Raw.replace(/-/g, " ");
+
+        if (!value) {
+          acc[key] = `${opt1} / ${opt2}`;
         } else {
-          acc[key] = `${option1} / ${option2}`;
+          const finalLine =
+            value === opt1
+              ? `${opt1} / ${applyStrikethrough(opt2)}`
+              : `${applyStrikethrough(opt1)} / ${opt2}`;
+
+          acc[key] = finalLine;
         }
       } else if (typeof value === "boolean") {
         acc[key] = value === true ? "\u2611" : "\u2612";
@@ -76,7 +84,8 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
           } else {
             initialValues[field.attribute] = false;
           }
-        } else if (field.attribute.startsWith("_st")) {
+        } 
+        else if (field.attribute.startsWith("_st")) {
           if (reportDetails && reportDetails[field.attribute]) {
 
             const parts = reportDetails[field.attribute]?.split(' / ').map(s => s.trim());
