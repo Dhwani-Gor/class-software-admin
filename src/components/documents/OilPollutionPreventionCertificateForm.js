@@ -100,7 +100,7 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                 const opt2 = opt2Raw.replace(/-/g, " ");
 
                 if (!value) {
-                    finalPayload[attribute] = `{{${attribute}}}`;
+                    finalPayload[attribute] = `${opt1} / ${opt2}`;
                 } else {
                     finalPayload[attribute] =
                         value === opt1
