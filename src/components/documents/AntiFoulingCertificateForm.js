@@ -78,7 +78,7 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
         const opt2 = opt2Raw.replace(/-/g, " ");
 
         if (!value) {
-          acc[key] = `{{${key}}}`;
+          acc[key] = `${opt1} / ${opt2}`;
         } else {
           const finalLine =
             value === opt1

@@ -102,7 +102,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                 const opt2 = opt2Raw.replace(/-/g, " ");
 
                 if (!value) {
-                    finalPayload[attribute] = `{{${attribute}}}`;
+                    finalPayload[attribute] = `${opt1} / ${opt2}`;
                 } else {
                     finalPayload[attribute] =
                         value === opt1
@@ -119,7 +119,6 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                 finalPayload[attribute] = "-";
             }
         });
-
         onSubmit(finalPayload);
     };
 
@@ -478,7 +477,6 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                                         <TableCell sx={{ fontWeight: 'medium' }}>{attr.label}</TableCell>
                                         {engineNumbers.map(num => {
                                             const fieldKey = groupedEngineFields[num]?.[attr.key];
-                                            console.log(fieldKey, "field key")
                                             const isCheckbox = fieldKey?.includes("checkbox") || fieldKey?.startsWith("_checkbox");
                                             const isDate = fieldKey?.includes("date") || fieldKey?.endsWith("_date");
                                             return (
