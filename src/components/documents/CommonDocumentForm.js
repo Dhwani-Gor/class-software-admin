@@ -28,37 +28,25 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
     setFormData(prev => ({ ...prev, [fieldName]: value }));
   };
 
-  // useEffect(() => {
-  //   console.log(reportDetails,"report details in common component")
-  //   if (reportDetails) {
-  //     setFormData(prev => ({
-  //       ...prev,
-  //       parseReportDetails(reportDetails)
-  //     }));
-  //   }
-  // }, [reportDetails]);
   const applyStrikethrough = (text) =>
     text?.split("").map(c => c + "\u0336").join("");
 
   const handleSubmit = () => {
     const filledValues = Object.entries(formData).reduce((acc, [key, value]) => {
       if (key.startsWith("_st_")) {
-        const [, raw] = key.split("_st_");
-        const [opt1Raw, opt2Raw] = raw.split("_");
-        const opt1 = opt1Raw.replace(/-/g, " ");
-        const opt2 = opt2Raw.replace(/-/g, " ");
+        const [, raw] = key?.split("_st_");
+        const optionsRaw = raw.split("_");
+        const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
 
         if (!value) {
-          acc[key] = `${opt1} / ${opt2}`;
+          acc[key] = options.join(" / ");
         } else {
-          const finalLine =
-            value === opt1
-              ? `${opt1} / ${applyStrikethrough(opt2)}`
-              : `${applyStrikethrough(opt1)} / ${opt2}`;
-
-          acc[key] = finalLine;
+          acc[key] = options
+            .map(opt => (opt === value ? opt : applyStrikethrough(opt)))
+            .join(" / ");
         }
-      } else if (typeof value === "boolean") {
+      }
+      else if (typeof value === "boolean") {
         acc[key] = value === true ? "\u2611" : "\u2612";
       } else if (key.includes("date") && value) {
         acc[key] = formattedDate(value);
@@ -84,23 +72,21 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
           } else {
             initialValues[field.attribute] = false;
           }
-        } 
+        }
         else if (field.attribute.startsWith("_st")) {
           if (reportDetails && reportDetails[field.attribute]) {
+            const parts = reportDetails[field.attribute]
+              .split(' / ')
+              .map(s => s.trim());
 
-            const parts = reportDetails[field.attribute]?.split(' / ').map(s => s.trim());
-            const [option1, option2] = parts;
-            if (isStrikethroughText(option1)) {
-              initialValues[field.attribute] = option2;
-            } else if (isStrikethroughText(option2)) {
-              initialValues[field.attribute] = option1;
-            } else {
-              initialValues[field.attribute] = "";
-            }
+            const selectedOption = parts.find(part => !isStrikethroughText(part));
+
+            initialValues[field.attribute] = selectedOption || "";
           } else {
             initialValues[field.attribute] = "";
           }
         }
+
         else {
           if (reportDetails && reportDetails[field.attribute]) {
             initialValues[field.attribute] = reportDetails[field.attribute];
@@ -197,9 +183,8 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
                         (
                           (() => {
                             const [, raw] = attr?.split("_st_");
-                            const [opt1Raw, opt2Raw] = raw.split("_");
-                            const opt1 = opt1Raw?.replace(/-/g, " ");
-                            const opt2 = opt2Raw?.replace(/-/g, " ");
+                            const optionsRaw = raw.split("_");
+                            const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
                             const selected = formData[attr];
                             return (
 
@@ -207,25 +192,19 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
                                 <Typography variant="body2" sx={{ mb: 1 }}>
                                   {field.label || formatLabel(attr)}
                                 </Typography>
-                                <label>
-                                  <input
-                                    type="radio"
-                                    name={attr}
-                                    value={opt1}
-                                    checked={selected === opt1}
-                                    onChange={() => handleInputChange(attr, opt1)}
-                                  /> {opt1}
-                                </label>
-                                <label>
-                                  <input
-                                    type="radio"
-                                    name={attr}
-                                    value={opt2}
-                                    checked={selected === opt2}
-                                    onChange={() => handleInputChange(attr, opt2)}
-                                  /> {opt2}
-                                </label>
+                                {options.map(opt => (
+                                  <label key={opt}>
+                                    <input
+                                      type="radio"
+                                      name={attr}
+                                      value={opt}
+                                      checked={selected === opt}
+                                      onChange={() => handleInputChange(attr, opt)}
+                                    /> {opt}
+                                  </label>
+                                ))}
                               </Box>
+
                             );
                           })()
                         ) : (
