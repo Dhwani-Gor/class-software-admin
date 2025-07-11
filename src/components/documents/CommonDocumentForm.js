@@ -48,7 +48,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
         } else if (value === option2) {
           acc[key] = `${strikeText(option1)} / ${option2}`;
         } else {
-          acc[key] = `{{${key}}}`;
+          acc[key] = `${option1} / ${option2}`;
         }
       } else if (typeof value === "boolean") {
         acc[key] = value === true ? "\u2611" : "\u2612";
@@ -187,7 +187,10 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
                       ) : isRadioWithStrike ?
                         (
                           (() => {
-                            const [label1, label2] = attr.replace('_st_', '')?.split('_');
+                            const [, raw] = attr?.split("_st_");
+                            const [opt1Raw, opt2Raw] = raw.split("_");
+                            const opt1 = opt1Raw?.replace(/-/g, " ");
+                            const opt2 = opt2Raw?.replace(/-/g, " ");
                             const selected = formData[attr];
                             return (
 
@@ -199,19 +202,19 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
                                   <input
                                     type="radio"
                                     name={attr}
-                                    value={label1}
-                                    checked={selected === label1}
-                                    onChange={() => handleInputChange(attr, label1)}
-                                  /> {label1}
+                                    value={opt1}
+                                    checked={selected === opt1}
+                                    onChange={() => handleInputChange(attr, opt1)}
+                                  /> {opt1}
                                 </label>
                                 <label>
                                   <input
                                     type="radio"
                                     name={attr}
-                                    value={label2}
-                                    checked={selected === label2}
-                                    onChange={() => handleInputChange(attr, label2)}
-                                  /> {label2}
+                                    value={opt2}
+                                    checked={selected === opt2}
+                                    onChange={() => handleInputChange(attr, opt2)}
+                                  /> {opt2}
                                 </label>
                               </Box>
                             );

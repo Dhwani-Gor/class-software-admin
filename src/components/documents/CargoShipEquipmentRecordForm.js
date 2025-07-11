@@ -83,7 +83,6 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
           if (reportDetails && reportDetails[field.attribute]) {
 
             const parts = reportDetails[field.attribute]?.split(' / ').map(s => s.trim());
-            console.log(parts);
             const [option1, option2] = parts;
             if (isStrikethroughText(option1)) {
               initialValues[field.attribute] = option2;
@@ -164,7 +163,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
         const opt2 = opt2Raw.replace(/-/g, " ");
 
         if (!value) {
-          acc[key] = `{{${key}}}`;
+          acc[key] = `${opt1} / ${opt2}`;
         } else {
           const finalLine =
             value === opt1
