@@ -389,7 +389,6 @@ const ReportingForm = () => {
   const [previewDocument, setPreviewDocument] = useState(null);
   const [underscoreFields, setUnderscoreFields] = useState([]);
   const [reportName, setReportName] = useState("");
-  console.log(reportName, "report name")
   const [showEndorsementField, setShowEndorsementField] = useState(false);
   const [showExtraEndorsementField, setShowExtraEndorsementField] = useState(false);
   const [endorsementTitle, setEndorsementTitle] = useState([]);
@@ -438,7 +437,12 @@ const ReportingForm = () => {
         return <CSSForm {...commonProps} />;
 
       case "INTERNATIONAL LOAD LINE CERTIFICATE":
-        return <LoadLineCertificateForm {...commonProps} />;
+        return <LoadLineCertificateForm 
+        open={open}
+        onClose={() => setOpen(false)}
+        onSubmit={handleSubmitReport}
+        fields={underscoreFields}
+        reportDetails={reportDetails} />;
 
       case "International Anti-Fouling System Certificate":
         return <AntiFoulingCertificateForm {...commonProps} />;
@@ -691,20 +695,19 @@ const ReportingForm = () => {
       const reportNo = selectedReportNumber?.journalTypeId || 'Unknown';
 
       const isCertificateOfClass = reportDetails?.activity?.surveyType?.report?.name?.toLowerCase() === 'certificate of class';
-      console.log()
       const payload = {
         reportDetailId: reportDetails?.id,
 
         data: {
           ...extraFields,
-          image: 7,
           type: 'image',
           stamp: 6,
           companyText: 8,
           ...(reportName.toLocaleLowerCase() === 'certificate of class' && { logo: 7 })
         }
-      };
 
+        
+      };
       const result = await generateFullReport(payload);
       const fileUrl = result?.data?.data;
 
@@ -968,7 +971,6 @@ const ReportingForm = () => {
   };
 
   const handlePreviewDocument = (document) => {
-    console.log(document, "document")
     setPreviewDocument(document);
     setLoadingPreview(true);
     setOpenPreviewModal(true);

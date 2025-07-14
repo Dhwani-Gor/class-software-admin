@@ -43,22 +43,20 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                     } else {
                         initialValues[field.attribute] = false;
                     }
-                } else if (field.attribute.startsWith("_st")) {
+                } 
+                else if (field.attribute.startsWith("_st")) {
                     if (reportDetails && reportDetails[field.attribute]) {
-
-                        const parts = reportDetails[field.attribute]?.split(' / ').map(s => s.trim());
-                        const [option1, option2] = parts;
-                        if (isStrikethroughText(option1)) {
-                            initialValues[field.attribute] = option2;
-                        } else if (isStrikethroughText(option2)) {
-                            initialValues[field.attribute] = option1;
-                        } else {
-                            initialValues[field.attribute] = "";
-                        }
+                      const parts = reportDetails[field.attribute]
+                        .split(' / ')
+                        .map(s => s.trim());
+          
+                      const selectedOption = parts.find(part => !isStrikethroughText(part));
+          
+                      initialValues[field.attribute] = selectedOption || "";
                     } else {
-                        initialValues[field.attribute] = "";
+                      initialValues[field.attribute] = "";
                     }
-                }
+                  }
                 else {
                     if (reportDetails && reportDetails[field.attribute]) {
                         if (field.attribute.includes("date")) {
@@ -91,21 +89,21 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
         const finalPayload = {};
 
         fields.forEach(({ attribute }) => {
-            const value = formValues[attribute];
-
+            let value = formValues[attribute];
+            if (typeof value === "string" && (value.includes("undefined") || value.trim() === "")) {
+                value = undefined;
+            }
             if (attribute.startsWith("_st_")) {
                 const [, raw] = attribute?.split("_st_");
-                const [opt1Raw, opt2Raw] = raw.split("_");
-                const opt1 = opt1Raw.replace(/-/g, " ");
-                const opt2 = opt2Raw.replace(/-/g, " ");
+                const optionsRaw = raw.split("_");
+                const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
 
                 if (!value) {
-                    finalPayload[attribute] = `${opt1} / ${opt2}`;
+                    finalPayload[attribute] = options.join(" / ");
                 } else {
-                    finalPayload[attribute] =
-                        value === opt1
-                            ? `${opt1} / ${applyStrikethrough(opt2)}`
-                            : `${applyStrikethrough(opt1)} / ${opt2}`;
+                    finalPayload[attribute] = options
+                        .map(opt => (opt === value ? opt : applyStrikethrough(opt)))
+                        .join(" / ");
                 }
             } else if (attribute.startsWith("_checkbox")) {
                 finalPayload[attribute] = value === true ? "\u2611" : "\u2612";
@@ -192,33 +190,27 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
                 if (isStrikethroughRadio) {
                     const [, raw] = attr?.split("_st_");
-                    const [opt1Raw, opt2Raw] = raw?.split("_");
-                    const opt1 = opt1Raw?.replace(/-/g, " ");
-                    const opt2 = opt2Raw?.replace(/-/g, " ");
-                    const value = formValues[attr];
+                    const optionsRaw = raw.split("_");
+                    const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
+                    const selected = formValues[attr];
 
                     return (
                         <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={attr}>
-                            <Typography variant="body2" sx={{ mb: 1 }}>{field.label}</Typography>
                             <Box display="flex" flexDirection="column" gap={1}>
-                                <label>
-                                    <input
-                                        type="radio"
-                                        name={attr}
-                                        value={opt1}
-                                        checked={value === opt1}
-                                        onChange={() => handleInputChange(attr, opt1)}
-                                    /> {opt1}
-                                </label>
-                                <label>
-                                    <input
-                                        type="radio"
-                                        name={attr}
-                                        value={opt2}
-                                        checked={value === opt2}
-                                        onChange={() => handleInputChange(attr, opt2)}
-                                    /> {opt2}
-                                </label>
+                                <Typography variant="body2" sx={{ mb: 1 }}>
+                                    {field.label}
+                                </Typography>
+                                {options.map(opt => (
+                                    <label key={opt}>
+                                        <input
+                                            type="radio"
+                                            name={attr}
+                                            value={opt}
+                                            checked={selected === opt}
+                                            onChange={() => handleInputChange(attr, opt)}
+                                        /> {opt}
+                                    </label>
+                                ))}
                             </Box>
                         </Grid2>
                     );

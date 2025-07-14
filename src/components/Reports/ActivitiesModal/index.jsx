@@ -113,7 +113,7 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes, ac
               render={({ field }) => (
                 <Autocomplete
                   multiple
-                  options={surveyOptions}
+                  options={surveyOptions?.sort((a, b) => a.label.localeCompare(b.label))}
                   value={surveyOptions.filter((option) =>
                     field.value?.includes(option.value)
                   )}

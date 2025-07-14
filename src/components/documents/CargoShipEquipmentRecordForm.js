@@ -79,18 +79,16 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
           } else {
             initialValues[field.attribute] = false;
           }
-        } else if (field.attribute.startsWith("_st")) {
+        } 
+        else if (field.attribute.startsWith("_st")) {
           if (reportDetails && reportDetails[field.attribute]) {
+            const parts = reportDetails[field.attribute]
+              .split(' / ')
+              .map(s => s.trim());
 
-            const parts = reportDetails[field.attribute]?.split(' / ').map(s => s.trim());
-            const [option1, option2] = parts;
-            if (isStrikethroughText(option1)) {
-              initialValues[field.attribute] = option2;
-            } else if (isStrikethroughText(option2)) {
-              initialValues[field.attribute] = option1;
-            } else {
-              initialValues[field.attribute] = "";
-            }
+            const selectedOption = parts.find(part => !isStrikethroughText(part));
+
+            initialValues[field.attribute] = selectedOption || "";
           } else {
             initialValues[field.attribute] = "";
           }
@@ -156,21 +154,20 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
   const handleSubmit = () => {
     const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
+      if (typeof value === "string" && (value.includes("undefined") || value.trim() === "")) {
+        value = undefined;
+      }
       if (key.startsWith("_st_")) {
-        const [, raw] = key.split("_st_");
-        const [opt1Raw, opt2Raw] = raw.split("_");
-        const opt1 = opt1Raw.replace(/-/g, " ");
-        const opt2 = opt2Raw.replace(/-/g, " ");
+        const [, raw] = key?.split("_st_");
+        const optionsRaw = raw.split("_");
+        const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
 
         if (!value) {
-          acc[key] = `${opt1} / ${opt2}`;
+          acc[key] = options.join(" / ");
         } else {
-          const finalLine =
-            value === opt1
-              ? `${opt1} / ${applyStrikethrough(opt2)}`
-              : `${applyStrikethrough(opt1)} / ${opt2}`;
-
-          acc[key] = finalLine;
+          acc[key] = options
+            .map(opt => (opt === value ? opt : applyStrikethrough(opt)))
+            .join(" / ");
         }
       } else if (typeof value === "boolean") {
         acc[key] = value ? "☑" : "☒";
@@ -261,35 +258,25 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                   ) : isStrikethroughRadio ? (
                     (() => {
                       const [, raw] = attr.split("_st_");
-                      const [opt1Raw, opt2Raw] = raw.split("_");
-                      const label1 = opt1Raw.replace(/-/g, " ");
-                      const label2 = opt2Raw.replace(/-/g, " ");
+                      const optionsRaw = raw.split("_");
+                      const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
                       const value = formValues[attr];
-
                       return (
                         <Box display="flex" alignItems="center" gap={2}>
-                          <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                            <input
-                              type="radio"
-                              name={attr}
-                              value={label1}
-                              checked={value === label1}
-                              onChange={() => handleInputChange(attr, label1)}
-                              style={{ marginRight: '4px' }}
-                            />
-                            <span style={{ fontSize: '14px' }}>{label1}</span>
-                          </label>
-                          <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                            <input
-                              type="radio"
-                              name={attr}
-                              value={label2}
-                              checked={value === label2}
-                              onChange={() => handleInputChange(attr, label2)}
-                              style={{ marginRight: '4px' }}
-                            />
-                            <span style={{ fontSize: '14px' }}>{label2}</span>
-                          </label>
+                          <Typography variant="body2" sx={{ mb: 1 }}>
+                            {field.label}
+                          </Typography>
+                          {options.map(opt => (
+                            <label key={opt}>
+                              <input
+                                type="radio"
+                                name={attr}
+                                value={opt}
+                                checked={value === opt}
+                                onChange={() => handleInputChange(attr, opt)}
+                              /> {opt}
+                            </label>
+                          ))}
                         </Box>
                       );
                     })()

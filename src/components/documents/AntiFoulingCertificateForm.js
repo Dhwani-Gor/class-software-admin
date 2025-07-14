@@ -30,16 +30,13 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
           }
         } else if (field.attribute.startsWith("_st")) {
           if (reportDetails && reportDetails[field.attribute]) {
+            const parts = reportDetails[field.attribute]
+              .split(' / ')
+              .map(s => s.trim());
 
-            const parts = reportDetails[field.attribute]?.split(' / ').map(s => s.trim());
-            const [option1, option2] = parts;
-            if (isStrikethroughText(option1)) {
-              initialValues[field.attribute] = option2;
-            } else if (isStrikethroughText(option2)) {
-              initialValues[field.attribute] = option1;
-            } else {
-              initialValues[field.attribute] = "";
-            }
+            const selectedOption = parts.find(part => !isStrikethroughText(part));
+
+            initialValues[field.attribute] = selectedOption || "";
           } else {
             initialValues[field.attribute] = "";
           }
@@ -71,25 +68,24 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
 
   const handleSubmit = () => {
     const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
+      if (typeof value === "string" && (value.includes("undefined") || value.trim() === "")) {
+        value = undefined;
+      }
       if (key.startsWith("_st_")) {
-        const [, raw] = key.split("_st_");
-        const [opt1Raw, opt2Raw] = raw.split("_");
-        const opt1 = opt1Raw.replace(/-/g, " ");
-        const opt2 = opt2Raw.replace(/-/g, " ");
+        const [, raw] = key?.split("_st_");
+        const optionsRaw = raw.split("_");
+        const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
 
         if (!value) {
-          acc[key] = `${opt1} / ${opt2}`;
+          acc[key] = options.join(" / ");
         } else {
-          const finalLine =
-            value === opt1
-              ? `${opt1} / ${applyStrikethrough(opt2)}`
-              : `${applyStrikethrough(opt1)} / ${opt2}`;
-
-          acc[key] = finalLine;
+          acc[key] = options
+            .map(opt => (opt === value ? opt : applyStrikethrough(opt)))
+            .join(" / ");
         }
       } else if (typeof value === "boolean") {
         acc[key] = value ? "☑" : "☒";
-      }else if (key.includes("date") && value) {
+      } else if (key.includes("date") && value) {
         acc[key] = formattedDate(value);
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
@@ -174,38 +170,29 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
             const isTextarea = attr.startsWith("_ta_");
 
             if (isStrikethroughRadio) {
-              const [, raw] = attr.split("_st_");
-              const [opt1Raw, opt2Raw] = raw.split("_");
-              const label1 = opt1Raw.replace(/-/g, " ");
-              const label2 = opt2Raw.replace(/-/g, " ");
-              const value = formValues[attr];
+              const [, raw] = attr?.split("_st_");
+              const optionsRaw = raw.split("_");
+              const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
+              const selected = formData[attr];
 
               return (
-                <Grid2 size={{ xs: 12, sm: 6, md: 6 }} key={attr}>
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    {field.label || formatLabel(attr)}
-                  </Typography>
-                  <Box display="flex" alignItems="center" gap={2}>
-                    <label>
-                      <input
-                        type="radio"
-                        name={attr}
-                        value={label1}
-                        checked={value === label1}
-                        onChange={() => handleInputChange(attr, label1)}
-                      />{" "}
-                      {label1}
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        name={attr}
-                        value={label2}
-                        checked={value === label2}
-                        onChange={() => handleInputChange(attr, label2)}
-                      />{" "}
-                      {label2}
-                    </label>
+                <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={attr}>
+                  <Typography variant="body2" sx={{ mb: 1 }}>{field.label}</Typography>
+                  <Box display="flex" flexDirection="column" gap={1}>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      {field.label || formatLabel(attr)}
+                    </Typography>
+                    {options.map(opt => (
+                      <label key={opt}>
+                        <input
+                          type="radio"
+                          name={attr}
+                          value={opt}
+                          checked={selected === opt}
+                          onChange={() => handleInputChange(attr, opt)}
+                        /> {opt}
+                      </label>
+                    ))}
                   </Box>
                 </Grid2>
               );

@@ -33,6 +33,9 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
 
   const handleSubmit = () => {
     const filledValues = Object.entries(formData).reduce((acc, [key, value]) => {
+      if (typeof value === "string" && (value.includes("undefined") || value.trim() === "")) {
+        value = undefined;
+      }
       if (key.startsWith("_st_")) {
         const [, raw] = key?.split("_st_");
         const optionsRaw = raw.split("_");
@@ -190,7 +193,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
 
                               <Box display="flex" flexDirection="column" gap={1}>
                                 <Typography variant="body2" sx={{ mb: 1 }}>
-                                  {field.label || formatLabel(attr)}
+                                  {field.label}
                                 </Typography>
                                 {options.map(opt => (
                                   <label key={opt}>

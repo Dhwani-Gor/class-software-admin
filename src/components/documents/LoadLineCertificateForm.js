@@ -11,6 +11,7 @@ import {
   CheckCircle as CheckIcon, Waves as WavesIcon
 } from "@mui/icons-material";
 import { formattedDate, formatDate } from "@/utils/date";
+import { getAllSystemVariables } from "@/api";
 
 const applyStrikethrough = (text) =>
   text?.split("").map((c) => c + "\u0336").join("");
@@ -18,7 +19,100 @@ const applyStrikethrough = (text) =>
 const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [formValues, setFormValues] = useState({});
   const [expandedSection, setExpandedSection] = useState("freeboard");
+  const [systemVariables, setSystemVariables] = useState();
+  const [isLoadingVariables, setIsLoadingVariables] = useState(false);
+  const case_1_Image = systemVariables?.data?.find(item => item.name === "timber_image_case_1")?.id || '[companyName]';
+  const case_2_Image = systemVariables?.data?.find(item => item.name === "timber_image_case_2")?.id || '[companyName]';
+  const case_3_Image = systemVariables?.data?.find(item => item.name === "timber_image_case_3")?.id || '[companyName]';
+  const case_4_Image = systemVariables?.data?.find(item => item.name === "timber_image_case_4")?.id || '[companyName]';
 
+  const selectImageBasedOnCases = (data = {}) => {
+    const isFilled = (val) => val && val !== "-";
+
+    const timberFields = [
+      "_timber_tropical_LT",
+      "_timber_tropical_LS",
+      "_timber_summer_LS",
+      "_timber_summer_S",
+      "_timber_winter_LW",
+      "_timber_winter_LS",
+      "_LWNA",
+      "_LWNA_LS"
+    ];
+
+    const nonTimberFields = [
+      "_tropical_T",
+      "_tropical_S",
+      "_summer_S",
+      "_winter_W",
+      "_winter_S",
+      "_WNA",
+      "_WNA_S"
+    ];
+
+    const fwFields = ["_FW"];
+
+    const hasTimber = timberFields.some(f => isFilled(reportDetails.data[f]));
+
+    const allNonTimberFilled = nonTimberFields.every(f => isFilled(reportDetails.data[f]));
+
+    const onlySummer = isFilled(reportDetails.data["_summer_S"])
+      && !isFilled(data["_tropical_T"])
+      && !isFilled(data["_winter_W"])
+      && !isFilled(data["_WNA"]);
+
+    const fwFilled = fwFields.some(f => isFilled(data[f]));
+
+    if (reportDetails.activity.journal.client.lengthOfShip
+      && Number(reportDetails.activity.journal.client.lengthOfShip) < 100
+      && !isFilled(reportDetails.data["_WNA"])
+      && !onlySummer) {
+      return case_1_Image;
+    }
+
+    if (reportDetails.activity.journal.client.typeOfShip === "all season"
+      && onlySummer
+      && fwFilled) {
+      return case_2_Image;
+    }
+
+    if (hasTimber) {
+      return case_3_Image;
+    }
+
+    if (allNonTimberFilled && !hasTimber) {
+      return case_4_Image;
+    }
+
+    return "";
+  };
+
+
+
+  const getSystemVariables = async () => {
+    try {
+      setIsLoadingVariables(true);
+      console.log("Making API call to getAllSystemVariables...");
+
+      const response = await getAllSystemVariables();
+
+      if (response?.status === 200) {
+        setSystemVariables(response?.data);
+      } else {
+        console.warn("API call returned non-200 status:", response?.status);
+      }
+    } catch (error) {
+      console.error("Error fetching system variables:", error);
+    } finally {
+      setIsLoadingVariables(false);
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      getSystemVariables();
+    }
+  }, [open]);
   const isStrikethroughText = (text) => text?.split('').some(c => c === '\u0336');
 
   useEffect(() => {
@@ -26,30 +120,28 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
       const initialValues = {};
       fields.forEach(field => {
         if (field.attribute.startsWith("_checkbox")) {
-          if (reportDetails && reportDetails[field.attribute] === "\u2611") {
+          if (reportDetails.data && reportDetails.data[field.attribute] === "\u2611") {
             initialValues[field.attribute] = true;
           } else {
             initialValues[field.attribute] = false;
           }
-        } else if (field.attribute.startsWith("_st")) {
+        }
+        else if (field.attribute.startsWith("_st")) {
           if (reportDetails && reportDetails[field.attribute]) {
+            const parts = reportDetails[field.attribute]
+              .split(' / ')
+              .map(s => s.trim());
 
-            const parts = reportDetails[field.attribute]?.split(' / ').map(s => s.trim());
-            const [option1, option2] = parts;
-            if (isStrikethroughText(option1)) {
-              initialValues[field.attribute] = option2;
-            } else if (isStrikethroughText(option2)) {
-              initialValues[field.attribute] = option1;
-            } else {
-              initialValues[field.attribute] = "";
-            }
+            const selectedOption = parts.find(part => !isStrikethroughText(part));
+
+            initialValues[field.attribute] = selectedOption || "";
           } else {
             initialValues[field.attribute] = "";
           }
         }
         else {
-          if (reportDetails && reportDetails[field.attribute]) {
-            initialValues[field.attribute] = reportDetails[field.attribute];
+          if (reportDetails.data && reportDetails.data[field.attribute]) {
+            initialValues[field.attribute] = reportDetails.data[field.attribute];
           } else {
             initialValues[field.attribute] = "";
           }
@@ -57,7 +149,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
       });
       setFormValues(initialValues);
     }
-  }, [fields, open]);
+  }, [fields, open, reportDetails]);
 
   const handleClose = () => {
     onClose();
@@ -71,20 +163,16 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
   const handleSubmit = () => {
     const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
       if (key.startsWith("_st_")) {
-        const [, raw] = key.split("_st_");
-        const [opt1Raw, opt2Raw] = raw.split("_");
-        const opt1 = opt1Raw.replace(/-/g, " ");
-        const opt2 = opt2Raw.replace(/-/g, " ");
+        const [, raw] = key?.split("_st_");
+        const optionsRaw = raw.split("_");
+        const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
 
         if (!value) {
-          acc[key] = `${opt1} / ${opt2}`;
+          acc[key] = options.join(" / ");
         } else {
-          const finalLine =
-            value === opt1
-              ? `${opt1} / ${applyStrikethrough(opt2)}`
-              : `${applyStrikethrough(opt1)} / ${opt2}`;
-
-          acc[key] = finalLine;
+          acc[key] = options
+            .map(opt => (opt === value ? opt : applyStrikethrough(opt)))
+            .join(" / ");
         }
       } else if (typeof value === "boolean") {
         acc[key] = value ? "\u2611" : "\u2612";
@@ -99,7 +187,10 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
       return acc;
     }, {});
 
-    onSubmit(filledValues);
+    const finalImage = selectImageBasedOnCases(reportDetails.data);
+    const finalFilledValues = { ...filledValues, image: finalImage };
+
+    onSubmit(finalFilledValues || {});
   };
 
   const categorizeFields = (fields) => {
@@ -152,40 +243,33 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
                   </Typography>
                 </Box>
               </Grid2>
-
             </Grid2>
           );
         }
 
         if (isStrikethroughRadio) {
-          const [, rawOptions] = attr.split("_st_");
-          const [option1, option2] = rawOptions.split("_");
-          const label1 = option1.replace(/-/g, " ");
-          const label2 = option2.replace(/-/g, " ");
-          const value = formValues[attr] || "";
+          const [, raw] = attr?.split("_st_");
+          const optionsRaw = raw.split("_");
+          const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
+          const selected = formValues[attr];
 
           return (
-            <Grid2 size={{ xs: 12, sm: 12, md: 6 }} key={attr}>
-              <Typography variant="body2" sx={{ mb: 1 }}>{field.label}</Typography>
+            <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={attr}>
               <Box display="flex" flexDirection="column" gap={1}>
-                <label>
-                  <input
-                    type="radio"
-                    name={attr}
-                    value={label1}
-                    checked={value === label1}
-                    onChange={() => handleInputChange(attr, label1)}
-                  /> {label1}
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name={attr}
-                    value={label2}
-                    checked={value === label2}
-                    onChange={() => handleInputChange(attr, label2)}
-                  /> {label2}
-                </label>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  {field.label}
+                </Typography>
+                {options.map(opt => (
+                  <label key={opt}>
+                    <input
+                      type="radio"
+                      name={attr}
+                      value={opt}
+                      checked={selected === opt}
+                      onChange={() => handleInputChange(attr, opt)}
+                    /> {opt}
+                  </label>
+                ))}
               </Box>
             </Grid2>
           );
@@ -259,7 +343,10 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
             </Box>
             <Box>
               <Typography variant="h5" fontWeight={700}>Load Line Certificate Details</Typography>
-              <Typography variant="body2">Provide measurements and allowance details</Typography>
+              <Typography variant="body2">
+                Provide measurements and allowance details
+                {isLoadingVariables && " (Loading system variables...)"}
+              </Typography>
             </Box>
           </Box>
           <IconButton onClick={handleClose} sx={{ color: 'white' }}>
@@ -313,6 +400,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
           variant="contained"
           size="large"
           startIcon={<CheckIcon />}
+          disabled={isLoadingVariables}
           sx={{
             borderRadius: 2,
             px: 4,
@@ -329,7 +417,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
             transition: 'all 0.2s ease'
           }}
         >
-          Generate Report
+          {isLoadingVariables ? 'Loading...' : 'Generate Report'}
         </Button>
       </DialogActions>
     </Dialog>
