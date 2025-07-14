@@ -263,7 +263,6 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
                             return (
                                 <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={attr}>
-                                    <Typography variant="body2" sx={{ mb: 1 }}>{field.label}</Typography>
                                     <Box display="flex" flexDirection="column" gap={1}>
                                         <Typography variant="body2" sx={{ mb: 1 }}>
                                             {field.label}
