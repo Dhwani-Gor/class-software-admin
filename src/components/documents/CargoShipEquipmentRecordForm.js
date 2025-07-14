@@ -79,18 +79,16 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
           } else {
             initialValues[field.attribute] = false;
           }
-        } else if (field.attribute.startsWith("_st")) {
+        } 
+        else if (field.attribute.startsWith("_st")) {
           if (reportDetails && reportDetails[field.attribute]) {
+            const parts = reportDetails[field.attribute]
+              .split(' / ')
+              .map(s => s.trim());
 
-            const parts = reportDetails[field.attribute]?.split(' / ').map(s => s.trim());
-            const [option1, option2] = parts;
-            if (isStrikethroughText(option1)) {
-              initialValues[field.attribute] = option2;
-            } else if (isStrikethroughText(option2)) {
-              initialValues[field.attribute] = option1;
-            } else {
-              initialValues[field.attribute] = "";
-            }
+            const selectedOption = parts.find(part => !isStrikethroughText(part));
+
+            initialValues[field.attribute] = selectedOption || "";
           } else {
             initialValues[field.attribute] = "";
           }

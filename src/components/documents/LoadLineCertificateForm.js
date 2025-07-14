@@ -27,8 +27,6 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
   const case_4_Image = systemVariables?.data?.find(item => item.name === "timber_image_case_4")?.id || '[companyName]';
 
   const selectImageBasedOnCases = (data = {}) => {
-    console.log(data, "data in selectImageBasedOnCases");
-
     const isFilled = (val) => val && val !== "-";
 
     const timberFields = [
@@ -86,7 +84,6 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
       return case_4_Image;
     }
 
-    console.log("Returning default company placeholder");
     return "";
   };
 
