@@ -21,13 +21,14 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
   const [expandedSection, setExpandedSection] = useState("freeboard");
   const [systemVariables, setSystemVariables] = useState();
   const [isLoadingVariables, setIsLoadingVariables] = useState(false);
+
   const case_1_Image = systemVariables?.data?.find(item => item.name === "timber_image_case_1")?.id || '[companyName]';
   const case_2_Image = systemVariables?.data?.find(item => item.name === "timber_image_case_2")?.id || '[companyName]';
   const case_3_Image = systemVariables?.data?.find(item => item.name === "timber_image_case_3")?.id || '[companyName]';
   const case_4_Image = systemVariables?.data?.find(item => item.name === "timber_image_case_4")?.id || '[companyName]';
 
-  const selectImageBasedOnCases = (data = {}) => {
-    const isFilled = (val) => val && val !== "-";
+  const selectImageBasedOnCases = (formData = {}) => {
+    const isFilled = (val) => val && val !== "-" && val.toString().trim() !== "";
 
     const timberFields = [
       "_timber_tropical_LT",
@@ -52,27 +53,27 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
 
     const fwFields = ["_FW"];
 
-    const hasTimber = timberFields.some(f => isFilled(reportDetails.data[f]));
+    const shipLength = reportDetails?.activity?.journal?.client?.lengthOfShip;
+    const shipType = reportDetails?.activity?.journal?.client?.typeOfShip;
 
-    const allNonTimberFilled = nonTimberFields.every(f => isFilled(reportDetails.data[f]));
+    const allData = { ...reportDetails?.data, ...formData };
 
-    const onlySummer = isFilled(reportDetails.data["_summer_S"])
-      && !isFilled(data["_tropical_T"])
-      && !isFilled(data["_winter_W"])
-      && !isFilled(data["_WNA"]);
+    const hasTimber = timberFields?.some(field => isFilled(allData[field]));
+    const hasWNA = isFilled(allData["_WNA"]);
+    const hasFW = fwFields?.some(field => isFilled(allData[field]));
 
-    const fwFilled = fwFields.some(f => isFilled(data[f]));
+    const allNonTimberFilled = nonTimberFields?.every(field => isFilled(allData[field]));
 
-    if (reportDetails.activity.journal.client.lengthOfShip
-      && Number(reportDetails.activity.journal.client.lengthOfShip) < 100
-      && !isFilled(reportDetails.data["_WNA"])
-      && !onlySummer) {
+    const onlySummerFilled = isFilled(allData["_summer_S"]) &&
+      !isFilled(allData["_tropical_T"]) &&
+      !isFilled(allData["_winter_W"]) &&
+      !isFilled(allData["_WNA"]);
+
+    if (shipLength && Number(shipLength) < 100 && !hasWNA && allNonTimberFilled && !onlySummerFilled) {
       return case_1_Image;
     }
 
-    if (reportDetails.activity.journal.client.typeOfShip === "all season"
-      && onlySummer
-      && fwFilled) {
+    if (shipType === "all season" && onlySummerFilled && hasFW) {
       return case_2_Image;
     }
 
@@ -87,19 +88,16 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
     return "";
   };
 
-
-
   const getSystemVariables = async () => {
     try {
       setIsLoadingVariables(true);
-      console.log("Making API call to getAllSystemVariables...");
 
       const response = await getAllSystemVariables();
 
       if (response?.status === 200) {
         setSystemVariables(response?.data);
       } else {
-        console.warn("API call returned non-200 status:", response?.status);
+        console.warn("API call returned status:", response?.status);
       }
     } catch (error) {
       console.error("Error fetching system variables:", error);
@@ -113,6 +111,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
       getSystemVariables();
     }
   }, [open]);
+
   const isStrikethroughText = (text) => text?.split('').some(c => c === '\u0336');
 
   useEffect(() => {
@@ -120,7 +119,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
       const initialValues = {};
       fields.forEach(field => {
         if (field.attribute.startsWith("_checkbox")) {
-          if (reportDetails.data && reportDetails.data[field.attribute] === "\u2611") {
+          if (reportDetails?.data && reportDetails?.data[field.attribute] === "\u2611") {
             initialValues[field.attribute] = true;
           } else {
             initialValues[field.attribute] = false;
@@ -132,7 +131,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
               .split(' / ')
               .map(s => s.trim());
 
-            const selectedOption = parts.find(part => !isStrikethroughText(part));
+            const selectedOption = parts?.find(part => !isStrikethroughText(part));
 
             initialValues[field.attribute] = selectedOption || "";
           } else {
@@ -140,8 +139,8 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
           }
         }
         else {
-          if (reportDetails.data && reportDetails.data[field.attribute]) {
-            initialValues[field.attribute] = reportDetails.data[field.attribute];
+          if (reportDetails?.data && reportDetails?.data[field.attribute]) {
+            initialValues[field.attribute] = reportDetails?.data[field.attribute];
           } else {
             initialValues[field.attribute] = "";
           }
@@ -187,7 +186,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
       return acc;
     }, {});
 
-    const finalImage = selectImageBasedOnCases(reportDetails.data);
+    const finalImage = selectImageBasedOnCases(filledValues);
     const finalFilledValues = { ...filledValues, image: finalImage };
 
     onSubmit(finalFilledValues || {});
@@ -279,7 +278,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
           return (
             <Grid2 size={{ xs: 12 }} key={attr}>
               <Typography variant="body2" sx={{ mb: 1 }}>
-                {field.label || formatLabel(attr)}
+                {field.label}
               </Typography>
               <TextareaAutosize
                 style={{ width: '100%' }}

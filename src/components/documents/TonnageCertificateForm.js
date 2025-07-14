@@ -141,12 +141,21 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
   const organizeSpacesData = () => {
     const gtSpaces = [];
     const ntSpaces = [];
-
-    for (let i = 1; i <= 20; i++) {
+  
+    const gtFields = fields?.filter(f => f.attribute.startsWith('_GT_space_')) || [];
+    const ntFields = fields?.filter(f => f.attribute.startsWith('_NT_space_')) || [];
+  
+    const gtIndexes = gtFields.map(f => parseInt(f.attribute.split('_GT_space_')[1], 10)).filter(Boolean);
+    const maxGtIndex = gtIndexes.length ? Math.max(...gtIndexes) : 0;
+  
+    const ntIndexes = ntFields.map(f => parseInt(f.attribute.split('_NT_space_')[1], 10)).filter(Boolean);
+    const maxNtIndex = ntIndexes.length ? Math.max(...ntIndexes) : 0;
+  
+    for (let i = 1; i <= maxGtIndex; i++) {
       const spaceAttr = `_GT_space_${i}`;
       const locAttr = `_GT_loc_${i}`;
       const lengthAttr = `_GT_length_${i}`;
-
+  
       if (fields?.some(f => f.attribute === spaceAttr)) {
         gtSpaces.push({
           index: i,
@@ -156,12 +165,12 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
         });
       }
     }
-
-    for (let i = 1; i <= 20; i++) {
+  
+    for (let i = 1; i <= maxNtIndex; i++) {
       const spaceAttr = `_NT_space_${i}`;
       const locAttr = `_NT_loc_${i}`;
       const lengthAttr = `_NT_length_${i}`;
-
+  
       if (fields?.some(f => f.attribute === spaceAttr)) {
         ntSpaces.push({
           index: i,
@@ -171,7 +180,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
         });
       }
     }
-
+  
     return { gtSpaces, ntSpaces };
   };
 
