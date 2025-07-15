@@ -12,6 +12,7 @@ import {
 } from "@mui/icons-material";
 import { formattedDate, formatDate } from "@/utils/date";
 import { getAllSystemVariables } from "@/api";
+import CommonButton from "../CommonButton";
 
 const applyStrikethrough = (text) =>
   text?.split("").map((c) => c + "\u0336").join("");
@@ -62,12 +63,12 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
     const hasWNA = isFilled(allData["_WNA"]);
     const hasFW = fwFields?.some(field => isFilled(allData[field]));
 
-    const allNonTimberFilled = nonTimberFields?.every(field => isFilled(allData[field]));
+    const allNonTimberFilled = nonTimberFields?.some(field => isFilled(allData[field]));
 
     const onlySummerFilled = isFilled(allData["_summer_S"]) &&
-      !isFilled(allData["_tropical_T"]) &&
-      !isFilled(allData["_winter_W"]) &&
-      !isFilled(allData["_WNA"]);
+      isFilled(allData["_timber_summer_LS"]) &&
+      isFilled(allData["_timber_summer_S"]) &&
+      isFilled(allData["_WNA"]);
 
     if (shipLength && Number(shipLength) < 100 && !hasWNA && allNonTimberFilled && !onlySummerFilled) {
       return case_1_Image;
@@ -131,9 +132,14 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
               .split(' / ')
               .map(s => s.trim());
 
-            const selectedOption = parts?.find(part => !isStrikethroughText(part));
+            const hasStrikethrough = parts.some(part => isStrikethroughText(part));
 
-            initialValues[field.attribute] = selectedOption || "";
+            if (!hasStrikethrough) {
+              initialValues[field.attribute] = "";
+            } else {
+              const selectedOption = parts.find(part => !isStrikethroughText(part));
+              initialValues[field.attribute] = selectedOption || "";
+            }
           } else {
             initialValues[field.attribute] = "";
           }
@@ -269,6 +275,14 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
                     /> {opt}
                   </label>
                 ))}
+                {selected && (
+                  <CommonButton
+                    variant="outlined"
+                    text="Clear selection"
+                    onClick={() => handleInputChange(attr, "")}
+                    sx={{ width: "50%" }}
+                  />
+                )}
               </Box>
             </Grid2>
           );

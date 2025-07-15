@@ -635,7 +635,7 @@ const ReportingForm = () => {
             image: 7,
             stamp: 6,
             companyText: 8,
-            ...(reportName.toLocaleLowerCase() === 'certificate of class' && { logo: 7 })
+            ...(reportName?.toLocaleLowerCase() === 'certificate of class' && { logo: 7 })
 
 
           }

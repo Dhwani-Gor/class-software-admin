@@ -10,6 +10,7 @@ import {
   CheckCircle as CheckIcon, Report as ReportIcon
 } from "@mui/icons-material";
 import { formattedDate, formatDate } from "@/utils/date";
+import CommonButton from "../CommonButton";
 
 const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [formValues, setFormValues] = useState({});
@@ -86,9 +87,14 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
               .split(' / ')
               .map(s => s.trim());
 
-            const selectedOption = parts.find(part => !isStrikethroughText(part));
+            const hasStrikethrough = parts.some(part => isStrikethroughText(part));
 
-            initialValues[field.attribute] = selectedOption || "";
+            if (!hasStrikethrough) {
+              initialValues[field.attribute] = "";
+            } else {
+              const selectedOption = parts.find(part => !isStrikethroughText(part));
+              initialValues[field.attribute] = selectedOption || "";
+            }
           } else {
             initialValues[field.attribute] = "";
           }
@@ -277,6 +283,14 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                               /> {opt}
                             </label>
                           ))}
+                          {value && (
+                            <CommonButton
+                              variant="outlined"
+                              text="Clear selection"
+                              onClick={() => handleInputChange(attr, "")}
+                              sx={{ width: "50%" }}
+                            />
+                          )}
                         </Box>
                       );
                     })()
