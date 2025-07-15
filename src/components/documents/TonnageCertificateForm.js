@@ -36,6 +36,7 @@ import {
   ExpandMore as ExpandMoreIcon
 } from "@mui/icons-material";
 import { formattedDate, formatDate } from "@/utils/date";
+import CommonButton from "../CommonButton";
 
 const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [formValues, setFormValues] = useState({});
@@ -64,9 +65,14 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
               .split(' / ')
               .map(s => s.trim());
 
-            const selectedOption = parts.find(part => !isStrikethroughText(part));
+            const hasStrikethrough = parts.some(part => isStrikethroughText(part));
 
-            initialValues[field.attribute] = selectedOption || "";
+            if (!hasStrikethrough) {
+              initialValues[field.attribute] = "";
+            } else {
+              const selectedOption = parts.find(part => !isStrikethroughText(part));
+              initialValues[field.attribute] = selectedOption || "";
+            }
           } else {
             initialValues[field.attribute] = "";
           }
@@ -141,21 +147,21 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
   const organizeSpacesData = () => {
     const gtSpaces = [];
     const ntSpaces = [];
-  
+
     const gtFields = fields?.filter(f => f.attribute.startsWith('_GT_space_')) || [];
     const ntFields = fields?.filter(f => f.attribute.startsWith('_NT_space_')) || [];
-  
+
     const gtIndexes = gtFields.map(f => parseInt(f.attribute.split('_GT_space_')[1], 10)).filter(Boolean);
     const maxGtIndex = gtIndexes.length ? Math.max(...gtIndexes) : 0;
-  
+
     const ntIndexes = ntFields.map(f => parseInt(f.attribute.split('_NT_space_')[1], 10)).filter(Boolean);
     const maxNtIndex = ntIndexes.length ? Math.max(...ntIndexes) : 0;
-  
+
     for (let i = 1; i <= maxGtIndex; i++) {
       const spaceAttr = `_GT_space_${i}`;
       const locAttr = `_GT_loc_${i}`;
       const lengthAttr = `_GT_length_${i}`;
-  
+
       if (fields?.some(f => f.attribute === spaceAttr)) {
         gtSpaces.push({
           index: i,
@@ -165,12 +171,12 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
         });
       }
     }
-  
+
     for (let i = 1; i <= maxNtIndex; i++) {
       const spaceAttr = `_NT_space_${i}`;
       const locAttr = `_NT_loc_${i}`;
       const lengthAttr = `_NT_length_${i}`;
-  
+
       if (fields?.some(f => f.attribute === spaceAttr)) {
         ntSpaces.push({
           index: i,
@@ -180,7 +186,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
         });
       }
     }
-  
+
     return { gtSpaces, ntSpaces };
   };
 
@@ -391,6 +397,14 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
                       /> {opt}
                     </label>
                   ))}
+                  {selected && (
+                    <CommonButton
+                      variant="outlined"
+                      text="Clear selection"
+                      onClick={() => handleInputChange(attr, "")}
+                      sx={{ width: "50%" }}
+                    />
+                  )}
                 </Box>
               </Grid2>
             );

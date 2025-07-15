@@ -11,6 +11,7 @@ import {
   CheckCircle as CheckIcon, Science as ScienceIcon
 } from "@mui/icons-material";
 import { formattedDate, formatDate } from "@/utils/date";
+import CommonButton from "../CommonButton";
 
 const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [formValues, setFormValues] = useState({});
@@ -34,9 +35,14 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
               .split(' / ')
               .map(s => s.trim());
 
-            const selectedOption = parts.find(part => !isStrikethroughText(part));
+            const hasStrikethrough = parts.some(part => isStrikethroughText(part));
 
-            initialValues[field.attribute] = selectedOption || "";
+            if (!hasStrikethrough) {
+              initialValues[field.attribute] = "";
+            } else {
+              const selectedOption = parts.find(part => !isStrikethroughText(part));
+              initialValues[field.attribute] = selectedOption || "";
+            }
           } else {
             initialValues[field.attribute] = "";
           }
@@ -173,7 +179,7 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
               const [, raw] = attr?.split("_st_");
               const optionsRaw = raw.split("_");
               const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
-              const selected = formData[attr];
+              const selected = formValues[attr];
 
               return (
                 <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={attr}>
@@ -193,6 +199,14 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
                         /> {opt}
                       </label>
                     ))}
+                    {selected && (
+                      <CommonButton
+                        variant="outlined"
+                        text="Clear selection"
+                        onClick={() => handleInputChange(attr, "")}
+                        sx={{ width: "50%" }}
+                      />
+                    )}
                   </Box>
                 </Grid2>
               );
