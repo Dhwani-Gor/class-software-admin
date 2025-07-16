@@ -280,7 +280,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
                     variant="outlined"
                     text="Clear selection"
                     onClick={() => handleInputChange(attr, "")}
-                    sx={{ width: "50%" }}
+                    sx={{ width: "30%" }}
                   />
                 )}
               </Box>
