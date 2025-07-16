@@ -402,7 +402,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
                       variant="outlined"
                       text="Clear selection"
                       onClick={() => handleInputChange(attr, "")}
-                      sx={{ width: "50%" }}
+                      sx={{ width: "30%" }}
                     />
                   )}
                 </Box>

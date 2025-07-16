@@ -133,9 +133,20 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
     };
 
 
+    const engineNumbers = new Set();
+
+    fields?.forEach(field => {
+        const match = field.attribute?.match(/_engine_(\d+)_/);
+        if (match) {
+            engineNumbers.add(Number(match[1]));
+        }
+    });
+
+    const maxEngineNumber = engineNumbers.size > 0 ? Math.max(...engineNumbers) : 0;
+
     const engineFields = [];
 
-    for (let i = 1; i <= 6; i++) {
+    for (let i = 1; i <= maxEngineNumber; i++) {
         fields.forEach(field => {
             const fixedAttr = field.attribute?.replace("_engine__", `_engine_${i}_`);
             engineFields.push({
@@ -144,6 +155,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
             });
         });
     }
+    console.log(maxEngineNumber, "maxEngineNumber")
 
     const vocFields = fields.filter(field =>
         field.attribute && field.attribute.includes('_IAPP_VOC_')
@@ -164,11 +176,24 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
         field.attribute && field.attribute.startsWith('_ta_')
     );
 
+    const ozoneNumbers = new Set();
+
+    fields.forEach(f => {
+        const match = f.attribute?.match(/_IAPP_oz_(?:eq|loc|sub)_(\d+)$/);
+        if (match) {
+            ozoneNumbers.add(Number(match[1]));
+        }
+    });
+
+    const maxOzoneNumber = ozoneNumbers.size > 0 ? Math.max(...ozoneNumbers) : 0;
+
     const groupedOzoneFields = [];
-    for (let i = 1; i <= 5; i++) {
+
+    for (let i = 1; i <= maxOzoneNumber; i++) {
         const eqField = fields.find(f => f.attribute === `_IAPP_oz_eq_${i}`);
         const locField = fields.find(f => f.attribute === `_IAPP_oz_loc_${i}`);
         const subField = fields.find(f => f.attribute === `_IAPP_oz_sub_${i}`);
+
         if (eqField || locField || subField) {
             groupedOzoneFields.push({
                 equipment: eqField,
@@ -178,9 +203,19 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
         }
     }
 
-    // Group HCFC fields similarly
+    const hcfcNumbers = new Set();
+
+    fields.forEach(f => {
+        const match = f.attribute?.match(/_IAPP_HCFC_(?:eq|loc|sub)_(\d+)$/);
+        if (match) {
+            hcfcNumbers.add(Number(match[1]));
+        }
+    });
+
+    const maxHcfcNumber = hcfcNumbers.size > 0 ? Math.max(...hcfcNumbers) : 0;
+
     const groupedHcfcFields = [];
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= maxHcfcNumber; i++) {
         const eqField = fields.find(f => f.attribute === `_IAPP_HCFC_eq_${i}`);
         const locField = fields.find(f => f.attribute === `_IAPP_HCFC_loc_${i}`);
         const subField = fields.find(f => f.attribute === `_IAPP_HCFC_sub_${i}`);
@@ -205,8 +240,17 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
         }
     });
 
+    const equivalentNumbers = new Set();
+    fields.forEach(f => {
+        const match = f.attribute?.match(/_IAPP_reg4_(?:eq|loc|ref)_(\d+)$/);
+        if (match) {
+            equivalentNumbers.add(Number(match[1]));
+        }
+    });
+    
+    const maxEquivalentNumber = equivalentNumbers.size > 0 ? Math.max(...equivalentNumbers) : 0;
     const groupedEquivalentFields = [];
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= maxEquivalentNumber; i++) {
         const eqField = fields.find(f => f.attribute === `_IAPP_reg4_eq_${i}`);
         const locField = fields.find(f => f.attribute === `_IAPP_reg4_loc_${i}`);
         const refField = fields.find(f => f.attribute === `_IAPP_reg4_ref_${i}`);
@@ -218,6 +262,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
             });
         }
     }
+
 
     const fieldLabels = {
         ship_name: 'Ship Name',
@@ -285,12 +330,12 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                                             </label>
                                         ))}
                                         {selected && (
-                                        <CommonButton
-                                            variant="outlined"
-                                            text="Clear selection"
-                                            onClick={() => handleInputChange(attr, "")}
-                                            sx={{ width: "50%" }}
-                                        />
+                                            <CommonButton
+                                                variant="outlined"
+                                                text="Clear selection"
+                                                onClick={() => handleInputChange(attr, "")}
+                                                sx={{ width: "30%" }}
+                                            />
                                         )}
                                     </Box>
                                 </Grid2>
@@ -408,6 +453,54 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
         </Card>
     );
 
+
+    const usedAttributes = new Set();
+
+    const baseEngineFields = fields?.filter(field =>
+        field.attribute && field.attribute.includes("_engine_")
+    );
+
+    baseEngineFields?.forEach(f => {
+        if (f.attribute) usedAttributes?.add(f.attribute);
+    });
+
+    groupedOzoneFields?.forEach(group => {
+        if (group.equipment?.attribute) usedAttributes?.add(group.equipment.attribute);
+        if (group.location?.attribute) usedAttributes?.add(group.location.attribute);
+        if (group.substance?.attribute) usedAttributes.add(group.substance.attribute);
+    });
+
+    groupedHcfcFields.forEach(group => {
+        if (group.equipment?.attribute) usedAttributes.add(group.equipment.attribute);
+        if (group.location?.attribute) usedAttributes.add(group.location.attribute);
+        if (group.substance?.attribute) usedAttributes.add(group.substance.attribute);
+    });
+
+    groupedEquivalentFields.forEach(group => {
+        if (group.equipment?.attribute) usedAttributes.add(group.equipment.attribute);
+        if (group.location?.attribute) usedAttributes.add(group.location.attribute);
+        if (group.reference?.attribute) usedAttributes.add(group.reference.attribute);
+    });
+
+    vocFields.forEach(f => {
+        if (f.attribute) usedAttributes.add(f.attribute);
+    });
+
+    checkboxFields.forEach(f => {
+        if (f.attribute) usedAttributes.add(f.attribute);
+    });
+
+    radioFields.forEach(f => {
+        if (f.attribute) usedAttributes.add(f.attribute);
+    });
+
+    remarksFields.forEach(f => {
+        if (f.attribute) usedAttributes.add(f.attribute);
+    });
+    const remainingFields = fields?.filter(f => {
+        return f.attribute && !usedAttributes.has(f.attribute);
+    });
+
     const renderEngineTable = () => {
         const engineNumbers = Object.keys(groupedEngineFields)
             .filter(key => key !== 'undefined' && !!groupedEngineFields[key])
@@ -461,6 +554,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
             { key: '14', label: 'AM Not Applicable' }
         ];
 
+        console.log(remainingFields, "remainingFields")
         return (
             <Card variant="outlined" sx={{ mb: 2 }}>
                 <CardContent>
@@ -764,6 +858,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                         {renderBasicFields([...checkboxFields])}
                         {renderBasicFields([...radioFields])}
                         {renderBasicFields([...remarksFields])}
+
                     </AccordionDetails>
                 </Accordion>
                 <Accordion
@@ -795,6 +890,28 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                                 { key: 'reference', label: 'Approval Reference' }
                             ]
                         )}
+                    </AccordionDetails>
+                </Accordion>
+                <Accordion
+                    expanded={expandedSection === "hcfc"}
+                    onChange={() => setExpandedSection(expandedSection === "hcfc" ? null : "hcfc")}
+                    sx={{ mb: 2 }}
+                >
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                        <Typography variant="h6">
+                            Others
+                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                                ({
+                                    remainingFields?.filter(group =>
+                                        (group?.attribute && formValues[group.attribute])
+                                    ).length
+                                }/{remainingFields?.length})
+                            </Typography>
+
+                        </Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        {renderBasicFields([...remainingFields])}
                     </AccordionDetails>
                 </Accordion>
             </DialogContent>
