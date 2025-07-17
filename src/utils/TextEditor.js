@@ -1,16 +1,18 @@
 import { Editor } from '@tinymce/tinymce-react';
 import { useEffect, useState, useCallback } from "react";
-import { getAllSystemVariables, getSpecificClient, getSurveyReportData } from "../api";
+import { getAllClassificationSurveys, getAllSystemVariables, getSpecificClient, getSurveyReportData, uploadSurveyReport } from "../api";
 import { toast } from "react-toastify";
 import { PDFDocument } from "pdf-lib";
 import html2canvas from "html2canvas";
 import moment from 'moment';
 import CommonButton from '@/components/CommonButton';
 import { Box } from '@mui/material';
-import SurveyDialog from '@/components/Dialogs/SurveyDialog';
 import Loader from '@/components/Loader';
+import { addYears, subMonths, format } from "date-fns";
+import { useRouter } from 'next/navigation';
 
 const TextEditor = ({ id }) => {
+    const router = useRouter()
     const [reportDetails, setReportDetails] = useState(null);
     const [clientData, setClientData] = useState();
     const [loading, setLoading] = useState(true);
@@ -18,7 +20,6 @@ const TextEditor = ({ id }) => {
     const [classificationData, setClassificationData] = useState([]);
     const [statutoryData, setStatutoryData] = useState([]);
     const [systemVariables, setSystemVariables] = useState()
-    const [show, setShow] = useState(false);
     const today = moment();
     const companyName = systemVariables?.data?.find(item => item.name === "company_name")?.information || '[companyName]';
     const companyLogo = systemVariables?.data?.find(item => item.name === "company_logo")?.information || '[logoUrl]';
@@ -27,9 +28,14 @@ const TextEditor = ({ id }) => {
         getSystemVariables()
     }, [])
 
+    const getAllClassification = async () => {
+        const response = await getAllClassificationSurveys(id)
+        setClassificationData(response.data.data)
+
+    }
     useEffect(() => {
-        setShow(true)
-    }, [id])
+        getAllClassification()
+    }, [])
 
     const getSystemVariables = async () => {
         try {
@@ -134,15 +140,27 @@ const TextEditor = ({ id }) => {
                     height: scaledHeight,
                 });
             }
-
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes], { type: "application/pdf" });
+
+            const file = new File([blob], "survey-status-report.pdf", { type: "application/pdf" });
+            const formData = new FormData();
+            formData.append("clientId", id);
+            formData.append("generatedDoc", file);
+
+            const res = await uploadSurveyReport(formData);
+            if (res) {
+                toast.success("Survey Status Report Downloaded Successfully");
+            }
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.download = "survey-report.pdf";
+            link.download = "survey-status-report.pdf";
+            document.body.appendChild(link);
             link.click();
+            document.body.removeChild(link);
             URL.revokeObjectURL(url);
+
 
         } finally {
             contentBody.style.overflow = originalOverflow;
@@ -151,32 +169,16 @@ const TextEditor = ({ id }) => {
         }
     };
 
-    const calculateDueDate = (assignmentDate) => {
-        return moment(assignmentDate).add(5, 'years');
-    };
+    const getClassName = (dueDate, today) => {
+        if (!dueDate) return '';
 
-    const calculateRangeDate = (dueDate) => {
-        return moment(dueDate).subtract(3, 'months');
-    };
-
-    const getClassName = (dueDate) => {
-        if (!dueDate) return 'status-icon expiring3m';
         const due = moment(dueDate);
         if (!due.isValid()) {
             console.warn('Invalid date provided to getClassName:', dueDate);
             return 'status-icon expiring3m';
         }
+
         const daysDiff = due.diff(today, 'days');
-
-        // console.log('Date comparison:', {
-        //     inputDate: dueDate,
-        //     momentDate: due.format('DD-MM-YYYY'),
-        //     today: today.format('DD-MM-YYYY'),
-        //     daysDiff: daysDiff,
-        //     isBefore: due.isBefore(today),
-        //     isValid: due.isValid()
-        // });
-
         if (daysDiff < 0) {
             return 'status-icon expired';
         }
@@ -187,8 +189,39 @@ const TextEditor = ({ id }) => {
             return 'status-icon expiring3m';
         }
 
-        // Default case for dates further in the future
-        return 'status-icon expiring3m';
+        return '';
+    };
+
+
+    const getClassRangeIcon = (rangeTo, currentDate, rangeFrom) => {
+        if (!rangeTo) {
+            console.warn("Missing rangeTo");
+            return '';
+        }
+
+        const to = moment(rangeTo);
+        const from = rangeFrom ? moment(rangeFrom) : null;
+        const today = moment(currentDate);
+
+        if (!to.isValid()) {
+            console.warn('Invalid rangeTo:', rangeTo);
+            return '';
+        }
+
+        if (to.isBefore(today, 'day')) {
+            return 'status-icon expired';
+        }
+
+        const daysDiff = to.diff(today, 'days');
+        if (daysDiff <= 30) {
+            return 'status-icon expiring1m';
+        }
+
+        if (from?.isValid() && today.isSameOrAfter(from, 'day') && today.isSameOrBefore(to, 'day')) {
+            return 'status-icon expiring3m';
+        }
+
+        return '';
     };
 
     // const getStatusText = (dueDate) => {
@@ -223,6 +256,96 @@ const TextEditor = ({ id }) => {
     // };
 
     // Function to handle dynamic updates in TinyMCE
+    // const calculateDates = (issuanceDate) => {
+    //     if (!issuanceDate) return { dueDate: "", rangeDate: "" };
+
+    //     const issuanceDateObj = new Date(issuanceDate);
+    //     const dueDateObj = addYears(issuanceDateObj, 5);
+    //     const rangeDateObj = reportDetails?.typeOfCertificate === "full_term" ? subMonths(dueDateObj, 6) : subMonths(dueDateObj, 3);
+
+    //     return {
+    //         dueDate: format(dueDateObj, "yyyy-MM-dd"),
+    //         rangeDate: format(rangeDateObj, "yyyy-MM-dd"),
+    //     };
+    // };
+
+    const calculateDates = (issuanceDate) => {
+        if (!issuanceDate) return { dueDate: "", rangeFrom: "", rangeTo: "" };
+
+        const issuanceDateObj = new Date(issuanceDate);
+        const dueDateObj = addYears(issuanceDateObj, 5);
+        const rangeFromObj = subMonths(dueDateObj, 3);
+        const rangeToObj = addYears(issuanceDateObj, 5);
+        const rangeToPlus = addYears(issuanceDateObj, 5);
+        const rangeToFinal = addYears(issuanceDateObj, 5);
+        const rangeToPlus3 = addYears(subMonths(issuanceDateObj, -3), 5);
+
+        return {
+            dueDate: format(dueDateObj, "yyyy-MM-dd"),
+            rangeFrom: format(rangeFromObj, "yyyy-MM-dd"),
+            rangeTo: format(rangeToPlus3, "yyyy-MM-dd")
+        };
+    };
+
+    const populateStatutoryRows = (surveyDataList) => {
+        if (!surveyDataList || surveyDataList.length === 0)
+            return;
+
+        const surveyMap = {};
+
+        surveyDataList.forEach((survey) => {
+            const surveyName = survey.activity?.surveyTypes?.report?.name || "";
+
+            if (!surveyName) return;
+
+            if (!surveyMap[surveyName]) {
+                surveyMap[surveyName] = survey;
+            } else {
+                const existing = surveyMap[surveyName];
+                const existingDate = new Date(existing.updatedAt);
+                const currentDate = new Date(survey.updatedAt);
+
+                if (currentDate > existingDate) {
+                    surveyMap[surveyName] = survey;
+                }
+            }
+        });
+
+        const uniqueSurveys = Object.values(surveyMap);
+
+        return uniqueSurveys.map((survey) => {
+            const surveyName = survey.activity?.surveyTypes?.report?.name || "";
+            const surveyDate = survey.surveyDate ? format(new Date(survey.surveyDate), "yyyy-MM-dd") : "";
+            const issuanceDate = survey.issuanceDate ? format(new Date(survey.issuanceDate), "yyyy-MM-dd") : "";
+
+            let dueDate = "";
+            let rangeFrom = "";
+            let rangeTo = "";
+
+            if (issuanceDate) {
+                const { dueDate: d, rangeFrom: r, rangeTo: t } = calculateDates(issuanceDate);
+                dueDate = d;
+                rangeFrom = r;
+                rangeTo = t;
+            }
+
+            return {
+                surveyName,
+                surveyDate,
+                issuanceDate,
+                dueDate,
+                rangeFrom,
+                rangeTo,
+                postponedDate: "",
+            };
+        });
+    };
+
+    useEffect(() => {
+        const statutory = populateStatutoryRows(reportDetails);
+        setStatutoryData(statutory);
+    }, [reportDetails])
+
     const updateStatusIcons = (editor) => {
         const editorDoc = editor.getDoc();
         const currentToday = moment();
@@ -266,7 +389,7 @@ const TextEditor = ({ id }) => {
         // Function to get status text
         const getDynamicStatusText = (dateStr) => {
             const date = parseDate(dateStr);
-            if (!date) return 'No date set';
+            if (!date) return '';
 
             const daysDiff = date.diff(currentToday, 'days');
 
@@ -352,48 +475,38 @@ const TextEditor = ({ id }) => {
             const surveyName = formatSurveyName(row.surveyName);
             const issuanceDate = row.issuanceDate;
             const surveyDate = row.surveyDate;
-            let dueDate = row.dueDate;
-            let rangeDate = row.rangeDate;
-            const postponedDate = row.postponedDate;
-            const status = ""
-            // const status = row.status || getStatusText(dueDate) || "";
-
+            let rangeTo = row.rangeTo ? moment(row.rangeTo).format("YYYY-MM-DD") : null;
+            let rangeFrom = row.rangeFrom ? moment(row.rangeFrom).format("YYYY-MM-DD") : null;
+            const postponedDate = row.postponed;
+            const currentDate = new Date().toISOString().split('T')[0];
             return `
             <tr>
               <td>${surveyName}</td>
-              <td>${`<span class="${getClassName(surveyDate)}">S</span>`}</td>
+              <td>${getClassRangeIcon(rangeTo, currentDate, rangeFrom) ? `<span class="${getClassRangeIcon(rangeTo, currentDate, rangeFrom)}">C</span>` : ''}</td>              
               <td>${surveyDate ? moment(surveyDate).format('DD/MM/YYYY') : ''}</td>
               <td>${issuanceDate ? moment(issuanceDate).format('DD/MM/YYYY') : ''}</td>
-              <td>${dueDate ? moment(dueDate).format('DD/MM/YYYY') : ''}</td>
-              <td>${dueDate ? `${moment(dueDate).format('DD/MM/YYYY')} - ${moment(rangeDate).format('DD/MM/YYYY')}` : ''}</td>
-              <td>${postponedDate}</td>
-              <td>${status}</td>
+              <td>${reportDetails.typeOfCertificate == "full_term" ? `${moment(rangeFrom).format('DD/MM/YYYY')} - ${moment(rangeTo).format('DD/MM/YYYY')}` : ''}</td>
+              <td>${postponedDate ? moment(postponedDate).format('DD/MM/YYYY') : ''}</td>
             </tr>
           `;
         }).join("");
 
-        const statutoryRows = statutoryData.map((row) => {
+        const statutoryRows = statutoryData?.map((row) => {
             const surveyName = row.surveyName;
             const surveyDate = row.surveyDate;
             const issuanceDate = row.issuanceDate;
-            let dueDate = row.dueDate;
-            let rangeDate = row.rangeDate;
-            const postponedDate = row.postponedDate;
-            const status = ""
-
-            // const status = row.status || getStatusText(dueDate);
+            let rangeTo = row.rangeTo;
+            let rangeFrom = row.rangeFrom;
+            const postponedDate = "";
+            const currentDate = new Date().toISOString().split('T')[0];
 
             return `
             <tr>
-              <td style="width: 250px;">${surveyName}</td>
-
-              <td><span class="${getClassName(dueDate)}">S</span></td>
-              <td>${surveyDate ? moment(surveyDate).format('DD/MM/YYYY') : ''}</td>
+              <td style="width: 220px;">${surveyName}</td>
+              <td>${getClassRangeIcon(rangeTo, currentDate, rangeFrom) ? `<span class="${getClassRangeIcon(rangeTo, currentDate, rangeFrom)}">C</span>` : ''}</td>              <td>${surveyDate ? moment(surveyDate).format('DD/MM/YYYY') : ''}</td>
               <td>${issuanceDate ? moment(issuanceDate).format('DD/MM/YYYY') : ''}</td>
-              <td>${dueDate ? moment(dueDate).format('DD/MM/YYYY') : ''}</td>
-              <td style="width: 150px;">${dueDate ? `${moment(dueDate).format('DD/MM/YYYY')} - ${moment(rangeDate).format('DD/MM/YYYY')}` : ''}</td>
+              <td>${reportDetails.typeOfCertificate == "full_term" ? `${moment(rangeFrom).format('DD/MM/YYYY')} - ${moment(rangeTo).format('DD/MM/YYYY')}` : ''}</td>
               <td>${postponedDate}</td>
-              <td>${status}</td>
             </tr>
           `;
         }).join("");
@@ -407,18 +520,6 @@ const TextEditor = ({ id }) => {
 
                 const expiryFormatted = expiry ? moment(expiry).format('YYYY-MM-DD') : null;
 
-                console.log('Certificate processing:', {
-                    name: name,
-                    expiryRaw: expiry,
-                    expiryFormatted: expiryFormatted,
-                    expiryMoment: moment(expiry).format('YYYY-MM-DD'),
-                    today: today.format('YYYY-MM-DD'),
-                    daysDiff: moment(expiry).diff(today, 'days'),
-                    className: getClassName(expiryFormatted)
-                });
-
-
-
                 const type = cert?.typeOfCertificate === "short_term"
                     ? "ST"
                     : cert?.typeOfCertificate === "full_term"
@@ -430,12 +531,12 @@ const TextEditor = ({ id }) => {
                                 : cert?.typeOfCertificate || "[Type]";
 
                 // const status = cert?.activity?.status;
-                const status = "Completed"
-
+                const status = ""
+                const currentDate = new Date().toISOString().split('T')[0];
                 return `
             <tr>
               <td>${name}</td>
-              <td><span class="${getClassName(expiryFormatted)}">C</span></td>
+              <td>${getClassName(expiryFormatted, currentDate) ? `<span class="${getClassName(expiryFormatted, currentDate)}">C</span>` : ''}</td>
               <td>${issued}</td>
               <td>${expiry ? moment(expiry).format('DD/MM/YYYY') : ''}</td>
               <td></td>
@@ -479,10 +580,8 @@ const TextEditor = ({ id }) => {
                     <th></th>
                     <th>Survey Date</th>
                     <th>Issuance Date</th>
-                    <th>Due Date</th>
                     <th>Range (from, to)</th>
                     <th>Postponed</th>
-                    <th>Status</th>
                 </tr>
                 ${classificationRows}
             </table>
@@ -496,10 +595,8 @@ const TextEditor = ({ id }) => {
                     <th></th>
                     <th>SurveyDate</th>
                     <th>Issuance Date</th>
-                    <th>Due Date</th>
                     <th>Range (from, to)</th>
                     <th>Postponed</th>
-                    <th>Status</th>
                 </tr>
                 ${statutoryRows}
             </table>
@@ -646,29 +743,6 @@ const TextEditor = ({ id }) => {
     }, [clientData, reportDetails, classificationData, statutoryData]);
 
     useEffect(() => {
-        const classification = localStorage.getItem("classification");
-        const statutory = localStorage.getItem("statutory");
-
-        if (classification) {
-            try {
-                setClassificationData(JSON.parse(classification));
-            } catch (e) {
-                console.error('Error parsing classification data:', e);
-                setClassificationData([]);
-            }
-        }
-
-        if (statutory) {
-            try {
-                setStatutoryData(JSON.parse(statutory));
-            } catch (e) {
-                console.error('Error parsing statutory data:', e);
-                setStatutoryData([]);
-            }
-        }
-    }, [show]);
-
-    useEffect(() => {
         if (clientData && reportDetails) {
             const newContent = generateHtmlContent();
             setEditorContent(newContent);
@@ -677,7 +751,6 @@ const TextEditor = ({ id }) => {
 
     const handleEditorChange = (content) => {
         setEditorContent(content);
-        console.log('Editor content changed:', content);
     };
 
     const getShipData = async (clientId) => {
@@ -1049,11 +1122,10 @@ const TextEditor = ({ id }) => {
                 }}
             />
             <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-                <CommonButton onClick={() => setShow(true)} text="Back" />
+                <CommonButton onClick={() => router.push('/clients')} text="Back" />
                 <CommonButton onClick={downloadEditorContentAsPdf} text="Download PDF" />
             </Box>
-            
-            <SurveyDialog open={show} onClose={() => setShow(false)} update={id} surveyData={reportDetails} />
+
         </>
     );
 };

@@ -28,8 +28,12 @@ export const sidemenu_items = [
     to: "/documents",
   },
   {
-    label: "Settings",
+    label: "System Variables",
     to: "/system-variables",
+  },
+  {
+    label: "Classification",
+    to: "/classification",
   },
 ];
  

@@ -5,8 +5,6 @@ export const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_SERVER_URL,
 });
 
-
-
 //axios instance
 axiosInstance.interceptors.request.use(
   function (config) {
@@ -735,14 +733,14 @@ export const createSystemVariable = async (payload) => {
   let result;
   try {
     const config = {};
-    
+
     // If payload is FormData (for image upload), set appropriate headers
     if (payload instanceof FormData) {
       config.headers = {
         'Content-Type': 'multipart/form-data',
       };
     }
-    
+
     result = await axiosInstance.post(`/api/systemData`, payload, config);
   } catch (e) {
     result = e;
@@ -790,14 +788,14 @@ export const updateSystemVariable = async (id, payload) => {
   let result;
   try {
     const config = {};
-    
+
     // If payload is FormData (for image upload), set appropriate headers
     if (payload instanceof FormData) {
       config.headers = {
         'Content-Type': 'multipart/form-data',
       };
     }
-    
+
     result = await axiosInstance.patch(`/api/systemData/${id}`, payload, config);
   } catch (e) {
     result = e;
@@ -811,6 +809,66 @@ export const getSurveyReportData = async (clientId) => {
     result = await axiosInstance.get(`/api/reportDetails?filterKey=activity.journal.clientId&filterValue=${clientId}`);
   } catch (error) {
     result = error;
+  }
+  return result;
+};
+
+export const addClassificationSurvey = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/api/classificationSurveys`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const deleteClassificationSurvey = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.delete(`/api/classificationSurveys/${id}`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const updateClassificationSurvey = async (id, payload) => {
+  let result;
+  try {
+    result = await axiosInstance.patch(`/api/classificationSurveys/${id}`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const getAllClassificationSurveys = async (clientId) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/classificationSurveys?filterKey=clientId&filterValue=${clientId}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const getSingleClassificationSurveyDetails = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/classificationSurveys/${id}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const uploadSurveyReport = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/api/surveyStatusReports`, payload);
+  } catch (e) {
+    result = e;
   }
   return result;
 };

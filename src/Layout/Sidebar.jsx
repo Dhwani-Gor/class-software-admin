@@ -35,7 +35,7 @@ const SidebarComponent = ({ isSidebarOpen }) => {
       );
     } else if (roleId === "2") {
       return sidemenu_items.filter((item) =>
-        ["Journal", "Reporting", "Issued Documents", "Survey Types", "Documents", "Settings"].includes(item.label)
+        ["Journal", "Reporting", "Issued Documents", "Survey Types", "Documents", "Settings", "Classification"].includes(item.label)
       );
     }
     return [];
