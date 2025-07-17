@@ -231,7 +231,7 @@ const ClassificationForm = ({ mode = "create", variableId = null }) => {
     return (
         <Stack mt={4} spacing={4}>
             <Paper sx={{ padding: "20px", borderRadius: "15px" }}>
-                <Box mt={3}>
+                <Box>
                     {mode === "create" && (
                         <Box>
                             <FormControl fullWidth sx={{ maxWidth: 300 }}>
@@ -255,8 +255,8 @@ const ClassificationForm = ({ mode = "create", variableId = null }) => {
                     )}
                 </Box>
 
-                <Box mt={4}>
-                    <Typography variant="h6">Classification Surveys</Typography>
+                <Box>
+                    <Typography variant="h6" mb={2}>Classification Surveys</Typography>
                     {classificationRows.map((row, index) => (
                         <Box
                             key={index}
