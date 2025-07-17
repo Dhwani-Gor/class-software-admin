@@ -605,10 +605,10 @@ export const updateDocument = async (id, payload) => {
   return result;
 };
 
-export const deleteDocument = async (payload) => {
+export const deleteDocument = async (id) => {
   let result;
   try {
-    result = await axiosInstance.delete(`/api/reports/${payload.id}`);
+    result = await axiosInstance.delete(`/api/reports/${id}`);
   } catch (e) {
     result = e;
   }
@@ -867,6 +867,26 @@ export const uploadSurveyReport = async (payload) => {
   let result;
   try {
     result = await axiosInstance.post(`/api/surveyStatusReports`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const getAllSurveyStatusReport = async () => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/surveyStatusReports`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const deleteSurveyReport = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.delete(`/api/surveyStatusReports/${id}`);
   } catch (e) {
     result = e;
   }

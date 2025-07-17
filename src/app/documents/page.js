@@ -21,11 +21,11 @@ import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import CommonInput from "@/components/CommonInput";
-import { deleteDocument, getAllDocuments } from "@/api";
+import { deleteDocument, getAllDocuments, getAllSurveyStatusReport, deleteSurveyReport } from "@/api";
 import { toast } from "react-toastify";
 import PreviewIcon from '@mui/icons-material/Visibility';
 import DialogContent from "@mui/material/DialogContent";
-import { CopyAll } from "@mui/icons-material";
+import moment from "moment";
 
 const Documents = () => {
   const router = useRouter();
@@ -34,27 +34,23 @@ const Documents = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
   const [documents, setDocuments] = useState([]);
+  const [reports, setReports] = useState([]);
   const [filteredDocuments, setFilteredDocuments] = useState([]);
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [limit, setLimit] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [selectedDocument, setSelectedDocument] = useState({ });
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [previewFile, setPreviewFile] = useState(null);
   const [openPreviewModal, setOpenPreviewModal] = useState(false);
   const [loadingPreview, setLoadingPreview] = useState(false);
 
-  const snackbarClose = () => {
-    setSnackBar({ open: false, message: "" });
-  };
-
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
     }, 300);
-
     return () => clearTimeout(handler);
   }, [search]);
 
@@ -68,42 +64,54 @@ const Documents = () => {
         applyFilters(docs, selectedFilter);
         setTotalRows(docs.length);
       } else {
-        toast.error("Something went wrong! Please try again after some time");
+        toast.error("Something went wrong! Please try again later.");
       }
-      setLoading(false);
     } catch (error) {
-      setLoading(false);
       toast.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAllReports = async () => {
+    try {
+      setLoading(true);
+      const result = await getAllSurveyStatusReport();
+      if (result?.data?.status === "success") {
+        const docs = result.data.data;
+        setReports(docs);
+      } else {
+        toast.error("Something went wrong! Please try again later.");
+      }
+    } catch (error) {
+      toast.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchAllDocuments();
+    fetchAllReports();
   }, []);
 
-  // Apply filters based on selected chip and search text
   const applyFilters = (docs, filter) => {
     let filtered = [...docs];
-
-    // Filter by search text
     if (debouncedSearch) {
       filtered = filtered.filter(doc =>
         doc.name.toLowerCase().includes(debouncedSearch.toLowerCase())
       );
     }
 
-    // Filter by document type (Reports = odd index, Certificates = even index)
     if (filter === "reports") {
-      filtered = filtered.filter((document, index) => document.type === "report"); // Odd indexed
+      filtered = filtered.filter((document, index) => document.type === "report");
     } else if (filter === "certificates") {
-      filtered = filtered.filter((document, index) => document.type === "certificate"); // Even indexed
+      filtered = filtered.filter((document, index) => document.type === "certificate");
     }
-
     setFilteredDocuments(filtered);
     setTotalRows(filtered.length);
   };
 
-  // Update filters when search changes
   useEffect(() => {
     applyFilters(documents, selectedFilter);
   }, [debouncedSearch, selectedFilter]);
@@ -117,28 +125,25 @@ const Documents = () => {
     setPage(1);
   };
 
-  const handleDeleteClick = (documentId) => {
-    setSelectedDocument(documentId);
-    setOpenDialog(true);
-  };
-
-  const handleDuplicateClick = (documentId) => {
-    setSelectedDocument(documentId);
-    router.push(`/documents/${documentId}?mode=duplicate`);
-  };
-  
   const handleConfirmDelete = async () => {
     setOpenDialog(false);
     if (!selectedDocument) return;
     try {
-      const res = await deleteDocument({ id: selectedDocument });
-      if (res?.data?.message) {
-        setSnackBar({ open: true, message: res.data.message });
+      if (selectedDocument.type === "document") {
+        console.log(selectedDocument.id,"docuemnt id")
+        const res = await deleteDocument(selectedDocument.id);
+        if (res?.data?.message) {
+          setSnackBar({ open: true, message: res.data.message });
+          fetchAllDocuments();
+        }
+      } else if (selectedDocument.type === "report") {
+        await deleteSurveyReport(selectedDocument.id);
+        toast.success("Report deleted successfully");
+        fetchAllReports();
       }
-      fetchAllDocuments();
     } catch (e) {
-      console.error("Error deleting Document:", e.response?.data || e.message);
-      setSnackBar({ open: true, message: "Failed to delete Document." });
+      console.error("Error deleting:", e.response?.data || e.message);
+      toast.error("Failed to delete.");
     }
   };
 
@@ -161,34 +166,9 @@ const Documents = () => {
       renderCell: (params) => {
         return (page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1;
       }
-    },    
+    },
     { field: "name", headerName: "Document Name", flex: 1.5 },
     { field: "type", headerName: "Document Type", flex: 0.5 },
-    // {
-    //   field: "fullTermFilePath || interimFilePath || shortTermFilePath",
-    //   headerName: "File Preview",
-    //   width: 100,
-    //   renderCell: (params) => (
-    //     params.row.fullTermFilePath || params.row.interimFilePath || params.row.shortTermFilePath ? (
-    //       <Tooltip title="Preview Document">
-    //         <IconButton
-    //           color="info"
-    //           onClick={() => {
-    //             setPreviewFile(params.row.fullTermFilePath || params.row.interimFilePath || params.row.shortTermFilePath);
-    //             setLoadingPreview(true);
-    //             setOpenPreviewModal(true);
-    //           }}
-    //         >
-    //           <PreviewIcon />
-    //         </IconButton>
-    //       </Tooltip>
-    //     ) : (
-    //       <Typography variant="body2" color="textSecondary">
-    //         No File
-    //       </Typography>
-    //     )
-    //   ),
-    // },
     {
       field: "actions",
       headerName: "Actions",
@@ -203,29 +183,79 @@ const Documents = () => {
               <EditIcon />
             </IconButton>
           </Tooltip>
-          {/* <Tooltip title="Duplicate Document">
-            <IconButton
-              color="primary"
-              onClick={() => handleDuplicateClick(params?.id)}
-            >
-              <CopyAll />
-            </IconButton>
-          </Tooltip> */}
           <Tooltip title="Delete Document">
             <IconButton
               color="error"
-              onClick={() => handleDeleteClick(params?.id)}
+              onClick={() => {
+                setSelectedDocument({ id: params?.id, type: "document" });
+                setOpenDialog(true);
+              }}
             >
               <DeleteIcon />
             </IconButton>
           </Tooltip>
-          
         </Stack>
       ),
     },
   ];
 
-  // Calculate pagination
+  const surveyColumns = [
+    {
+      field: "index",
+      headerName: "No.",
+      flex: 0.5,
+      sortable: false,
+      renderCell: (params) => {
+        return (page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1;
+      }
+    },
+    
+    {
+      field: "generatedDoc",
+      headerName: "Generated Document",
+      flex: 3,
+      renderCell: (params) => (<Typography variant="body2" sx={{height:"100%",display:'flex',alignItems:'center',overflow:'hidden',textOverflow:'ellipsis'}}>{params.value}</Typography>)
+    },
+    {
+        field:'createdAt',
+        headerName:'Created At',
+        flex:1,
+        renderCell: (params) => (<Typography variant="body2" sx={{height:"100%",display:'flex',alignItems:'center',overflow:'hidden'}}>{moment(params.value).format("DD-MM-YYYY")}</Typography>)
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 150,
+      renderCell: (params) => (
+        <Stack direction="row" spacing={1}>
+          <Tooltip title="Preview Report">
+            <IconButton
+              color="info"
+              onClick={() => {
+                setPreviewFile(params.row.generatedDoc);
+                setLoadingPreview(true);
+                setOpenPreviewModal(true);
+              }}
+            >
+              <PreviewIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete Report">
+            <IconButton
+              color="error"
+              onClick={() => {
+                setSelectedDocument({ id: params?.id, type: "report" });
+                setOpenDialog(true);
+              }}
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      ),
+    },
+  ];
+
   const startIndex = (page - 1) * limit;
   const endIndex = startIndex + limit;
   const paginatedDocuments = filteredDocuments.slice(startIndex, endIndex);
@@ -233,57 +263,29 @@ const Documents = () => {
   return (
     <Layout>
       <CommonCard sx={{ mt: 0 }}>
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-        >
-          <Typography variant="h4" fontWeight={700}>
-            Documents
-          </Typography>
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
+          <Typography variant="h4" fontWeight={700}>Documents</Typography>
           <CommonButton
             sx={{ textTransform: "capitalize" }}
             text="Add Document"
             variant="contained"
-            onClick={() => {
-              router.push("/documents/create");
-            }}
+            onClick={() => router.push("/documents/create")}
           />
         </Stack>
       </CommonCard>
 
       <CommonCard>
         <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-          <Chip
-            label="All"
-            color={selectedFilter === "all" ? "primary" : "default"}
-            onClick={() => handleFilterChange("all")}
-            clickable
-            sx={{
-              fontWeight: selectedFilter === "all" ? 600 : 400,
-              px: 2
-            }}
-          />
-          <Chip
-            label="Reports"
-            color={selectedFilter === "reports" ? "primary" : "default"}
-            onClick={() => handleFilterChange("reports")}
-            clickable
-            sx={{
-              fontWeight: selectedFilter === "reports" ? 600 : 400,
-              px: 2
-            }}
-          />
-          <Chip
-            label="Certificates"
-            color={selectedFilter === "certificates" ? "primary" : "default"}
-            onClick={() => handleFilterChange("certificates")}
-            clickable
-            sx={{
-              fontWeight: selectedFilter === "certificates" ? 600 : 400,
-              px: 2
-            }}
-          />
+          {["all", "reports", "certificates"].map(type => (
+            <Chip
+              key={type}
+              label={type.charAt(0).toUpperCase() + type.slice(1)}
+              color={selectedFilter === type ? "primary" : "default"}
+              onClick={() => handleFilterChange(type)}
+              clickable
+              sx={{ fontWeight: selectedFilter === type ? 600 : 400, px: 2 }}
+            />
+          ))}
         </Stack>
 
         <CommonInput
@@ -291,22 +293,18 @@ const Documents = () => {
           fullWidth
           value={search}
           onChange={handleSearchChange}
-          sx={{ marginBottom: 2 }}
+          sx={{ mb: 2 }}
         />
+
         <Box sx={{ width: "100%", mt: 4 }}>
           {loading ? (
-            <Box
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              height="300px"
-            >
+            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
               <CircularProgress />
             </Box>
-          ) : filteredDocuments.length > 0 ? (
+          ) : selectedFilter === "reports" ? (
             <DataGrid
-              rows={paginatedDocuments}
-              columns={columns}
+              rows={reports}
+              columns={surveyColumns}
               loading={loading}
               pagination={false}
               disableColumnFilter
@@ -315,21 +313,24 @@ const Documents = () => {
               disableDensitySelector
               disableRowSelectionOnClick
               hideFooter
-              sx={{
-                backgroundColor: "#fff",
-                border: "none",
-              }}
+              sx={{ backgroundColor: "#fff", border: "none" }}
             />
           ) : (
-            <Typography
-              variant="h6"
-              align="center"
-              sx={{ color: "gray", padding: 3 }}
-            >
-              No Data Found
-            </Typography>
+            <DataGrid
+              rows={paginatedDocuments}
+              columns={columns}
+              pagination={false}
+              disableColumnFilter
+              disableColumnMenu
+              disableColumnSelector
+              disableDensitySelector
+              disableRowSelectionOnClick
+              hideFooter
+              sx={{ backgroundColor: "#fff", border: "none" }}
+            />
           )}
         </Box>
+
         <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
           <Pagination
             count={Math.ceil(totalRows / limit)}
@@ -338,24 +339,19 @@ const Documents = () => {
             color="primary"
             variant="outlined"
             shape="rounded"
-            sx={{ marginTop: "10px" }}
           />
         </Box>
       </CommonCard>
 
       <Dialog open={openDialog} onClose={handleCancelDelete}>
-        <DialogTitle>Are you sure you want to delete this Document?</DialogTitle>
+        <DialogTitle>
+          Are you sure you want to delete this {selectedDocument?.type === "report" ? "Report" : "Document"}?
+        </DialogTitle>
         <DialogActions>
-          <Button onClick={handleCancelDelete} color="primary">
-            Cancel
-          </Button>
+          <Button onClick={handleCancelDelete} color="primary">Cancel</Button>
           <Button
             onClick={handleConfirmDelete}
-            sx={{
-              backgroundColor: "#ed2b1c",
-              color: "white",
-              fontWeight: "500",
-            }}
+            sx={{ backgroundColor: "#ed2b1c", color: "white", fontWeight: "500" }}
           >
             Delete
           </Button>
@@ -366,14 +362,11 @@ const Documents = () => {
         open={snackBar.open}
         autoHideDuration={2000}
         message={snackBar.message}
-        anchorOrigin={{
-          vertical: "top",
-          horizontal: "center",
-        }}
-        onClose={snackbarClose}
-        className="snackBarColor"
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        onClose={() => setSnackBar({ open: false, message: "" })}
         key="snackbar"
       />
+
       <Dialog
         open={openPreviewModal}
         onClose={() => setOpenPreviewModal(false)}
@@ -392,30 +385,20 @@ const Documents = () => {
                   position: 'absolute',
                   top: '10px',
                   right: '10px',
-                  zIndex: 1,
                   backgroundColor: '#4CAF50',
                   color: 'white',
                   padding: '8px 12px',
-                  border: 'none',
                   borderRadius: '4px',
                   textDecoration: 'none',
                   fontSize: '14px',
+                  zIndex:1,
+                  border:'none'
                 }}
               >
                 Download
-              </a>) : (
-              <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                height="100%"
-                position="absolute"
-                top={0}
-                left={0}
-                width="100%"
-                zIndex={0}
-                sx={{ backgroundColor: "rgba(255,255,255,0.8)" }}
-              >
+              </a>
+            ) : (
+              <Box display="flex" justifyContent="center" alignItems="center" height="100%">
                 <CircularProgress />
               </Box>
             )}
@@ -424,18 +407,14 @@ const Documents = () => {
               style={{ width: '100%', height: '100%', border: 'none' }}
               title="File Preview"
               onLoad={() => setLoadingPreview(false)}
-
             />
           </div>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenPreviewModal(false)} color="primary">
-            Close
-          </Button>
+          <Button onClick={() => setOpenPreviewModal(false)} color="primary">Close</Button>
         </DialogActions>
       </Dialog>
     </Layout>
   );
 };
-
 export default Documents;

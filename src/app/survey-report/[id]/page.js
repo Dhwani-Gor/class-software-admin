@@ -3,13 +3,14 @@ import React from "react";
 import Layout from "@/Layout";
 import TextEditor from "@/utils/TextEditor";
 import { use } from "react";
+import SurveyReport from "@/utils/SurveyReport";
 
-const GenerateSurveyReport = ({ params }) => {
+const GenerateSurveyStatusReport = ({ params }) => {
     const { id } = params
     return (
         <Layout>
-            <TextEditor id={id}/>
+            <SurveyReport id={id}/>
         </Layout>
     )
 }
-export default GenerateSurveyReport
+export default GenerateSurveyStatusReport

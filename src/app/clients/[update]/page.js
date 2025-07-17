@@ -12,13 +12,12 @@ import { useRouter } from "next/navigation";
 import CommonButton from "@/components/CommonButton";
 import EditingReasonDialog from "@/components/Dialogs/EditingReasonDialog";
 import EditHistoryDialog from "@/components/Dialogs/EditHistoryDialog";
-import { getClientHistory, getSpecificClient, getSurveyReportData } from "@/api";
+import { getClientHistory, getSpecificClient } from "@/api";
 import { toast } from "react-toastify";
 import { transformData } from "@/utils/helper";
-import SurveyDialog from "@/components/Dialogs/SurveyDialog";
 
 const UpdateClient = ({ params }) => {
-  const { update }= use(params); // ✅ unwrap the promise
+  const { update }= use(params);
   const router = useRouter();
   const [editHistoryDialog, setEditHistoryDialog] = useState(false);
   const [isEditDialogVisible, setIsEditDialogVisible] = useState(false);
@@ -26,8 +25,6 @@ const UpdateClient = ({ params }) => {
   const [changeHistory, setChangeHistory] = useState([]);
   const [editReason, setEditReason] = useState('');
   const [reportDetails, setReportDetails] = useState();
-  const [surveyData,setSurveyData]=useState();
-  const [loading,setLoading]=useState(false);
 
   const fetchClientsHistory = async () => {
     try {
@@ -63,10 +60,12 @@ const UpdateClient = ({ params }) => {
     getClient();
   }, []);
 
-  const handleClick = () => {
-    localStorage.removeItem("classification");
-    localStorage.removeItem("statutory");
+  const handleSurveyStatsReport = () => {
     router.push(`/survey-report/${update}`)
+  }
+
+  const handleClick = () => {
+    router.push(`/survey-status-report/${update}`)
   };
 
   return (
@@ -100,9 +99,12 @@ const UpdateClient = ({ params }) => {
               {reportDetails && (
                 <CommonButton variant="contained" fontWeight={"700"} 
                 onClick={handleClick}
-                text="Generate Survey Report">
-                  Generate Report
-                </CommonButton>
+                text="GENERATE SURVEY STATUS"/>
+              )}
+               {reportDetails && (
+                <CommonButton variant="contained" fontWeight={"700"} 
+                onClick={handleSurveyStatsReport}
+                text="GENERATE SURVEY REPORT"/>
               )}
             </>
           )}
