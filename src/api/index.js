@@ -843,10 +843,10 @@ export const updateClassificationSurvey = async (id, payload) => {
   return result;
 };
 
-export const getAllClassificationSurveys = async (clientId) => {
+export const getAllClassificationSurveys = async ({clientId, page, limit}) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/classificationSurveys?filterKey=clientId&filterValue=${clientId}`);
+    result = await axiosInstance.get(`/api/classificationSurveys?filterKey=clientId&filterValue=${clientId}&page=${page}&limit=${limit}`);
   } catch (error) {
     result = error;
   }
