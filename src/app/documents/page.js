@@ -35,14 +35,15 @@ const Documents = () => {
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
   const [documents, setDocuments] = useState([]);
   const [reports, setReports] = useState([]);
-  const [filteredDocuments, setFilteredDocuments] = useState([]);
-  const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
+  const [reportsPage, setReportsPage] = useState(Number(searchParams.get("repPage")) || 1);
+  const [documentsPage, setDocumentsPage] = useState(Number(searchParams.get("docPage")) || 1);
   const [limit, setLimit] = useState(10);
-  const [totalRows, setTotalRows] = useState(0);
+  const [documentsTotalRows, setDocumentsTotalRows] = useState(0);
+  const [reportsTotalRows, setReportsTotalRows] = useState(0);
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState({ });
-  const [selectedFilter, setSelectedFilter] = useState("all");
+  const [selectedFilter, setSelectedFilter] = useState("certificates");
   const [previewFile, setPreviewFile] = useState(null);
   const [openPreviewModal, setOpenPreviewModal] = useState(false);
   const [loadingPreview, setLoadingPreview] = useState(false);
@@ -57,12 +58,25 @@ const Documents = () => {
   const fetchAllDocuments = async () => {
     try {
       setLoading(true);
-      const result = await getAllDocuments();
+      
+      const params = {
+        page: documentsPage,
+        limit
+      };
+      
+      if (debouncedSearch) {
+        params.search = debouncedSearch;
+      }
+      
+      if (selectedFilter === "certificates") {
+        params.type = "certificate";
+      }
+      
+      const result = await getAllDocuments(params);
       if (result?.status === 200) {
-        const docs = result.data.data;
+        const docs = result?.data?.data;
         setDocuments(docs);
-        applyFilters(docs, selectedFilter);
-        setTotalRows(docs.length);
+        setDocumentsTotalRows(result?.data?.results || docs?.length);
       } else {
         toast.error("Something went wrong! Please try again later.");
       }
@@ -76,10 +90,20 @@ const Documents = () => {
   const fetchAllReports = async () => {
     try {
       setLoading(true);
-      const result = await getAllSurveyStatusReport();
+      
+      const params = {
+        page: reportsPage,
+        limit
+      };
+      
+      if (debouncedSearch) {
+        params.search = debouncedSearch;
+      }
+      const result = await getAllSurveyStatusReport({params});
       if (result?.data?.status === "success") {
         const docs = result.data.data;
         setReports(docs);
+        setReportsTotalRows(result.data.results || docs.length);
       } else {
         toast.error("Something went wrong! Please try again later.");
       }
@@ -91,38 +115,36 @@ const Documents = () => {
   };
 
   useEffect(() => {
-    fetchAllDocuments();
-    fetchAllReports();
-  }, []);
-
-  const applyFilters = (docs, filter) => {
-    let filtered = [...docs];
-    if (debouncedSearch) {
-      filtered = filtered.filter(doc =>
-        doc.name.toLowerCase().includes(debouncedSearch.toLowerCase())
-      );
+    if (selectedFilter === "certificates") {
+      fetchAllDocuments();
     }
-
-    if (filter === "reports") {
-      filtered = filtered.filter((document, index) => document.type === "report");
-    } else if (filter === "certificates") {
-      filtered = filtered.filter((document, index) => document.type === "certificate");
-    }
-    setFilteredDocuments(filtered);
-    setTotalRows(filtered.length);
-  };
+  }, [documentsPage, selectedFilter, debouncedSearch]);
 
   useEffect(() => {
-    applyFilters(documents, selectedFilter);
-  }, [debouncedSearch, selectedFilter]);
+    if (selectedFilter === "reports") {
+      fetchAllReports();
+    }
+  }, [reportsPage, selectedFilter, debouncedSearch]);
+
+  useEffect(() => {
+    if (selectedFilter === "certificates") {
+      fetchAllDocuments();
+    } else {
+      fetchAllReports();
+    }
+  }, []);
 
   const handleSearchChange = (event) => {
     setSearch(event.target.value);
+    setDocumentsPage(1);
+    setReportsPage(1);
   };
 
   const handleFilterChange = (newFilter) => {
     setSelectedFilter(newFilter);
-    setPage(1);
+    setSearch("");
+    setDocumentsPage(1);
+    setReportsPage(1);
   };
 
   const handleConfirmDelete = async () => {
@@ -130,7 +152,7 @@ const Documents = () => {
     if (!selectedDocument) return;
     try {
       if (selectedDocument.type === "document") {
-        console.log(selectedDocument.id,"docuemnt id")
+        console.log(selectedDocument.id,"document id")
         const res = await deleteDocument(selectedDocument.id);
         if (res?.data?.message) {
           setSnackBar({ open: true, message: res.data.message });
@@ -152,9 +174,22 @@ const Documents = () => {
     setOpenDialog(false);
   };
 
-  const handlePageChange = (event, value) => {
-    setPage(value);
-    router.push(`/documents?page=${value}&limit=${limit}`);
+  const handleDocumentsPageChange = (event, value) => {
+    setDocumentsPage(value);
+    const params = new URLSearchParams(searchParams);
+    params.set('docPage', value);
+    if (selectedFilter === "reports") {
+      params.set('repPage', reportsPage);
+    }
+    router.push(`/documents?${params.toString()}`);
+  };
+
+  const handleReportsPageChange = (event, value) => {
+    setReportsPage(value);
+    const params = new URLSearchParams(searchParams);
+    params.set('repPage', value);
+    params.set('docPage', documentsPage);
+    router.push(`/documents?${params.toString()}`);
   };
 
   const columns = [
@@ -164,7 +199,7 @@ const Documents = () => {
       flex: 0.3,
       sortable: false,
       renderCell: (params) => {
-        return (page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1;
+        return (documentsPage - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1;
       }
     },
     { field: "name", headerName: "Document Name", flex: 1.5 },
@@ -203,19 +238,25 @@ const Documents = () => {
     {
       field: "index",
       headerName: "No.",
-      flex: 0.5,
+      flex: 0.8,
       sortable: false,
       renderCell: (params) => {
-        return (page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1;
+        return (reportsPage - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1;
       }
     },
-    
+    {
+      field: "shipName",
+      headerName: "Ship Name",
+      flex: 1,
+      renderCell: (params) => (<Typography variant="body2" sx={{height:"100%",display:'flex',alignItems:'center',overflow:'hidden',textOverflow:'ellipsis'}}>{params.row.client?.shipName || 'N/A'}</Typography>)
+    },
     {
       field: "generatedDoc",
       headerName: "Generated Document",
       flex: 3,
       renderCell: (params) => (<Typography variant="body2" sx={{height:"100%",display:'flex',alignItems:'center',overflow:'hidden',textOverflow:'ellipsis'}}>{params.value}</Typography>)
     },
+  
     {
         field:'createdAt',
         headerName:'Created At',
@@ -256,10 +297,6 @@ const Documents = () => {
     },
   ];
 
-  const startIndex = (page - 1) * limit;
-  const endIndex = startIndex + limit;
-  const paginatedDocuments = filteredDocuments.slice(startIndex, endIndex);
-
   return (
     <Layout>
       <CommonCard sx={{ mt: 0 }}>
@@ -276,7 +313,7 @@ const Documents = () => {
 
       <CommonCard>
         <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-          {["all", "reports", "certificates"].map(type => (
+          {["certificates","reports"].map(type => (
             <Chip
               key={type}
               label={type.charAt(0).toUpperCase() + type.slice(1)}
@@ -317,7 +354,7 @@ const Documents = () => {
             />
           ) : (
             <DataGrid
-              rows={paginatedDocuments}
+              rows={documents}
               columns={columns}
               pagination={false}
               disableColumnFilter
@@ -333,9 +370,9 @@ const Documents = () => {
 
         <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
           <Pagination
-            count={Math.ceil(totalRows / limit)}
-            page={page}
-            onChange={handlePageChange}
+            count={selectedFilter === "reports" ? Math.ceil(reportsTotalRows / limit) : Math.ceil(documentsTotalRows / limit)}
+            page={selectedFilter === "reports" ? reportsPage : documentsPage}
+            onChange={selectedFilter === "reports" ? handleReportsPageChange : handleDocumentsPageChange}
             color="primary"
             variant="outlined"
             shape="rounded"
