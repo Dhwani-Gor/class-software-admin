@@ -183,9 +183,7 @@ const ClassificationForm = ({ mode = "create", variableId = null }) => {
         if (mode === "update" && variableId) {
             const updatedData = {
                 ...classificationRows[0],
-                clientId: Number(selectedShip.id),
-                dueDate: classificationRows[0].dueDate || calculateDates(classificationRows[0].issuanceDate).dueDate
-
+                clientId: Number(selectedShip.id)
             };
             updateClassificationSurvey(variableId, updatedData);
             router.push(`/classification?id=${selectedShip.id}`);
@@ -312,7 +310,7 @@ const ClassificationForm = ({ mode = "create", variableId = null }) => {
                                         type="date"
                                         label="Due Date"
                                         fullWidth
-                                        value={row.dueDate ? moment(row.dueDate).format("YYYY-MM-DD") : moment(row.issuanceDate).add(5, "days").format("YYYY-MM-DD")}
+                                        value={row.dueDate ? moment(row.dueDate).format("YYYY-MM-DD") : ""}
                                         onChange={(e) => handleChange("classification", index, "dueDate", e.target.value)}
                                         disabled
                                         InputLabelProps={{ shrink: true }}

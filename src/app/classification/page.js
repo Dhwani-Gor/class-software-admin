@@ -43,7 +43,6 @@ const Classifications = () => {
   const [deleteRow,setDeleteRow] = useState(null)
   const params = useSearchParams();
 
-  console.log(selectedShip.id, "selectedShip")
   const variableId = params.get("id");
 
   useEffect(() => {
@@ -104,22 +103,25 @@ const Classifications = () => {
   const getAllClassification = async () => {
     try {
       setLoading(true);
-      if(selectedShip.id == null) return;
-      const result = await getAllClassificationSurveys(selectedShip.id);
+      if (!selectedShip.id) return;
+  
+      const result = await getAllClassificationSurveys({clientId: selectedShip.id, page, limit});
+  
       if (result?.status === 200) {
-        console.log(result.data, "result")
         const data = result.data.data;
         setClassificationRows(data);
+        setTotalRows(result.data.results);
       } else {
-        toast.error("Something went wrong! Please try again after some time");
+        toast.error("Something went wrong! Please try again later");
       }
     } catch (error) {
-      console.error("Error fetching report details:", error);
-      toast.error(error.message || "Error fetching client data");
+      console.error("Error fetching classification data:", error);
+      toast.error(error.message || "Error fetching classification data");
     } finally {
       setLoading(false);
     }
   };
+  
   const handleDeleteRow = async (id) => {
     try {
       setOpenDialog(true);
@@ -134,9 +136,11 @@ const Classifications = () => {
   };
 
   useEffect(() => {
-    getAllClassification();
-  }, [selectedShip.id]);
-
+    if (selectedShip.id) {
+      getAllClassification();
+    }
+  }, [selectedShip.id, page]);
+  
   const handleClientChange = (event) => {
     const selectedId = event.target.value;
     const selectedClient = clientsList.find(client => client.id === selectedId);
@@ -147,7 +151,7 @@ const Classifications = () => {
   };
   const handlePageChange = (event, value) => {
     setPage(value);
-    router.push(`/clients?page=${value}&limit=${limit}`);
+    router.push(`/classification?page=${value}&limit=${limit}&id=${selectedShip.id}`);
   };
 
   const columns = [
