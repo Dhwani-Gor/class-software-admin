@@ -1,6 +1,6 @@
 import { Editor } from '@tinymce/tinymce-react';
 import { useEffect, useState, useCallback } from "react";
-import { getAllClassificationSurveys, getAllSystemVariables, getSpecificClient, getSurveyReportData, uploadSurveyReport } from "../api";
+import { getAllClassificationSurveys, getAllListClassificationSurveys, getAllSystemVariables, getSpecificClient, getSurveyReportData, uploadSurveyReport } from "../api";
 import { toast } from "react-toastify";
 import { PDFDocument } from "pdf-lib";
 import html2canvas from "html2canvas";
@@ -29,7 +29,7 @@ const TextEditor = ({ id }) => {
     }, [])
 
     const getAllClassification = async () => {
-        const response = await getAllClassificationSurveys(id)
+        const response = await getAllListClassificationSurveys({clientId:id})
         setClassificationData(response?.data?.data)
 
     }
@@ -477,6 +477,7 @@ console.log(contentBody.scrollHeight);
     const generateHtmlContent = useCallback(() => {
         if (!clientData || !reportDetails) return '';
         const classificationRows = classificationData?.map((row) => {
+
             const surveyName = formatSurveyName(row.surveyName);
             const issuanceDate = row.issuanceDate;
             const surveyDate = row.surveyDate;
@@ -578,6 +579,7 @@ console.log(contentBody.scrollHeight);
 
         const classificationSurveyTableHtml = `
             <div class="section-title">Classification Surveys</div>
+            ${classificationData?.length > 0 ? "" : "<div style='text-align: center;margin-bottom: 40px; font-size: 12px;'>No Classification Surveys found</div>"}
             <table class="">
                 <tr>
                     <th>Survey Name</th>
