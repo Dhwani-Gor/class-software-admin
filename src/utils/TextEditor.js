@@ -318,7 +318,7 @@ console.log(contentBody.scrollHeight);
 
         const uniqueSurveys = Object.values(surveyMap);
 
-        return uniqueSurveys.map((survey) => {
+        return uniqueSurveys?.map((survey) => {
             const surveyName = survey.activity?.surveyTypes?.report?.name || "";
             const surveyDate = survey.surveyDate ? format(new Date(survey.surveyDate), "yyyy-MM-dd") : "";
             const issuanceDate = survey.issuanceDate ? format(new Date(survey.issuanceDate), "yyyy-MM-dd") : "";
@@ -476,7 +476,7 @@ console.log(contentBody.scrollHeight);
 
     const generateHtmlContent = useCallback(() => {
         if (!clientData || !reportDetails) return '';
-        const classificationRows = classificationData.map((row) => {
+        const classificationRows = classificationData?.map((row) => {
             const surveyName = formatSurveyName(row.surveyName);
             const issuanceDate = row.issuanceDate;
             const surveyDate = row.surveyDate;
