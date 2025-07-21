@@ -852,7 +852,15 @@ export const getAllClassificationSurveys = async ({clientId, page, limit}) => {
   }
   return result;
 };
-
+export const getAllListClassificationSurveys = async ({clientId}) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/api/classificationSurveys?filterKey=clientId&filterValue=${clientId}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
 export const getSingleClassificationSurveyDetails = async (id) => {
   let result;
   try {
