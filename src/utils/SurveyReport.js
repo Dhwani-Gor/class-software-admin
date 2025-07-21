@@ -204,7 +204,7 @@ const SurveyReport = ({ id }) => {
             <th>Survey Name</th>
             <th>Cert.Term</th>
             <th>Endorsed</th>
-            <th>Survey</th>
+            <th>Survey Type</th>
             <th>Issued or Extended</th>
             <th>Expiry Date</th>
           </tr>

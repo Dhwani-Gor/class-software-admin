@@ -21,8 +21,8 @@ const TextEditor = ({ id }) => {
     const [statutoryData, setStatutoryData] = useState([]);
     const [systemVariables, setSystemVariables] = useState()
     const today = moment();
-    const companyName = systemVariables?.data?.find(item => item.name === "company_name")?.information || '[companyName]';
-    const companyLogo = systemVariables?.data?.find(item => item.name === "company_logo")?.information || '[logoUrl]';
+    const companyName = systemVariables?.data?.find(item => item.name === "company_name")?.information || '-';
+    const companyLogo = systemVariables?.data?.find(item => item.name === "company_logo")?.information || '-';
 
     useEffect(() => {
         getSystemVariables()
@@ -30,7 +30,7 @@ const TextEditor = ({ id }) => {
 
     const getAllClassification = async () => {
         const response = await getAllClassificationSurveys(id)
-        setClassificationData(response.data.data)
+        setClassificationData(response?.data?.data)
 
     }
     useEffect(() => {
@@ -65,8 +65,13 @@ const TextEditor = ({ id }) => {
             contentBody.style.overflow = 'visible';
             contentBody.style.height = 'auto';
             contentBody.style.maxHeight = 'none';
+            console.log(getComputedStyle(contentBody).fontFamily);
+console.log(getComputedStyle(contentBody).fontSize);
+console.log(contentBody.scrollHeight);
 
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await document.fonts.ready;
+
+            await new Promise(resolve => setTimeout(resolve, 300));
 
             const canvas = await html2canvas(contentBody, {
                 scale: 2,
@@ -504,7 +509,7 @@ const TextEditor = ({ id }) => {
             <tr>
               <td style="width: 220px;">${surveyName}</td>
               <td>${getClassRangeIcon(rangeTo, currentDate, rangeFrom) ? `<span class="${getClassRangeIcon(rangeTo, currentDate, rangeFrom)}">C</span>` : ''}</td>              <td>${surveyDate ? moment(surveyDate).format('DD/MM/YYYY') : ''}</td>
-              <td>${issuanceDate ? moment(issuanceDate).format('DD/MM/YYYY') : ''}</td>
+              <td></td>
               <td>${reportDetails.typeOfCertificate == "full_term" ? `${moment(rangeFrom).format('DD/MM/YYYY')} - ${moment(rangeTo).format('DD/MM/YYYY')}` : ''}</td>
               <td>${postponedDate}</td>
             </tr>
@@ -558,7 +563,6 @@ const TextEditor = ({ id }) => {
             <th>Expiry</th>
             <th>Extended</th>
             <th>Type</th>
-            <th>Status</th>
           </tr>
         </thead>
         <tbody>
@@ -623,76 +627,78 @@ const TextEditor = ({ id }) => {
 </div>
 
       <br />
-      <p>${clientData?.shipName || '[shipName]'}</p>
+      <p>${clientData?.shipName || '-'}</p>
 
       <br />
 
       <div style="text-align: left; display: inline-block; margin-top: 10px;">
-        <p><strong>Reg. Owner:</strong> ${clientData?.ownerDetails?.companyName || '[Owner Name]'}</p>
-        <p><strong>IMO Number:</strong> ${clientData?.imoNumber || '[IMO Number]'}</p>
-        <p><strong>Vessel Type:</strong> ${clientData?.typeOfShip || '[Vessel Type]'}</p>
-        <p><strong>Gross Tonnage:</strong> ${clientData?.grossTonnage || '[Gross Tonnage]'}</p>
-        <p><strong>Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : '[Date of Build]'}</p>
+        <p><strong>Reg. Owner:</strong> ${clientData?.ownerDetails?.companyName || '-'}</p>
+        <p><strong>IMO Number:</strong> ${clientData?.imoNumber || '-'}</p>
+        <p><strong>Vessel Type:</strong> ${clientData?.typeOfShip || '-'}</p>
+        <p><strong>Gross Tonnage:</strong> ${clientData?.grossTonnage || '-'}</p>
+        <p><strong>Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : '-'}</p>
       </div>
     </div>
 
     <div class="page">
+    <h2>Table of Contents</h2>
         <h2>Ship Particulars</h2>
         
         <div class="section">
             <h4>Identification</h4>
             <div class="identification-row">
-                <div class="left"><em><strong>Ship Type:</strong></em> ${clientData?.typeOfShip || '[Ship Type]'}</div>
-                <div class="right"><em><strong>Flag:</strong></em> ${clientData?.flag || '[Flag]'}</div>
+                <div class="left"><em><strong>Ship Type:</strong></em> ${clientData?.typeOfShip || '-'}</div>
+                <div class="right"><em><strong>Flag:</strong></em> ${clientData?.flag || '-'}</div>
             </div>
             <div class="identification-row">
-                <div class="left"><em><strong>IMO Number:</strong></em> ${clientData?.imoNumber || '[IMO Number]'}</div>
-                <div class="right"><em><strong>Port of Registry:</strong></em> ${clientData?.portOfRegistry || '[Port of Registry]'}</div>
+                <div class="left"><em><strong>IMO Number:</strong></em> ${clientData?.imoNumber || '-'}</div>
+                <div class="right"><em><strong>Port of Registry:</strong></em> ${clientData?.portOfRegistry || '-'}</div>
             </div>
             <div class="identification-row">
-                <div class="right"><em><strong>Call Sign:</strong></em> ${clientData?.callSign || '[Call Sign]'}</div>
+                <div class="left"><em><strong>Call Sign:</strong></em> ${clientData?.callSign || '-'}</div>
+                <div class="right"><em><strong>Official Number:</strong></em> ${clientData?.officialNumber || '-'}</div>
             </div>
         </div>
         
         <div class="section">
             <h4>Classification</h4>
-            <div class="classification-row"><em><strong>Class Symbols:</strong></em> ${clientData?.classId || '[Class Symbols]'}</div>
-            <div class="classification-row"><em><strong>Descriptive Notations:</strong></em> ${clientData?.descriptiveNotation || '[Descriptive Notations]'}</div>
-            <div class="classification-row"><em><strong>Official Number:</strong></em> ${clientData?.officialNumber || '[Official Number]'}</div>
-            <div class="classification-row"><em><strong>Machinery Notation:</strong></em> ${clientData?.machineryNotation || '[Machinery Notation]'}</div>
+            <div class="classification-row"><em><strong>Class Symbols:</strong></em> ${clientData?.classId || '-'}</div>
+            <div class="classification-row"><em><strong>Hull Notation:</strong></em> ${clientData?.hullNotation || '-'}</div>
+            <div class="classification-row"><em><strong>Descriptive Notations:</strong></em> ${clientData?.descriptiveNotation || '-'}</div>
+            <div class="classification-row"><em><strong>Machinery Notation:</strong></em> ${clientData?.machineryNotation || '-'}</div>
         </div>
         
         <div class="hull-section">
             <h4>Hull</h4>
             <div class="hull-row">
-                <div class="left"><em><strong>Gross Tonnage:</strong></em> ${clientData?.grossTonnage || '[Gross Tonnage]'}</div>
-                <div class="right"><strong>Ship Builder:</strong> ${clientData?.shipBuilder || '[Ship Builder]'}</div>
+                <div class="left"><em><strong>Gross Tonnage:</strong></em> ${clientData?.grossTonnage || '-'}</div>
+                <div class="right"><strong>Ship Builder:</strong> ${clientData?.shipBuilder || '-'}</div>
             </div>
             <div class="hull-row">
-                <div class="left"><em><strong>Net Tonnage:</strong></em> ${clientData?.netTonnage || '[Net Tonnage]'}</div>
-                <div class="right"><strong>Country of build:</strong> ${clientData?.countryOfBuild || '[Country of Build]'}</div>
+                <div class="left"><em><strong>Net Tonnage:</strong></em> ${clientData?.netTonnage || '-'}</div>
+                <div class="right"><strong>Country of build:</strong> ${clientData?.countryOfBuild || '-'}</div>
             </div>
             <div class="hull-row">
-                <div class="left"><em><strong>Deadweight:</strong></em> ${clientData?.deadweight || '[Deadweight]'}</div>
-                <div class="right"><strong>Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : '[Date of Build]'}</div>
+                <div class="left"><em><strong>Deadweight:</strong></em> ${clientData?.deadweight || '-'}</div>
+                <div class="right"><strong>Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : '-'}</div>
             </div>
             <div class="hull-row">
-                <div class="left"><strong>Keel Laid Date:</strong> ${clientData?.keelLaidDate ? moment(clientData?.keelLaidDate).format("DD/MM/YYYY") : '[Keel Laid Date]'}</div>
-                <div class="right"><strong>Date of building contract:</strong> ${clientData?.dateOfBuildingContract ? moment(clientData?.dateOfBuildingContract).format("DD/MM/YYYY") : '[Date of Building Contract]'}</div>
+                <div class="left"><strong>Keel Laid Date:</strong> ${clientData?.keelLaidDate ? moment(clientData?.keelLaidDate).format("DD/MM/YYYY") : '-'}</div>
+                <div class="right"><strong>Date of building contract:</strong> ${clientData?.dateOfBuildingContract ? moment(clientData?.dateOfBuildingContract).format("DD/MM/YYYY") : '-'}</div>
             </div>
             <div class="hull-row">
-                <div class="left"><em><strong>Length of ship:</strong></em> ${clientData?.lengthOfShip || '[Length of Ship]'}</div>
-                <div class="right"><strong>Area of operation:</strong> ${clientData?.areaOfOperation || '[Area of Operation]'}</div>
+                <div class="left"><em><strong>Length of ship:</strong></em> ${clientData?.lengthOfShip || '-'}</div>
+                <div class="right"><strong>Area of operation:</strong> ${clientData?.areaOfOperation || '-'}</div>
             </div>
             <div class="hull-row">
-                <div class="left"><em><strong>Date of delivery:</strong></em> ${clientData?.dateOfDelivery ? moment(clientData?.dateOfDelivery).format("DD/MM/YYYY") : '[Date of Delivery]'}</div>
-                <div class="right"><strong>Hull Info:</strong> ${clientData?.hullNotation || '[Hull Info]'}</div>
+                <div class="left"><em><strong>Date of delivery:</strong></em> ${clientData?.dateOfDelivery ? moment(clientData?.dateOfDelivery).format("DD/MM/YYYY") : '-'}</div>
+                <div class="right"><strong>Hull Info:</strong> ${clientData?.hullNotation || '-'}</div>
             </div>
            <div class="hull-row">
-                <div class="left"><em><strong>Date of modification:</strong></em> ${clientData?.dateOfModification ? moment(clientData?.dateOfModification).format("DD/MM/YYYY") : '[Date of Modification]'}</div>
+                <div class="left"><em><strong>Date of modification:</strong></em> ${clientData?.dateOfModification ? moment(clientData?.dateOfModification).format("DD/MM/YYYY") : '-'}</div>
             </div>
             <div class="hull-row">
-                <div class="left"><em><strong>Carrying capacity:</strong></em> ${clientData?.carryingCapacity || '[Carrying Capacity]'}</div>
+                <div class="left"><em><strong>Carrying capacity:</strong></em> ${clientData?.carryingCapacity || '-'}</div>
             </div>
         </div>
         
@@ -701,19 +707,20 @@ const TextEditor = ({ id }) => {
             
             <h4>Registered Owner</h4>
             <div class="owner-info">
-                <div><em><strong>Company Name:</strong></em> ${clientData?.ownerDetails?.companyName || '[Owner Company Name]'}</div>
-                <div><em><strong>Phone Number:</strong></em> ${clientData?.ownerDetails?.phoneNumber || '[Phone Number]'}</div>
-                <div><em><strong>Email:</strong></em> ${clientData?.ownerDetails?.email || '[Email]'}</div>
-                <div><em><strong>Address:</strong></em> ${clientData?.ownerDetails?.companyAddress || '[Address]'}</div>
+                <div><em><strong>Company Name:</strong></em> ${clientData?.ownerDetails?.companyName || '-'}</div>
+                <div><em><strong>Phone Number:</strong></em> ${clientData?.ownerDetails?.phoneNumber || '-'}</div>
+                <div><em><strong>IMO Number:</strong></em> ${clientData?.ownerDetails?.imoNumber || '-'}</div>
+                <div><em><strong>Email:</strong></em> ${clientData?.ownerDetails?.email || '-'}</div>
+                <div><em><strong>Address:</strong></em> ${clientData?.ownerDetails?.companyAddress || '-'}</div>
             </div>
             
             <h4>Manager</h4>
             <div class="owner-info">
-                <div><em><strong>Name:</strong></em> ${clientData?.managerDetails?.name || 'NIRRIS SHIPPING SA'}</div>
-                <div><em><strong>Company Name:</strong></em> ${clientData?.managerDetails?.companyName || '[Manager Company Name]'}</div>
-                <div><em><strong>Phone Number:</strong></em> ${clientData?.managerDetails?.phoneNumber || '[Phone Number]'}</div>
-                <div><em><strong>Email:</strong></em> ${clientData?.managerDetails?.email || '[Email]'}</div>
-                <div><em><strong>Address:</strong></em> ${clientData?.managerDetails?.companyAddress || '[Address]'}</div>
+                <div><em><strong>Company Name:</strong></em> ${clientData?.managerDetails?.companyName || '-'}</div>
+                <div><em><strong>IMO Number:</strong></em> ${clientData?.managerDetails?.imoNumber || '-'}</div>
+                <div><em><strong>Phone Number:</strong></em> ${clientData?.managerDetails?.phoneNumber || '-'}</div>
+                <div><em><strong>Email:</strong></em> ${clientData?.managerDetails?.email || '-'}</div>
+                <div><em><strong>Address:</strong></em> ${clientData?.managerDetails?.companyAddress || '-'}</div>
             </div>
         </div>
         
@@ -853,7 +860,7 @@ const TextEditor = ({ id }) => {
                             }, 200);
                         });
                     },
-
+                    content_css: false,
                     content_style: `
                     body { 
                         font-family: Arial, sans-serif; 
