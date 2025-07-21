@@ -565,10 +565,10 @@ export const getReports = async () => {
 };
 
 // Document API functions
-export const getAllDocuments = async () => {
+export const getAllDocuments = async (params) => {
   let result;
   try {
-    result = await axiosInstance.get("/api/reports");
+    result = await axiosInstance.get("/api/reports", { params });
   } catch (error) {
     result = error;
   }
@@ -873,10 +873,10 @@ export const uploadSurveyReport = async (payload) => {
   return result;
 };
 
-export const getAllSurveyStatusReport = async () => {
+export const getAllSurveyStatusReport = async ({params}) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/surveyStatusReports`);
+    result = await axiosInstance.get(`/api/surveyStatusReports`, { params });
   } catch (error) {
     result = error;
   }
