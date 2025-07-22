@@ -262,8 +262,6 @@ const SurveyReport = ({ id }) => {
 
     const htmlString = `
       ${certificatesTableHtml}
-      
-     
       `;
 
     return `
@@ -292,7 +290,6 @@ const SurveyReport = ({ id }) => {
       <td class="label" style="border: 1px dotted gray;"><strong></strong></td>
       <td class="label" style="border: 1px dotted gray;"><strong>Report No:</strong></td>
       <td style="border: 1px dotted gray;">${journalId}</td>
-      <td style="border: 1px dotted gray;">${Number(journalId)}</td>
 
     </tr>
     <tr style="border: 1px dotted gray;">
