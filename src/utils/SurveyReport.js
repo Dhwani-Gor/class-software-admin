@@ -51,7 +51,9 @@ const SurveyReport = ({ id }) => {
       const journalIds = reportDetails.map(item => item?.activity?.journal?.id).filter(Boolean);
       const uniqueJournalIds = [...new Set(journalIds)];
   
+      
       if (uniqueJournalIds[0]) {
+        console.log("uniqueJournalIds",uniqueJournalIds);
         setJournalId(uniqueJournalIds[0]);
         getVisitInfo(uniqueJournalIds[0]).finally(() => setLoading(false));
       } else {
