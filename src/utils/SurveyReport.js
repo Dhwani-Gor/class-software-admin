@@ -20,7 +20,7 @@ const SurveyReport = ({ id }) => {
   const [firstVisit, setFirstVisit] = useState();
   const [lastVisit, setLastVisit] = useState();
   const [numOfVisit, setNumOfVisit] = useState();
-  const [journalId, setJournalId] = useState();
+  const [journalId, setJournalId] = useState('');
   const [reportLoading, setReportLoading] = useState(true);
 
   const companyName = systemVariables?.data?.find(item => item.name === "company_name")?.information || '[companyName]';
@@ -47,9 +47,12 @@ const SurveyReport = ({ id }) => {
   };
 
   useEffect(() => {
+    console.log("reportDetails",reportDetails);
     if (reportDetails && Array.isArray(reportDetails)) {
       const journalIds = reportDetails.map(item => item?.activity?.journal?.id).filter(Boolean);
+      console.log("journalIds",journalIds);
       const uniqueJournalIds = [...new Set(journalIds)];
+      console.log("uniqueJournalIds",uniqueJournalIds);
   
       if (uniqueJournalIds[0]) {
         setJournalId(uniqueJournalIds[0]);
@@ -287,6 +290,8 @@ const SurveyReport = ({ id }) => {
       <td class="label" style="border: 1px dotted gray;"><strong></strong></td>
       <td class="label" style="border: 1px dotted gray;"><strong>Report No:</strong></td>
       <td style="border: 1px dotted gray;">${journalId}</td>
+      <td style="border: 1px dotted gray;">${Number(journalId)}</td>
+
     </tr>
     <tr style="border: 1px dotted gray;">
       <td class="label" style="border: 1px dotted gray;"><strong>Date of Build:</strong></td>
