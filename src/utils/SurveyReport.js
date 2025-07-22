@@ -54,7 +54,9 @@ const SurveyReport = ({ id }) => {
       const uniqueJournalIds = [...new Set(journalIds)];
       console.log("uniqueJournalIds",uniqueJournalIds);
   
+      
       if (uniqueJournalIds[0]) {
+        console.log("uniqueJournalIds",uniqueJournalIds);
         setJournalId(uniqueJournalIds[0]);
         getVisitInfo(uniqueJournalIds[0]).finally(() => setLoading(false));
       } else {
