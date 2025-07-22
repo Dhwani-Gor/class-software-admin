@@ -361,14 +361,14 @@ const SurveyReport = ({ id }) => {
 </div>
     </div>
 `;
-  }, [clientData, reportDetails]);
+  }, [clientData, reportDetails, journalId]);
 
   useEffect(() => {
     if (clientData && reportDetails) {
       const newContent = generateHtmlContent();
       setEditorContent(newContent);
     }
-  }, [clientData, reportDetails, generateHtmlContent]);
+  }, [clientData, reportDetails, journalId, generateHtmlContent]);
 
   const handleEditorChange = (content) => {
     setEditorContent(content);
