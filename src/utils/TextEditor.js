@@ -580,7 +580,6 @@ console.log(contentBody.scrollHeight);
 
         const classificationSurveyTableHtml = `
             <div class="section-title">Classification Surveys</div>
-            ${classificationData?.length > 0 ? "" : "<div style='text-align: center;margin-bottom: 40px; font-size: 12px;'>No Classification Surveys found</div>"}
             <table class="">
                 <tr>
                     <th>Survey Name</th>
@@ -595,13 +594,13 @@ console.log(contentBody.scrollHeight);
         `;
 
         const statutorySurveyTableHtml = `
+        <tr>${classificationData?.length > 0 ? "" : "<div style='text-align: center;margin-bottom: 40px; font-size: 12px; margin-top:20px;'>No Classification Surveys found</div>"}</tr>
             <div class="section-title">Statutory Surveys</div>
             <table>
                 <tr>
                     <th>Survey Name</th>
                     <th></th>
                     <th>SurveyDate</th>
-                    <th>Issuance Date</th>
                     <th>Range (from, to)</th>
                     <th>Postponed</th>
                 </tr>

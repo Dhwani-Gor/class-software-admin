@@ -21,6 +21,7 @@ const SurveyReport = ({ id }) => {
   const [lastVisit, setLastVisit] = useState();
   const [numOfVisit, setNumOfVisit] = useState();
   const [journalId, setJournalId] = useState();
+  const [reportLoading, setReportLoading] = useState(true);
 
   const companyName = systemVariables?.data?.find(item => item.name === "company_name")?.information || '[companyName]';
   const companyLogo = systemVariables?.data?.find(item => item.name === "company_logo")?.information || '[logoUrl]';
@@ -35,15 +36,10 @@ const SurveyReport = ({ id }) => {
     try {
       const response = await getVisitDetails('journalId', journalId);
       const visits = response?.data?.data;
-      console.log(visits)
       if (visits?.length) {
         setFirstVisit(visits[0]?.updatedAt);
         setLastVisit(visits[visits.length - 1]?.updatedAt);
         setNumOfVisit(visits.length);
-      } else {
-        setFirstVisit(null);
-        setLastVisit(null);
-        setNumOfVisit(0);
       }
     } catch (error) {
       console.error("Failed to get visit info:", error);
@@ -51,19 +47,21 @@ const SurveyReport = ({ id }) => {
   };
 
   useEffect(() => {
-    if (reportDetails) {
-      const journalIds = reportDetails.map((item) => item?.activity?.journal?.id);
+    if (reportDetails && Array.isArray(reportDetails)) {
+      const journalIds = reportDetails.map(item => item?.activity?.journal?.id).filter(Boolean);
       const uniqueJournalIds = [...new Set(journalIds)];
-      setFirstVisit(null);
-      setLastVisit(null);
-      setNumOfVisit(null);
+  
       if (uniqueJournalIds[0]) {
-        getVisitInfo(uniqueJournalIds[0]);
-        setJournalId(uniqueJournalIds[0])
+        setJournalId(uniqueJournalIds[0]);
+        getVisitInfo(uniqueJournalIds[0]).finally(() => setLoading(false));
+      } else {
+        setFirstVisit(null);
+        setLastVisit(null);
+        setNumOfVisit(null);
+        setLoading(false);
       }
     }
   }, [reportDetails]);
-
 
   useEffect(() => {
     getSystemVariables()
@@ -278,7 +276,9 @@ const SurveyReport = ({ id }) => {
      
 
     </div>
- <table class="three-columns-table" style="width: 100%; border: 1px dotted gray;">
+    ${loading ? <div>loading</div> : (
+
+ `<table class="three-columns-table" style="width: 100%; border: 1px dotted gray;">
     <tr style="border: 1px dotted gray;">
       <td class="label" style="border: 1px dotted gray;"><strong>Ship’s Name:</strong></td>
       <td style="border: 1px dotted gray;">${clientData?.shipName || '-'}</td>
@@ -320,7 +320,7 @@ const SurveyReport = ({ id }) => {
       <td style="border: 1px dotted gray;"></td>
       <td style="border: 1px dotted gray;"></td>
     </tr>
-  </table>
+  </table>`)}
 
   <h4 style="margin-top: 40px; font-weight: bold;">Recommendation</h4>
   <p style="margin-bottom: -40px;">
