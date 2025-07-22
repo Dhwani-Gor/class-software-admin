@@ -497,7 +497,8 @@ console.log(contentBody.scrollHeight);
           `;
         }).join("");
 
-        const statutoryRows = statutoryData?.map((row) => {
+        const statutoryRows = statutoryData ?.filter(row => row.surveyName.toLowerCase() !== "certificate of class")
+        .map((row) => {
             const surveyName = row.surveyName;
             const surveyDate = row.surveyDate;
             const issuanceDate = row.issuanceDate;
@@ -519,7 +520,7 @@ console.log(contentBody.scrollHeight);
 
         const certificateRows = reportDetails
             ?.map((cert) => {
-                const name = cert?.activity?.surveyTypes?.report?.name || "[Certificate Name]";
+                const name = cert?.activity?.surveyTypes?.report?.name || "-";
                 const issued = cert.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : "";
                 const expiry = cert.validityDate;
                 let extendedDate = cert.extendedDate;
@@ -534,7 +535,7 @@ console.log(contentBody.scrollHeight);
                             ? "IT"
                             : cert?.typeOfCertificate === "extended"
                                 ? "ET"
-                                : cert?.typeOfCertificate || "[Type]";
+                                : cert?.typeOfCertificate || "-";
 
                 // const status = cert?.activity?.status;
                 const status = ""

@@ -62,18 +62,10 @@ export const adminLogin = async (payload) => {
   return result;
 };
 
-export const getVisitDetails = async (filterKey, filterValue, page, limit, search) => {
+export const getVisitDetails = async (filterKey, filterValue) => {
   let result;
   try {
-    result = await axiosInstance.get("/api/visitDetails", {
-      params: {
-        filterKey: 'journalId',
-        filterValue: 28,
-        page: page,
-        limit: limit,
-        query: search,
-      },
-    });
+    result = await axiosInstance.get(`/api/visitDetails?filterKey=${filterKey}&filterValue=${filterValue}`)
   } catch (error) {
     result = error;
   }

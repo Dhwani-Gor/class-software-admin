@@ -595,7 +595,7 @@ const JournalEntryForm = ({ journalId = null }) => {
 
       if (journalId) {
         const res = await updateInspection(payload, journalId);
-        if (res?.data.status === "success") {
+        if (res?.data?.status === "success") {
           toast.success("Journal updated successfully");
           router.push('/journal')
         } else {
@@ -604,7 +604,7 @@ const JournalEntryForm = ({ journalId = null }) => {
       } else {
         const res = await generateInspection(payload);
 
-        if (res?.data.status === "success") {
+        if (res?.data?.status === "success") {
           toast.success("Journal created successfully");
           router.push('/journal')
         } else {
