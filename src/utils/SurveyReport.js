@@ -129,7 +129,7 @@ const SurveyReport = ({ id }) => {
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes], { type: "application/pdf" });
 
-      const file = new File([blob], "survey-status-report.pdf", { type: "application/pdf" });
+      const file = new File([blob], "survey-report.pdf", { type: "application/pdf" });
       const formData = new FormData();
       formData.append("clientId", id);
       formData.append("generatedDoc", file);
@@ -142,7 +142,7 @@ const SurveyReport = ({ id }) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "survey-status-report.pdf";
+      link.download = "survey-report.pdf";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -391,12 +391,14 @@ const SurveyReport = ({ id }) => {
       <Editor
         apiKey="p9j94lg0okz82u9rr4v3zhap0pimbq1hob48rzesv3c5dylj"
         value={editorContent}
+
         onEditorChange={handleEditorChange}
         init={{
           disabled: false,
           height: 600,
           menubar: true,
           visual: false,
+          content_css: false,
           plugins: [
             'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
             'print', 'preview', 'searchreplace', 'wordcount', 'code', 'fullscreen'
