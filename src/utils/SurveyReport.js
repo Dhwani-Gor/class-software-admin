@@ -13,77 +13,31 @@ import { useRouter } from 'next/navigation';
 const SurveyReport = ({ id }) => {
   const router = useRouter()
   const [reportDetails, setReportDetails] = useState(null);
-  const [clientData, setClientData] = useState();
+  const [clientData, setClientData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editorContent, setEditorContent] = useState('');
-  const [systemVariables, setSystemVariables] = useState();
-  const [firstVisit, setFirstVisit] = useState();
-  const [lastVisit, setLastVisit] = useState();
-  const [numOfVisit, setNumOfVisit] = useState();
+  const [systemVariables, setSystemVariables] = useState(null);
+  const [firstVisit, setFirstVisit] = useState(null);
+  const [lastVisit, setLastVisit] = useState(null);
+  const [numOfVisit, setNumOfVisit] = useState(null);
   const [journalId, setJournalId] = useState('');
-  const [reportLoading, setReportLoading] = useState(true);
-
-  const companyName = systemVariables?.data?.find(item => item.name === "company_name")?.information || '[companyName]';
-  const companyLogo = systemVariables?.data?.find(item => item.name === "company_logo")?.information || '[logoUrl]';
-  const stamp = systemVariables?.data?.find(item => item.name === "company_stamp")?.information || '[stamp]';
-  const issuer = reportDetails?.map((item) => item?.issuer?.name)
-  const reportId = reportDetails?.map((item) => item?.activity?.surveyTypes?.report?.id)
-  const portOfSurvey = reportDetails?.map((item) => item?.place.toLowerCase())
-  const uniquePorts = [...new Set(portOfSurvey)].join(',').toUpperCase();
-  const uniqueSurveyors = [...new Set(issuer)].join(',').toUpperCase();
-
-  const getVisitInfo = async (journalId) => {
-    try {
-      const response = await getVisitDetails('journalId', journalId);
-      const visits = response?.data?.data;
-      if (visits?.length) {
-        setFirstVisit(visits[0]?.updatedAt);
-        setLastVisit(visits[visits.length - 1]?.updatedAt);
-        setNumOfVisit(visits.length);
-      }
-    } catch (error) {
-      console.error("Failed to get visit info:", error);
-    }
-  };
 
   useEffect(() => {
-    console.log("reportDetails",reportDetails);
-    if (reportDetails && Array.isArray(reportDetails)) {
-      const journalIds = reportDetails.map(item => item?.activity?.journal?.id).filter(Boolean);
-      console.log("journalIds",journalIds);
-      const uniqueJournalIds = [...new Set(journalIds)];
-      console.log("uniqueJournalIds",uniqueJournalIds);
-  
-      
-      if (uniqueJournalIds[0]) {
-        console.log("uniqueJournalIds",uniqueJournalIds);
-        setJournalId(uniqueJournalIds[0]);
-        getVisitInfo(uniqueJournalIds[0]).finally(() => setLoading(false));
-      } else {
-        setFirstVisit(null);
-        setLastVisit(null);
-        setNumOfVisit(null);
-        setLoading(false);
+    const getSystemVariables = async () => {
+      try {
+        const response = await getAllSystemVariables();
+        if (response?.status === 200) {
+          setSystemVariables(response?.data);
+        }
+      } catch (error) {
+        console.log(error);
       }
-    }
-  }, [reportDetails]);
+    };
 
-  useEffect(() => {
-    getSystemVariables()
-  }, [])
+    getSystemVariables();
+  }, []);
 
-
-  const getSystemVariables = async () => {
-    try {
-      const response = await getAllSystemVariables();
-      if (response?.status === 200) {
-        setSystemVariables(response?.data);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  }
-  const downloadEditorContentAsPdf = async () => {
+  const downloadEditorContentAsPdf = async (id) => {
     const iframe = document.querySelector("iframe.tox-edit-area__iframe");
     const contentDocument = iframe?.contentDocument;
     const contentBody = contentDocument?.body;
@@ -102,81 +56,73 @@ const SurveyReport = ({ id }) => {
       contentBody.style.height = 'auto';
       contentBody.style.maxHeight = 'none';
 
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      const lastElement = contentBody.querySelector('.page:last-child');
-      const totalHeight = lastElement ? lastElement.offsetTop + lastElement.offsetHeight : contentBody.scrollHeight;
+      await document.fonts.ready;
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       const canvas = await html2canvas(contentBody, {
         scale: 2,
-        height: totalHeight,
-        width: contentBody.scrollWidth,
         useCORS: true,
         allowTaint: true,
         scrollX: 0,
         scrollY: 0,
         windowWidth: contentBody.scrollWidth,
-        windowHeight: totalHeight
+        windowHeight: contentBody.scrollHeight,
       });
-
-      const imgData = canvas.toDataURL("image/png");
-      const pdfDoc = await PDFDocument.create();
 
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
-      const aspectRatio = imgHeight / imgWidth;
+
+      const pdfDoc = await PDFDocument.create();
 
       const pageWidth = 595.28;
       const pageHeight = 841.89;
       const margin = 40;
-      const maxWidth = pageWidth - 2 * margin;
-      const maxHeight = pageHeight - 2 * margin;
+      const usableWidth = pageWidth - 2 * margin;
+      const usableHeight = pageHeight - 2 * margin;
 
-      let scaledWidth = maxWidth;
-      let scaledHeight = scaledWidth * aspectRatio;
+      const scaleFactor = usableWidth / imgWidth;
+      const buffer = 50;
+      const pageHeightInCanvas = (usableHeight - buffer) / scaleFactor;
 
-      if (scaledHeight > maxHeight) {
-        const pagesNeeded = Math.ceil(scaledHeight / maxHeight);
-        const heightPerPage = imgHeight / pagesNeeded;
+      const totalPages = Math.ceil(imgHeight / pageHeightInCanvas);
 
-        for (let i = 0; i < pagesNeeded; i++) {
-          const page = pdfDoc.addPage([pageWidth, pageHeight]);
+      for (let i = 0; i < totalPages; i++) {
+        const startY = i * pageHeightInCanvas;
+        const sliceHeight = Math.min(pageHeightInCanvas, imgHeight - startY + buffer); // add buffer
 
-          const croppedCanvas = document.createElement('canvas');
-          const croppedCtx = croppedCanvas.getContext('2d');
+        const sliceCanvas = document.createElement("canvas");
+        sliceCanvas.width = imgWidth;
+        sliceCanvas.height = sliceHeight;
 
-          croppedCanvas.width = imgWidth;
-          croppedCanvas.height = heightPerPage;
+        const ctx = sliceCanvas.getContext("2d");
+        ctx.drawImage(
+          canvas,
+          0, startY,
+          imgWidth, sliceHeight,
+          0, 0,
+          imgWidth, sliceHeight
+        );
 
-          croppedCtx.drawImage(
-            canvas,
-            0, i * heightPerPage,
-            imgWidth, heightPerPage,
-            0, 0,
-            imgWidth, heightPerPage
-          );
+        const sliceDataUrl = sliceCanvas.toDataURL("image/png");
+        const pngImage = await pdfDoc.embedPng(sliceDataUrl);
+        const scaledHeight = sliceHeight * scaleFactor;
 
-          const croppedImgData = croppedCanvas.toDataURL("image/png");
-          const pngImage = await pdfDoc.embedPng(croppedImgData);
-
-          const croppedScaledHeight = (heightPerPage / imgWidth) * scaledWidth;
-
-          page.drawImage(pngImage, {
-            x: margin,
-            y: pageHeight - margin - croppedScaledHeight,
-            width: scaledWidth,
-            height: croppedScaledHeight,
-          });
-        }
-      } else {
         const page = pdfDoc.addPage([pageWidth, pageHeight]);
-        const pngImage = await pdfDoc.embedPng(imgData);
-
         page.drawImage(pngImage, {
           x: margin,
           y: pageHeight - margin - scaledHeight,
-          width: scaledWidth,
+          width: usableWidth,
           height: scaledHeight,
+        });
+
+        const footerY = margin / 2;
+        const pageText = `Page ${i + 1} of ${totalPages}`;
+
+        const textWidth = pageText.length * 5.5;
+        page.drawText(pageText, {
+          x: pageWidth - margin - textWidth,
+          y: footerY,
+          size: 10,
         });
       }
 
@@ -190,8 +136,9 @@ const SurveyReport = ({ id }) => {
 
       const res = await uploadSurveyReport(formData);
       if (res) {
-        toast.success("Survey Status Report Downloaded and Uploaded Successfully");
+        toast.success("Survey Status Report Downloaded Successfully");
       }
+
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -200,7 +147,6 @@ const SurveyReport = ({ id }) => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-
     } finally {
       contentBody.style.overflow = originalOverflow;
       contentBody.style.height = originalHeight;
@@ -209,7 +155,16 @@ const SurveyReport = ({ id }) => {
   };
 
   const generateHtmlContent = useCallback(() => {
-    if (!clientData || !reportDetails) return '';
+    if (!clientData || !reportDetails || !systemVariables) return '';
+
+    const companyName = systemVariables?.data?.find(item => item.name === "company_name")?.information || '-';
+    const companyLogo = systemVariables?.data?.find(item => item.name === "company_logo")?.information || '-';
+    const stamp = systemVariables?.data?.find(item => item.name === "company_stamp")?.information || '-';
+    const issuer = reportDetails?.map((item) => item?.issuer?.name);
+    const portOfSurvey = reportDetails?.map((item) => item?.place?.toLowerCase());
+    const uniquePorts = [...new Set(portOfSurvey)].join(',').toUpperCase();
+    const uniqueSurveyors = [...new Set(issuer)].join(',').toUpperCase();
+
 
     const surveyRows = reportDetails
       ?.map((cert) => {
@@ -222,8 +177,6 @@ const SurveyReport = ({ id }) => {
               : cert?.typeOfCertificate === "extended"
                 ? "ET"
                 : cert?.typeOfCertificate || "[Type]";
-
-        // const status = cert?.activity?.status;
 
         return `
             <tr>
@@ -255,14 +208,7 @@ const SurveyReport = ({ id }) => {
           ${surveyRows}
         </tbody>
       </table>
-    
-      `;
-
-
-
-    const htmlString = `
-      ${certificatesTableHtml}
-      `;
+    `;
 
     return `
         <div class="page">
@@ -276,14 +222,11 @@ const SurveyReport = ({ id }) => {
      <div style="justifyContent: start; display: flex; backgroundColor: white; color: black; padding: 60px">
 </div>
 
-     
-
     </div>
-    ${loading ? <div>loading</div> : (
 
- `<table class="three-columns-table" style="width: 100%; border: 1px dotted gray;">
+ <table class="three-columns-table" style="width: 100%; border: 1px dotted gray;">
     <tr style="border: 1px dotted gray;">
-      <td class="label" style="border: 1px dotted gray;"><strong>Ship’s Name:</strong></td>
+      <td class="label" style="border: 1px dotted gray;"><strong>Ship's Name:</strong></td>
       <td style="border: 1px dotted gray;">${clientData?.shipName || '-'}</td>
             <td class="label" style="border: 1px dotted gray;"><strong></strong></td>
 
@@ -304,7 +247,7 @@ const SurveyReport = ({ id }) => {
       <td style="border: 1px dotted gray;"><strong>IMO Number:</strong></td>
       <td style="border: 1px dotted gray;">${clientData?.imoNumber || '-'}</td>
       <td style="border: 1px dotted gray;"><strong>First Visit:</strong></td>
-      <td style="border: 1px dotted gray;">${moment(firstVisit).format('DD/MM/YYYY') || '-'}</td>
+      <td style="border: 1px dotted gray;">${firstVisit ? moment(firstVisit).format('DD/MM/YYYY') : '-'}</td>
       <td style="border: 1px dotted gray;"><strong>Port of Survey:</strong></td>
       <td style="border: 1px dotted gray;">${uniquePorts || '-'}</td>
     </tr>
@@ -312,19 +255,19 @@ const SurveyReport = ({ id }) => {
       <td style="border: 1px dotted gray;"><strong>Port of Registry:</strong></td>
       <td style="border: 1px dotted gray;">${clientData?.portOfRegistry || '-'}</td>
       <td style="border: 1px dotted gray;"><strong>Last Visit:</strong></td>
-      <td style="border: 1px dotted gray;">${moment(lastVisit).format('DD/MM/YYYY') || '-'}</td>
+      <td style="border: 1px dotted gray;">${lastVisit ? moment(lastVisit).format('DD/MM/YYYY') : '-'}</td>
       <td style="border: 1px dotted gray;"><strong>No of Visits:</strong></td>
       <td style="border: 1px dotted gray;">${numOfVisit || '-'}</td>
     </tr>
     <tr style="border: 1px dotted gray;">
       <td class="label" style="border: 1px dotted gray;"><strong>Gross Tons:</strong></td>
-      <td style="border: 1px dotted gray;">${clientData?.grossTonnage || '[grossTonnage]'}</td>
+      <td style="border: 1px dotted gray;">${clientData?.grossTonnage || '-'}</td>
       <td style="border: 1px dotted gray;"></td>
       <td style="border: 1px dotted gray;"></td>
       <td style="border: 1px dotted gray;"></td>
       <td style="border: 1px dotted gray;"></td>
     </tr>
-  </table>`)}
+  </table>
 
   <h4 style="margin-top: 40px; font-weight: bold;">Recommendation</h4>
   <p style="margin-bottom: -40px;">
@@ -336,17 +279,17 @@ const SurveyReport = ({ id }) => {
   </p>
   </div>
     <div class="page">
-        ${htmlString}
+        ${certificatesTableHtml}
         <div><img src="${stamp}" width="100" height="100" alt="Stamp" /></div>
         <table style="width: 100%; border: 1px dotted gray;">
   <tr style="border: 1px dotted gray;">
     <td style="border: 1px dotted gray;"><strong>Surveyors</strong></td>
-    <td style="border: 1px dotted gray; word-wrap: break-word; width: 10%; ">${uniqueSurveyors || '[surveyors]'}</td>
+    <td style="border: 1px dotted gray; word-wrap: break-word; width: 10%; ">${uniqueSurveyors || '-'}</td>
     <td style="border: 1px dotted gray;"><strong>This Report is Reviewed and Authorized by:</strong></td>
   </tr>
   <tr style="border: 1px dotted gray;">
     <td style="border: 1px dotted gray;"><strong>Port</strong></td>
-    <td style="border: 1px dotted gray; word-wrap: break-word; width: 50%">${uniquePorts || '[port]'}</td>
+    <td style="border: 1px dotted gray; word-wrap: break-word; width: 50%">${uniquePorts || '-'}</td>
     <td style="border: 1px dotted gray;"><strong>Reviewed On:</strong>  ${new Date().toLocaleDateString()}</td>
   </tr>
   <tr style="border: 1px dotted gray;">
@@ -358,67 +301,89 @@ const SurveyReport = ({ id }) => {
 </div>
     </div>
 `;
-  }, [clientData, reportDetails, journalId]);
+  }, [clientData, reportDetails, systemVariables, journalId, firstVisit, lastVisit, numOfVisit]);
 
+  // Single useEffect to load all data when id changes
   useEffect(() => {
-    if (clientData && reportDetails) {
+    if (!id) return;
+
+    const loadAllData = async () => {
+      try {
+        setLoading(true);
+        setEditorContent(''); // Reset content
+
+        // Load client data and report details in parallel
+        const [clientResult, reportResult] = await Promise.all([
+          getSpecificClient(id),
+          getSurveyReportData(id)
+        ]);
+
+        if (clientResult?.status === 200) {
+          setClientData(clientResult.data.data);
+        } else {
+          toast.error("Failed to load client data");
+          return;
+        }
+
+        if (reportResult?.status === 200) {
+          const reportData = reportResult.data.data;
+          setReportDetails(reportData);
+
+          // Extract unique journal ID
+          const journalIds = reportData
+            .map(item => item?.activity?.journal?.id)
+            .filter(Boolean);
+          const uniqueJournalId = [...new Set(journalIds)][0];
+
+          if (uniqueJournalId) {
+            setJournalId(uniqueJournalId);
+
+            // Load visit details
+            const visitResponse = await getVisitDetails('journalId', uniqueJournalId);
+            const visits = visitResponse?.data?.data;
+
+            if (visits?.length) {
+              setFirstVisit(visits[0]?.updatedAt);
+              setLastVisit(visits[visits.length - 1]?.updatedAt);
+              setNumOfVisit(visits.length);
+            }
+          }
+        } else {
+          toast.error("Failed to load report data");
+        }
+      } catch (error) {
+        console.error("Error loading data:", error);
+        toast.error(error.message || "Error loading data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAllData();
+  }, [id]);
+
+  // Update editor content when data is ready
+  useEffect(() => {
+    const isDataReady = clientData && reportDetails && systemVariables && !loading;
+
+    if (isDataReady) {
       const newContent = generateHtmlContent();
       setEditorContent(newContent);
     }
-  }, [clientData, reportDetails, journalId]);
+  }, [clientData, reportDetails, systemVariables, loading, generateHtmlContent]);
 
   const handleEditorChange = (content) => {
     setEditorContent(content);
     console.log('Editor content changed:', content);
   };
 
-  const getShipData = async (clientId) => {
-    try {
-      setLoading(true);
-      const result = await getSpecificClient(clientId);
-
-      if (result?.status === 200) {
-        const data = result.data.data;
-        setClientData(data);
-      } else {
-        toast.error("Something went wrong! Please try again after some time");
-      }
-    } catch (error) {
-      console.error("Error fetching report details:", error);
-      toast.error(error.message || "Error fetching client data");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchActivityReportDetails = async (clientId) => {
-    try {
-      setLoading(true);
-      const result = await getSurveyReportData(clientId);
-
-      if (result?.status === 200) {
-        const data = result.data.data;
-        setReportDetails(data);
-      } else {
-        toast.error("Something went wrong! Please try again after some time");
-      }
-    } catch (error) {
-      console.error("Error fetching report details:", error);
-      toast.error(error.message || "Error fetching client data");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (id) {
-      getShipData(id);
-      fetchActivityReportDetails(id);
-    }
-  }, [id]);
-
+  // Show loading state
   if (loading) {
-    return <Box><Loader /></Box>;
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <Loader />
+      </Box>
+    );
   }
 
   return (
@@ -438,109 +403,76 @@ const SurveyReport = ({ id }) => {
           ],
           toolbar: 'undo redo | formatselect | bold italic | alignleft aligncenter alignright | outdent indent | link image | code fullscreen',
           readonly: false,
-
           setup: (editor) => {
-            // editor.on('input', () => {
-            //     setTimeout(() => {
-            //     }, 100);
-            // });
-
-            // editor.on('SetContent', () => {
-            //     setTimeout(() => {
-            //         updateStatusIcons(editor);
-            //     }, 100);
-            // });
-
-            // editor.on('init', () => {
-            //     setTimeout(() => {
-            //         updateStatusIcons(editor);
-            //     }, 500);
-            // });
-
-            // let timeoutId;
-            // editor.on('keyup', () => {
-            //     clearTimeout(timeoutId);
-            //     timeoutId = setTimeout(() => {
-            //         updateStatusIcons(editor);
-            //     }, 500);
-            // });
-
-            // editor.on('paste', () => {
-            //     setTimeout(() => {
-            //         updateStatusIcons(editor);
-            //     }, 200);
-            // });
+            editor.on('input', () => {
+              setTimeout(() => {
+              }, 100);
+            });
           },
-
           content_style: `
-                    body { 
-                        font-family: Arial, sans-serif; 
-                        margin: 0;
-                        padding: 20px;
-                        line-height: 1.4;
-                        font-size: 14px;
-                    }
-                    
-                    .page {
-                        width: 8.5in;
-                        margin: 0 auto;
-                        padding: 20px;
-                        background-color: white;
-                        position: relative;
-                    }
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 0;
+              padding: 20px;
+              line-height: 1.4;
+              font-size: 14px;
+            }
+            
+            .page {
+              width: 8.5in;
+              margin: 0 auto;
+              padding: 20px;
+              background-color: white;
+              position: relative;
+            }
 
-                    h2 {
-                        color: #4884eb;
-                        text-align: center;
-                        font-size: 18px;
-                        margin: 0 0 30px 0;
-                        font-weight: bold;
-                    }
+            h2 {
+              color: #4884eb;
+              text-align: center;
+              font-size: 18px;
+              margin: 0 0 30px 0;
+              font-weight: bold;
+            }
 
-                    h4 {
-                        color: #4884eb;
-                        font-size: 14px;
-                        margin: 20px 0 5px 0;
-                        padding-bottom: 2px;
-                        border-bottom: 1px solid #4884eb;
-                        font-weight: bold;
-                    }
+            h4 {
+              color: #4884eb;
+              font-size: 14px;
+              margin: 20px 0 5px 0;
+              padding-bottom: 2px;
+              border-bottom: 1px solid #4884eb;
+              font-weight: bold;
+            }
 
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 20px;
+              margin-bottom: 20px;
+            }
+            td {
+              vertical-align: top;
+              padding: 5px;
+            }
+            td.label {
+              font-weight: bold;
+              width: 30%;
+            }
+            td.value {
+              width: 30%;
+            }
+            .recommendation-title {
+              font-weight: bold;
+            }
+            
+            strong {
+              font-weight: bold;
+            }
 
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-top: 20px;
-                        margin-bottom: 20px;
-                      }
-                      td {
-                        vertical-align: top;
-                        padding: 5px;
-                      }
-                      td.label {
-                        font-weight: bold;
-                        width: 30%;
-                      }
-                      td.value {
-                        width: 30%;
-                      }
-                      .recommendation-title {
-                        font-weight: bold;
-                      }
-                      
-                    strong {
-                        font-weight: bold;
-                    }
-
-                    em {
-                        font-style: italic;
-                    }
-                    
-                `
+            em {
+              font-style: italic;
+            }
+          `
         }}
-      // setup={(editor) => {
-      //     updateStatusIcons(editor);
-      // }}
       />
       <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
         <CommonButton onClick={() => router.push('/clients')} text="Back" />
