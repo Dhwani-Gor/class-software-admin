@@ -365,7 +365,7 @@ const SurveyReport = ({ id }) => {
       const newContent = generateHtmlContent();
       setEditorContent(newContent);
     }
-  }, [clientData, reportDetails, journalId, generateHtmlContent]);
+  }, [clientData, reportDetails, journalId]);
 
   const handleEditorChange = (content) => {
     setEditorContent(content);
