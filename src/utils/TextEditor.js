@@ -106,6 +106,8 @@ const TextEditor = ({ id }) => {
                 sliceCanvas.height = sliceHeight;
 
                 const ctx = sliceCanvas.getContext("2d");
+                ctx.fillStyle = "white";
+                ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
                 ctx.drawImage(
                     canvas,
                     0, startY,
@@ -819,7 +821,7 @@ const TextEditor = ({ id }) => {
         try {
             setLoading(true);
             const result = await getSpecificClient(clientId);
-
+            console.log(result,"result");
             if (result?.status === 200) {
                 const data = result.data.data;
                 setClientData(data);
