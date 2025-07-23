@@ -70,11 +70,11 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
       isFilled(allData["_timber_summer_S"]) &&
       isFilled(allData["_WNA"]);
 
-    if (shipLength && Number(shipLength) < 100 && !hasWNA && allNonTimberFilled && !onlySummerFilled) {
+    if (!hasWNA && allNonTimberFilled && !onlySummerFilled) {
       return case_1_Image;
     }
 
-    if (shipType === "all season" && onlySummerFilled && hasFW) {
+    if (onlySummerFilled && hasFW) {
       return case_2_Image;
     }
 

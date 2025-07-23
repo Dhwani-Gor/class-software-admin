@@ -29,7 +29,7 @@ const TextEditor = ({ id }) => {
     }, [])
 
     const getAllClassification = async () => {
-        const response = await getAllListClassificationSurveys({clientId:id})
+        const response = await getAllListClassificationSurveys({ clientId: id })
         setClassificationData(response?.data?.data)
 
     }
@@ -47,7 +47,8 @@ const TextEditor = ({ id }) => {
             console.log(error);
         }
     }
-    const downloadEditorContentAsPdf = async () => {
+
+    const downloadEditorContentAsPdf = async (id) => {
         const iframe = document.querySelector("iframe.tox-edit-area__iframe");
         const contentDocument = iframe?.contentDocument;
         const contentBody = contentDocument?.body;
@@ -65,86 +66,86 @@ const TextEditor = ({ id }) => {
             contentBody.style.overflow = 'visible';
             contentBody.style.height = 'auto';
             contentBody.style.maxHeight = 'none';
-            console.log(getComputedStyle(contentBody).fontFamily);
-console.log(getComputedStyle(contentBody).fontSize);
-console.log(contentBody.scrollHeight);
 
             await document.fonts.ready;
-
             await new Promise(resolve => setTimeout(resolve, 300));
 
             const canvas = await html2canvas(contentBody, {
                 scale: 2,
-                height: contentBody.scrollHeight,
-                width: contentBody.scrollWidth,
                 useCORS: true,
                 allowTaint: true,
                 scrollX: 0,
                 scrollY: 0,
                 windowWidth: contentBody.scrollWidth,
-                windowHeight: contentBody.scrollHeight
+                windowHeight: contentBody.scrollHeight,
             });
-
-            const imgData = canvas.toDataURL("image/png");
-            const pdfDoc = await PDFDocument.create();
 
             const imgWidth = canvas.width;
             const imgHeight = canvas.height;
-            const aspectRatio = imgHeight / imgWidth;
+
+            const pdfDoc = await PDFDocument.create();
 
             const pageWidth = 595.28;
             const pageHeight = 841.89;
             const margin = 40;
-            const maxWidth = pageWidth - 2 * margin;
-            const maxHeight = pageHeight - 2 * margin;
+            const usableWidth = pageWidth - 2 * margin;
+            const usableHeight = pageHeight - 2 * margin;
 
-            let scaledWidth = maxWidth;
-            let scaledHeight = scaledWidth * aspectRatio;
+            const scaleFactor = usableWidth / imgWidth;
+            const buffer = 10
+            const pageHeightInCanvas = (usableHeight - buffer) / scaleFactor;
 
-            if (scaledHeight > maxHeight) {
-                const pagesNeeded = Math.ceil(scaledHeight / maxHeight);
-                const heightPerPage = imgHeight / pagesNeeded;
+            const totalPages = Math.ceil(imgHeight / pageHeightInCanvas);
 
-                for (let i = 0; i < pagesNeeded; i++) {
-                    const page = pdfDoc.addPage([pageWidth, pageHeight]);
+            for (let i = 0; i < totalPages; i++) {
+                const startY = i * pageHeightInCanvas;
+                const sliceHeight = Math.min(pageHeightInCanvas, imgHeight - startY + buffer); // add buffer
 
-                    const croppedCanvas = document.createElement('canvas');
-                    const croppedCtx = croppedCanvas.getContext('2d');
+                const sliceCanvas = document.createElement("canvas");
+                sliceCanvas.width = imgWidth;
+                sliceCanvas.height = sliceHeight;
 
-                    croppedCanvas.width = imgWidth;
-                    croppedCanvas.height = heightPerPage;
+                const ctx = sliceCanvas.getContext("2d");
+                ctx.fillStyle = "white";
+                ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+                ctx.drawImage(
+                    canvas,
+                    0, startY,
+                    imgWidth, sliceHeight,
+                    0, 0,
+                    imgWidth, sliceHeight
+                );
 
-                    croppedCtx.drawImage(
-                        canvas,
-                        0, i * heightPerPage,
-                        imgWidth, heightPerPage,
-                        0, 0,
-                        imgWidth, heightPerPage
-                    );
+                const sliceDataUrl = sliceCanvas.toDataURL("image/png");
+                const pngImage = await pdfDoc.embedPng(sliceDataUrl);
+                const scaledHeight = sliceHeight * scaleFactor;
 
-                    const croppedImgData = croppedCanvas.toDataURL("image/png");
-                    const pngImage = await pdfDoc.embedPng(croppedImgData);
-
-                    const croppedScaledHeight = (heightPerPage / imgWidth) * scaledWidth;
-
-                    page.drawImage(pngImage, {
-                        x: margin,
-                        y: pageHeight - margin - croppedScaledHeight,
-                        width: scaledWidth,
-                        height: croppedScaledHeight,
-                    });
-                }
-            } else {
                 const page = pdfDoc.addPage([pageWidth, pageHeight]);
-                const pngImage = await pdfDoc.embedPng(imgData);
-
                 page.drawImage(pngImage, {
                     x: margin,
                     y: pageHeight - margin - scaledHeight,
-                    width: scaledWidth,
+                    width: usableWidth,
                     height: scaledHeight,
                 });
+
+                const footerY = margin / 2;
+                const pageText = `Page ${i + 1} of ${totalPages}`;
+                const generatedText = `Generated on: ${moment().format("DD MMM YYYY")}`;
+
+                page.drawText(generatedText, {
+                    x: margin,
+                    y: footerY,
+                    size: 10,
+                });
+
+                const textWidth = pageText.length * 5.5;
+                page.drawText(pageText, {
+                    x: pageWidth - margin - textWidth,
+                    y: footerY,
+                    size: 10,
+                });
             }
+
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes], { type: "application/pdf" });
 
@@ -157,6 +158,7 @@ console.log(contentBody.scrollHeight);
             if (res) {
                 toast.success("Survey Status Report Downloaded Successfully");
             }
+
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
@@ -165,8 +167,6 @@ console.log(contentBody.scrollHeight);
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-
-
         } finally {
             contentBody.style.overflow = originalOverflow;
             contentBody.style.height = originalHeight;
@@ -475,48 +475,71 @@ console.log(contentBody.scrollHeight);
     };
 
     const generateHtmlContent = useCallback(() => {
-        if (!clientData || !reportDetails) return '';
-        const classificationRows = classificationData?.map((row) => {
+        const certificateOfClassRow = statutoryData?.find(row => row.surveyName.toLowerCase() === "certificate of class");
 
-            const surveyName = formatSurveyName(row.surveyName);
-            const issuanceDate = row.issuanceDate;
-            const surveyDate = row.surveyDate;
-            let rangeTo = row.rangeTo ? moment(row.rangeTo).format("YYYY-MM-DD") : null;
-            let rangeFrom = row.rangeFrom ? moment(row.rangeFrom).format("YYYY-MM-DD") : null;
-            const postponedDate = row.postponed;
-            const currentDate = new Date().toISOString().split('T')[0];
-            return `
-            <tr>
-              <td>${surveyName}</td>
-              <td>${getClassRangeIcon(rangeTo, currentDate, rangeFrom) ? `<span class="${getClassRangeIcon(rangeTo, currentDate, rangeFrom)}">C</span>` : ''}</td>              
-              <td>${surveyDate ? moment(surveyDate).format('DD/MM/YYYY') : ''}</td>
-              <td>${issuanceDate ? moment(issuanceDate).format('DD/MM/YYYY') : ''}</td>
-              <td>${reportDetails.typeOfCertificate == "full_term" ? `${moment(rangeFrom).format('DD/MM/YYYY')} - ${moment(rangeTo).format('DD/MM/YYYY')}` : ''}</td>
-              <td>${postponedDate ? moment(postponedDate).format('DD/MM/YYYY') : ''}</td>
-            </tr>
-          `;
-        }).join("");
+        const classificationRows = [
+            certificateOfClassRow && (() => {
+                const surveyName = formatSurveyName(certificateOfClassRow.surveyName);
+                const issuanceDate = certificateOfClassRow.issuanceDate;
+                const surveyDate = certificateOfClassRow.surveyDate;
+                const rangeTo = certificateOfClassRow.rangeTo ? moment(certificateOfClassRow.rangeTo).format("YYYY-MM-DD") : null;
+                const rangeFrom = certificateOfClassRow.rangeFrom ? moment(certificateOfClassRow.rangeFrom).format("YYYY-MM-DD") : null;
+                const postponedDate = certificateOfClassRow.postponed;
+                const currentDate = new Date().toISOString().split('T')[0];
 
-        const statutoryRows = statutoryData ?.filter(row => row.surveyName.toLowerCase() !== "certificate of class")
-        .map((row) => {
-            const surveyName = row.surveyName;
-            const surveyDate = row.surveyDate;
-            const issuanceDate = row.issuanceDate;
-            let rangeTo = row.rangeTo;
-            let rangeFrom = row.rangeFrom;
-            const postponedDate = "";
-            const currentDate = new Date().toISOString().split('T')[0];
+                return `
+                        <tr>
+                            <td>${surveyName}</td>
+                            <td>${getClassRangeIcon(rangeTo, currentDate, rangeFrom) ? `<span class="${getClassRangeIcon(rangeTo, currentDate, rangeFrom)}">C</span>` : ''}</td>              
+                            <td>${surveyDate ? moment(surveyDate).format('DD/MM/YYYY') : ''}</td>
+                            <td>${issuanceDate ? moment(issuanceDate).format('DD/MM/YYYY') : ''}</td>
+                            <td>${reportDetails.typeOfCertificate == "full_term" ? `${moment(rangeFrom).format('DD/MM/YYYY')} - ${moment(rangeTo).format('DD/MM/YYYY')}` : ''}</td>
+                            <td>${postponedDate ? moment(postponedDate).format('DD/MM/YYYY') : ''}</td>
+                        </tr>
+                    `;
+            })(),
+            ...(classificationData?.map((row) => {
+                const surveyName = formatSurveyName(row.surveyName);
+                const issuanceDate = row.issuanceDate;
+                const surveyDate = row.surveyDate;
+                const rangeTo = row.rangeTo ? moment(row.rangeTo).format("YYYY-MM-DD") : null;
+                const rangeFrom = row.rangeFrom ? moment(row.rangeFrom).format("YYYY-MM-DD") : null;
+                const postponedDate = row.postponed;
+                const currentDate = new Date().toISOString().split('T')[0];
 
-            return `
-            <tr>
-              <td style="width: 220px;">${surveyName}</td>
-              <td>${getClassRangeIcon(rangeTo, currentDate, rangeFrom) ? `<span class="${getClassRangeIcon(rangeTo, currentDate, rangeFrom)}">C</span>` : ''}</td>              <td>${surveyDate ? moment(surveyDate).format('DD/MM/YYYY') : ''}</td>
-              <td></td>
-              <td>${reportDetails.typeOfCertificate == "full_term" ? `${moment(rangeFrom).format('DD/MM/YYYY')} - ${moment(rangeTo).format('DD/MM/YYYY')}` : ''}</td>
-              <td>${postponedDate}</td>
-            </tr>
-          `;
-        }).join("");
+                return `
+                        <tr>
+                            <td>${surveyName}</td>
+                            <td>${getClassRangeIcon(rangeTo, currentDate, rangeFrom) ? `<span class="${getClassRangeIcon(rangeTo, currentDate, rangeFrom)}">C</span>` : ''}</td>              
+                            <td>${surveyDate ? moment(surveyDate).format('DD/MM/YYYY') : ''}</td>
+                            <td>${issuanceDate ? moment(issuanceDate).format('DD/MM/YYYY') : ''}</td>
+                            <td>${reportDetails.typeOfCertificate == "full_term" ? `${moment(rangeFrom).format('DD/MM/YYYY')} - ${moment(rangeTo).format('DD/MM/YYYY')}` : ''}</td>
+                            <td>${postponedDate ? moment(postponedDate).format('DD/MM/YYYY') : ''}</td>
+                        </tr>
+                    `;
+            }) || [])
+        ].filter(Boolean).join("");
+
+        const statutoryRows = statutoryData?.filter(row => row.surveyName.toLowerCase() !== "certificate of class")
+            .map((row) => {
+                const surveyName = row.surveyName;
+                const surveyDate = row.surveyDate;
+                const issuanceDate = row.issuanceDate;
+                let rangeTo = row.rangeTo;
+                let rangeFrom = row.rangeFrom;
+                const postponedDate = "";
+                const currentDate = new Date().toISOString().split('T')[0];
+
+                return `
+                <tr>
+                <td style="width: 220px;">${surveyName}</td>
+                <td>${getClassRangeIcon(rangeTo, currentDate, rangeFrom) ? `<span class="${getClassRangeIcon(rangeTo, currentDate, rangeFrom)}">C</span>` : ''}</td>              <td>${surveyDate ? moment(surveyDate).format('DD/MM/YYYY') : ''}</td>
+                <td></td>
+                <td>${reportDetails.typeOfCertificate == "full_term" ? `${moment(rangeFrom).format('DD/MM/YYYY')} - ${moment(rangeTo).format('DD/MM/YYYY')}` : ''}</td>
+                <td>${postponedDate}</td>
+                </tr>
+            `;
+            }).join("");
 
         const certificateRows = reportDetails
             ?.map((cert) => {
@@ -541,214 +564,246 @@ console.log(contentBody.scrollHeight);
                 const status = ""
                 const currentDate = new Date().toISOString().split('T')[0];
                 return `
-            <tr>
-              <td>${name}</td>
-              <td>${getClassName(expiryFormatted, currentDate) ? `<span class="${getClassName(expiryFormatted, currentDate)}">C</span>` : ''}</td>
-              <td>${issued}</td>
-              <td>${expiry ? moment(expiry).format('DD/MM/YYYY') : ''}</td>
-              <td></td>
-              <td>${type}</td>
-              <td>${status}</td>
-            </tr>
-          `;
+                <tr>
+                <td>${name}</td>
+                <td>${getClassName(expiryFormatted, currentDate) ? `<span class="${getClassName(expiryFormatted, currentDate)}">C</span>` : ''}</td>
+                <td>${issued}</td>
+                <td>${expiry ? moment(expiry).format('DD/MM/YYYY') : ''}</td>
+                <td></td>
+                <td>${type}</td>
+                <td>${status}</td>
+                </tr>
+            `;
             })
             .join("");
 
         const certificatesTableHtml = `
-      <h4>Certificates</h4>
-      <table>
-        <thead>
-          <tr>
-            <th>Certificate Name</th>
-            <th></th>
-            <th>Issued</th>
-            <th>Expiry</th>
-            <th>Extended</th>
-            <th>Type</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${certificateRows}
-        </tbody>
-      </table>
-     <div class="legend">
-      <span class="legend-item"><span class="status-icon expired">C</span>Expired</span>
-      <span class="legend-item"><span class="status-icon expiring1m">C</span>Expires in less than 1 month</span>
-      <span class="legend-item"><span class="status-icon expiring3m">C</span>Expires in less than 3 months</span>
-      </div>
-      `;
+        <h4 style="margin-top: -50px;">Certificates</h4>
+        <table>
+            <thead>
+            <tr>
+                <th>Certificate Name</th>
+                <th></th>
+                <th>Issued</th>
+                <th>Expiry</th>
+                <th>Extended</th>
+                <th>Type</th>
+            </tr>
+            </thead>
+            <tbody>
+            ${certificateRows}
+            </tbody>
+        </table>
+        <div class="legend">
+        <span class="legend-item"><span class="status-icon expired">C</span>Expired</span>
+        <span class="legend-item"><span class="status-icon expiring1m">C</span>Expires in less than 1 month</span>
+        <span class="legend-item"><span class="status-icon expiring3m">C</span>Expires in less than 3 months</span>
+        </div>
+        `;
+
 
         const classificationSurveyTableHtml = `
-            <div class="section-title">Classification Surveys</div>
-            <table class="">
-                <tr>
-                    <th>Survey Name</th>
-                    <th></th>
-                    <th>Survey Date</th>
-                    <th>Issuance Date</th>
-                    <th>Range (from, to)</th>
-                    <th>Postponed</th>
-                </tr>
-                ${classificationRows}
-            </table>
-        `;
+                <div class="section-title">Classification Surveys</div>
+                <table class="">
+                    <tr>
+                        <th>Survey Name</th>
+                        <th></th>
+                        <th>Survey Date</th>
+                        <th>Issuance Date</th>
+                        <th>Range (from, to)</th>
+                        <th>Postponed</th>
+                    </tr>
+                    ${classificationRows}
+                </table>
+            `;
 
         const statutorySurveyTableHtml = `
-        <tr>${classificationData?.length > 0 ? "" : "<div style='text-align: center;margin-bottom: 40px; font-size: 12px; margin-top:20px;'>No Classification Surveys found</div>"}</tr>
-            <div class="section-title">Statutory Surveys</div>
-            <table>
-                <tr>
-                    <th>Survey Name</th>
-                    <th></th>
-                    <th>SurveyDate</th>
-                    <th>Range (from, to)</th>
-                    <th>Postponed</th>
-                </tr>
-                ${statutoryRows}
-            </table>
-        `;
+                <div class="section-title">Statutory Surveys</div>
+                <table>
+                    <tr>
+                        <th>Survey Name</th>
+                        <th></th>
+                        <th>SurveyDate</th>
+                        <th>Range (from, to)</th>
+                        <th>Postponed</th>
+                    </tr>
+                    ${statutoryRows}
+                </table>
+            `;
 
         const htmlString = `
-      ${certificatesTableHtml}
-      
-      <h2 style="margin-top: 40px;">Conditions of Class / Statutory Status</h2>
-      <p class="subtitle">
-        The Conditions of Class / Statutory Status below shows the information available at the time the report is printed. 
-        This may not indicate certificates issued, surveys carried out or conditions of class / recommendations issued but not yet reported to MCB Head Office.
-      </p>
+        <div class="page">
+        ${certificatesTableHtml}
+        
+        <h2 style="margin-top: 40px;">Conditions of Class / Statutory Status</h2>
+        <p class="subtitle">
+            The Conditions of Class / Statutory Status below shows the information available at the time the report is printed. 
+            This may not indicate certificates issued, surveys carried out or conditions of class / recommendations issued but not yet reported to MCB Head Office.
+        </p>
 
-      <h4>Classification</h4>
-      <p><i>Status: Active</i></p>
-      `;
+        <h4>Classification</h4>
+        <p><i>Status: Active</i></p>
+        </div>
+        `;
 
         return `
-    <div style="text-align: center; background-color: white; color: black; padding: 60px;">
-     <div style={{ textAlign: 'center', backgroundColor: 'white', color: 'black', padding: '60px' }}>
-  <img src=${companyLogo} alt="companyLogo" height="100" width="100" />
-  <p>${companyName}</p>
+        <div style="text-align: center; background-color: white; color: black; padding: 60px;">
+        <div style={{ textAlign: 'center', backgroundColor: 'white', color: 'black', padding: '60px' }}>
+    <img src=${companyLogo} alt="companyLogo" height="100" width="100" />
+    <p>${companyName}</p>
+    </div>
+
+        <p>${clientData?.shipName || '-'}</p>
+
+        <div style="text-align: left; display: inline-block;">
+            <p><strong>Reg. Owner:</strong> ${clientData?.ownerDetails?.companyName || '-'}</p>
+            <p><strong>IMO Number:</strong> ${clientData?.imoNumber || '-'}</p>
+            <p><strong>Vessel Type:</strong> ${clientData?.typeOfShip || '-'}</p>
+            <p><strong>Gross Tonnage:</strong> ${clientData?.grossTonnage || '-'}</p>
+            <p><strong>Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : '-'}</p>
+        </div>
+        </div>
+
+       <div style="text-align: center;">
+  <div style="font-size: 16px; display: inline-block; text-align: left;">
+    <h2 style="margin-top: -40px;">Table of Contents</h2>
+
+    <ul>
+      <li>
+        <strong>Ship Particulars</strong>
+        <ul>
+          <li>Identification</li>
+          <li>Classification</li>
+          <li>Hull</li>
+          <li>Registered Owner</li>
+          <li>Manager</li>
+          <li>Certificates</li>
+        </ul>
+      </li>
+      <li style="margin-top: 20px;">
+        <strong>Conditions of Class / Statutory Status</strong>
+        <ul>
+          <li>Classification</li>
+          <li>
+            <strong>Surveys / Audits / Inspections</strong>
+            <ul>
+              <li>Statutory Surveys</li>
+              <li>Classification Surveys</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </div>
 </div>
 
-      <br />
-      <p>${clientData?.shipName || '-'}</p>
-
-      <br />
-
-      <div style="text-align: left; display: inline-block; margin-top: 10px;">
-        <p><strong>Reg. Owner:</strong> ${clientData?.ownerDetails?.companyName || '-'}</p>
-        <p><strong>IMO Number:</strong> ${clientData?.imoNumber || '-'}</p>
-        <p><strong>Vessel Type:</strong> ${clientData?.typeOfShip || '-'}</p>
-        <p><strong>Gross Tonnage:</strong> ${clientData?.grossTonnage || '-'}</p>
-        <p><strong>Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : '-'}</p>
-      </div>
-    </div>
-
-    <div class="page">
-    <h2>Table of Contents</h2>
-        <h2>Ship Particulars</h2>
-        
-        <div class="section">
-            <h4>Identification</h4>
-            <div class="identification-row">
-                <div class="left"><em><strong>Ship Type:</strong></em> ${clientData?.typeOfShip || '-'}</div>
-                <div class="right"><em><strong>Flag:</strong></em> ${clientData?.flag || '-'}</div>
-            </div>
-            <div class="identification-row">
-                <div class="left"><em><strong>IMO Number:</strong></em> ${clientData?.imoNumber || '-'}</div>
-                <div class="right"><em><strong>Port of Registry:</strong></em> ${clientData?.portOfRegistry || '-'}</div>
-            </div>
-            <div class="identification-row">
-                <div class="left"><em><strong>Call Sign:</strong></em> ${clientData?.callSign || '-'}</div>
-                <div class="right"><em><strong>Official Number:</strong></em> ${clientData?.officialNumber || '-'}</div>
-            </div>
-        </div>
-        
-        <div class="section">
-            <h4>Classification</h4>
-            <div class="classification-row"><em><strong>Class Symbols:</strong></em> ${clientData?.classId || '-'}</div>
-            <div class="classification-row"><em><strong>Hull Notation:</strong></em> ${clientData?.hullNotation || '-'}</div>
-            <div class="classification-row"><em><strong>Descriptive Notations:</strong></em> ${clientData?.descriptiveNotation || '-'}</div>
-            <div class="classification-row"><em><strong>Machinery Notation:</strong></em> ${clientData?.machineryNotation || '-'}</div>
-        </div>
-        
-        <div class="hull-section">
-            <h4>Hull</h4>
-            <div class="hull-row">
-                <div class="left"><em><strong>Gross Tonnage:</strong></em> ${clientData?.grossTonnage || '-'}</div>
-                <div class="right"><strong>Ship Builder:</strong> ${clientData?.shipBuilder || '-'}</div>
-            </div>
-            <div class="hull-row">
-                <div class="left"><em><strong>Net Tonnage:</strong></em> ${clientData?.netTonnage || '-'}</div>
-                <div class="right"><strong>Country of build:</strong> ${clientData?.countryOfBuild || '-'}</div>
-            </div>
-            <div class="hull-row">
-                <div class="left"><em><strong>Deadweight:</strong></em> ${clientData?.deadweight || '-'}</div>
-                <div class="right"><strong>Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : '-'}</div>
-            </div>
-            <div class="hull-row">
-                <div class="left"><strong>Keel Laid Date:</strong> ${clientData?.keelLaidDate ? moment(clientData?.keelLaidDate).format("DD/MM/YYYY") : '-'}</div>
-                <div class="right"><strong>Date of building contract:</strong> ${clientData?.dateOfBuildingContract ? moment(clientData?.dateOfBuildingContract).format("DD/MM/YYYY") : '-'}</div>
-            </div>
-            <div class="hull-row">
-                <div class="left"><em><strong>Length of ship:</strong></em> ${clientData?.lengthOfShip || '-'}</div>
-                <div class="right"><strong>Area of operation:</strong> ${clientData?.areaOfOperation || '-'}</div>
-            </div>
-            <div class="hull-row">
-                <div class="left"><em><strong>Date of delivery:</strong></em> ${clientData?.dateOfDelivery ? moment(clientData?.dateOfDelivery).format("DD/MM/YYYY") : '-'}</div>
-                <div class="right"><strong>Hull Info:</strong> ${clientData?.hullNotation || '-'}</div>
-            </div>
-           <div class="hull-row">
-                <div class="left"><em><strong>Date of modification:</strong></em> ${clientData?.dateOfModification ? moment(clientData?.dateOfModification).format("DD/MM/YYYY") : '-'}</div>
-            </div>
-            <div class="hull-row">
-                <div class="left"><em><strong>Carrying capacity:</strong></em> ${clientData?.carryingCapacity || '-'}</div>
-            </div>
-        </div>
-        
-        <div class="owner-section">
-            <h2>Owner / Manager Information</h2>
+         <div class="page">
+                <h2 style="margin-top: 20px;">Ship Particulars</h2>
             
-            <h4>Registered Owner</h4>
-            <div class="owner-info">
-                <div><em><strong>Company Name:</strong></em> ${clientData?.ownerDetails?.companyName || '-'}</div>
-                <div><em><strong>Phone Number:</strong></em> ${clientData?.ownerDetails?.phoneNumber || '-'}</div>
-                <div><em><strong>IMO Number:</strong></em> ${clientData?.ownerDetails?.imoNumber || '-'}</div>
-                <div><em><strong>Email:</strong></em> ${clientData?.ownerDetails?.email || '-'}</div>
-                <div><em><strong>Address:</strong></em> ${clientData?.ownerDetails?.companyAddress || '-'}</div>
+                <div class="section">
+                <h4>Identification</h4>
+                <div class="identification-row">
+                    <div class="left"><em><strong>Ship Type:</strong></em> ${clientData?.typeOfShip || '-'}</div>
+                    <div class="right"><em><strong>Flag:</strong></em> ${clientData?.flag || '-'}</div>
+                </div>
+                <div class="identification-row">
+                    <div class="left"><em><strong>IMO Number:</strong></em> ${clientData?.imoNumber || '-'}</div>
+                    <div class="right"><em><strong>Port of Registry:</strong></em> ${clientData?.portOfRegistry || '-'}</div>
+                </div>
+                <div class="identification-row">
+                    <div class="left"><em><strong>Call Sign:</strong></em> ${clientData?.callSign || '-'}</div>
+                    <div class="right"><em><strong>Official Number:</strong></em> ${clientData?.officialNumber || '-'}</div>
+                </div>
             </div>
             
-            <h4>Manager</h4>
-            <div class="owner-info">
-                <div><em><strong>Company Name:</strong></em> ${clientData?.managerDetails?.companyName || '-'}</div>
-                <div><em><strong>IMO Number:</strong></em> ${clientData?.managerDetails?.imoNumber || '-'}</div>
-                <div><em><strong>Phone Number:</strong></em> ${clientData?.managerDetails?.phoneNumber || '-'}</div>
-                <div><em><strong>Email:</strong></em> ${clientData?.managerDetails?.email || '-'}</div>
-                <div><em><strong>Address:</strong></em> ${clientData?.managerDetails?.companyAddress || '-'}</div>
+            <div class="section">
+                <h4>Classification</h4>
+                <div class="classification-row"><em><strong>Class Symbols:</strong></em> ${clientData?.classId || '-'}</div>
+                <div class="classification-row"><em><strong>Hull Notation:</strong></em> ${clientData?.hullNotation || '-'}</div>
+                <div class="classification-row"><em><strong>Descriptive Notations:</strong></em> ${clientData?.descriptiveNotation || '-'}</div>
+                <div class="classification-row"><em><strong>Machinery Notation:</strong></em> ${clientData?.machineryNotation || '-'}</div>
             </div>
-        </div>
-        
-        ${htmlString}
-        
-        <div class="survey-container">
-            <h4>Surveys / Audits / Inspections</h4>
             
-            ${classificationSurveyTableHtml}
+            <div class="hull-section">
+                <h4>Hull</h4>
+                <div class="hull-row">
+                    <div class="left"><em><strong>Gross Tonnage:</strong></em> ${clientData?.grossTonnage || '-'}</div>
+                    <div class="right"><strong>Ship Builder:</strong> ${clientData?.shipBuilder || '-'}</div>
+                </div>
+                <div class="hull-row">
+                    <div class="left"><em><strong>Net Tonnage:</strong></em> ${clientData?.netTonnage || '-'}</div>
+                    <div class="right"><strong>Country of build:</strong> ${clientData?.countryOfBuild || '-'}</div>
+                </div>
+                <div class="hull-row">
+                    <div class="left"><em><strong>Deadweight:</strong></em> ${clientData?.deadweight || '-'}</div>
+                    <div class="right"><strong>Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : '-'}</div>
+                </div>
+                <div class="hull-row">
+                    <div class="left"><strong>Keel Laid Date:</strong> ${clientData?.keelLaidDate ? moment(clientData?.keelLaidDate).format("DD/MM/YYYY") : '-'}</div>
+                    <div class="right"><strong>Date of building contract:</strong> ${clientData?.dateOfBuildingContract ? moment(clientData?.dateOfBuildingContract).format("DD/MM/YYYY") : '-'}</div>
+                </div>
+                <div class="hull-row">
+                    <div class="left"><em><strong>Length of ship:</strong></em> ${clientData?.lengthOfShip || '-'}</div>
+                    <div class="right"><strong>Area of operation:</strong> ${clientData?.areaOfOperation || '-'}</div>
+                </div>
+                <div class="hull-row">
+                    <div class="left"><em><strong>Date of delivery:</strong></em> ${clientData?.dateOfDelivery ? moment(clientData?.dateOfDelivery).format("DD/MM/YYYY") : '-'}</div>
+                    <div class="right"><strong>Hull Info:</strong> ${clientData?.hullNotation || '-'}</div>
+                </div>
+            <div class="hull-row">
+                    <div class="left"><em><strong>Date of modification:</strong></em> ${clientData?.dateOfModification ? moment(clientData?.dateOfModification).format("DD/MM/YYYY") : '-'}</div>
+                </div>
+                <div class="hull-row">
+                    <div class="left"><em><strong>Carrying capacity:</strong></em> ${clientData?.carryingCapacity || '-'}</div>
+                </div>
+            </div>
+            </div>
             
-            ${statutorySurveyTableHtml}
+            <div class="owner-section page">
+                <h2 style="margin-top: -45px;">Owner / Manager Information</h2>
+                
+                <h4>Registered Owner</h4>
+                <div class="owner-info">
+                    <div><em><strong>Company Name:</strong></em> ${clientData?.ownerDetails?.companyName || '-'}</div>
+                    <div><em><strong>Phone Number:</strong></em> ${clientData?.ownerDetails?.phoneNumber || '-'}</div>
+                    <div><em><strong>IMO Number:</strong></em> ${clientData?.ownerDetails?.imoNumber || '-'}</div>
+                    <div><em><strong>Email:</strong></em> ${clientData?.ownerDetails?.email || '-'}</div>
+                    <div><em><strong>Address:</strong></em> ${clientData?.ownerDetails?.companyAddress || '-'}</div>
+                </div>
+                
+                <h4>Manager</h4>
+                <div class="owner-info">
+                    <div><em><strong>Company Name:</strong></em> ${clientData?.managerDetails?.companyName || '-'}</div>
+                    <div><em><strong>IMO Number:</strong></em> ${clientData?.managerDetails?.imoNumber || '-'}</div>
+                    <div><em><strong>Phone Number:</strong></em> ${clientData?.managerDetails?.phoneNumber || '-'}</div>
+                    <div><em><strong>Email:</strong></em> ${clientData?.managerDetails?.email || '-'}</div>
+                    <div><em><strong>Address:</strong></em> ${clientData?.managerDetails?.companyAddress || '-'}</div>
+                </div>
+            </div>
+            
+            ${htmlString}
+        
+            <div class="page">
+                <h4 style="margin-top: -50px;">Surveys / Audits / Inspections</h4>
+                
+                ${classificationSurveyTableHtml}
+                
+                ${statutorySurveyTableHtml}
 
-           <div class="legend">
-          <span class="legend-item">
-            <span class="status-icon expired">S</span>Overdue
-          </span>
-          <span class="legend-item">
-            <span class="status-icon expiring1m">S</span>Overdue in less than 1 month
-          </span>
-          <span class="legend-item">
-            <span class="status-icon expiring3m">S</span>Within the range
-          </span>
+            <div class="legend">
+            <span class="legend-item">
+                <span class="status-icon expired">S</span>Overdue
+            </span>
+            <span class="legend-item">
+                <span class="status-icon expiring1m">S</span>Overdue in less than 1 month
+            </span>
+            <span class="legend-item">
+                <span class="status-icon expiring3m">S</span>Within the range
+            </span>
+            </div>
+            <div style="margin-top: 22px; font-size: 16px;"><strong>Note: </strong>Format of date is DD/MM/YYYY</div>
         </div>
-        <div style="margin-top: 22px; font-size: 16px;"><strong>Note: </strong>Format of date is DD/MM/YYYY</div>
-    </div>
-`;
+    `;
     }, [clientData, reportDetails, classificationData, statutoryData]);
 
     useEffect(() => {
@@ -766,7 +821,7 @@ console.log(contentBody.scrollHeight);
         try {
             setLoading(true);
             const result = await getSpecificClient(clientId);
-
+            console.log(result,"result");
             if (result?.status === 200) {
                 const data = result.data.data;
                 setClientData(data);
@@ -867,7 +922,6 @@ console.log(contentBody.scrollHeight);
                     body { 
                         font-family: Arial, sans-serif; 
                         margin: 0;
-                        padding: 20px;
                         line-height: 1.4;
                         font-size: 14px;
                     }
@@ -1061,11 +1115,6 @@ console.log(contentBody.scrollHeight);
                         color: #00b050;
                     }
                     
-                    .survey-container {
-                        font-family: Arial, sans-serif;
-                        font-size: 11px;
-                        background-color: white;
-                    }
 
                     .main-heading {
                         color: #0066cc;
@@ -1078,7 +1127,7 @@ console.log(contentBody.scrollHeight);
                     .section-title {
                         font-weight: bold;
                         font-size: 14px;
-                        margin: 15px 0 5px 0;
+                        margin: 0px 0 5px 0;
                         color: black;
                         font-family: Arial, sans-serif;
                     }
@@ -1113,17 +1162,7 @@ console.log(contentBody.scrollHeight);
                         font-size: 14px;
                     }
 
-                    @media print {
-                        .page {
-                            page-break-after: always;
-                            margin: 0;
-                            border: none;
-                            box-shadow: none;
-                        }
-                        body {
-                            padding: 0;
-                        }
-                    }
+                   
                 `
                 }}
                 setup={(editor) => {
