@@ -10,6 +10,7 @@ import { Box } from '@mui/material';
 import Loader from '@/components/Loader';
 import { addYears, subMonths, format } from "date-fns";
 import { useRouter } from 'next/navigation';
+const currentDate = new Date();
 
 const TextEditor = ({ id }) => {
     const router = useRouter()
@@ -70,7 +71,7 @@ const TextEditor = ({ id }) => {
             await document.fonts.ready;
             await new Promise(resolve => setTimeout(resolve, 300));
             contentBody.style.fontSize = '16px';
-            contentBody.style.lineHeight = '22px';
+            contentBody.style.lineHeight = '25px';
             const canvas = await html2canvas(contentBody, {
                 scale: 2,
                 useCORS: true,
@@ -163,7 +164,7 @@ const TextEditor = ({ id }) => {
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.download = `${clientData?.shipName}-status-report.pdf`;
+            link.download = `MCB Survey Status Report - ${clientData?.imoNumber}-${clientData?.shipName}-${moment(currentDate).format("DD-MM-YYYY")}.pdf`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -1207,10 +1208,9 @@ const TextEditor = ({ id }) => {
         
          .option {
                         max-width: 900px;
-                        margin: 0 auto 40px auto;
+                        margin: 0 auto 38px auto;
                         background: white;
                         border-radius: 8px;
-                        overflow: hidden;
                     }
                    
                 `

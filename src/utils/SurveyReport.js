@@ -21,7 +21,8 @@ const SurveyReport = ({ id }) => {
   const [lastVisit, setLastVisit] = useState(null);
   const [numOfVisit, setNumOfVisit] = useState(null);
   const [journalId, setJournalId] = useState('');
-
+const currentDate = new Date();
+console.log(reportDetails,"reportDetails")
   useEffect(() => {
     const getSystemVariables = async () => {
       try {
@@ -142,7 +143,7 @@ const SurveyReport = ({ id }) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "survey-report.pdf";
+      link.download = `MCB Survey Report - ${clientData?.imoNumber}-${clientData?.shipName}-${moment(currentDate).format("DD-MM-YYYY")}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
