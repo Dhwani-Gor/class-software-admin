@@ -21,8 +21,8 @@ const SurveyReport = ({ id }) => {
   const [lastVisit, setLastVisit] = useState(null);
   const [numOfVisit, setNumOfVisit] = useState(null);
   const [journalId, setJournalId] = useState('');
-const currentDate = new Date();
-console.log(reportDetails,"reportDetails")
+  const currentDate = new Date();
+  
   useEffect(() => {
     const getSystemVariables = async () => {
       try {
