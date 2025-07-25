@@ -48,7 +48,7 @@ const TextEditor = ({ id }) => {
         }
     }
 
-    const downloadEditorContentAsPdf = async (id) => {
+    const downloadEditorContentAsPdf = async () => {
         const iframe = document.querySelector("iframe.tox-edit-area__iframe");
         const contentDocument = iframe?.contentDocument;
         const contentBody = contentDocument?.body;
@@ -69,7 +69,7 @@ const TextEditor = ({ id }) => {
 
             await document.fonts.ready;
             await new Promise(resolve => setTimeout(resolve, 300));
-
+            
             const canvas = await html2canvas(contentBody, {
                 scale: 2,
                 useCORS: true,
@@ -532,7 +532,7 @@ const TextEditor = ({ id }) => {
 
                 return `
                 <tr>
-                <td style="width: 220px;">${surveyName}</td>
+                <td>${surveyName}</td>
                 <td>${getClassRangeIcon(rangeTo, currentDate, rangeFrom) ? `<span class="${getClassRangeIcon(rangeTo, currentDate, rangeFrom)}">C</span>` : ''}</td>              <td>${surveyDate ? moment(surveyDate).format('DD/MM/YYYY') : ''}</td>
                 <td></td>
                 <td>${reportDetails.typeOfCertificate == "full_term" ? `${moment(rangeFrom).format('DD/MM/YYYY')} - ${moment(rangeTo).format('DD/MM/YYYY')}` : ''}</td>
@@ -821,7 +821,6 @@ const TextEditor = ({ id }) => {
         try {
             setLoading(true);
             const result = await getSpecificClient(clientId);
-            console.log(result,"result");
             if (result?.status === 200) {
                 const data = result.data.data;
                 setClientData(data);
