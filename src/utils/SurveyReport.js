@@ -37,7 +37,7 @@ const SurveyReport = ({ id }) => {
     getSystemVariables();
   }, []);
 
-  const downloadEditorContentAsPdf = async (id) => {
+  const downloadEditorContentAsPdf = async () => {
     const iframe = document.querySelector("iframe.tox-edit-area__iframe");
     const contentDocument = iframe?.contentDocument;
     const contentBody = contentDocument?.body;
@@ -343,8 +343,8 @@ const SurveyReport = ({ id }) => {
             const visits = visitResponse?.data?.data;
 
             if (visits?.length) {
-              setFirstVisit(visits[0]?.updatedAt);
-              setLastVisit(visits[visits.length - 1]?.updatedAt);
+              setFirstVisit(visits[0]?.date);
+              setLastVisit(visits[visits.length - 1]?.date);
               setNumOfVisit(visits.length);
             }
           }
