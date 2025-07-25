@@ -69,7 +69,8 @@ const TextEditor = ({ id }) => {
 
             await document.fonts.ready;
             await new Promise(resolve => setTimeout(resolve, 300));
-            
+            contentBody.style.fontSize = '16px';
+            contentBody.style.lineHeight = '22px';
             const canvas = await html2canvas(contentBody, {
                 scale: 2,
                 useCORS: true,
@@ -135,21 +136,21 @@ const TextEditor = ({ id }) => {
                 page.drawText(generatedText, {
                     x: margin,
                     y: footerY,
-                    size: 10,
+                    size: 8,
                 });
 
                 const textWidth = pageText.length * 5.5;
                 page.drawText(pageText, {
                     x: pageWidth - margin - textWidth,
                     y: footerY,
-                    size: 10,
+                    size: 8,
                 });
             }
 
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes], { type: "application/pdf" });
 
-            const file = new File([blob], "survey-status-report.pdf", { type: "application/pdf" });
+            const file = new File([blob], `${clientData?.shipName}-status-report.pdf`, { type: "application/pdf" });
             const formData = new FormData();
             formData.append("clientId", id);
             formData.append("generatedDoc", file);
@@ -162,7 +163,7 @@ const TextEditor = ({ id }) => {
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.download = "survey-status-report.pdf";
+            link.download = `${clientData?.shipName}-status-report.pdf`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -665,40 +666,49 @@ const TextEditor = ({ id }) => {
         </div>
 
        <div style="text-align: center;">
-  <div style="font-size: 16px; display: inline-block; text-align: left;">
-    <h2 style="margin-top: -40px;">Table of Contents</h2>
+       <h2>Table of Contents</h2>
+  <div class="option option3">
+         <table>
+        <tr>
+            <td><strong>1. Ship Particulars</strong></td>
+        </tr>
+        <tr>
+            <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Identification</td>
+        </tr>
+        <tr>
+            <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Classification</td>
+        </tr>
+        <tr>
+            <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Hull</td>
+        </tr>
+        <tr>
+            <td><strong>2. Owner/Manager Information</strong></td>
+        </tr>
+        <tr>
+            <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Registered owner</td>
+        </tr>
+        <tr>
+            <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Manager info</td>
+        </tr>
+        <tr>
+            <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Certificates</td>
+        </tr>
+        <tr>
+            <td><strong>3. Conditions of Class / Statutory status</strong></td>
+        </tr>
+        <tr>
+            <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Classification</td>
+        </tr>
+        <tr>
+            <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Surveys / Audits / Inspections</td>
+        </tr>
+    </table>
+    </div>
 
-    <ul>
-      <li>
-        <strong>Ship Particulars</strong>
-        <ul>
-          <li>Identification</li>
-          <li>Classification</li>
-          <li>Hull</li>
-          <li>Registered Owner</li>
-          <li>Manager</li>
-          <li>Certificates</li>
-        </ul>
-      </li>
-      <li style="margin-top: 20px;">
-        <strong>Conditions of Class / Statutory Status</strong>
-        <ul>
-          <li>Classification</li>
-          <li>
-            <strong>Surveys / Audits / Inspections</strong>
-            <ul>
-              <li>Statutory Surveys</li>
-              <li>Classification Surveys</li>
-            </ul>
-          </li>
-        </ul>
-      </li>
-    </ul>
-  </div>
 </div>
 
          <div class="page">
-                <h2 style="margin-top: 20px;">Ship Particulars</h2>
+                <h2>Ship Particulars</h2>
             
                 <div class="section">
                 <h4>Identification</h4>
@@ -718,7 +728,7 @@ const TextEditor = ({ id }) => {
             
             <div class="section">
                 <h4>Classification</h4>
-                <div class="classification-row"><em><strong>Class Symbols:</strong></em> ${clientData?.classId || '-'}</div>
+                <div class="classification-row"><em><strong>Class Symbols:</strong></em> </div>
                 <div class="classification-row"><em><strong>Hull Notation:</strong></em> ${clientData?.hullNotation || '-'}</div>
                 <div class="classification-row"><em><strong>Descriptive Notations:</strong></em> ${clientData?.descriptiveNotation || '-'}</div>
                 <div class="classification-row"><em><strong>Machinery Notation:</strong></em> ${clientData?.machineryNotation || '-'}</div>
@@ -981,6 +991,7 @@ const TextEditor = ({ id }) => {
                     .hull-section h4 {
                         border-bottom: 2px solid #4884eb;
                     }
+                       
 
                     .hull-row {
                         display: flex;
@@ -1160,7 +1171,47 @@ const TextEditor = ({ id }) => {
                         gap: 6px;
                         font-size: 14px;
                     }
-
+                        .option3 table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .option3 td {
+            border: 1px solid #bdc3c7;
+            padding: 12px;
+            vertical-align: top;
+        }
+        
+        .option3 .section-col {
+            color: black;
+            font-weight: bold;
+            width: 30%;
+        }
+        
+        .option3 .content-col {
+            background: white;
+            width: 70%;
+        }
+        
+        .option3 .item {
+            display: block;
+            padding: 5px 0;
+            border-bottom: 1px dotted #ddd;
+        }
+        
+        .option3 .sub-item {
+            margin-left: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+         .option {
+                        max-width: 900px;
+                        margin: 0 auto 40px auto;
+                        background: white;
+                        border-radius: 8px;
+                        overflow: hidden;
+                    }
                    
                 `
                 }}
