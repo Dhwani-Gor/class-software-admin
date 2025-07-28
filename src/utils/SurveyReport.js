@@ -23,7 +23,7 @@ const SurveyReport = ({ id }) => {
   const [journalId, setJournalId] = useState('');
   const currentDate = new Date();
   
-  useEffect(() => {
+  useEffect(() => { 
     const getSystemVariables = async () => {
       try {
         const response = await getAllSystemVariables();
@@ -123,7 +123,7 @@ const SurveyReport = ({ id }) => {
         page.drawText(pageText, {
           x: pageWidth - margin - textWidth,
           y: footerY,
-          size: 10,
+          size: 7,
         });
       }
 
