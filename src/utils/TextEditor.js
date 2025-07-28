@@ -137,14 +137,14 @@ const TextEditor = ({ id }) => {
                 page.drawText(generatedText, {
                     x: margin,
                     y: footerY,
-                    size: 8,
+                    size: 7,
                 });
 
                 const textWidth = pageText.length * 5.5;
                 page.drawText(pageText, {
                     x: pageWidth - margin - textWidth,
                     y: footerY,
-                    size: 8,
+                    size: 7,
                 });
             }
 
@@ -729,7 +729,7 @@ const TextEditor = ({ id }) => {
             
             <div class="section">
                 <h4>Classification</h4>
-                <div class="classification-row"><em><strong>Class Symbols:</strong></em> </div>
+                <div class="classification-row"><em><strong>Class Symbols:</strong></em> - </div>
                 <div class="classification-row"><em><strong>Hull Notation:</strong></em> ${clientData?.hullNotation || '-'}</div>
                 <div class="classification-row"><em><strong>Descriptive Notations:</strong></em> ${clientData?.descriptiveNotation || '-'}</div>
                 <div class="classification-row"><em><strong>Machinery Notation:</strong></em> ${clientData?.machineryNotation || '-'}</div>
