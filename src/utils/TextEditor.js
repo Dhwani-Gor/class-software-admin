@@ -64,62 +64,168 @@ const TextEditor = ({ id }) => {
         const originalMaxHeight = contentBody.style.maxHeight;
 
         try {
+            const style = contentDocument.createElement("style");
+            style.innerHTML = `
+            @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+      
+            * {
+              font-family: 'Roboto', sans-serif !important;
+              font-size: 13px !important;
+              line-height: 20px !important;
+              box-sizing: border-box;
+            }
+      
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
+              background: white !important;
+              width: 100% !important;
+            }
+            
+            /* Enhanced table row break prevention */
+            table {
+              border-collapse: collapse !important;
+              page-break-inside: auto !important;
+            }
+            
+            table tr {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              display: table-row !important;
+              vertical-align: top !important;
+            }
+            
+            table td, table th {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              vertical-align: top !important;
+              padding: 4px !important;
+            }
+            
+            /* Prevent orphaned table elements */
+            table thead {
+              display: table-header-group !important;
+            }
+            
+            table tbody {
+              display: table-row-group !important;
+            }
+            
+            /* General page break rules */
+            .no-break {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+          `;
+            contentDocument.head.appendChild(style);
+
+            // Add no-break class to all table rows programmatically
+            const tableRows = contentDocument.querySelectorAll('table tr');
+            tableRows.forEach(row => {
+                row.classList.add('no-break');
+                row.style.pageBreakInside = 'avoid';
+                row.style.breakInside = 'avoid';
+            });
+
             contentBody.style.overflow = 'visible';
             contentBody.style.height = 'auto';
             contentBody.style.maxHeight = 'none';
 
             await document.fonts.ready;
-            await new Promise(resolve => setTimeout(resolve, 300));
-            contentBody.style.fontSize = '16px';
-            contentBody.style.lineHeight = '25px';
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            const pageWidth = 595.28;
+            const pageHeight = 841.89;
+            const dpiRatio = 1.3333;
+            const canvasWidth = pageWidth * dpiRatio;
+            const canvasHeight = contentBody.scrollHeight;
+
             const canvas = await html2canvas(contentBody, {
                 scale: 2,
                 useCORS: true,
                 allowTaint: true,
                 scrollX: 0,
                 scrollY: 0,
-                windowWidth: contentBody.scrollWidth,
-                windowHeight: contentBody.scrollHeight,
+                backgroundColor: '#ffffff',
+                width: canvasWidth,
+                height: canvasHeight,
+                windowWidth: canvasWidth,
+                windowHeight: canvasHeight,
             });
 
             const imgWidth = canvas.width;
             const imgHeight = canvas.height;
 
             const pdfDoc = await PDFDocument.create();
-
-            const pageWidth = 595.28;
-            const pageHeight = 841.89;
             const margin = 40;
             const usableWidth = pageWidth - 2 * margin;
             const usableHeight = pageHeight - 2 * margin;
-
             const scaleFactor = usableWidth / imgWidth;
-            const buffer = 10
-            const pageHeightInCanvas = (usableHeight - buffer) / scaleFactor;
 
-            const totalPages = Math.ceil(imgHeight / pageHeightInCanvas);
+            const baseSliceHeight = Math.floor((usableHeight - 20) / scaleFactor);
 
-            for (let i = 0; i < totalPages; i++) {
-                const startY = i * pageHeightInCanvas;
-                const sliceHeight = Math.min(pageHeightInCanvas, imgHeight - startY + buffer); // add buffer
+            const getTableRowPositions = () => {
+                const rows = contentDocument.querySelectorAll('table tr');
+                const positions = [];
+
+                rows.forEach(row => {
+                    const rect = row.getBoundingClientRect();
+                    const bodyRect = contentBody.getBoundingClientRect();
+                    const relativeTop = rect.top - bodyRect.top + contentBody.scrollTop;
+                    const relativeBottom = relativeTop + rect.height;
+
+                    positions.push({
+                        top: Math.floor(relativeTop * 2),
+                        bottom: Math.floor(relativeBottom * 2),
+                        height: Math.floor(rect.height * 2)
+                    });
+                });
+
+                return positions;
+            };
+
+            const rowPositions = getTableRowPositions();
+
+            const getOptimalSliceHeight = (startY, maxSliceHeight) => {
+                let optimalHeight = maxSliceHeight;
+                const sliceEndY = startY + maxSliceHeight;
+
+                for (const row of rowPositions) {
+                    if (row.top < sliceEndY && row.bottom > sliceEndY) {
+                        if (row.top > startY + 100) {
+                            optimalHeight = row.top - startY;
+                        } else if (row.bottom < startY + maxSliceHeight + row.height) {
+                            optimalHeight = row.bottom - startY;
+                        }
+                        break;
+                    }
+                }
+
+                return Math.max(optimalHeight, 100);
+            };
+
+            let currentY = 0;
+            let pageIndex = 0;
+
+            while (currentY < imgHeight) {
+                const maxSliceHeight = Math.min(baseSliceHeight, imgHeight - currentY);
+                const sliceHeight = getOptimalSliceHeight(currentY, maxSliceHeight);
 
                 const sliceCanvas = document.createElement("canvas");
                 sliceCanvas.width = imgWidth;
                 sliceCanvas.height = sliceHeight;
 
                 const ctx = sliceCanvas.getContext("2d");
-                ctx.fillStyle = "white";
-                ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
                 ctx.drawImage(
                     canvas,
-                    0, startY,
+                    0, currentY,
                     imgWidth, sliceHeight,
                     0, 0,
                     imgWidth, sliceHeight
                 );
 
-                const sliceDataUrl = sliceCanvas.toDataURL("image/png");
-                const pngImage = await pdfDoc.embedPng(sliceDataUrl);
+                const pngUrl = sliceCanvas.toDataURL("image/png");
+                const pngImage = await pdfDoc.embedPng(pngUrl);
                 const scaledHeight = sliceHeight * scaleFactor;
 
                 const page = pdfDoc.addPage([pageWidth, pageHeight]);
@@ -130,35 +236,38 @@ const TextEditor = ({ id }) => {
                     height: scaledHeight,
                 });
 
+                // Footer
                 const footerY = margin / 2;
-                const pageText = `Page ${i + 1} of ${totalPages}`;
                 const generatedText = `Generated on: ${moment().format("DD MMM YYYY")}`;
+                const totalPages = Math.ceil(imgHeight / baseSliceHeight);
+                const pageText = `Page ${pageIndex + 1} of ${totalPages}`;
 
                 page.drawText(generatedText, {
                     x: margin,
                     y: footerY,
-                    size: 7,
+                    size: 9,
+                });
+                page.drawText(pageText, {
+                    x: pageWidth - margin - pageText.length * 5.5,
+                    y: footerY,
+                    size: 9,
                 });
 
-                const textWidth = pageText.length * 5.5;
-                page.drawText(pageText, {
-                    x: pageWidth - margin - textWidth,
-                    y: footerY,
-                    size: 7,
-                });
+                currentY += sliceHeight;
+                pageIndex++;
             }
 
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes], { type: "application/pdf" });
 
-            const file = new File([blob], `${clientData?.shipName}-status-report.pdf`, { type: "application/pdf" });
+            const file = new File([blob], "survey-status-report.pdf", { type: "application/pdf" });
             const formData = new FormData();
             formData.append("clientId", id);
             formData.append("generatedDoc", file);
 
             const res = await uploadSurveyReport(formData);
             if (res) {
-                toast.success("Survey Status Report Downloaded Successfully");
+              toast.success("Survey Status Report Downloaded Successfully");
             }
 
             const url = URL.createObjectURL(blob);
@@ -169,13 +278,13 @@ const TextEditor = ({ id }) => {
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
+
         } finally {
             contentBody.style.overflow = originalOverflow;
             contentBody.style.height = originalHeight;
             contentBody.style.maxHeight = originalMaxHeight;
         }
     };
-
     const getClassName = (dueDate, today) => {
         if (!dueDate) return '';
 
@@ -729,8 +838,8 @@ const TextEditor = ({ id }) => {
             
             <div class="section">
                 <h4>Classification</h4>
-                <div class="classification-row"><em><strong>Class Symbols:</strong></em> - </div>
-                <div class="classification-row"><em><strong>Hull Notation:</strong></em> ${clientData?.hullNotation || '-'}</div>
+                <div class="classification-row"><em><strong>Class Symbols :</strong></em> - </div>
+                <div class="classification-row"><em><strong>Hull Notation :</strong></em> ${clientData?.hullNotation || '-'}</div>
                 <div class="classification-row"><em><strong>Descriptive Notations:</strong></em> ${clientData?.descriptiveNotation || '-'}</div>
                 <div class="classification-row"><em><strong>Machinery Notation:</strong></em> ${clientData?.machineryNotation || '-'}</div>
             </div>
@@ -1072,6 +1181,8 @@ const TextEditor = ({ id }) => {
                     
                     table tr{
                         border:none;
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
                     }
                     
                     .status-icon {
