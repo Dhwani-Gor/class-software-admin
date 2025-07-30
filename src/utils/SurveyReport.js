@@ -252,7 +252,7 @@ const SurveyReport = ({ id }) => {
               if (res) {
                 toast.success("Survey Report Downloaded Successfully");
               }
-  
+              console.log("response")
               const url = URL.createObjectURL(blob);
               const link = document.createElement("a");
               link.href = url;
