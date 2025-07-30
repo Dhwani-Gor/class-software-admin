@@ -239,7 +239,7 @@ const TextEditor = ({ id }) => {
                 // Footer
                 const footerY = margin / 2;
                 const generatedText = `Generated on: ${moment().format("DD MMM YYYY")}`;
-                const totalPages = Math.ceil(imgHeight / baseSliceHeight); // Approximate
+                const totalPages = Math.ceil(imgHeight / baseSliceHeight);
                 const pageText = `Page ${pageIndex + 1} of ${totalPages}`;
 
                 page.drawText(generatedText, {

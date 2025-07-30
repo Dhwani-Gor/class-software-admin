@@ -165,11 +165,11 @@ const Classifications = () => {
       }
     },
     { field: "surveyName", headerName: "Survey Name", flex: 1.5, renderCell: (params) => params.value?.surveyName?.toUpperCase() },
-    { field: "surveyDate", headerName: "Survey Date", flex: 1, renderCell: (params) => moment(params.value).format('DD/MM/YYYY') },
-    { field: "issuanceDate", headerName: "Issuance Date", flex: 1, renderCell: (params) => moment(params.value).format('DD/MM/YYYY') },
-    { field: "rangeFrom", headerName: "Range From", flex: 1, renderCell: (params) => moment(params.value).format('DD/MM/YYYY') },
-    { field: "rangeTo", headerName: "Range To", flex: 1, renderCell: (params) => moment(params.value).format('DD/MM/YYYY') },
-    { field: "postponedDate", headerName: "Postponed Date", flex: 1, renderCell: (params) => moment(params.value).format('DD/MM/YYYY') },
+    { field: "surveyDate", headerName: "Survey Date", flex: 1, renderCell: (params) => params.value ? moment(params.value).format('DD/MM/YYYY') : "-" },
+    { field: "issuanceDate", headerName: "Issuance Date", flex: 1, renderCell: (params) => params.value ? moment(params.value).format('DD/MM/YYYY') : "-" },
+    { field: "rangeFrom", headerName: "Range From", flex: 1, renderCell: (params) => params.value ? moment(params.value).format('DD/MM/YYYY') : "-" },
+    { field: "rangeTo", headerName: "Range To", flex: 1, renderCell: (params) => params.value ? moment(params.value).format('DD/MM/YYYY') : "-" },
+    { field: "postponed", headerName: "Postponed Date", flex: 1, renderCell: (params) => params.value ? moment(params.value).format('DD/MM/YYYY') : "-" },
     {
       field: "actions",
       headerName: "Actions",

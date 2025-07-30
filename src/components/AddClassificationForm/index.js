@@ -35,6 +35,7 @@ import { useEffect, useState } from "react";
 import DeleteIcon from "@mui/icons-material/Delete";
 import moment from "moment";
 import CommonButton from "../CommonButton";
+import { toast } from "react-toastify";
 
 const surveyTypes = [
     { label: "Special Survey Hull", value: "special_survey_hull" },
@@ -51,14 +52,19 @@ const surveyTypes = [
     { label: "Special Survey (Fi-Fi)", value: "special_survey_fi_fi" },
     { label: "Annual Survey (Fi-Fi)", value: "annual_survey_fi_fi" },
     { label: "Intermediate survey", value: "intermediate_survey" },
-    { label: "Telshaft initial survey", value: "telshaft_initial_survey" },
-    { label: "Telshaft renewal survey", value: "telshaft_renewal_survey" },
-    { label: "Telshaft periodical survey", value: "telshaft_periodical_survey" },
-    { label: "Telshaft condition monitoring annual survey", value: "telshaft_condition_monitoring_annual_survey" },
+    { label: "Tail Shaft initial survey", value: "tailshaft_initial_survey" },
+    { label: "Tail Shaft renewal survey", value: "tailshaft_renewal_survey" },
+    { label: "Tail Shaft periodical survey", value: "tailshaft_periodical_survey" },
+    { label: "Tail Shaft condition monitoring annual survey", value: "tailshaft_condition_monitoring_annual_survey" },
     { label: "Main Boiler survey", value: "main_boiler_survey" },
     { label: "Auxiliary Boiler survey", value: "auxiliary_boiler_survey" },
     { label: "Thermal Oil Heating Systems Survey", value: "thermal_oil_heating_systems_survey" },
-    { label: "Exhaust Gas steam generators and economisers survey", value: "exhaust_gas_steam_generators_and_economisers_survey" }
+    { label: "Exhaust Gas steam generators and economisers survey", value: "exhaust_gas_steam_generators_and_economisers_survey" },
+    { label: "Special Survey", value: "special_survey" },
+    { label: "Bottom Survey", value: "bottom_survey" },
+    { label: "Boiler Survey (OF)", value: "boiler_survey_of" },
+    { label: "Boiler Survey (EXH)", value: "boiler_survey_exh" },
+    { label: "Tail Shaft Survey", value: "tailshaft_survey" }
 ];
 
 const ClassificationForm = ({ mode = "create", variableId = null }) => {
@@ -81,19 +87,19 @@ const ClassificationForm = ({ mode = "create", variableId = null }) => {
 
     const calculateDates = (issuanceDate) => {
         if (!issuanceDate) return { dueDate: "", rangeFrom: "", rangeTo: "" };
-    
+
         const issuanceDateObj = new Date(issuanceDate);
         const dueDateObj = addYears(issuanceDateObj, 5);
         const rangeFromObj = subMonths(dueDateObj, 3);
         const rangeToPlus3 = addYears(subMonths(issuanceDateObj, -3), 5);
-    
+
         return {
             dueDate: format(dueDateObj, "yyyy-MM-dd"),
             rangeFrom: format(rangeFromObj, "yyyy-MM-dd"),
             rangeTo: format(rangeToPlus3, "yyyy-MM-dd")
         };
     };
-    
+
 
     const handleChange = (section, index, field, value) => {
         const updatedRows = [...classificationRows];
@@ -149,14 +155,14 @@ const ClassificationForm = ({ mode = "create", variableId = null }) => {
     const getClassification = async () => {
         try {
             setLoading(true);
-            
-            if(variableId == null) return;
+
+            if (variableId == null) return;
             const result = await getSingleClassificationSurveyDetails(variableId);
             if (result?.status === 200) {
                 const data = result.data.data;
-    
+
                 const { dueDate, rangeFrom, rangeTo } = calculateDates(data.issuanceDate);
-    
+
                 const formattedRow = {
                     id: data.id,
                     surveyName: data.surveyName,
@@ -167,7 +173,7 @@ const ClassificationForm = ({ mode = "create", variableId = null }) => {
                     rangeTo: data.rangeTo || rangeTo,
                     postponed: data.postponed || ""
                 };
-    
+
                 setClassificationRows([formattedRow]);
                 setSelectedShip({ id: data.clientId, shipName: data.client?.shipName || "" });
             }
@@ -177,36 +183,50 @@ const ClassificationForm = ({ mode = "create", variableId = null }) => {
             setLoading(false);
         }
     };
-    
 
-    const handleAddClassification = () => {
+
+    const handleAddClassification = async () => {
         if (mode === "update" && variableId) {
             const updatedData = {
                 ...classificationRows[0],
-                clientId: Number(selectedShip.id)
+                clientId: Number(selectedShip.id),
+                surveyName: classificationRows[0].surveyName,
+                surveyDate: classificationRows[0].surveyDate ? classificationRows[0].surveyDate : "",
+                issuanceDate: classificationRows[0].issuanceDate,
+                dueDate: classificationRows[0].dueDate,
+                rangeFrom: classificationRows[0].rangeFrom,
+                rangeTo: classificationRows[0].rangeTo,
+                postponed: classificationRows[0].postponed
             };
-            updateClassificationSurvey(variableId, updatedData);
-            router.push(`/classification?id=${selectedShip.id}`);
-            return;
+            const response = await updateClassificationSurvey(variableId, updatedData);
+            if (response?.data?.status == "success") {
+                toast.success("Classification updated successfully");
+            }
+            router.push(`/classification`);
         }
-    
+
         const payload = classificationRows
             .filter(row => row.surveyName)
             .map(({ id, ...rest }) => ({
                 clientId: Number(selectedShip.id),
                 surveyName: rest.surveyName,
-                surveyDate: rest.surveyDate,
+                surveyDate: rest.surveyDate ? rest.surveyDate : "",
                 issuanceDate: rest.issuanceDate,
                 dueDate: rest.dueDate,
                 rangeFrom: rest.rangeFrom,
                 rangeTo: rest.rangeTo,
                 postponed: rest.postponed
             }));
-    
-        addClassificationSurvey(payload);
-        router.push(`/classification`);
+
+        const response = await addClassificationSurvey(payload);
+        console.log(response, "response")
+        if (response?.data?.status == "success") {
+            toast.success("Classification added successfully");
+            router.push(`/classification`);
+        }
     };
-    
+
+
     const handleClientChange = (event) => {
         const selectedId = event.target.value;
         const selectedClient = clientsList.find(client => client.id === selectedId);
@@ -254,7 +274,7 @@ const ClassificationForm = ({ mode = "create", variableId = null }) => {
                 </Box>
 
                 <Box>
-                    <Typography variant="h6" mb={2}>Classification Surveys</Typography>
+                    <Typography variant="h6" mt={3} mb={2}>Classification Surveys</Typography>
                     {classificationRows.map((row, index) => (
                         <Box
                             key={index}
@@ -312,28 +332,29 @@ const ClassificationForm = ({ mode = "create", variableId = null }) => {
                                         fullWidth
                                         value={row.dueDate ? moment(row.dueDate).format("YYYY-MM-DD") : ""}
                                         onChange={(e) => handleChange("classification", index, "dueDate", e.target.value)}
-                                        disabled
                                         InputLabelProps={{ shrink: true }}
                                     />
                                 </Grid2>
 
                                 <Grid2 size={{ xs: 12, sm: 6, md: 4 }}>
                                     <TextField
+                                        type="date"
                                         label="Range From"
                                         fullWidth
-                                        value={row.rangeFrom ? moment(row.rangeFrom).format("DD/MM/YYYY") : ""}
-                                        InputProps={{ readOnly: true }}
-                                        disabled
+                                        value={row.rangeFrom ? moment(row.rangeFrom).format("YYYY-MM-DD") : ""}
+                                        InputLabelProps={{ shrink: true }}
+                                        onChange={(e) => handleChange("classification", index, "rangeFrom", e.target.value)}
                                     />
                                 </Grid2>
 
                                 <Grid2 size={{ xs: 12, sm: 6, md: 4 }}>
-                                    <TextField
+                                <TextField
+                                        type="date"
                                         label="Range To"
                                         fullWidth
-                                        value={row.rangeTo ? moment(row.rangeTo).format("DD/MM/YYYY") : ""}
+                                        value={row.rangeTo ? moment(row.rangeTo).format("YYYY-MM-DD") : ""}
                                         InputLabelProps={{ shrink: true }}
-                                        disabled
+                                        onChange={(e) => handleChange("classification", index, "rangeTo", e.target.value)}
                                     />
                                 </Grid2>
 
