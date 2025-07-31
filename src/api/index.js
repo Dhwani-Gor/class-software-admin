@@ -828,7 +828,7 @@ export const deleteClassificationSurvey = async (id) => {
 export const updateClassificationSurvey = async (id, payload) => {
   let result;
   try {
-    result = await axiosInstance.patch(`/api/classificationSurveys/${id}`, payload);
+    result = await axiosInstance.patch(`/api/classificationSurveys/update/${id}`, payload);
   } catch (e) {
     result = e;
   }
