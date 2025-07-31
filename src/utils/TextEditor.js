@@ -818,8 +818,8 @@ const TextEditor = ({ id }) => {
             <div class="section">
                 <h4>Classification</h4>
                 <div class="classification-row"><em><strong>Class Symbols :</strong></em> - </div>
-                <div class="classification-row"><em><strong>Machinery Notation:</strong></em> ${clientData?.machineryNotation || '-'}</div>
                 <div class="classification-row"><em><strong>Hull Notation :</strong></em> ${clientData?.hullNotation || '-'}</div>
+                <div class="classification-row"><em><strong>Machinery Notation:</strong></em> ${clientData?.machineryNotation || '-'}</div>
                 <div class="classification-row"><em><strong>Descriptive Notations:</strong></em> ${clientData?.descriptiveNotation || '-'}</div>
             </div>
             
