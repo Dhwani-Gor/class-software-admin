@@ -66,60 +66,49 @@ const TextEditor = ({ id }) => {
         try {
             const style = contentDocument.createElement("style");
             style.innerHTML = `
-            @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
-      
             * {
-              font-family: 'Roboto', sans-serif !important;
-              font-size: 13px !important;
-              line-height: 20px !important;
-              box-sizing: border-box;
+                font-family: Arial, sans-serif !important;
+                font-size: 11px !important;
+                line-height: 20px !important;
+                word-spacing: 0.05em !important;
+                box-sizing: border-box;
+                white-space: normal !important;
             }
-      
-            html, body {
-              margin: 0 !important;
-              padding: 0 !important;
-              background: white !important;
-              width: 100% !important;
-            }
-            
-            /* Enhanced table row break prevention */
-            table {
-              border-collapse: collapse !important;
-              page-break-inside: auto !important;
-            }
-            
-            table tr {
-              page-break-inside: avoid !important;
-              break-inside: avoid !important;
-              display: table-row !important;
-              vertical-align: top !important;
-            }
-            
-            table td, table th {
-              page-break-inside: avoid !important;
-              break-inside: avoid !important;
-              vertical-align: top !important;
-              padding: 4px !important;
-            }
-            
-            /* Prevent orphaned table elements */
-            table thead {
-              display: table-header-group !important;
-            }
-            
-            table tbody {
-              display: table-row-group !important;
-            }
-            
-            /* General page break rules */
-            .no-break {
-              page-break-inside: avoid !important;
-              break-inside: avoid !important;
-            }
-          `;
-            contentDocument.head.appendChild(style);
 
-            // Add no-break class to all table rows programmatically
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                width: 100% !important;
+                height: auto !important;
+            }
+
+            table {
+                border-collapse: collapse !important;
+                page-break-inside: auto !important;
+            }
+
+            table tr, table td, table th {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                vertical-align: top !important;
+                padding: 4px !important;
+            }
+
+            table thead {
+                display: table-header-group !important;
+            }
+
+            table tbody {
+                display: table-row-group !important;
+            }
+
+            .no-break {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+        `;
+            contentDocument.head.appendChild(style);
             const tableRows = contentDocument.querySelectorAll('table tr');
             tableRows.forEach(row => {
                 row.classList.add('no-break');
@@ -132,7 +121,7 @@ const TextEditor = ({ id }) => {
             contentBody.style.maxHeight = 'none';
 
             await document.fonts.ready;
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 300));
 
             const pageWidth = 595.28;
             const pageHeight = 841.89;
@@ -586,50 +575,29 @@ const TextEditor = ({ id }) => {
     };
 
     const generateHtmlContent = useCallback(() => {
-        const certificateOfClassRow = statutoryData?.find(row => row.surveyName.toLowerCase() === "certificate of class");
 
-        const classificationRows = [
-            certificateOfClassRow && (() => {
-                const surveyName = formatSurveyName(certificateOfClassRow.surveyName);
-                const issuanceDate = certificateOfClassRow.issuanceDate;
-                const surveyDate = certificateOfClassRow.surveyDate;
-                const rangeTo = certificateOfClassRow.rangeTo ? moment(certificateOfClassRow.rangeTo).format("YYYY-MM-DD") : null;
-                const rangeFrom = certificateOfClassRow.rangeFrom ? moment(certificateOfClassRow.rangeFrom).format("YYYY-MM-DD") : null;
-                const postponedDate = certificateOfClassRow.postponed;
-                const currentDate = new Date().toISOString().split('T')[0];
+        const classificationRows = (classificationData?.map((row) => {
+            const surveyName = formatSurveyName(row.surveyName);
+            const issuanceDate = row.issuanceDate;
+            const surveyDate = row.surveyDate;
+            const dueDate = row.dueDate;
+            const rangeTo = row.rangeTo ? moment(row.rangeTo).format("YYYY-MM-DD") : null;
+            const rangeFrom = row.rangeFrom ? moment(row.rangeFrom).format("YYYY-MM-DD") : null;
+            const postponedDate = row.postponed;
+            const currentDate = new Date().toISOString().split('T')[0];
 
-                return `
-                        <tr>
-                            <td>${surveyName}</td>
-                            <td>${getClassRangeIcon(rangeTo, currentDate, rangeFrom) ? `<span class="${getClassRangeIcon(rangeTo, currentDate, rangeFrom)}">C</span>` : ''}</td>              
-                            <td>${surveyDate ? moment(surveyDate).format('DD/MM/YYYY') : ''}</td>
-                            <td>${issuanceDate ? moment(issuanceDate).format('DD/MM/YYYY') : ''}</td>
-                            <td>${reportDetails.typeOfCertificate == "full_term" ? `${moment(rangeFrom).format('DD/MM/YYYY')} - ${moment(rangeTo).format('DD/MM/YYYY')}` : ''}</td>
-                            <td>${postponedDate ? moment(postponedDate).format('DD/MM/YYYY') : ''}</td>
-                        </tr>
-                    `;
-            })(),
-            ...(classificationData?.map((row) => {
-                const surveyName = formatSurveyName(row.surveyName);
-                const issuanceDate = row.issuanceDate;
-                const surveyDate = row.surveyDate;
-                const rangeTo = row.rangeTo ? moment(row.rangeTo).format("YYYY-MM-DD") : null;
-                const rangeFrom = row.rangeFrom ? moment(row.rangeFrom).format("YYYY-MM-DD") : null;
-                const postponedDate = row.postponed;
-                const currentDate = new Date().toISOString().split('T')[0];
-
-                return `
-                        <tr>
-                            <td>${surveyName}</td>
-                            <td>${getClassRangeIcon(rangeTo, currentDate, rangeFrom) ? `<span class="${getClassRangeIcon(rangeTo, currentDate, rangeFrom)}">C</span>` : ''}</td>              
-                            <td>${surveyDate ? moment(surveyDate).format('DD/MM/YYYY') : ''}</td>
-                            <td>${issuanceDate ? moment(issuanceDate).format('DD/MM/YYYY') : ''}</td>
-                            <td>${reportDetails.typeOfCertificate == "full_term" ? `${moment(rangeFrom).format('DD/MM/YYYY')} - ${moment(rangeTo).format('DD/MM/YYYY')}` : ''}</td>
-                            <td>${postponedDate ? moment(postponedDate).format('DD/MM/YYYY') : ''}</td>
-                        </tr>
-                    `;
-            }) || [])
-        ].filter(Boolean).join("");
+            return `
+                <tr>
+                    <td>${surveyName}</td>
+                    <td>${getClassRangeIcon(rangeTo, currentDate, rangeFrom) ? `<span class="${getClassRangeIcon(rangeTo, currentDate, rangeFrom)}">C</span>` : ''}</td>              
+                    <td>${surveyDate ? moment(surveyDate).format('DD/MM/YYYY') : ''}</td>
+                    <td>${issuanceDate ? moment(issuanceDate).format('DD/MM/YYYY') : ''}</td>
+                    <td>${dueDate ? moment(dueDate).format('DD/MM/YYYY') : ''}
+                    <td>${reportDetails.typeOfCertificate == "full_term" ? `${moment(rangeFrom).format('DD/MM/YYYY')} - ${moment(rangeTo).format('DD/MM/YYYY')}` : ''}</td>
+                    <td>${postponedDate ? moment(postponedDate).format('DD/MM/YYYY') : ''}</td>
+                </tr>
+            `;
+        }) || []).join("");
 
         const statutoryRows = statutoryData?.filter(row => row.surveyName.toLowerCase() !== "certificate of class")
             .map((row) => {
@@ -652,41 +620,51 @@ const TextEditor = ({ id }) => {
             `;
             }).join("");
 
-        const certificateRows = reportDetails
-            ?.map((cert) => {
-                const name = cert?.activity?.surveyTypes?.report?.name || "-";
-                const issued = cert.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : "";
-                const expiry = cert.validityDate;
-                let extendedDate = cert.extendedDate;
+        const certificateOfClassRow = reportDetails?.find(
+            (cert) => cert?.activity?.surveyTypes?.report?.name?.toLowerCase() === "certificate of class"
+        );
 
-                const expiryFormatted = expiry ? moment(expiry).format('YYYY-MM-DD') : null;
+        const otherCertificates = reportDetails?.filter(
+            (cert) => cert?.activity?.surveyTypes?.report?.name?.toLowerCase() !== "certificate of class"
+        );
 
-                const type = cert?.typeOfCertificate === "short_term"
-                    ? "ST"
-                    : cert?.typeOfCertificate === "full_term"
-                        ? "FT"
-                        : cert?.typeOfCertificate === "intrim"
-                            ? "IT"
-                            : cert?.typeOfCertificate === "extended"
-                                ? "ET"
-                                : cert?.typeOfCertificate || "-";
+        const formatCertificateRow = (cert) => {
+            const name = cert?.activity?.surveyTypes?.report?.name || "-";
+            const issued = cert.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : "";
+            const expiry = cert.validityDate;
+            const extendedDate = cert.extendedDate;
+            const expiryFormatted = expiry ? moment(expiry).format("YYYY-MM-DD") : null;
 
-                // const status = cert?.activity?.status;
-                const status = ""
-                const currentDate = new Date().toISOString().split('T')[0];
-                return `
-                <tr>
-                <td>${name}</td>
-                <td>${getClassName(expiryFormatted, currentDate) ? `<span class="${getClassName(expiryFormatted, currentDate)}">C</span>` : ''}</td>
-                <td>${issued}</td>
-                <td>${expiry ? moment(expiry).format('DD/MM/YYYY') : ''}</td>
-                <td></td>
-                <td>${type}</td>
-                <td>${status}</td>
-                </tr>
-            `;
-            })
-            .join("");
+            const type = cert?.typeOfCertificate === "short_term"
+                ? "ST"
+                : cert?.typeOfCertificate === "full_term"
+                    ? "FT"
+                    : cert?.typeOfCertificate === "intrim"
+                        ? "IT"
+                        : cert?.typeOfCertificate === "extended"
+                            ? "ET"
+                            : cert?.typeOfCertificate || "-";
+
+            const status = "";
+            const currentDate = new Date().toISOString().split("T")[0];
+
+            return `
+                    <tr>
+                        <td>${name}</td>
+                        <td>${getClassName(expiryFormatted, currentDate) ? `<span class="${getClassName(expiryFormatted, currentDate)}">C</span>` : ""}</td>
+                        <td>${issued}</td>
+                        <td>${expiry ? moment(expiry).format("DD/MM/YYYY") : ""}</td>
+                        <td></td>
+                        <td>${type}</td>
+                        <td>${status}</td>
+                    </tr>
+                `;
+        };
+
+        const certificateRows = [
+            certificateOfClassRow ? formatCertificateRow(certificateOfClassRow) : null,
+            ...(otherCertificates?.map(formatCertificateRow) || [])
+        ].filter(Boolean).join("");
 
         const certificatesTableHtml = `
         <h4 style="margin-top: -50px;">Certificates</h4>
@@ -721,6 +699,7 @@ const TextEditor = ({ id }) => {
                         <th></th>
                         <th>Survey Date</th>
                         <th>Issuance Date</th>
+                        <th>Due Date</th>
                         <th>Range (from, to)</th>
                         <th>Postponed</th>
                     </tr>
@@ -729,7 +708,7 @@ const TextEditor = ({ id }) => {
             `;
 
         const statutorySurveyTableHtml = `
-                <div class="section-title">Statutory Surveys</div>
+                <div class="section-title" style="margin-top: 20px;">Statutory Surveys</div>
                 <table>
                     <tr>
                         <th>Survey Name</th>
@@ -839,9 +818,9 @@ const TextEditor = ({ id }) => {
             <div class="section">
                 <h4>Classification</h4>
                 <div class="classification-row"><em><strong>Class Symbols :</strong></em> - </div>
+                <div class="classification-row"><em><strong>Machinery Notation:</strong></em> ${clientData?.machineryNotation || '-'}</div>
                 <div class="classification-row"><em><strong>Hull Notation :</strong></em> ${clientData?.hullNotation || '-'}</div>
                 <div class="classification-row"><em><strong>Descriptive Notations:</strong></em> ${clientData?.descriptiveNotation || '-'}</div>
-                <div class="classification-row"><em><strong>Machinery Notation:</strong></em> ${clientData?.machineryNotation || '-'}</div>
             </div>
             
             <div class="hull-section">
@@ -868,11 +847,9 @@ const TextEditor = ({ id }) => {
                 </div>
                 <div class="hull-row">
                     <div class="left"><em><strong>Date of delivery:</strong></em> ${clientData?.dateOfDelivery ? moment(clientData?.dateOfDelivery).format("DD/MM/YYYY") : '-'}</div>
-                    <div class="right"><strong>Hull Info:</strong> ${clientData?.hullNotation || '-'}</div>
+                    <div class="right"><em><strong>Date of modification:</strong></em> ${clientData?.dateOfModification ? moment(clientData?.dateOfModification).format("DD/MM/YYYY") : '-'}</div>
                 </div>
-            <div class="hull-row">
-                    <div class="left"><em><strong>Date of modification:</strong></em> ${clientData?.dateOfModification ? moment(clientData?.dateOfModification).format("DD/MM/YYYY") : '-'}</div>
-                </div>
+           
                 <div class="hull-row">
                     <div class="left"><em><strong>Carrying capacity:</strong></em> ${clientData?.carryingCapacity || '-'}</div>
                 </div>

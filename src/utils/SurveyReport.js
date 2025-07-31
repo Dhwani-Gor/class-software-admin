@@ -55,57 +55,48 @@ const SurveyReport = ({ id }) => {
           try {
               const style = contentDocument.createElement("style");
               style.innerHTML = `
-              @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
-        
               * {
-                font-family: 'Roboto', sans-serif !important;
-                font-size: 13px !important;
-                line-height: 20px !important;
-                box-sizing: border-box;
+                  font-family: Arial, sans-serif !important;
+                  font-size: 11px !important;
+                  line-height: 20px !important;
+                  word-spacing: 0.05em !important;
+                  box-sizing: border-box;
+                  white-space: normal !important;
               }
-        
+  
               html, body {
-                margin: 0 !important;
-                padding: 0 !important;
-                background: white !important;
-                width: 100% !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  background: white !important;
+                  width: 100% !important;
+                  height: auto !important;
               }
-              
-              /* Enhanced table row break prevention */
+  
               table {
-                border-collapse: collapse !important;
-                page-break-inside: auto !important;
+                  border-collapse: collapse !important;
+                  page-break-inside: auto !important;
               }
-              
-              table tr {
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-                display: table-row !important;
-                vertical-align: top !important;
+  
+              table tr, table td, table th {
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                  vertical-align: top !important;
+                  padding: 4px !important;
               }
-              
-              table td, table th {
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-                vertical-align: top !important;
-                padding: 4px !important;
-              }
-              
-              /* Prevent orphaned table elements */
+  
               table thead {
-                display: table-header-group !important;
+                  display: table-header-group !important;
               }
-              
+  
               table tbody {
-                display: table-row-group !important;
+                  display: table-row-group !important;
               }
-              
-              /* General page break rules */
+  
               .no-break {
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
               }
-            `;
+          `;
               contentDocument.head.appendChild(style);
   
               // Add no-break class to all table rows programmatically

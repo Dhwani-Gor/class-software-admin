@@ -168,9 +168,9 @@ const ClassificationForm = ({ mode = "create", variableId = null }) => {
                     surveyName: data.surveyName,
                     surveyDate: data.surveyDate,
                     issuanceDate: data.issuanceDate,
-                    dueDate: data.dueDate || dueDate,
-                    rangeFrom: data.rangeFrom || rangeFrom,
-                    rangeTo: data.rangeTo || rangeTo,
+                    dueDate: data.dueDate,
+                    rangeFrom: data.rangeFrom,
+                    rangeTo: data.rangeTo,
                     postponed: data.postponed || ""
                 };
 
