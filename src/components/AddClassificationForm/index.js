@@ -166,12 +166,12 @@ const ClassificationForm = ({ mode = "create", variableId = null }) => {
                 const formattedRow = {
                     id: data.id,
                     surveyName: data.surveyName,
-                    surveyDate: data.surveyDate,
+                    surveyDate: data.surveyDate ? data.surveyDate : "",
                     issuanceDate: data.issuanceDate,
                     dueDate: data.dueDate,
-                    rangeFrom: data.rangeFrom,
-                    rangeTo: data.rangeTo,
-                    postponed: data.postponed || ""
+                    rangeFrom: data.rangeFrom ? data.rangeFrom : "",
+                    rangeTo: data.rangeTo ? data.rangeTo : "",
+                    postponed: data.postponed ? data.postponed : ""
                 };
 
                 setClassificationRows([formattedRow]);
@@ -194,15 +194,16 @@ const ClassificationForm = ({ mode = "create", variableId = null }) => {
                 surveyDate: classificationRows[0].surveyDate ? classificationRows[0].surveyDate : "",
                 issuanceDate: classificationRows[0].issuanceDate,
                 dueDate: classificationRows[0].dueDate,
-                rangeFrom: classificationRows[0].rangeFrom,
-                rangeTo: classificationRows[0].rangeTo,
-                postponed: classificationRows[0].postponed
+                rangeFrom: classificationRows[0].rangeFrom ? classificationRows[0].rangeFrom : "",
+                rangeTo: classificationRows[0].rangeTo ? classificationRows[0].rangeTo : "",
+                postponed: classificationRows[0].postponed ? classificationRows[0].postponed : ""
             };
             const response = await updateClassificationSurvey(variableId, updatedData);
             if (response?.data?.status == "success") {
                 toast.success("Classification updated successfully");
             }
             router.push(`/classification`);
+            return;
         }
 
         const payload = classificationRows
