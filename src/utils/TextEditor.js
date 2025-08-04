@@ -108,6 +108,13 @@ const TextEditor = ({ id }) => {
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
+                .no-break-block, 
+                .no-break-block *, 
+                .hull-row {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                border:none;
+}
         `;
             contentDocument.head.appendChild(style);
             const tableRows = contentDocument.querySelectorAll('table tr');
@@ -235,12 +242,12 @@ const TextEditor = ({ id }) => {
                 page.drawText(generatedText, {
                     x: margin,
                     y: footerY,
-                    size: 9,
+                    size: 8,
                 });
                 page.drawText(pageText, {
                     x: pageWidth - margin - pageText.length * 5.5,
                     y: footerY,
-                    size: 9,
+                    size: 8,
                 });
 
                 currentY += sliceHeight;
@@ -596,9 +603,9 @@ const TextEditor = ({ id }) => {
                     <td>${dueDate ? moment(dueDate).format('DD/MM/YYYY') : ''}
                     <td>
                         ${moment(rangeFrom, moment.ISO_8601, true).isValid() && moment(rangeTo, moment.ISO_8601, true).isValid()
-                            ? `${moment(rangeFrom).format('DD/MM/YYYY')} - ${moment(rangeTo).format('DD/MM/YYYY')}`
-                            : '-'
-                        }
+                    ? `${moment(rangeFrom).format('DD/MM/YYYY')} - ${moment(rangeTo).format('DD/MM/YYYY')}`
+                    : '-'
+                }
                     </td>
 
                     <td>${postponedDate ? moment(postponedDate).format('DD/MM/YYYY') : ''}</td>
@@ -761,7 +768,7 @@ const TextEditor = ({ id }) => {
         </div>
         </div>
 
-       <div style="text-align: center;">
+       <div style="text-align: center;" class="page">
        <h2>Table of Contents</h2>
   <div class="option option3">
          <table>
@@ -821,45 +828,72 @@ const TextEditor = ({ id }) => {
                 </div>
             </div>
             
-            <div class="section">
-                <h4>Classification</h4>
-                <div class="classification-row"><em><strong>Class Symbols :</strong></em> - </div>
-                <div class="classification-row"><em><strong>Hull Notation :</strong></em> ${clientData?.hullNotation || '-'}</div>
-                <div class="classification-row"><em><strong>Machinery Notation:</strong></em> ${clientData?.machineryNotation || '-'}</div>
-                <div class="classification-row"><em><strong>Descriptive Notations:</strong></em> ${clientData?.descriptiveNotation || '-'}</div>
-            </div>
+            <table class="classification-section-table" style="width: 100%; border-collapse: collapse;">
+  <thead>
+    <tr>
+      <th style="text-align: left; padding: 8px;" colspan="2">
+        <h4>Classification</h4>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><em><strong>Class Symbols:</strong></em></td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td><em><strong>Hull Notation:</strong></em></td>
+      <td>${clientData?.hullNotation || '-'}</td>
+    </tr>
+    <tr>
+      <td><em><strong>Machinery Notation:</strong></em></td>
+      <td>${clientData?.machineryNotation || '-'}</td>
+    </tr>
+    <tr>
+      <td><em><strong>Descriptive Notations:</strong></em></td>
+      <td>${clientData?.descriptiveNotation || '-'}</td>
+    </tr>
+  </tbody>
+</table>
+
             
-            <div class="hull-section">
-                <h4>Hull</h4>
-                <div class="hull-row">
-                    <div class="left"><em><strong>Gross Tonnage:</strong></em> ${clientData?.grossTonnage || '-'}</div>
-                    <div class="right"><strong>Ship Builder:</strong> ${clientData?.shipBuilder || '-'}</div>
-                </div>
-                <div class="hull-row">
-                    <div class="left"><em><strong>Net Tonnage:</strong></em> ${clientData?.netTonnage || '-'}</div>
-                    <div class="right"><strong>Country of build:</strong> ${clientData?.countryOfBuild || '-'}</div>
-                </div>
-                <div class="hull-row">
-                    <div class="left"><em><strong>Deadweight:</strong></em> ${clientData?.deadweight || '-'}</div>
-                    <div class="right"><strong>Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : '-'}</div>
-                </div>
-                <div class="hull-row">
-                    <div class="left"><strong>Keel Laid Date:</strong> ${clientData?.keelLaidDate ? moment(clientData?.keelLaidDate).format("DD/MM/YYYY") : '-'}</div>
-                    <div class="right"><strong>Date of building contract:</strong> ${clientData?.dateOfBuildingContract ? moment(clientData?.dateOfBuildingContract).format("DD/MM/YYYY") : '-'}</div>
-                </div>
-                <div class="hull-row">
-                    <div class="left"><em><strong>Length of ship:</strong></em> ${clientData?.lengthOfShip || '-'}</div>
-                    <div class="right"><strong>Area of operation:</strong> ${clientData?.areaOfOperation || '-'}</div>
-                </div>
-                <div class="hull-row">
-                    <div class="left"><em><strong>Date of delivery:</strong></em> ${clientData?.dateOfDelivery ? moment(clientData?.dateOfDelivery).format("DD/MM/YYYY") : '-'}</div>
-                    <div class="right"><em><strong>Date of modification:</strong></em> ${clientData?.dateOfModification ? moment(clientData?.dateOfModification).format("DD/MM/YYYY") : '-'}</div>
-                </div>
-           
-                <div class="hull-row">
-                    <div class="left"><em><strong>Carrying capacity:</strong></em> ${clientData?.carryingCapacity || '-'}</div>
-                </div>
-            </div>
+            <table class="hull-section-table" style="width: 100%; border-collapse: collapse; border:none;">
+  <thead>
+    <tr>
+      <th colspan="2" style="text-align: left; padding: 8px; border:none;"><h4>Hull</h4></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><em><strong>Gross Tonnage:</strong></em> ${clientData?.grossTonnage || '-'}</td>
+      <td><strong>Ship Builder:</strong> ${clientData?.shipBuilder || '-'}</td>
+    </tr>
+    <tr>
+      <td><em><strong>Net Tonnage:</strong></em> ${clientData?.netTonnage || '-'}</td>
+      <td><strong>Country of build:</strong> ${clientData?.countryOfBuild || '-'}</td>
+    </tr>
+    <tr>
+      <td><em><strong>Deadweight:</strong></em> ${clientData?.deadweight || '-'}</td>
+      <td><strong>Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : '-'}</td>
+    </tr>
+    <tr>
+      <td><strong>Keel Laid Date:</strong> ${clientData?.keelLaidDate ? moment(clientData?.keelLaidDate).format("DD/MM/YYYY") : '-'}</td>
+      <td><strong>Date of building contract:</strong> ${clientData?.dateOfBuildingContract ? moment(clientData?.dateOfBuildingContract).format("DD/MM/YYYY") : '-'}</td>
+    </tr>
+    <tr>
+      <td><em><strong>Length of ship:</strong></em> ${clientData?.lengthOfShip || '-'}</td>
+      <td><strong>Area of operation:</strong> ${clientData?.areaOfOperation || '-'}</td>
+    </tr>
+    <tr>
+      <td><em><strong>Date of delivery:</strong></em> ${clientData?.dateOfDelivery ? moment(clientData?.dateOfDelivery).format("DD/MM/YYYY") : '-'}</td>
+      <td><em><strong>Date of modification:</strong></em> ${clientData?.dateOfModification ? moment(clientData?.dateOfModification).format("DD/MM/YYYY") : '-'}</td>
+    </tr>
+    <tr>
+      <td colspan="2"><em><strong>Carrying capacity:</strong></em> ${clientData?.carryingCapacity || '-'}</td>
+    </tr>
+  </tbody>
+</table>
+
             </div>
             
             <div class="owner-section page">
@@ -893,19 +927,31 @@ const TextEditor = ({ id }) => {
                 
                 ${statutorySurveyTableHtml}
 
-            <div class="legend">
-            <span class="legend-item">
-                <span class="status-icon expired">S</span>Overdue
-            </span>
-            <span class="legend-item">
-                <span class="status-icon expiring1m">S</span>Overdue in less than 1 month
-            </span>
-            <span class="legend-item">
-                <span class="status-icon expiring3m">S</span>Within the range
-            </span>
-            </div>
-            <div style="margin-top: 22px; font-size: 16px;"><strong>Note: </strong>Format of date is DD/MM/YYYY</div>
+            <table class="survey-summary-table" style="width: 100%; border-collapse: collapse; margin-top: 16px; page-break-inside: avoid;">
+  <tbody>
+    <tr>
+      <td colspan="2">
+        <div class="legend" style="margin-top: 10px;">
+          <span class="legend-item">
+            <span class="status-icon expired">S</span> Overdue
+          </span>
+          <span class="legend-item">
+            <span class="status-icon expiring1m">S</span> Overdue in less than 1 month
+          </span>
+          <span class="legend-item">
+            <span class="status-icon expiring3m">S</span> Within the range
+          </span>
         </div>
+        <div style="font-size: 16px; margin-top: 16px;">
+          <strong>Note:</strong> Format of date is DD/MM/YYYY
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+        </div>
+
     `;
     }, [clientData, reportDetails, classificationData, statutoryData]);
 
@@ -971,7 +1017,7 @@ const TextEditor = ({ id }) => {
     return (
         <>
             <Editor
-                apiKey="p9j94lg0okz82u9rr4v3zhap0pimbq1hob48rzesv3c5dylj"
+                apiKey="ui9zuowlon8fa7oc7k1pxppzdasljlojq3bcubjdvx6uhfw3"
                 value={editorContent}
                 onEditorChange={handleEditorChange}
                 init={{
@@ -1241,6 +1287,22 @@ const TextEditor = ({ id }) => {
                         margin: 2px 0;
                         color: black;
                     }
+                        .classification-section-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  border:none;
+  page-break-inside: avoid;
+}
+
+.classification-section-table td,
+.classification-section-table th {
+  padding: 6px 8px;
+  border:none;
+  vertical-align: top;
+  break-inside: avoid;
+}
+
 
                     .legend-overdue {
                         color: #ff9900;
