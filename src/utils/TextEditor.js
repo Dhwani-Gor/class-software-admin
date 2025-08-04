@@ -54,6 +54,7 @@ const TextEditor = ({ id }) => {
         const contentDocument = iframe?.contentDocument;
         const contentBody = contentDocument?.body;
 
+
         if (!contentBody) {
             console.error("Could not find editor content");
             return;
@@ -256,7 +257,7 @@ const TextEditor = ({ id }) => {
 
             const res = await uploadSurveyReport(formData);
             if (res) {
-              toast.success("Survey Status Report Downloaded Successfully");
+                toast.success("Survey Status Report Downloaded Successfully");
             }
 
             const url = URL.createObjectURL(blob);
@@ -593,7 +594,13 @@ const TextEditor = ({ id }) => {
                     <td>${surveyDate ? moment(surveyDate).format('DD/MM/YYYY') : ''}</td>
                     <td>${issuanceDate ? moment(issuanceDate).format('DD/MM/YYYY') : ''}</td>
                     <td>${dueDate ? moment(dueDate).format('DD/MM/YYYY') : ''}
-                    <td>${reportDetails.typeOfCertificate == "full_term" ? `${moment(rangeFrom).format('DD/MM/YYYY')} - ${moment(rangeTo).format('DD/MM/YYYY')}` : ''}</td>
+                    <td>
+                        ${moment(rangeFrom, moment.ISO_8601, true).isValid() && moment(rangeTo, moment.ISO_8601, true).isValid()
+                            ? `${moment(rangeFrom).format('DD/MM/YYYY')} - ${moment(rangeTo).format('DD/MM/YYYY')}`
+                            : '-'
+                        }
+                    </td>
+
                     <td>${postponedDate ? moment(postponedDate).format('DD/MM/YYYY') : ''}</td>
                 </tr>
             `;
@@ -713,7 +720,7 @@ const TextEditor = ({ id }) => {
                     <tr>
                         <th>Survey Name</th>
                         <th></th>
-                        <th>SurveyDate</th>
+                        <th>Survey Date</th>
                         <th>Range (from, to)</th>
                         <th>Postponed</th>
                     </tr>
@@ -798,7 +805,6 @@ const TextEditor = ({ id }) => {
 
          <div class="page">
                 <h2>Ship Particulars</h2>
-            
                 <div class="section">
                 <h4>Identification</h4>
                 <div class="identification-row">
