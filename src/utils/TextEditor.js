@@ -768,10 +768,10 @@ const TextEditor = ({ id }) => {
         </div>
         </div>
 
-       <div style="text-align: center;" class="page">
+       <div style="text-align: center; align-items: center;" class="page">
        <h2>Table of Contents</h2>
-  <div class="option option3">
-         <table>
+        <div class="option option3">
+         <table style="width: 99%;">
         <tr>
             <td><strong>1. Ship Particulars</strong></td>
         </tr>
@@ -1076,7 +1076,7 @@ const TextEditor = ({ id }) => {
                     
                     .page {
                         width: 8.5in;
-                        margin: 0 auto;
+                        margin: 0 auto; 
                         padding: 20px;
                         background-color: white;
                         position: relative;
