@@ -64,7 +64,9 @@ const surveyTypes = [
     { label: "Bottom Survey", value: "bottom_survey" },
     { label: "Boiler Survey (OF)", value: "boiler_survey_of" },
     { label: "Boiler Survey (EXH)", value: "boiler_survey_exh" },
-    { label: "Tail Shaft Survey", value: "tailshaft_survey" }
+    { label: "Tail Shaft Survey", value: "tailshaft_survey" },
+    { label: "Cargo Gear Survey - annual", value: "cargo_gear_survey_annual" },
+    { label: "Cargo Gear Survey - renewal", value: "cargo_gear_survey_renewal" }
 ];
 
 const ClassificationForm = ({ mode = "create", variableId = null }) => {
