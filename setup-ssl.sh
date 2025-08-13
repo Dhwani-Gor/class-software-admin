@@ -16,7 +16,7 @@ mkdir -p ssl ssl-challenge
 
 # Start containers
 echo "Starting Docker containers..."
-docker-compose up -d --build
+docker compose up -d --build
 sleep 15
 
 echo "Generating SSL certificate for both gambiaclass.org and www.gambiaclass.org..."
