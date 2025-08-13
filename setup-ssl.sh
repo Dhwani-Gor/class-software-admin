@@ -35,7 +35,7 @@ if [ $? -eq 0 ]; then
     
     # Restart nginx with SSL
     echo "Restarting nginx with SSL configuration..."
-    docker-compose restart nginx
+    docker compose restart nginx
     
     echo ""
     echo "🎉 Setup Complete!"
