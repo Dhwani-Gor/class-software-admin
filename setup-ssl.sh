@@ -4,7 +4,7 @@ echo "🚀 SSL Setup for gambiaclass.org"
 
 # Pre-configured for your domain
 DOMAIN="gambiaclass.org"
-EMAIL="your-email@gambiaclass.org"
+EMAIL="info@gambiaclass.org"
 
 echo "Enter your email for Let's Encrypt certificate:"
 read EMAIL
@@ -32,7 +32,9 @@ docker run --rm \
 
 if [ $? -eq 0 ]; then
     echo "✅ SSL certificate generated successfully!"
-    
+
+    (crontab -l 2>/dev/null; echo '0 3 * * * docker run --rm -v $(pwd)/ssl:/etc/letsencrypt -v $(pwd)/ssl-challenge:/var/www/certbot certbot/certbot renew && docker exec nginx-proxy nginx -s reload') | crontab -
+
     # Restart nginx with SSL
     echo "Restarting nginx with SSL configuration..."
     docker compose restart nginx
