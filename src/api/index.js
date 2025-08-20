@@ -46,7 +46,7 @@ export const addCountry = async (payload) => {
 export const registerUser = async (payload) => {
   let result;
   try {
-    result = await axiosInstance.post(`/api/users/signUp`, payload);
+    result = await axiosInstance.post(`/users/signUp`, payload);
   } catch (error) {
     result = error;
   }
@@ -55,7 +55,7 @@ export const registerUser = async (payload) => {
 export const adminLogin = async (payload) => {
   let result;
   try {
-    result = await axiosInstance.post(`/api/users/login`, payload);
+    result = await axiosInstance.post(`/users/login`, payload);
   } catch (error) {
     result = error;
   }
@@ -65,7 +65,7 @@ export const adminLogin = async (payload) => {
 export const getVisitDetails = async (filterKey, filterValue) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/visitDetails?filterKey=${filterKey}&filterValue=${filterValue}`)
+    result = await axiosInstance.get(`/visitDetails?filterKey=${filterKey}&filterValue=${filterValue}`)
   } catch (error) {
     result = error;
   }
@@ -131,7 +131,7 @@ export const getParticularVisaApplicantDetails = async (id) => {
 export const createInspector = async (payload) => {
   let result;
   try {
-    result = await axiosInstance.post(`/api/users`, payload);
+    result = await axiosInstance.post(`/users`, payload);
   } catch (e) {
     result = e;
   }
@@ -141,7 +141,7 @@ export const createInspector = async (payload) => {
 export const getAllUsers = async (page, limit, search, isActiveUsers = true) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/users?filterKey=isActive&filterValue=${isActiveUsers}`, {
+    result = await axiosInstance.get(`/users?filterKey=isActive&filterValue=${isActiveUsers}`, {
       params: {
         page: page,
         limit: limit,
@@ -157,7 +157,7 @@ export const getAllUsers = async (page, limit, search, isActiveUsers = true) => 
 export const deleteUser = async (payload) => {
   let result;
   try {
-    result = await axiosInstance.delete(`/api/users/${payload.id}`);
+    result = await axiosInstance.delete(`/users/${payload.id}`);
   } catch (e) {
     result = e;
   }
@@ -167,7 +167,7 @@ export const deleteUser = async (payload) => {
 export const getInspectorsDetails = async (id) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/users/${id}`);
+    result = await axiosInstance.get(`/users/${id}`);
   } catch (error) {
     result = error;
   }
@@ -177,7 +177,7 @@ export const getInspectorsDetails = async (id) => {
 export const updateInspectorDetail = async (id, payload) => {
   let result;
   try {
-    result = await axiosInstance.patch(`/api/users/${id}`, payload);
+    result = await axiosInstance.patch(`/users/${id}`, payload);
   } catch (e) {
     result = e;
   }
@@ -202,7 +202,7 @@ export const getAllJournals = async ({
   if (limit) params.limit = limit;
 
   try {
-    result = await axiosInstance.get("/api/journals", { params });
+    result = await axiosInstance.get("/journals", { params });
   } catch (error) {
     result = error;
   }
@@ -216,7 +216,7 @@ export const getAllJournals = async ({
 export const getJournal = async (journalId) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/journals/${journalId}`);
+    result = await axiosInstance.get(`/journals/${journalId}`);
   } catch (error) {
     result = error;
   }
@@ -226,7 +226,7 @@ export const getJournal = async (journalId) => {
 export const deleteJournal = async (id) => {
   let result;
   try {
-    result = await axiosInstance.delete(`/api/journals/${id}`);
+    result = await axiosInstance.delete(`/journals/${id}`);
   } catch (error) {
     result = error;
   }
@@ -235,7 +235,7 @@ export const deleteJournal = async (id) => {
 export const generateInspection = async (payload) => {
   let result;
   try {
-    result = await axiosInstance.post(`/api/journals`, payload);
+    result = await axiosInstance.post(`/journals`, payload);
   } catch (e) {
     result = e;
   }
@@ -245,7 +245,7 @@ export const generateInspection = async (payload) => {
 export const updateInspection = async (payload, journalId) => {
   let result;
   try {
-    result = await axiosInstance.patch(`/api/journals/${journalId}`, payload);
+    result = await axiosInstance.patch(`/journals/${journalId}`, payload);
   } catch (e) {
     result = e;
   }
@@ -255,7 +255,7 @@ export const updateInspection = async (payload, journalId) => {
 export const getShipDetails = async (page, limit, search) => {
   let result;
   try {
-    result = await axiosInstance.get("/api/ships", {
+    result = await axiosInstance.get("/ships", {
       params: {
         page: page,
         limit: limit,
@@ -271,7 +271,7 @@ export const getShipDetails = async (page, limit, search) => {
 export const getAllClients = async (page, limit, search) => {
   let result;
   try {
-    result = await axiosInstance.get("/api/clients", {
+    result = await axiosInstance.get("/clients", {
       params: {
         page: page,
         limit: limit,
@@ -287,7 +287,7 @@ export const getAllClients = async (page, limit, search) => {
 export const getSpecificClient = async (clientId) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/clients/${clientId}`);
+    result = await axiosInstance.get(`/clients/${clientId}`);
   } catch (error) {
     result = error;
   }
@@ -297,7 +297,7 @@ export const getSpecificClient = async (clientId) => {
 export const createClient = async (payload) => {
   let result;
   try {
-    result = await axiosInstance.post(`/api/clients`, payload);
+    result = await axiosInstance.post(`/clients`, payload);
   } catch (e) {
     result = e;
   }
@@ -307,7 +307,7 @@ export const createClient = async (payload) => {
 export const updateClient = async (clientId, payload) => {
   let result;
   try {
-    result = await axiosInstance.patch(`/api/clients/${clientId}`, payload);
+    result = await axiosInstance.patch(`/clients/${clientId}`, payload);
   } catch (e) {
     result = e;
   }
@@ -317,7 +317,7 @@ export const updateClient = async (clientId, payload) => {
 export const deleteClient = async (payload) => {
   let result;
   try {
-    result = await axiosInstance.delete(`/api/clients/${payload.id}`);
+    result = await axiosInstance.delete(`/clients/${payload.id}`);
   } catch (e) {
     result = e;
   }
@@ -327,7 +327,7 @@ export const deleteClient = async (payload) => {
 export const searchowner_detail = async (searchQuery) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/search/ownerDetails?search=${searchQuery}`);
+    result = await axiosInstance.get(`/search/ownerDetails?search=${searchQuery}`);
   } catch (error) {
     result = error;
   }
@@ -337,7 +337,7 @@ export const searchowner_detail = async (searchQuery) => {
 export const searchmanager_detail = async (searchQuery) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/search/managerDetails?search=${searchQuery}`);
+    result = await axiosInstance.get(`/search/managerDetails?search=${searchQuery}`);
   } catch (error) {
     result = error;
   }
@@ -347,7 +347,7 @@ export const searchmanager_detail = async (searchQuery) => {
 export const searchinvoicing_detail = async (searchQuery) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/search/invoicingDetails?search=${searchQuery}`);
+    result = await axiosInstance.get(`/search/invoicingDetails?search=${searchQuery}`);
   } catch (error) {
     result = error;
   }
@@ -357,7 +357,7 @@ export const searchinvoicing_detail = async (searchQuery) => {
 export const getClientHistory = async (clientId) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/clients/${clientId}/history`);
+    result = await axiosInstance.get(`/clients/${clientId}/history`);
   } catch (e) {
     result = e;
   }
@@ -367,7 +367,7 @@ export const getClientHistory = async (clientId) => {
 export const createReportDetail = async (payload) => {
   let result;
   try {
-    result = await axiosInstance.post(`/api/reportDetails`, payload);
+    result = await axiosInstance.post(`/reportDetails`, payload);
   } catch (e) {
     result = e;
   }
@@ -377,7 +377,7 @@ export const createReportDetail = async (payload) => {
 export const updateReportDetail = async (reportId, payload) => {
   let result;
   try {
-    result = await axiosInstance.patch(`/api/reportDetails/${reportId}`, payload);
+    result = await axiosInstance.patch(`/reportDetails/${reportId}`, payload);
   } catch (e) {
     result = e;
   }
@@ -387,7 +387,7 @@ export const updateReportDetail = async (reportId, payload) => {
 export const createActivity = async (payload) => {
   let result;
   try {
-    result = await axiosInstance.post(`/api/activities`, payload);
+    result = await axiosInstance.post(`/activities`, payload);
   } catch (e) {
     result = e;
   }
@@ -397,7 +397,7 @@ export const createActivity = async (payload) => {
 export const updateActivity = async (payload, journalId) => {
   let result;
   try {
-    result = await axiosInstance.patch(`/api/activities/${journalId}`, payload);
+    result = await axiosInstance.patch(`/activities/${journalId}`, payload);
   } catch (e) {
     result = e;
   }
@@ -407,7 +407,7 @@ export const updateActivity = async (payload, journalId) => {
 export const getActivity = async (activityId) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/activities/${activityId}`);
+    result = await axiosInstance.get(`/activities/${activityId}`);
   } catch (e) {
     result = e;
   }
@@ -417,7 +417,7 @@ export const getActivity = async (activityId) => {
 export const deleteActivity = async (activityId) => {
   let result;
   try {
-    result = await axiosInstance.delete(`/api/activities/${activityId}`);
+    result = await axiosInstance.delete(`/activities/${activityId}`);
   } catch (e) {
     result = e;
   }
@@ -436,7 +436,7 @@ export const getAllActivities = async (filterKey, filterValue) => {
     // Only include params object if it's not empty
     const config = Object.keys(params).length > 0 ? { params } : undefined;
 
-    result = await axiosInstance.get("/api/activities", config);
+    result = await axiosInstance.get("/activities", config);
   } catch (error) {
     result = error;
   }
@@ -447,7 +447,7 @@ export const getAllActivities = async (filterKey, filterValue) => {
 export const createVisitDetails = async (payload) => {
   let result;
   try {
-    result = await axiosInstance.post(`/api/visitDetails`, payload);
+    result = await axiosInstance.post(`/visitDetails`, payload);
   } catch (e) {
     result = e;
   }
@@ -457,7 +457,7 @@ export const createVisitDetails = async (payload) => {
 export const updateVisitDetails = async (payload, journalId) => {
   let result;
   try {
-    result = await axiosInstance.patch(`/api/visitDetails/${journalId}`, payload);
+    result = await axiosInstance.patch(`/visitDetails/${journalId}`, payload);
   } catch (e) {
     result = e;
   }
@@ -467,7 +467,7 @@ export const updateVisitDetails = async (payload, journalId) => {
 export const deleteVisitDetails = async (activityId) => {
   let result;
   try {
-    result = await axiosInstance.delete(`/api/visitDetails/${activityId}`);
+    result = await axiosInstance.delete(`/visitDetails/${activityId}`);
   } catch (e) {
     result = e;
   }
@@ -486,7 +486,7 @@ export const getAllVisitDetails = async (filterKey, filterValue) => {
     // Only include params object if it's not empty
     const config = Object.keys(params).length > 0 ? { params } : undefined;
 
-    result = await axiosInstance.get("/api/visitDetails", config);
+    result = await axiosInstance.get("/visitDetails", config);
   } catch (error) {
     result = error;
   }
@@ -496,7 +496,7 @@ export const getAllVisitDetails = async (filterKey, filterValue) => {
 export const getSurveyTypes = async (search = '', page = '', limit = '') => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/surveyTypes?search=${search}&page=${page}&limit=${limit}`);
+    result = await axiosInstance.get(`/surveyTypes?search=${search}&page=${page}&limit=${limit}`);
   } catch (error) {
     result = error;
   }
@@ -508,7 +508,7 @@ export const getSurveyTypes = async (search = '', page = '', limit = '') => {
 export const createSurveyType = async (payload) => {
   let result;
   try {
-    result = await axiosInstance.post(`/api/surveyTypes`, payload);
+    result = await axiosInstance.post(`/surveyTypes`, payload);
   } catch (e) {
     result = e;
   }
@@ -518,7 +518,7 @@ export const createSurveyType = async (payload) => {
 export const updateSurveyType = async (id, payload) => {
   let result;
   try {
-    result = await axiosInstance.patch(`/api/surveyTypes/${id}`, payload);
+    result = await axiosInstance.patch(`/surveyTypes/${id}`, payload);
   } catch (e) {
     result = e;
   }
@@ -529,7 +529,7 @@ export const updateSurveyType = async (id, payload) => {
 export const deleteSurveyType = async (payload) => {
   let result;
   try {
-    result = await axiosInstance.delete(`/api/surveyTypes/${payload.id}`);
+    result = await axiosInstance.delete(`/surveyTypes/${payload.id}`);
   } catch (e) {
     result = e;
   }
@@ -539,7 +539,7 @@ export const deleteSurveyType = async (payload) => {
 export const getSurveyTypeDetails = async (id) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/surveyTypes/${id}`);
+    result = await axiosInstance.get(`/surveyTypes/${id}`);
   } catch (error) {
     result = error;
   }
@@ -549,7 +549,7 @@ export const getSurveyTypeDetails = async (id) => {
 export const getReports = async () => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/reports`);
+    result = await axiosInstance.get(`/reports`);
   } catch (error) {
     result = error;
   }
@@ -560,7 +560,7 @@ export const getReports = async () => {
 export const getAllDocuments = async (params) => {
   let result;
   try {
-    result = await axiosInstance.get("/api/reports", { params });
+    result = await axiosInstance.get("/reports", { params });
   } catch (error) {
     result = error;
   }
@@ -570,7 +570,7 @@ export const getAllDocuments = async (params) => {
 export const getDocumentDetails = async (id) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/reports/${id}`);
+    result = await axiosInstance.get(`/reports/${id}`);
   } catch (error) {
     result = error;
   }
@@ -580,7 +580,7 @@ export const getDocumentDetails = async (id) => {
 export const createDocument = async (payload) => {
   let result;
   try {
-    result = await axiosInstance.post(`/api/reports`, payload);
+    result = await axiosInstance.post(`/reports`, payload);
   } catch (e) {
     result = e;
   }
@@ -590,7 +590,7 @@ export const createDocument = async (payload) => {
 export const updateDocument = async (id, payload) => {
   let result;
   try {
-    result = await axiosInstance.patch(`/api/reports/${id}`, payload);
+    result = await axiosInstance.patch(`/reports/${id}`, payload);
   } catch (e) {
     result = e;
   }
@@ -600,7 +600,7 @@ export const updateDocument = async (id, payload) => {
 export const deleteDocument = async (id) => {
   let result;
   try {
-    result = await axiosInstance.delete(`/api/reports/${id}`);
+    result = await axiosInstance.delete(`/reports/${id}`);
   } catch (e) {
     result = e;
   }
@@ -610,7 +610,7 @@ export const deleteDocument = async (id) => {
 export const searchUnloCodes = async (query) => {
   let result;
   try {
-    result = await axiosInstance.get('/api/unloCodes/search', {
+    result = await axiosInstance.get('/unloCodes/search', {
       params: {
         query: query
       }
@@ -624,7 +624,7 @@ export const searchUnloCodes = async (query) => {
 export const updateActivityDetails = async (id, payload) => {
   let result;
   try {
-    result = await axiosInstance.patch(`/api/activities/${id}`, payload);
+    result = await axiosInstance.patch(`/activities/${id}`, payload);
   } catch (e) {
     result = e;
   }
@@ -634,7 +634,7 @@ export const updateActivityDetails = async (id, payload) => {
 export const getSelectedReportDetails = async (id) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/reportDetails/${id}`);
+    result = await axiosInstance.get(`/reportDetails/${id}`);
   } catch (error) {
     result = error;
   }
@@ -650,7 +650,7 @@ export const getAllActivityReportDetails = async (filterKey, filterValue) => {
 
     const config = Object.keys(params).length > 0 ? { params } : undefined;
 
-    result = await axiosInstance.get("/api/reportDetails", config);
+    result = await axiosInstance.get("/reportDetails", config);
   } catch (error) {
     result = error;
   }
@@ -660,7 +660,7 @@ export const getAllActivityReportDetails = async (filterKey, filterValue) => {
 export const getSelectedActivityReportDetails = async (id) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/reportDetails?filterKey=activityId&filterValue=${id}`);
+    result = await axiosInstance.get(`/reportDetails?filterKey=activityId&filterValue=${id}`);
   } catch (error) {
     result = error;
   }
@@ -670,7 +670,7 @@ export const getSelectedActivityReportDetails = async (id) => {
 export const generateFullReport = async (payload) => {
   let result;
   try {
-    result = await axiosInstance.post(`/api/reportDetails/generateReport`, payload);
+    result = await axiosInstance.post(`/reportDetails/generateReport`, payload);
   } catch (e) {
     result = e;
   }
@@ -680,7 +680,7 @@ export const generateFullReport = async (payload) => {
 export const getEndorsedIssuedBy = async (filterKey, filterValue) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/visitDetails?filterKey=${filterKey}&filterValue=${filterValue}`);
+    result = await axiosInstance.get(`/visitDetails?filterKey=${filterKey}&filterValue=${filterValue}`);
   } catch (error) {
     result = error;
   }
@@ -703,7 +703,7 @@ export const getAllIssuedDocuments = async (filterKeys = [], filterValues = [], 
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
 
-    const result = await axiosInstance.get("/api/reportDetails", { params });
+    const result = await axiosInstance.get("/reportDetails", { params });
     return result;
   } catch (error) {
     return error;
@@ -713,7 +713,7 @@ export const getAllIssuedDocuments = async (filterKeys = [], filterValues = [], 
 export const deleteAttachment = async (activityId, attachmentId) => {
   let result;
   try {
-    result = await axiosInstance.delete(`/api/activities/${activityId}/attachments/${attachmentId}`);
+    result = await axiosInstance.delete(`/activities/${activityId}/attachments/${attachmentId}`);
   } catch (error) {
     result = error;
   }
@@ -733,7 +733,7 @@ export const createSystemVariable = async (payload) => {
       };
     }
 
-    result = await axiosInstance.post(`/api/systemData`, payload, config);
+    result = await axiosInstance.post(`/systemData`, payload, config);
   } catch (e) {
     result = e;
   }
@@ -743,7 +743,7 @@ export const createSystemVariable = async (payload) => {
 export const getAllSystemVariables = async (page, limit, search) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/systemData`, {
+    result = await axiosInstance.get(`/systemData`, {
       params: {
         page: page,
         limit: limit,
@@ -759,7 +759,7 @@ export const getAllSystemVariables = async (page, limit, search) => {
 export const deleteSystemVariable = async (payload) => {
   let result;
   try {
-    result = await axiosInstance.delete(`/api/systemData/${payload.id}`);
+    result = await axiosInstance.delete(`/systemData/${payload.id}`);
   } catch (e) {
     result = e;
   }
@@ -769,7 +769,7 @@ export const deleteSystemVariable = async (payload) => {
 export const getSystemVariableDetails = async (id) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/systemData?filterKey=id&filterValue=${id}`);
+    result = await axiosInstance.get(`/systemData?filterKey=id&filterValue=${id}`);
   } catch (error) {
     result = error;
   }
@@ -788,7 +788,7 @@ export const updateSystemVariable = async (id, payload) => {
       };
     }
 
-    result = await axiosInstance.patch(`/api/systemData/${id}`, payload, config);
+    result = await axiosInstance.patch(`/systemData/${id}`, payload, config);
   } catch (e) {
     result = e;
   }
@@ -798,7 +798,7 @@ export const updateSystemVariable = async (id, payload) => {
 export const getSurveyReportData = async (clientId) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/reportDetails?filterKey=activity.journal.clientId&filterValue=${clientId}`);
+    result = await axiosInstance.get(`/reportDetails?filterKey=activity.journal.clientId&filterValue=${clientId}`);
   } catch (error) {
     result = error;
   }
@@ -808,7 +808,7 @@ export const getSurveyReportData = async (clientId) => {
 export const addClassificationSurvey = async (payload) => {
   let result;
   try {
-    result = await axiosInstance.post(`/api/classificationSurveys`, payload);
+    result = await axiosInstance.post(`/classificationSurveys`, payload);
   } catch (e) {
     result = e;
   }
@@ -818,7 +818,7 @@ export const addClassificationSurvey = async (payload) => {
 export const deleteClassificationSurvey = async (id) => {
   let result;
   try {
-    result = await axiosInstance.delete(`/api/classificationSurveys/${id}`);
+    result = await axiosInstance.delete(`/classificationSurveys/${id}`);
   } catch (e) {
     result = e;
   }
@@ -828,7 +828,7 @@ export const deleteClassificationSurvey = async (id) => {
 export const updateClassificationSurvey = async (id, payload) => {
   let result;
   try {
-    result = await axiosInstance.patch(`/api/classificationSurveys/update/${id}`, payload);
+    result = await axiosInstance.patch(`/classificationSurveys/update/${id}`, payload);
   } catch (e) {
     result = e;
   }
@@ -838,7 +838,7 @@ export const updateClassificationSurvey = async (id, payload) => {
 export const getAllClassificationSurveys = async ({clientId, page, limit}) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/classificationSurveys?filterKey=clientId&filterValue=${clientId}&page=${page}&limit=${limit}`);
+    result = await axiosInstance.get(`/classificationSurveys?filterKey=clientId&filterValue=${clientId}&page=${page}&limit=${limit}`);
   } catch (error) {
     result = error;
   }
@@ -847,7 +847,7 @@ export const getAllClassificationSurveys = async ({clientId, page, limit}) => {
 export const getAllListClassificationSurveys = async ({clientId}) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/classificationSurveys?filterKey=clientId&filterValue=${clientId}`);
+    result = await axiosInstance.get(`/classificationSurveys?filterKey=clientId&filterValue=${clientId}`);
   } catch (error) {
     result = error;
   }
@@ -856,7 +856,7 @@ export const getAllListClassificationSurveys = async ({clientId}) => {
 export const getSingleClassificationSurveyDetails = async (id) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/classificationSurveys/${id}`);
+    result = await axiosInstance.get(`/classificationSurveys/${id}`);
   } catch (error) {
     result = error;
   }
@@ -866,7 +866,7 @@ export const getSingleClassificationSurveyDetails = async (id) => {
 export const uploadSurveyReport = async (payload) => {
   let result;
   try {
-    result = await axiosInstance.post(`/api/surveyStatusReports`, payload);
+    result = await axiosInstance.post(`/surveyStatusReports`, payload);
   } catch (e) {
     result = e;
   }
@@ -876,7 +876,7 @@ export const uploadSurveyReport = async (payload) => {
 export const getAllSurveyStatusReport = async ({params}) => {
   let result;
   try {
-    result = await axiosInstance.get(`/api/surveyStatusReports`, { params });
+    result = await axiosInstance.get(`/surveyStatusReports`, { params });
   } catch (error) {
     result = error;
   }
@@ -886,7 +886,7 @@ export const getAllSurveyStatusReport = async ({params}) => {
 export const deleteSurveyReport = async (id) => {
   let result;
   try {
-    result = await axiosInstance.delete(`/api/surveyStatusReports/${id}`);
+    result = await axiosInstance.delete(`/surveyStatusReports/${id}`);
   } catch (e) {
     result = e;
   }
