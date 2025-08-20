@@ -8,10 +8,7 @@ services:
     volumes:
       - ./ssl:/etc/letsencrypt
       - ./ssl-challenge:/var/www/certbot
-    command: certonly --webroot -w /var/www/certbot \
-      --email your-email@example.com \
-      --agree-tos --no-eff-email \
-      -d gambiaclass.org -d www.gambiaclass.org
+    command: certonly --webroot -w /var/www/certbot  --non-interactive --agree-tos -d gambiaclass.org -d www.gambiaclass.org
 
   # Next.js frontend
   frontend:
