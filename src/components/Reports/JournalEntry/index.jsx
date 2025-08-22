@@ -127,11 +127,9 @@ const JournalEntryForm = ({ journalId = null }) => {
 
   const onLastVisitConfirmation = (response) => {
     if (response) {
-      // User confirmed it's the last visit - submit with lockJournal = true
       handleSubmitJournal(formData, true);
       setOpenDialog(false);
     } else {
-      // User canceled - submit without locking
       handleSubmitJournal(formData, false);
       setOpenDialog(false);
     }
@@ -220,17 +218,18 @@ const JournalEntryForm = ({ journalId = null }) => {
     if (journalId) {
       if (editVisit) {
         const payload = {
-          journalId: visitData.journalId,
+          journalId: editVisit.journalId || journalId,
           location: visitData.location,
           timeFrom: visitData.timeFrom,
           timeTo: visitData.timeTo,
-          date: visitData.date
+          date: visitData.date,
+          initialOfSurveyors: visitData.initialOfSurveyors,
         }
-        updateVisitData(payload, visitData.id)
+        updateVisitData(payload, editVisit.id)
       } else {
         const payload = {
           journalId: journalId,
-          location: `${visitData.location.nameOfDiacritics} (${visitData.location.name}, ${visitData.location.country})`,
+          location: visitData.location,
           timeFrom: visitData.timeFrom,
           timeTo: visitData.timeTo,
           date: visitData.date,
@@ -244,8 +243,7 @@ const JournalEntryForm = ({ journalId = null }) => {
         setVisitList(
           visitList.map((visit) =>
             visit.id === editVisit.id
-              ? { ...visit, ...visitData, id: editVisit.id }
-              : visit
+              ? {...visit, ...visitData, id: editVisit.id} : visit
           )
         );
       } else {
@@ -253,22 +251,18 @@ const JournalEntryForm = ({ journalId = null }) => {
           date: visitData.date,
           timeFrom: visitData.timeFrom,
           timeTo: visitData.timeTo,
-          location: visitData.location.nameOfDiacritics
-            ? `${visitData.location.nameOfDiacritics} (${visitData.location.name}, ${visitData.location.country})`
-            : visitData.location,
+          location: visitData.location,
           initialOfSurveyors: visitData.initialOfSurveyors,
           surveyors: visitData.initialOfSurveyors.map((id) => {
             const match = surveyors.find((s) => s.id === id);
             return match ? { name: match.name } : { name: id };
           }),
         };
-
         setVisitList([...visitList, { id: Date.now(), ...formattedVisitData }]);
       }
     }
     setOpenModal(false);
   };
-
 
   const handleEdit = (visit) => {
     if (isJournalLocked) return;
@@ -352,6 +346,7 @@ const JournalEntryForm = ({ journalId = null }) => {
       toast.error(error);
     }
   };
+
   const deleteActivities = async (activity) => {
     if (activity.id) {
       try {
@@ -376,12 +371,10 @@ const JournalEntryForm = ({ journalId = null }) => {
     }
   };
 
-
   const handleSaveActivity = (activityData) => {
     if (isJournalLocked) return;
 
     if (journalId) {
-      // Existing journal - API calls
       if (editActivity) {
         const payload = {
           journalId: activityData.journalId,
@@ -397,9 +390,7 @@ const JournalEntryForm = ({ journalId = null }) => {
         addActivities(payload);
       }
     } else {
-      // New journal - local state management
       if (editActivity) {
-        // Handle edit for existing journal
         const survey = surveyTypes.find(
           (s) => s.id === activityData.typeOfSurvey
         );
@@ -418,9 +409,7 @@ const JournalEntryForm = ({ journalId = null }) => {
           )
         );
       } else {
-        // Handle adding new activities
         if (activityData.name) {
-          // Manual input - single activity
           setActivitiesList([
             ...activitiesList,
             {
@@ -450,8 +439,6 @@ const JournalEntryForm = ({ journalId = null }) => {
 
     setOpenActivityModal(false);
   };
-
-  // console.log(activitiesList, "activitiesList ==>")
 
   const handleEditActivity = (activity) => {
     if (isJournalLocked) return;
@@ -493,11 +480,7 @@ const JournalEntryForm = ({ journalId = null }) => {
     try {
       setLoading(true);
       const result = await getSurveyTypes();
-      // if (result?.status === 200) {
       setSurveyTypes(result.data.data);
-      // } else {
-      // toast.error("Something went wrong ! Please try again after some time");
-      // }
       setLoading(false);
     } catch (error) {
       setLoading(false);
@@ -527,11 +510,7 @@ const JournalEntryForm = ({ journalId = null }) => {
       if (result?.status === 200) {
         const journalData = result.data.data;
         setJournalData(journalData);
-
-        // Check if journal is locked
         setIsJournalLocked(userInfo?.journalUnlockRights || userInfo?.roleId === '1' ? false : journalData.isLocked);
-
-        // Set the form values
         setValue("shipWork", journalData.client.shipName);
         setValue("imoNumber", journalData.client.imoNumber);
         setValue("classId", journalData.client.classId);
@@ -539,16 +518,12 @@ const JournalEntryForm = ({ journalId = null }) => {
         setValue("date", moment(journalData.date).format("YYYY-MM-DD"));
         setValue("type", journalData.journalType);
 
-        // Set the client
         setSelectedClient({
           id: journalData.clientId,
           shipName: journalData.client.shipName,
           imoNumber: journalData.client.imoNumber,
           classId: journalData.client.classId,
         });
-
-
-        // Show the form for editing
         setIsShowForm(true);
       } else {
         toast.error("Something went wrong ! Please try again after some time");
@@ -580,7 +555,6 @@ const JournalEntryForm = ({ journalId = null }) => {
 
   const handleSubmitJournal = async (data, lockJournal = false) => {
     if (isJournalLocked) return;
-
     try {
       const payload = {
         userId: userInfo?.id,
@@ -620,15 +594,11 @@ const JournalEntryForm = ({ journalId = null }) => {
 
   const onSubmit = (data) => {
     if (isJournalLocked) return;
-
-    // Store the form data to use later
     setFormData(data);
 
-    // For a journal update, show the confirmation dialog
     if (journalId) {
       setOpenDialog(true);
     } else {
-      // For a new journal, submit directly without locking
       handleSubmitJournal(data, false);
     }
   };
@@ -706,7 +676,6 @@ const JournalEntryForm = ({ journalId = null }) => {
               display="inline"
             >
               <Box display="fliex" justifyContent="space-between" alignItems="center" mt={2} gap={2}>
-                {/* Left Side: Label + Radio Group */}
                 <Box>
                   <Typography fontSize="18px" fontWeight={600} mb={1}>
                     Type of Journal {" "}
@@ -754,7 +723,6 @@ const JournalEntryForm = ({ journalId = null }) => {
                   />
                 </Box>
 
-                {/* Right Side: Save/Update Button */}
                 {!isJournalLocked && (
                   <Box>
                     <CommonButton type="submit" text={journalId ? "Update" : "Save"} />

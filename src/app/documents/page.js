@@ -152,12 +152,9 @@ const Documents = () => {
     if (!selectedDocument) return;
     try {
       if (selectedDocument.type === "document") {
-        console.log(selectedDocument.id,"document id")
         const res = await deleteDocument(selectedDocument.id);
-        if (res?.data?.message) {
-          setSnackBar({ open: true, message: res.data.message });
-          fetchAllDocuments();
-        }
+        toast.success("Document deleted successfully");
+        fetchAllDocuments();
       } else if (selectedDocument.type === "report") {
         await deleteSurveyReport(selectedDocument.id);
         toast.success("Report deleted successfully");
