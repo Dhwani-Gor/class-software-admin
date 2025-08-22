@@ -21,12 +21,11 @@ import CommonInput from "@/components/CommonInput";
 import CommonButton from "@/components/CommonButton";
 import { getAllUsers, searchUnloCodes } from "@/api";
 
-// Validation Schema
 const visitSchema = yup.object().shape({
   date: yup.string().required("Date is required"),
   timeFrom: yup.string().required("Start time is required"),
   timeTo: yup.string().required("End time is required"),
-  location: yup.object().required("Location is required"), // Change to object validation
+  location: yup.string().required("Location is required"),
   initialOfSurveyors: yup
     .array()
     .min(1, "Select at least one Surveyor")
@@ -38,6 +37,8 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
   const [loadingSurveyors, setLoadingSurveyors] = useState(false);
   const [locationOptions, setLocationOptions] = useState([]);
   const [loadingLocations, setLoadingLocations] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const isEdit = Boolean(defaultValues);
 
   const {
     control,
@@ -51,36 +52,44 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
       date: "",
       timeFrom: "",
       timeTo: "",
-      location: null,
+      location: "",
       initialOfSurveyors: [],
     },
   });
 
-
   useEffect(() => {
     if (defaultValues) {
       reset({
-        ...defaultValues,
-        location: null,
-        initialOfSurveyors: [],
+        date: defaultValues.date || "",
+        timeFrom: defaultValues.timeFrom || "",
+        timeTo: defaultValues.timeTo || "",
+        location: defaultValues.location || "",
+        initialOfSurveyors: isEdit ? [] : [],
       });
 
-      if (defaultValues.surveyors?.length && surveyors.length) {
-        const surveyorIds = defaultValues.surveyors.map((s) => s.id);
-        setValue("initialOfSurveyors", surveyorIds);
+      if (defaultValues.location) {
+        setSelectedLocation(null);
+        setValue("location", defaultValues.location);
       }
     }
-  }, [defaultValues, locationOptions, surveyors, reset, setValue]);
-
+  }, [defaultValues, reset, isEdit]);
 
   const onCloseModal = () => {
     reset();
+    setSelectedLocation(null);
     onClose();
   };
 
   const onSubmit = (data) => {
-    onSave(data);
+    const submitData = {
+      ...data,
+      location: typeof data.location === 'string' ? data.location :
+        (selectedLocation ? `${selectedLocation.nameOfDiacritics} (${selectedLocation.name}, ${selectedLocation.country})` : data.location)
+    };
+
+    onSave(submitData);
     reset();
+    setSelectedLocation(null);
     onCloseModal();
   };
 
@@ -97,8 +106,6 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
       }
     } catch (error) {
       console.error("Error fetching Surveyors:", error);
-      // Assuming you have a toast library
-      // toast.error("Failed to load Surveyors");
     } finally {
       setLoadingSurveyors(false);
     }
@@ -106,7 +113,6 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
 
   const fetchLocations = async (query) => {
     if (!query) return;
-
     try {
       setLoadingLocations(true);
       const res = await searchUnloCodes(query);
@@ -115,8 +121,6 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
       }
     } catch (error) {
       console.error("Error fetching Locations:", error);
-      // Assuming you have a toast library
-      // toast.error("Failed to load Locations");
     } finally {
       setLoadingLocations(false);
     }
@@ -206,15 +210,30 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
                     options={locationOptions}
                     loading={loadingLocations}
                     getOptionLabel={(option) =>
-                      `${option.nameOfDiacritics} (${option.name}, ${option.country})`
+                      typeof option === 'string' ? option :
+                        `${option.nameOfDiacritics} (${option.name}, ${option.country})`
                     }
                     filterOptions={(x) => x}
+                    freeSolo
                     onInputChange={(event, newInputValue) => {
-                      fetchLocations(newInputValue);
+                      if (newInputValue && typeof newInputValue === 'string') {
+                        fetchLocations(newInputValue);
+                        onChange(newInputValue);
+                      }
                     }}
-                    value={value}
+                    value={selectedLocation || value || ''}
                     onChange={(event, newValue) => {
-                      onChange(newValue);
+                      if (typeof newValue === 'string') {
+                        setSelectedLocation(null);
+                        onChange(newValue);
+                      } else if (newValue && typeof newValue === 'object') {
+                        const locationString = `${newValue.nameOfDiacritics} (${newValue.name}, ${newValue.country})`;
+                        setSelectedLocation(newValue);
+                        onChange(locationString);
+                      } else {
+                        setSelectedLocation(null);
+                        onChange('');
+                      }
                     }}
                     renderInput={(params) => (
                       <TextField
@@ -237,7 +256,9 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
                       />
                     )}
                     isOptionEqualToValue={(option, value) =>
-                      option.id === value?.id
+                      typeof option === 'string' && typeof value === 'string'
+                        ? option === value
+                        : option.id === value?.id
                     }
                   />
                 )}
@@ -334,5 +355,4 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
     </Dialog>
   );
 };
-
 export default VisitModal;
