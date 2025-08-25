@@ -21,21 +21,23 @@ const Sidebar = styled(Drawer)(({ theme }) => ({
 }));
 
 const SidebarComponent = ({ isSidebarOpen }) => {
-  const { roleId } = useAuth();
+  const { roleId, data } = useAuth(); // Get roleId from context
   const pathName = usePathname();
   const [activeTab, setActiveTab] = useState(pathName);
-  const rights = JSON.parse(localStorage.getItem("data"));
-
+  console.log(data,"data")
+  const rights = localStorage.getItem("data");
+  console.log(rights,"rights")
+  // Define role-based filtering logic
   const getFilteredMenuItems = () => {
     if (roleId === "1") {
-      return sidemenu_items;
+      return sidemenu_items; // Show all items for roleId 1
     } else if (roleId === "3") {
       return sidemenu_items.filter((item) =>
         ["Reporting", "Issued Documents", "Settings"].includes(item.label)
       );
-    } else if (roleId === "2" && rights?.dataEntryRights === true ) {
+    } else if (roleId === "2" ) {
       return sidemenu_items.filter((item) =>
-        ["Clients", "Journal", "Reporting", "Issued Documents", "Survey Types", "Documents", "System Variables", "Classification"].includes(item.label)
+        ["Journal", "Reporting", "Issued Documents", "Survey Types", "Documents", "System Variables", "Classification"].includes(item.label)
       );
     }
     return [];
