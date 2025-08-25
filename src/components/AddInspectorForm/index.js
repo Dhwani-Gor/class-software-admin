@@ -196,7 +196,7 @@ const AddInspectorForm = ({
                             placeholder="Enter User Name"
                             error={Boolean(errors.username)}
                             helperText={errors.username?.message}
-                            autoComplete="New Username"
+                            autoComplete="off"
                             InputProps={{
                               style: { color: "black" },
                             }}
@@ -216,6 +216,7 @@ const AddInspectorForm = ({
                             {...field}
                             fullWidth
                             variant="standard"
+                            autoComplete="off"
                             label={
                               <span>
                                 Password <span style={{ color: "red" }}>*</span>
@@ -225,7 +226,6 @@ const AddInspectorForm = ({
                             error={Boolean(errors.password)}
                             helperText={errors.password?.message}
                             type="password"
-                            autoComplete="password"
                             InputProps={{
                               style: { color: "black" },
                             }}
