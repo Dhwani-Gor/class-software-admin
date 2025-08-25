@@ -11,12 +11,13 @@ export const AuthContext = createContext();
 const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [roleId, setRoleId] = useState(null);
+  const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname()
 
   const allowedRoutesRole1 = ["/clients", "/staff", "/journal", "/reporting", "/certificates", "/survey-types", "/documents", "/system-variables", "/settings", "/survey-report", "/classification","/survey-status-report"]
-  const allowedRoutesRole2 = ["/journal", "/reporting", "/certificates", "/settings"];
+  const allowedRoutesRole2 = ["/clients","/journal", "/reporting", "/certificates", "/settings"];
   const allowedRoutesRole3 = ["/reporting", "/certificates", "/settings"];
 
   // Define public routes that don't require authentication
@@ -106,6 +107,7 @@ const AuthProvider = ({ children }) => {
   const login = (data) => {
     localStorage.setItem("token", data?.token);
     localStorage.setItem("roleId", data?.roleId);
+    localStorage.setItem("data", JSON.stringify(data));
     setIsAuthenticated(true);
     setRoleId(data?.roleId);
 
@@ -126,6 +128,7 @@ const AuthProvider = ({ children }) => {
     localStorage.removeItem("roleId");
     setIsAuthenticated(false);
     setRoleId(null);
+    localStorage.removeItem("data");
     router.replace("/login");
   };
 
