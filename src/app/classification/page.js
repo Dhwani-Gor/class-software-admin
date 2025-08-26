@@ -49,9 +49,9 @@ const Classifications = () => {
     setSelectedShip({ id: variableId })
   }, [variableId])
 
-  const snackbarClose = () => {
-    setSnackBar({ open: false, message: "" });
-  };
+  // const snackbarClose = () => {
+  //   setSnackBar({ open: false, message: "" });
+  // };
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -309,7 +309,7 @@ const Classifications = () => {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      {/* <Snackbar
         open={snackBar.open}
         autoHideDuration={2000}
         message={snackBar.message}
@@ -320,7 +320,7 @@ const Classifications = () => {
         onClose={snackbarClose}
         className="snackBarColor"
         key="snackbar"
-      />
+      /> */}
     </Layout>
   );
 };
