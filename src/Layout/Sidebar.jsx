@@ -24,25 +24,25 @@ const SidebarComponent = ({ isSidebarOpen }) => {
   const { roleId, data } = useAuth(); // Get roleId from context
   const pathName = usePathname();
   const [activeTab, setActiveTab] = useState(pathName);
-  console.log(data,"data")
   const rights = localStorage.getItem("data");
-  console.log(rights,"rights")
-  // Define role-based filtering logic
+
   const getFilteredMenuItems = () => {
     if (roleId === "1") {
-      return sidemenu_items; // Show all items for roleId 1
+      return sidemenu_items;
     } else if (roleId === "3") {
       return sidemenu_items.filter((item) =>
-        ["Reporting", "Issued Documents", "Settings"].includes(item.label)
+        ["Reporting", "Issued Documents", "System Variables"].includes(item.label)
       );
-    } else if (roleId === "2" ) {
-      return sidemenu_items.filter((item) =>
-        ["Journal", "Reporting", "Issued Documents", "Survey Types", "Documents", "System Variables", "Classification"].includes(item.label)
-      );
+    } else if (roleId === "2") {
+      return sidemenu_items.filter((item) => {
+        if (item.label === "Clients") {
+          return JSON.parse(rights)?.dataEntryRights === true;
+        }
+        return ["Journal", "Reporting", "Issued Documents", "Survey Types", "Documents", "System Variables", "Classification"].includes(item.label);
+      });
     }
     return [];
   };
-
   return (
     <Sidebar variant="persistent" open={isSidebarOpen}>
       <Box

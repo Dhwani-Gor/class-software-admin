@@ -41,6 +41,7 @@ const CommonInput = ({
         onChange={onChange}
         placeholder={placeholder}
         error={error}
+        autoComplete="new-password"
         fullWidth
         {...props}
         {...inputProps}

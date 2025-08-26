@@ -11,13 +11,12 @@ export const AuthContext = createContext();
 const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [roleId, setRoleId] = useState(null);
-  const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   const allowedRoutesRole1 = ["/clients", "/staff", "/journal", "/reporting", "/certificates", "/survey-types", "/documents", "/system-variables", "/settings", "/survey-report", "/classification","/survey-status-report"]
-  const allowedRoutesRole2 = ["/clients","/journal", "/reporting", "/certificates", "/settings"];
+  const allowedRoutesRole2 = ["/journal", "/reporting", "/certificates", "/settings", "/clients", "/system-variables", "survey-types", "/documents", "/classification", "/survey-status-report"];
   const allowedRoutesRole3 = ["/reporting", "/certificates", "/settings"];
 
   // Define public routes that don't require authentication
@@ -29,13 +28,15 @@ const AuthProvider = ({ children }) => {
       case "1":
         return allowedRoutesRole1[0];
       case "2":
-        return allowedRoutesRole2[0];
+        const rights = JSON.parse(localStorage.getItem("data"))?.dataEntryRights;
+        return rights === true ? "/clients" : "/journal";
       case "3":
         return allowedRoutesRole3[0];
       default:
         return "/login";
     }
   };
+  
 
   useEffect(() => {
     const token =
