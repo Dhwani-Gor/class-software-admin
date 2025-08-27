@@ -81,7 +81,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
             initialValues[field.attribute] = false;
           }
         } 
-        else if (field.attribute.startsWith("_st")) {
+        else if (field.attribute.startsWith("_st_")) {
           if (reportDetails && reportDetails[field.attribute]) {
             const parts = reportDetails[field.attribute]
               .split(' / ')
