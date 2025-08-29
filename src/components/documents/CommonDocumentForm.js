@@ -52,9 +52,15 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
       }
       else if (typeof value === "boolean") {
         acc[key] = value === true ? "\u2611" : "\u2612";
-      } else if (key.includes("date") && value) {
-        acc[key] = formattedDate(value);
-      } else if (typeof value === "string" && value.trim()) {
+      } else if (key.includes("date")) {
+        const raw = String(value ?? "").trim();
+        if (!raw || /^\/*undefined$/i.test(raw)) {
+          acc[key] = "-";
+        } else {
+          acc[key] = formattedDate(raw);
+        }
+      }
+      else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       } else {
         acc[key] = "-";

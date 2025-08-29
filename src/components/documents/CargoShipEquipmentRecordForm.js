@@ -160,7 +160,8 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
   const handleSubmit = () => {
     const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
-      if (typeof value === "string" && (value.includes("undefined") || value.trim() === "")) {
+      if (typeof value === "string" && 
+        (value.includes("undefined") || value.trim() === "")) {
         value = undefined;
       }
       if (key.startsWith("_st_")) {
@@ -177,8 +178,13 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
         }
       } else if (typeof value === "boolean") {
         acc[key] = value ? "☑" : "☒";
-      } else if (key.includes("date") && value) {
-        acc[key] = formattedDate(value);
+      } else if (key.includes("date")) {
+        const raw = String(value ?? "").trim();
+        if (!raw || /^\/*undefined$/i.test(raw)) {
+          acc[key] = "-";
+        } else {
+          acc[key] = formattedDate(raw);
+        }
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       } else {

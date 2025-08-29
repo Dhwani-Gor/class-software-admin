@@ -122,7 +122,12 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
             } else if (attribute.startsWith("_checkbox")) {
                 finalPayload[attribute] = value === true ? "\u2611" : "\u2612";
             } else if (attribute.includes("date")) {
-                finalPayload[attribute] = value ? formattedDate(value) : "-";
+                const raw = String(value ?? "").trim();
+                if (!raw || /^\/*undefined$/i.test(raw)) {
+                  finalPayload[attribute] = "-";
+                } else {
+                  finalPayload[attribute] = formattedDate(raw);
+                }
             } else if (typeof value === "string" && value.trim()) {
                 finalPayload[attribute] = value;
             } else {

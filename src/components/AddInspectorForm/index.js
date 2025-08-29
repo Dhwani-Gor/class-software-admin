@@ -339,7 +339,7 @@ const AddInspectorForm = ({
                   />
                 </Stack>
               </form>
-
+{/* 
               <Snackbar
                 open={snackBar.open}
                 autoHideDuration={2000}
@@ -351,7 +351,7 @@ const AddInspectorForm = ({
                 onClose={snackbarClose}
                 className="snackBarColor"
                 key="snackbar"
-              />
+              /> */}
             </Paper>
           </Stack>
         </>

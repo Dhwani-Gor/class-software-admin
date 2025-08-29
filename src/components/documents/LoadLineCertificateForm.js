@@ -181,8 +181,13 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
         }
       } else if (typeof value === "boolean") {
         acc[key] = value ? "\u2611" : "\u2612";
-      } else if (key.includes("date") && value) {
-        acc[key] = formattedDate(value);
+      } else if (key.includes("date")) {
+        const raw = String(value ?? "").trim();
+        if (!raw || /^\/*undefined$/i.test(raw)) {
+          acc[key] = "-";
+        } else {
+          acc[key] = formattedDate(raw);
+        }
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       } else {
