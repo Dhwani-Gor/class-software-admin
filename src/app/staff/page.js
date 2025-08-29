@@ -263,7 +263,7 @@ const Countries = () => {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      {/* <Snackbar
         open={snackBar.open}
         autoHideDuration={2000}
         message={snackBar.message}
@@ -274,7 +274,7 @@ const Countries = () => {
         onClose={snackbarClose}
         className="snackBarColor"
         key="snackbar"
-      />
+      /> */}
     </Layout>
   );
 };
