@@ -126,7 +126,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
             initialValues[field.attribute] = false;
           }
         }
-        else if (field.attribute.startsWith("_st")) {
+        else if (field.attribute.startsWith("_st_")) {
           if (reportDetails && reportDetails[field.attribute]) {
             const parts = reportDetails[field.attribute]
               .split(' / ')
