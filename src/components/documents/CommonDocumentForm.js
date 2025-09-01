@@ -42,19 +42,27 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
         const optionsRaw = raw.split("_");
         const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
 
-        if (!value) {
+        const selectedValues = Array.isArray(value) ? value : [];
+
+        if (selectedValues.length === 0) {
           acc[key] = options.join(" / ");
         } else {
           acc[key] = options
-            .map(opt => (opt === value ? opt : applyStrikethrough(opt)))
+            .map(opt => (selectedValues.includes(opt) ? opt : applyStrikethrough(opt)))
             .join(" / ");
         }
       }
       else if (typeof value === "boolean") {
         acc[key] = value === true ? "\u2611" : "\u2612";
-      } else if (key.includes("date") && value) {
-        acc[key] = formattedDate(value);
-      } else if (typeof value === "string" && value.trim()) {
+      } else if (key.includes("date")) {
+        const raw = String(value ?? "").trim();
+        if (!raw || /^\/*undefined$/i.test(raw)) {
+          acc[key] = "-";
+        } else {
+          acc[key] = formattedDate(raw);
+        }
+      }
+      else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
       } else {
         acc[key] = "-";
@@ -80,22 +88,15 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
         else if (field.attribute.startsWith("_st_")) {
           if (reportDetails && reportDetails[field.attribute]) {
             const parts = reportDetails[field.attribute]
-              .split(' / ')
+              .split(" / ")
               .map(s => s.trim());
 
-            const hasStrikethrough = parts.some(part => isStrikethroughText(part));
-
-            if (!hasStrikethrough) {
-              initialValues[field.attribute] = "";
-            } else {
-              const selectedOption = parts.find(part => !isStrikethroughText(part));
-              initialValues[field.attribute] = selectedOption || "";
-            }
+            const selectedOptions = parts.filter(part => !isStrikethroughText(part));
+            initialValues[field.attribute] = selectedOptions;
           } else {
-            initialValues[field.attribute] = "";
+            initialValues[field.attribute] = [];
           }
         }
-
         else {
           if (reportDetails && reportDetails[field.attribute]) {
             initialValues[field.attribute] = reportDetails[field.attribute];
@@ -188,57 +189,58 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
                             placeholder={field.label}
                           />
                         </Grid2>
-                      ) : isRadioWithStrike ?
-                        (
-                          (() => {
-                            const [, raw] = attr?.split("_st_");
-                            const optionsRaw = raw.split("_");
-                            const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
-                            const selected = formData[attr];
-                            return (
+                      ) :
+                        isRadioWithStrike ?
+                          (
+                            (() => {
+                              const [, raw] = attr?.split("_st_");
+                              const optionsRaw = raw.split("_");
+                              const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
+                              const selected = formData[attr] || "";
 
-                              <Box display="flex" flexDirection="column" gap={1}>
-                                <Typography variant="body2" sx={{ mb: 1 }}>
-                                  {field.label}
-                                </Typography>
-                                {options.map(opt => (
-                                  <label key={opt}>
-                                    <input
-                                      type="radio"
-                                      name={attr}
-                                      value={opt}
-                                      checked={selected === opt}
-                                      onChange={() => handleInputChange(attr, opt)}
-                                    /> {opt}
-                                  </label>
-                                ))}
-                                {selected && (
-                                  <CommonButton
-                                    variant="outlined"
-                                    text="Clear selection"
-                                    onClick={() => handleInputChange(attr, "")}
-                                    sx={{ width: "30%" }}
-                                  />
-                                )}
-                              </Box>
-
-
-                            );
-                          })()
-                        ) : (
-                          <TextField
-                            fullWidth
-                            label={field.label}
-                            title={field.label}
-                            variant="outlined"
-                            value={isDate ? formatDate(formData[attr]) : formData[attr] || ""}
-                            onChange={(e) => {
-                              handleInputChange(attr, e.target.value);
-                            }}
-                            type={isDate ? "date" : "text"}
-                            InputLabelProps={isDate ? { shrink: true } : undefined}
-                          />
-                        )}
+                              return (
+                                <Box display="flex" flexDirection="column" gap={1}>
+                                  <Typography variant="body2" sx={{ mb: 1 }}>
+                                    {field.label}
+                                  </Typography>
+                                  {options.map(opt => (
+                                    <label key={opt}>
+                                      <input
+                                        type="checkbox"
+                                        name={attr}
+                                        value={opt}
+                                        checked={selected.includes(opt)}
+                                        onChange={(e) => {
+                                          if (e.target.checked) {
+                                            handleInputChange(attr, [...selected, opt]);
+                                          } else {
+                                            handleInputChange(
+                                              attr,
+                                              selected.filter(item => item !== opt)
+                                            );
+                                          }
+                                        }}
+                                      />{" "}
+                                      {opt}
+                                    </label>
+                                  ))}
+                                </Box>
+                              );
+                            })()
+                          ) : (
+                            <TextField
+                              fullWidth
+                              label={field.label}
+                              title={field.label}
+                              variant="outlined"
+                              value={isDate ? formatDate(formData[attr]) : formData[attr] || ""}
+                              onChange={(e) => {
+                                handleInputChange(attr, e.target.value);
+                              }}
+                              type={isDate ? "date" : "text"}
+                              InputLabelProps={isDate ? { shrink: true } : undefined}
+                            />
+                          )}
                     </Box>
                   </Fade>
                 </Grid2>
