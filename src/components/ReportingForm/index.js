@@ -660,19 +660,20 @@ const ReportingForm = () => {
         }
 
         const response = await fetch(fileUrl);
-        if (!response.ok) throw new Error("Failed to fetch file.");
+        console.log("response", response);
+        // if (!response.ok) throw new Error("Failed to fetch file.");
 
-        const blob = await response.blob();
-        const filename = fileUrl.split('/').pop();
+        // const blob = await response.blob();
+        // const filename = fileUrl.split('/').pop();
 
-        const blobUrl = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(blobUrl);
+        // const blobUrl = window.URL.createObjectURL(blob);
+        // const link = document.createElement("a");
+        // link.href = blobUrl;
+        // link.download = filename;
+        // document.body.appendChild(link);
+        // link.click();
+        // document.body.removeChild(link);
+        // window.URL.revokeObjectURL(blobUrl);
 
         toast.success("Report downloaded successfully.");
       }
@@ -718,20 +719,22 @@ const ReportingForm = () => {
 
       const response = await fetch(fileUrl);
       if (!response.ok) throw new Error("Network response was not ok");
+        
+      // const blob = await response.blob();
+      // const downloadUrl = window.URL.createObjectURL(blob);
 
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.target = "_blank";
-      link.download = `${surveyAbbr}_${certType}_${reportNo}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(downloadUrl);
-
-      toast.success("Report generated successfully.");
+      // const link = document.createElement("a");
+      // link.href = downloadUrl;
+      // link.target = "_blank";
+      // link.download = `${surveyAbbr}_${certType}_${reportNo}.pdf`;
+      // document.body.appendChild(link);
+      // link.click();
+      // link.remove();
+      // window.URL.revokeObjectURL(downloadUrl);
+      if(response.status == "success"){
+        toast.success("Report generated successfully.");
+      }
+      
     } catch (err) {
       console.error("Error downloading report:", err);
       toast.error("Failed to generate full report");

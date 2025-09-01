@@ -22,72 +22,15 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
   const [expandedSection, setExpandedSection] = useState("freeboard");
   const [systemVariables, setSystemVariables] = useState();
   const [isLoadingVariables, setIsLoadingVariables] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
 
-  const case_1_Image = systemVariables?.data?.find(item => item.name === "timber_image_case_1")?.id || '[companyName]';
-  const case_2_Image = systemVariables?.data?.find(item => item.name === "timber_image_case_2")?.id || '[companyName]';
-  const case_3_Image = systemVariables?.data?.find(item => item.name === "timber_image_case_3")?.id || '[companyName]';
-  const case_4_Image = systemVariables?.data?.find(item => item.name === "timber_image_case_4")?.id || '[companyName]';
-
-  const selectImageBasedOnCases = (formData = {}) => {
-    const isFilled = (val) => val && val !== "-" && val.toString().trim() !== "";
-
-    const timberFields = [
-      "_timber_tropical_LT",
-      "_timber_tropical_LS",
-      "_timber_summer_LS",
-      "_timber_summer_S",
-      "_timber_winter_LW",
-      "_timber_winter_LS",
-      "_LWNA",
-      "_LWNA_LS"
-    ];
-
-    const nonTimberFields = [
-      "_tropical_T",
-      "_tropical_S",
-      "_summer_S",
-      "_winter_W",
-      "_winter_S",
-      "_WNA",
-      "_WNA_S"
-    ];
-
-    const fwFields = ["_FW"];
-
-    const shipLength = reportDetails?.activity?.journal?.client?.lengthOfShip;
-    const shipType = reportDetails?.activity?.journal?.client?.typeOfShip;
-
-    const allData = { ...reportDetails?.data, ...formData };
-
-    const hasTimber = timberFields?.some(field => isFilled(allData[field]));
-    const hasWNA = isFilled(allData["_WNA"]);
-    const hasFW = fwFields?.some(field => isFilled(allData[field]));
-
-    const allNonTimberFilled = nonTimberFields?.some(field => isFilled(allData[field]));
-
-    const onlySummerFilled = isFilled(allData["_summer_S"]) &&
-      isFilled(allData["_timber_summer_LS"]) &&
-      isFilled(allData["_timber_summer_S"]) &&
-      isFilled(allData["_WNA"]);
-
-    if (!hasWNA && allNonTimberFilled && !onlySummerFilled) {
-      return case_1_Image;
-    }
-
-    if (onlySummerFilled && hasFW) {
-      return case_2_Image;
-    }
-
-    if (hasTimber) {
-      return case_3_Image;
-    }
-
-    if (allNonTimberFilled && !hasTimber) {
-      return case_4_Image;
-    }
-
-    return "";
+  const handleImageSelect = (id) => {
+    setSelectedImage(id);
   };
+
+  const timberImages = systemVariables?.data?.filter(
+    item => item.name.startsWith("timber_image")
+  ) || [];
 
   const getSystemVariables = async () => {
     try {
@@ -129,19 +72,13 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
         else if (field.attribute.startsWith("_st_")) {
           if (reportDetails && reportDetails[field.attribute]) {
             const parts = reportDetails[field.attribute]
-              .split(' / ')
+              .split(" / ")
               .map(s => s.trim());
 
-            const hasStrikethrough = parts.some(part => isStrikethroughText(part));
-
-            if (!hasStrikethrough) {
-              initialValues[field.attribute] = "";
-            } else {
-              const selectedOption = parts.find(part => !isStrikethroughText(part));
-              initialValues[field.attribute] = selectedOption || "";
-            }
+            const selectedOptions = parts.filter(part => !isStrikethroughText(part));
+            initialValues[field.attribute] = selectedOptions;
           } else {
-            initialValues[field.attribute] = "";
+            initialValues[field.attribute] = [];
           }
         }
         else {
@@ -172,14 +109,17 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
         const optionsRaw = raw.split("_");
         const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
 
-        if (!value) {
+        const selectedValues = Array.isArray(value) ? value : [];
+
+        if (selectedValues.length === 0) {
           acc[key] = options.join(" / ");
         } else {
           acc[key] = options
-            .map(opt => (opt === value ? opt : applyStrikethrough(opt)))
+            .map(opt => (selectedValues.includes(opt) ? opt : applyStrikethrough(opt)))
             .join(" / ");
         }
-      } else if (typeof value === "boolean") {
+      }
+      else if (typeof value === "boolean") {
         acc[key] = value ? "\u2611" : "\u2612";
       } else if (key.includes("date") && value) {
         acc[key] = formattedDate(value);
@@ -188,15 +128,13 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
       } else {
         acc[key] = "-";
       }
-
       return acc;
     }, {});
 
-    const finalImage = selectImageBasedOnCases(filledValues);
-    const finalFilledValues = { ...filledValues, image: finalImage };
-
+    const finalFilledValues = { ...filledValues, image: selectedImage };
     onSubmit(finalFilledValues || {});
   };
+
 
   const categorizeFields = (fields) => {
     const categories = {
@@ -257,34 +195,33 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
           const optionsRaw = raw.split("_");
           const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
           const selected = formValues[attr];
-
           return (
-            <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={attr}>
-              <Box display="flex" flexDirection="column" gap={1}>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  {field.label}
-                </Typography>
-                {options.map(opt => (
-                  <label key={opt}>
-                    <input
-                      type="radio"
-                      name={attr}
-                      value={opt}
-                      checked={selected === opt}
-                      onChange={() => handleInputChange(attr, opt)}
-                    /> {opt}
-                  </label>
-                ))}
-                {selected && (
-                  <CommonButton
-                    variant="outlined"
-                    text="Clear selection"
-                    onClick={() => handleInputChange(attr, "")}
-                    sx={{ width: "30%" }}
-                  />
-                )}
-              </Box>
-            </Grid2>
+            <Box display="flex" flexDirection="column" gap={1}>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                {field.label}
+              </Typography>
+              {options.map(opt => (
+                <label key={opt}>
+                  <input
+                    type="checkbox"
+                    name={attr}
+                    value={opt}
+                    checked={selected.includes(opt)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        handleInputChange(attr, [...selected, opt]);
+                      } else {
+                        handleInputChange(
+                          attr,
+                          selected.filter(item => item !== opt)
+                        );
+                      }
+                    }}
+                  />{" "}
+                  {opt}
+                </label>
+              ))}
+            </Box>
           );
         }
 
@@ -343,6 +280,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
         </AccordionSummary>
         <AccordionDetails>{renderFields(fieldList)}</AccordionDetails>
       </Accordion>
+
     );
   };
 
@@ -373,6 +311,58 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
         {renderCategoryAccordion("Timber Load Lines", "timberFreeboard", "🌲", timberFreeboard)}
         {renderCategoryAccordion("Fresh Water Allowance", "allowance", "💧", allowance)}
         {renderCategoryAccordion("Others", "others", "", others)}
+        {timberImages.length > 0 && (
+          <Accordion
+            expanded={expandedSection === "images"}
+            onChange={() => setExpandedSection(expandedSection === "images" ? null : "images")}
+            sx={{ mb: 2 }}
+          >
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">
+                Timber Images
+                <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                  ({selectedImage ? 1 : 0}/{timberImages.length})
+                </Typography>
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Grid2 container spacing={2}>
+                {timberImages.map((img) => (
+                  <Grid2 key={img.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                    <Box
+                      sx={{
+                        border: selectedImage === img.id ? "2px solid #667eea" : "1px solid #ddd",
+                        borderRadius: 2,
+                        p: 2,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 1,
+                        transition: "all 0.2s ease"
+                      }}
+                    >
+                      <img
+                        src={img.information}
+                        alt={img.name}
+                        style={{ width: "100%", height: "150px", objectFit: "contain", borderRadius: 8 }}
+                      />
+                      <Box display="flex" alignItems="center">
+                        <input
+                          type="radio"
+                          style={{ cursor: "pointer" }}
+                          name="timberImage"
+                          checked={selectedImage === img.id}
+                          onChange={() => handleImageSelect(img.id)}
+                        />
+                        <Typography sx={{ ml: 1 }}>{img.name}</Typography>
+                      </Box>
+                    </Box>
+                  </Grid2>
+                ))}
+              </Grid2>
+            </AccordionDetails>
+          </Accordion>
+        )}
       </DialogContent>
 
       <Divider />
