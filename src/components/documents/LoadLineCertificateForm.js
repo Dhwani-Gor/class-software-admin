@@ -75,12 +75,20 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
               .split(" / ")
               .map(s => s.trim());
 
-            const selectedOptions = parts.filter(part => !isStrikethroughText(part));
+            // Helper to clean strikethrough
+            const cleanText = txt => txt.replace(/\u0336/g, "");
+
+            // Selected = parts without strikethrough
+            const selectedOptions = parts
+              .filter(part => !/\u0336/.test(part)) // keep only non-struck
+              .map(cleanText);
+
             initialValues[field.attribute] = selectedOptions;
           } else {
             initialValues[field.attribute] = [];
           }
         }
+
         else {
           if (reportDetails?.data && reportDetails?.data[field.attribute]) {
             initialValues[field.attribute] = reportDetails?.data[field.attribute];
@@ -121,7 +129,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
       }
       else if (typeof value === "boolean") {
         acc[key] = value ? "\u2611" : "\u2612";
-      } else if (key.includes("date") && value) {
+      } else if (key?.includes("date") && value) {
         acc[key] = formattedDate(value);
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
@@ -166,7 +174,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
     <Grid2 container spacing={2}>
       {fieldList.map(field => {
         const attr = field.attribute;
-        const isDate = attr.includes("date");
+        const isDate = attr?.includes("date");
         const isCheckbox = attr.startsWith("_checkbox");
         const isStrikethroughRadio = attr.startsWith("_st_");
         const isTextarea = attr.startsWith("_ta_");
@@ -206,7 +214,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
                     type="checkbox"
                     name={attr}
                     value={opt}
-                    checked={selected.includes(opt)}
+                    checked={selected?.includes(opt)}
                     onChange={(e) => {
                       if (e.target.checked) {
                         handleInputChange(attr, [...selected, opt]);
