@@ -62,19 +62,13 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
         else if (field.attribute.startsWith("_st_")) {
           if (reportDetails && reportDetails[field.attribute]) {
             const parts = reportDetails[field.attribute]
-              .split(' / ')
+              .split(" / ")
               .map(s => s.trim());
 
-            const hasStrikethrough = parts.some(part => isStrikethroughText(part));
-
-            if (!hasStrikethrough) {
-              initialValues[field.attribute] = "";
-            } else {
-              const selectedOption = parts.find(part => !isStrikethroughText(part));
-              initialValues[field.attribute] = selectedOption || "";
-            }
+            const selectedOptions = parts.filter(part => !isStrikethroughText(part));
+            initialValues[field.attribute] = selectedOptions;
           } else {
-            initialValues[field.attribute] = "";
+            initialValues[field.attribute] = [];
           }
         }
         else {
@@ -109,26 +103,28 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
 
     fields.forEach(({ attribute }) => {
       let value = formValues[attribute];
-      if (typeof value === "string" && (value.includes("undefined") || value.trim() === "")) {
+      if (typeof value === "string" && (value?.includes("undefined") || value.trim() === "")) {
         value = undefined;
       }
 
       if (attribute.startsWith("_st_")) {
-        const [, raw] = key?.split("_st_");
+        const [, raw] = attribute?.split("_st_");
         const optionsRaw = raw.split("_");
         const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
 
-        if (!value) {
-          finalPayload[attribute] = options.join(" / ");
+        const selectedValues = Array.isArray(value) ? value : [];
+
+        if (selectedValues.length === 0) {
+          acc[key] = options.join(" / ");
         } else {
-          finalPayload[attribute] = options
-            .map(opt => (opt === value ? opt : applyStrikethrough(opt)))
+          acc[key] = options
+            .map(opt => (selectedValues.includes(opt) ? opt : applyStrikethrough(opt)))
             .join(" / ");
         }
       } else if (attribute.startsWith("_checkbox")) {
         finalPayload[attribute] = value === true ? "\u2611" : "\u2612";
       }
-      else if (attribute.includes("date") && value) {
+      else if (attribute?.includes("date") && value) {
         finalPayload[attribute] = formattedDate(value);
       } else if (typeof value === "string" && value.trim()) {
         finalPayload[attribute] = value;
@@ -377,38 +373,39 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
             const [, raw] = attr?.split("_st_");
             const optionsRaw = raw.split("_");
             const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
-            const selected = formValues[attr];
+            const selected = formValues[attr] || [];
 
             return (
-              <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={attr}>
-                <Typography variant="body2" sx={{ mb: 1 }}>{field.label}</Typography>
-                <Box display="flex" flexDirection="column" gap={1}>
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    {field.label}
-                  </Typography>
-                  {options.map(opt => (
-                    <label key={opt}>
-                      <input
-                        type="radio"
-                        name={attr}
-                        value={opt}
-                        checked={selected === opt}
-                        onChange={() => handleInputChange(attr, opt)}
-                      /> {opt}
-                    </label>
-                  ))}
-                  {selected && (
-                    <CommonButton
-                      variant="outlined"
-                      text="Clear selection"
-                      onClick={() => handleInputChange(attr, "")}
-                      sx={{ width: "30%" }}
-                    />
-                  )}
-                </Box>
-              </Grid2>
+              <Box display="flex" flexDirection="column" gap={1}>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  {field.label}
+                </Typography>
+                {options.map(opt => (
+                  <label key={opt}>
+                    <input
+                      type="checkbox"
+                      name={attr}
+                      value={opt}
+                      checked={selected?.includes(opt)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          handleInputChange(attr, [...selected, opt]);
+                        } else {
+                          handleInputChange(
+                            attr,
+                            selected?.filter(item => item !== opt)
+                          );
+                        }
+                      }}
+                    />{" "}
+                    {opt}
+                  </label>
+                ))}
+              </Box>
+
             );
           }
+
 
           if (isTextarea) {
             return (

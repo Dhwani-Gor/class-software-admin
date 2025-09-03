@@ -50,7 +50,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
   const renderInputField = (field) => {
     const attr = field.attribute;
-    const isDate = attr.includes("date");
+    const isDate = attr?.includes("date");
     const value = formValues[attr] || "";
 
     return (
@@ -154,7 +154,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
   const handleSubmit = () => {
     const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
-      if (typeof value === "string" && (value.includes("undefined") || value.trim() === "")) {
+      if (typeof value === "string" && (value?.includes("undefined") || value.trim() === "")) {
         value = undefined;
       }
       if (key.startsWith("_st_")) {
@@ -174,7 +174,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
       }
       else if (typeof value === "boolean") {
         acc[key] = value ? "☑" : "☒";
-      } else if (key.includes("date") && value) {
+      } else if (key?.includes("date") && value) {
         acc[key] = formattedDate(value);
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
@@ -226,7 +226,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
           {fieldList?.map((field, index) => {
             const attr = field.attribute;
             const isCheckbox = attr.startsWith("_checkbox");
-            const isDate = attr.includes("date");
+            const isDate = attr?.includes("date");
             const isStrikethroughRadio = attr.startsWith("_st_");
             const isTextarea = attr.startsWith("_ta_");
 
@@ -258,7 +258,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                       </Box>
                     </Grid2>
 
-                  ) : isRadioWithStrike ?
+                  ) : isStrikethroughRadio ?
                     (
                       (() => {
                         const [, raw] = attr?.split("_st_");
@@ -277,14 +277,14 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                                   type="checkbox"
                                   name={attr}
                                   value={opt}
-                                  checked={selected.includes(opt)}
+                                  checked={selected?.includes(opt)}
                                   onChange={(e) => {
                                     if (e.target.checked) {
                                       handleInputChange(attr, [...selected, opt]);
                                     } else {
                                       handleInputChange(
                                         attr,
-                                        selected.filter(item => item !== opt)
+                                        selected?.filter(item => item !== opt)
                                       );
                                     }
                                   }}

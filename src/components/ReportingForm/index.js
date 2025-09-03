@@ -30,7 +30,7 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
 import { useRouter } from "next/navigation";
-import { createReportDetail, deleteAttachment, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail } from "@/api";
+import { createReportDetail, deleteAttachment, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, uploadSurveyReport } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { updateActivityDetails } from "@/api";
@@ -437,12 +437,12 @@ const ReportingForm = () => {
         return <CSSForm {...commonProps} />;
 
       case "INTERNATIONAL LOAD LINE CERTIFICATE":
-        return <LoadLineCertificateForm 
-        open={open}
-        onClose={() => setOpen(false)}
-        onSubmit={handleSubmitReport}
-        fields={underscoreFields}
-        reportDetails={reportDetails} />;
+        return <LoadLineCertificateForm
+          open={open}
+          onClose={() => setOpen(false)}
+          onSubmit={handleSubmitReport}
+          fields={underscoreFields}
+          reportDetails={reportDetails} />;
 
       case "International Anti-Fouling System Certificate":
         return <AntiFoulingCertificateForm {...commonProps} />;
@@ -659,8 +659,7 @@ const ReportingForm = () => {
           return;
         }
 
-        const response = await fetch(fileUrl);
-        console.log("response", response);
+       
         // if (!response.ok) throw new Error("Failed to fetch file.");
 
         // const blob = await response.blob();
@@ -707,19 +706,20 @@ const ReportingForm = () => {
           ...(reportName.toLocaleLowerCase() === 'certificate of class' && { logo: 7 })
         }
 
-        
+
       };
       const result = await generateFullReport(payload);
       const fileUrl = result?.data?.data;
-
-      if (!fileUrl) {
+      console.log(fileUrl,"file url")
+      if (!fileUrl) { 
         toast.error("Invalid file URL received.");
         return;
       }
 
       const response = await fetch(fileUrl);
       if (!response.ok) throw new Error("Network response was not ok");
-        
+      
+      
       // const blob = await response.blob();
       // const downloadUrl = window.URL.createObjectURL(blob);
 
@@ -731,10 +731,10 @@ const ReportingForm = () => {
       // link.click();
       // link.remove();
       // window.URL.revokeObjectURL(downloadUrl);
-      if(response.status == "success"){
+      if (response.status == "success") {
         toast.success("Report generated successfully.");
       }
-      
+
     } catch (err) {
       console.error("Error downloading report:", err);
       toast.error("Failed to generate full report");
@@ -1518,93 +1518,6 @@ const ReportingForm = () => {
           ? `Remarks for ${fullScreenRemarksVisible.surveyTypes.name}`
           : "Remarks"}
       />
-      {/* {reportName?.trim() === "INTERNATIONAL TONNAGE CERTIFICATE" && (
-        <InternationalTonnage
-          open={open}
-          onClose={() => setOpen(false)}
-          onSubmit={handleSubmitReport}
-          fields={underscoreFields}
-          reportDetails={reportDetails?.data}
-        />
-      )}
-
-      {
-        validReports.includes(reportName?.trim()) ? (
-          <DialogForm
-            open={open}
-            onClose={() => setOpen(false)}
-            onSubmit={handleSubmitReport}
-            fields={underscoreFields}
-            reportDetails={reportDetails?.data}
-          />
-        ) : 
-        <DialogForm
-          open={open}
-          onClose={() => setOpen(false)}
-          onSubmit={handleSubmitReport}
-          fields={underscoreFields}
-          reportDetails={reportDetails?.data}
-        />
-      }
-
-      {reportName?.trim() === "SUPPLEMENT TO THE INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" || reportName?.trim() === "INTERNATIONAL OIL POLLUTION PREVENTION CERTIFICATE" &&
-        <div className="container">
-          <IOPPForm
-            open={open}
-            onClose={() => setOpen(false)}
-            onSubmit={handleSubmitReport}
-            fields={underscoreFields}
-            reportDetails={reportDetails?.data}
-          />
-        </div>
-      }
-      {reportName?.trim() === "RECORD OF EQUIPMENT FOR CARGO SHIP SAFETY" || reportName?.trim() === "CARGO SHIP SAFETY EQUIPMENT CERTIFICATE" &&
-        <CSSForm
-          open={open}
-          onClose={() => setOpen(false)}
-          onSubmit={handleSubmitReport}
-          fields={underscoreFields}
-          reportDetails={reportDetails?.data}
-        />
-      }
-      {reportName?.trim() === "INTERNATIONAL LOAD LINE CERTIFICATE" &&
-        <LoadLineCertificateForm
-          open={open}
-          onClose={() => setOpen(false)}
-          onSubmit={handleSubmitReport}
-          fields={underscoreFields}
-          reportDetails={reportDetails?.data}
-        />
-      }
-      {reportName?.trim() === "International Anti-Fouling System Certificate" &&
-        <AntiFoulingCertificateForm
-          open={open}
-          onClose={() => setOpen(false)}
-          onSubmit={handleSubmitReport}
-          fields={underscoreFields}
-          reportDetails={reportDetails?.data}
-        />
-      }
-      {reportName?.trim() === "RECORD OF CONSTRUCTION AND EQUIPMENT" || reportName?.trim() === "INTERNATIONAL AIR POLLUTION PREVENTION CERTIFICATE" &&
-        <IAPPForm
-          open={open}
-          onClose={() => setOpen(false)}
-          onSubmit={handleSubmitReport}
-          fields={underscoreFields}
-          reportDetails={reportDetails?.data}
-        />
-      } */}
-      {/* {reportDetails?.typeOfCertificate === "full_term" &&
-        openEndrosemet &&
-        !!reportDetails?.endorsementDate && (
-          <EndorsementDialog
-            open={openEndrosemet}
-            onClose={() => setOpenEndrosemet(false)}
-            onSubmit={handleSubmitReport}
-            endorsementList={endorsementTitle}
-            reportDetailsId={reportDetails?.id}
-          />
-        )} */}
       {renderReportForm()}
       {loadingReport && (
         <Box

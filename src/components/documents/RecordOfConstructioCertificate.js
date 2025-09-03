@@ -68,7 +68,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                 }
                 else {
                     if (reportDetails && reportDetails[field.attribute]) {
-                        if (field.attribute.includes("date")) {
+                        if (field.attribute?.includes("date")) {
                             initialValues[field.attribute] = formattedDate(reportDetails[field.attribute]);
                         } else {
                             initialValues[field.attribute] = reportDetails[field.attribute];
@@ -103,25 +103,25 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
         fields.forEach(({ attribute }) => {
             let value = formValues[attribute];
-            if (typeof value === "string" && (value.includes("undefined") || value.trim() === "")) {
+            if (typeof value === "string" && (value?.includes("undefined") || value.trim() === "")) {
                 value = undefined;
             }
 
-            if (attribute.startsWith("_st_")) {
-                const [, raw] = attribute.split("_st_");
+            if (key.startsWith("_st_")) {
+                const [, raw] = key?.split("_st_");
                 const optionsRaw = raw.split("_");
                 const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
 
                 if (!value) {
-                    finalPayload[attribute] = options.join(" / ");
+                    acc[key] = options.join(" / ");
                 } else {
-                    finalPayload[attribute] = options
+                    acc[key] = options
                         .map(opt => (opt === value ? opt : applyStrikethrough(opt)))
                         .join(" / ");
                 }
             } else if (attribute.startsWith("_checkbox")) {
                 finalPayload[attribute] = value === true ? "\u2611" : "\u2612";
-            } else if (attribute.includes("date")) {
+            } else if (attribute?.includes("date")) {
                 finalPayload[attribute] = value ? formattedDate(value) : "-";
             } else if (typeof value === "string" && value.trim()) {
                 finalPayload[attribute] = value;
@@ -158,12 +158,12 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
     console.log(maxEngineNumber, "maxEngineNumber")
 
     const vocFields = fields.filter(field =>
-        field.attribute && field.attribute.includes('_IAPP_VOC_')
+        field.attribute && field.attribute?.includes('_IAPP_VOC_')
     );
 
     const checkboxFields = fields.filter(field =>
         field.attribute && (
-            field.attribute.includes('checkbox') ||
+            field.attribute?.includes('checkbox') ||
             field.attribute.startsWith('_checkbox')
         )
     );
@@ -247,7 +247,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
             equivalentNumbers.add(Number(match[1]));
         }
     });
-    
+
     const maxEquivalentNumber = equivalentNumbers.size > 0 ? Math.max(...equivalentNumbers) : 0;
     const groupedEquivalentFields = [];
     for (let i = 1; i <= maxEquivalentNumber; i++) {
@@ -341,6 +341,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                                 </Grid2>
                             );
                         }
+
 
 
                         if (isTextarea) {
@@ -457,7 +458,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
     const usedAttributes = new Set();
 
     const baseEngineFields = fields?.filter(field =>
-        field.attribute && field.attribute.includes("_engine_")
+        field.attribute && field.attribute?.includes("_engine_")
     );
 
     baseEngineFields?.forEach(f => {

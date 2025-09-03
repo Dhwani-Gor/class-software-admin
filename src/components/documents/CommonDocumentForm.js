@@ -34,7 +34,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
 
   const handleSubmit = () => {
     const filledValues = Object.entries(formData).reduce((acc, [key, value]) => {
-      if (typeof value === "string" && (value.includes("undefined") || value.trim() === "")) {
+      if (typeof value === "string" && (value?.includes("undefined") || value.trim() === "")) {
         value = undefined;
       }
       if (key.startsWith("_st_")) {
@@ -154,7 +154,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
             {fields.map((field, index) => {
               const attr = field.attribute;
               const isCheckbox = attr.startsWith("_checkbox");
-              const isDate = attr.includes("date");
+              const isDate = attr?.includes("date");
               const isTextArea = attr.startsWith("_ta_");
               const isRadioWithStrike = attr.startsWith("_st_");
 
@@ -209,14 +209,14 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
                                         type="checkbox"
                                         name={attr}
                                         value={opt}
-                                        checked={selected.includes(opt)}
+                                        checked={selected?.includes(opt)}
                                         onChange={(e) => {
                                           if (e.target.checked) {
                                             handleInputChange(attr, [...selected, opt]);
                                           } else {
                                             handleInputChange(
                                               attr,
-                                              selected.filter(item => item !== opt)
+                                              selected?.filter(item => item !== opt)
                                             );
                                           }
                                         }}

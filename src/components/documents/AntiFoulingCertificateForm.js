@@ -69,10 +69,10 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
 
   const handleSubmit = () => {
     const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
-      if (typeof value === "string" && (value.includes("undefined") || value.trim() === "")) {
+      if (typeof value === "string" && (value?.includes("undefined") || value.trim() === "")) {
         value = undefined;
       }
-      if (key.startsWith("_st_")) {
+      if (key?.startsWith("_st_")) {
         const [, raw] = key?.split("_st_");
         const optionsRaw = raw.split("_");
         const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
@@ -87,7 +87,7 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
       }
       else if (typeof value === "boolean") {
         acc[key] = value ? "☑" : "☒";
-      } else if (key.includes("date") && value) {
+      } else if (key?.includes("date") && value) {
         acc[key] = formattedDate(value);
       } else if (typeof value === "string" && value.trim()) {
         acc[key] = value;
@@ -166,7 +166,7 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
         <Grid2 container spacing={2}>
           {others.map(field => {
             const attr = field.attribute;
-            const isDate = attr.includes("date");
+            const isDate = attr?.includes("date");
             const isStrikethroughRadio = attr.startsWith("_st_");
             const isTextarea = attr.startsWith("_ta_");
 
@@ -187,14 +187,14 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
                         type="checkbox"
                         name={attr}
                         value={opt}
-                        checked={selected.includes(opt)}
+                        checked={selected?.includes(opt)}
                         onChange={(e) => {
                           if (e.target.checked) {
                             handleInputChange(attr, [...selected, opt]);
                           } else {
                             handleInputChange(
                               attr,
-                              selected.filter(item => item !== opt)
+                              selected?.filter(item => item !== opt)
                             );
                           }
                         }}
