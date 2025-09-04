@@ -731,7 +731,7 @@ const ReportingForm = () => {
       // link.click();
       // link.remove();
       // window.URL.revokeObjectURL(downloadUrl);
-      if (response.status == "success") {
+      if (response.data.status == "success") {
         toast.success("Report generated successfully.");
       }
 
