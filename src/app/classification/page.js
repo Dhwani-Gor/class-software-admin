@@ -2,13 +2,13 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import CircularProgress from "@mui/material/CircularProgress";
-import Pagination from '@mui/material/Pagination';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogTitle from '@mui/material/DialogTitle';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
+import Pagination from "@mui/material/Pagination";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogTitle from "@mui/material/DialogTitle";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
 import Snackbar from "@mui/material/Snackbar";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
@@ -19,7 +19,11 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
-import { deleteClassificationSurvey, getAllClassificationSurveys, getAllClients } from "@/api";
+import {
+  deleteClassificationSurvey,
+  getAllClassificationSurveys,
+  getAllClients,
+} from "@/api";
 import { toast } from "react-toastify";
 import { FormControl, MenuItem, Select } from "@mui/material";
 import moment from "moment";
@@ -31,7 +35,7 @@ const Classifications = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
   const [clientsList, setClientsList] = useState([]);
-  console.log(clientsList, "clientsList")
+  console.log(clientsList, "clientsList");
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [limit, setLimit] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
@@ -40,14 +44,14 @@ const Classifications = () => {
   const [selectedClient, setSelectedClientId] = useState(null);
   const [selectedShip, setSelectedShip] = useState({ id: "", shipName: "" });
   const [classificationRows, setClassificationRows] = useState([]);
-  const [deleteRow,setDeleteRow] = useState(null)
+  const [deleteRow, setDeleteRow] = useState(null);
   const params = useSearchParams();
 
   const variableId = params.get("id");
 
   useEffect(() => {
-    setSelectedShip({ id: variableId })
-  }, [variableId])
+    setSelectedShip({ id: variableId });
+  }, [variableId]);
 
   // const snackbarClose = () => {
   //   setSnackBar({ open: false, message: "" });
@@ -61,21 +65,19 @@ const Classifications = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-
-
   const fetchClients = async () => {
     try {
       setLoading(true);
       const result = await getAllClients();
       if (result?.status === 200) {
-        setClientsList(result.data.data)
+        setClientsList(result.data.data);
       } else {
-        toast.error(result?.message)
+        toast.error(result?.message);
       }
       setLoading(false);
     } catch (error) {
       setLoading(false);
-      toast.error(error?.message || "Failed to fetch clients")
+      toast.error(error?.message || "Failed to fetch clients");
     }
   };
 
@@ -88,10 +90,10 @@ const Classifications = () => {
       setOpenDialog(false);
       await deleteClassificationSurvey(deleteRow);
       getAllClassification();
-      toast.success("Classification deleted successfully")
+      toast.success("Classification deleted successfully");
     } catch (e) {
       console.error("Error deleting Client:", e.response?.data || e.message);
-      toast.error("Failed to delete Classification.")
+      toast.error("Failed to delete Classification.");
     }
   };
 
@@ -104,9 +106,13 @@ const Classifications = () => {
     try {
       setLoading(true);
       if (!selectedShip.id) return;
-  
-      const result = await getAllClassificationSurveys({clientId: selectedShip.id, page, limit});
-  
+
+      const result = await getAllClassificationSurveys({
+        clientId: selectedShip.id,
+        page,
+        limit,
+      });
+
       if (result?.status === 200) {
         const data = result.data.data;
         setClassificationRows(data);
@@ -121,7 +127,7 @@ const Classifications = () => {
       setLoading(false);
     }
   };
-  
+
   const handleDeleteRow = async (id) => {
     try {
       setOpenDialog(true);
@@ -140,18 +146,22 @@ const Classifications = () => {
       getAllClassification();
     }
   }, [selectedShip.id, page]);
-  
+
   const handleClientChange = (event) => {
     const selectedId = event.target.value;
-    const selectedClient = clientsList.find(client => client.id === selectedId);
+    const selectedClient = clientsList.find(
+      (client) => client.id === selectedId
+    );
     setSelectedShip({
       id: selectedId,
-      shipName: selectedClient ? selectedClient.shipName : ""
+      shipName: selectedClient ? selectedClient.shipName : "",
     });
   };
   const handlePageChange = (event, value) => {
     setPage(value);
-    router.push(`/classification?page=${value}&limit=${limit}&id=${selectedShip.id}`);
+    router.push(
+      `/classification?page=${value}&limit=${limit}&id=${selectedShip.id}`
+    );
   };
 
   const columns = [
@@ -161,15 +171,59 @@ const Classifications = () => {
       flex: 1,
       sortable: false,
       renderCell: (params) => {
-        return (page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1;
-      }
+        return (
+          (page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1
+        );
+      },
     },
-    { field: "surveyName", headerName: "Survey Name", flex: 1.5, renderCell: (params) => params.value?.surveyName?.toUpperCase() },
-    { field: "surveyDate", headerName: "Survey Date", flex: 1, renderCell: (params) => params.value ? moment(params.value).format('DD/MM/YYYY') : "-" },
-    { field: "issuanceDate", headerName: "Issuance Date", flex: 1, renderCell: (params) => params.value ? moment(params.value).format('DD/MM/YYYY') : "-" },
-    { field: "rangeFrom", headerName: "Range From", flex: 1, renderCell: (params) => params.value ? moment(params.value).format('DD/MM/YYYY') : "-" },
-    { field: "rangeTo", headerName: "Range To", flex: 1, renderCell: (params) => params.value ? moment(params.value).format('DD/MM/YYYY') : "-" },
-    { field: "postponed", headerName: "Postponed Date", flex: 1, renderCell: (params) => params.value ? moment(params.value).format('DD/MM/YYYY') : "-" },
+    {
+      field: "surveyName",
+      headerName: "Survey Name",
+      flex: 1.5,
+      renderCell: (params) => params.value?.surveyName?.toUpperCase(),
+    },
+    {
+      field: "surveyDate",
+      headerName: "Survey Date",
+      flex: 1,
+      renderCell: (params) =>
+        params.value ? moment(params.value).format("DD/MM/YYYY") : "-",
+    },
+    {
+      field: "issuanceDate",
+      headerName: "Assignment Date",
+      flex: 1,
+      renderCell: (params) =>
+        params.value ? moment(params.value).format("DD/MM/YYYY") : "-",
+    },
+    {
+      field: "dueDate",
+      headerName: "Due' Date",
+      flex: 1,
+      renderCell: (params) =>
+        params.value ? moment(params.value).format("DD/MM/YYYY") : "-",
+    },
+    {
+      field: "rangeFrom",
+      headerName: "Range From",
+      flex: 1,
+      renderCell: (params) =>
+        params.value ? moment(params.value).format("DD/MM/YYYY") : "-",
+    },
+    {
+      field: "rangeTo",
+      headerName: "Range To",
+      flex: 1,
+      renderCell: (params) =>
+        params.value ? moment(params.value).format("DD/MM/YYYY") : "-",
+    },
+    {
+      field: "postponed",
+      headerName: "Postponed Date",
+      flex: 1,
+      renderCell: (params) =>
+        params.value ? moment(params.value).format("DD/MM/YYYY") : "-",
+    },
     {
       field: "actions",
       headerName: "Actions",
@@ -222,7 +276,9 @@ const Classifications = () => {
       <CommonCard>
         <Box>
           <FormControl fullWidth sx={{ maxWidth: 300 }}>
-            <Typography variant="h6" mb={1}>Select Client</Typography>
+            <Typography variant="h6" mb={1}>
+              Select Client
+            </Typography>
 
             <Select
               value={selectedShip.id || ""}
@@ -291,7 +347,9 @@ const Classifications = () => {
       </CommonCard>
 
       <Dialog open={openDialog} onClose={handleCancelDelete}>
-        <DialogTitle>Are you sure you want to delete this Classification?</DialogTitle>
+        <DialogTitle>
+          Are you sure you want to delete this Classification?
+        </DialogTitle>
         <DialogActions>
           <Button onClick={handleCancelDelete} color="primary">
             Cancel
