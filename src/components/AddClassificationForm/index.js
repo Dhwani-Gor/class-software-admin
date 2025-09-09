@@ -79,10 +79,14 @@ const surveyTypes = [
   { label: "Cargo Gear Survey - renewal", value: "cargo_gear_survey_renewal" },
 ];
 
-const ClassificationForm = ({ mode = "create", variableId = null }) => {
-  const [clientsList, setClientsList] = useState([]);
-  const [selectedShip, setSelectedShip] = useState({ id: "", shipName: "" });
+const ClassificationForm = ({
+  mode = "create",
+  variableId = null,
+  selectedShip,
+  onSuccess,
+}) => {
   const [classificationRows, setClassificationRows] = useState([]);
+  const [clientsList, setClientsList] = useState([]);
 
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -144,6 +148,7 @@ const ClassificationForm = ({ mode = "create", variableId = null }) => {
 
   const handleSave = () => {
     handleAddClassification();
+    setClassificationRows([createEmptyRow()]);
   };
 
   const fetchClients = async () => {
@@ -187,10 +192,10 @@ const ClassificationForm = ({ mode = "create", variableId = null }) => {
         };
 
         setClassificationRows([formattedRow]);
-        setSelectedShip({
-          id: data.clientId,
-          shipName: data.client?.shipName || "",
-        });
+        // setSelectedShip({
+        //   id: data.clientId,
+        //   shipName: data.client?.shipName || "",
+        // });
       }
     } catch (error) {
       toast.error(error.message || "Error fetching data");
@@ -220,7 +225,9 @@ const ClassificationForm = ({ mode = "create", variableId = null }) => {
         );
         if (response?.data?.status === "success") {
           toast.success("Classification updated successfully");
-          router.push(`/classification?id=${selectedShip.id}`);
+          onSuccess?.(); // ✅ trigger callback
+
+          //   router.push(`/classification?id=${selectedShip.id}`);
         }
         if (response?.response?.data?.status == "error") {
           toast.error(
@@ -247,7 +254,7 @@ const ClassificationForm = ({ mode = "create", variableId = null }) => {
       const response = await addClassificationSurvey(payload);
       if (response?.data?.status == "success") {
         toast.success("Classification added successfully");
-        router.push(`/classification?id=${selectedShip.id}`);
+        onSuccess?.();
       }
       if (response?.response?.data?.status == "error") {
         toast.error(response?.response?.data?.message);
@@ -283,16 +290,22 @@ const ClassificationForm = ({ mode = "create", variableId = null }) => {
   }, [mode, variableId]);
 
   useEffect(() => {
+    if (selectedShip?.id) {
+      setClassificationRows([createEmptyRow()]);
+    }
+  }, [selectedShip, selectedShip?.id]);
+
+  useEffect(() => {
     fetchClients();
   }, []);
 
   return (
-    <Stack mt={4} spacing={4}>
-      <Paper sx={{ padding: "20px", borderRadius: "15px" }}>
+    <Box spacing={2} sx={{ marginTop: "2rem", width: "100%" }}>
+      <Box sx={{ borderRadius: "15px" }}>
         <Box>
           {mode === "create" && (
             <Box>
-              <FormControl fullWidth sx={{ maxWidth: 300 }}>
+              {/* <FormControl fullWidth sx={{ maxWidth: 300 }}>
                 <Typography variant="h6" mb={1}>
                   Select Client
                 </Typography>
@@ -310,212 +323,230 @@ const ClassificationForm = ({ mode = "create", variableId = null }) => {
                     </MenuItem>
                   ))}
                 </Select>
-              </FormControl>
+              </FormControl> */}
             </Box>
           )}
         </Box>
+        {selectedShip?.id && (
+          <Box sx={{ m: 0, p: 0 }}>
+            <Typography variant="h6">Classification Surveys</Typography>
+            {classificationRows?.map((row, index) => (
+              <Box
+                key={index}
+                sx={{
+                  borderRadius: 2,
+                }}
+              >
+                <Grid2
+                  container
+                  spacing={0.5}
+                  marginTop={2.5}
+                  alignItems="center"
+                >
+                  {/* Survey Type */}
+                  <Grid2 size={{ xs: 12, md: 1.6 }}>
+                    <FormControl fullWidth>
+                      <InputLabel>Survey Type</InputLabel>
+                      <Select
+                        value={row.surveyName}
+                        onChange={(e) =>
+                          handleChange(
+                            "classification",
+                            index,
+                            "surveyName",
+                            e.target.value
+                          )
+                        }
+                      >
+                        {surveyTypes.map((type) => (
+                          <MenuItem key={type.value} value={type.label}>
+                            {type.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid2>
 
-        <Box>
-          <Typography variant="h6" mt={3} mb={2}>
-            Classification Surveys
-          </Typography>
-          {classificationRows?.map((row, index) => (
-            <Box
-              key={index}
-              sx={{
-                border: "1px solid #e0e0e0",
-                borderRadius: 2,
-                p: 2,
-                mb: 3,
-              }}
-            >
-              <Grid2 container spacing={2}>
-                <Grid2 size={{ xs: 12, sm: 12, md: 12 }}>
-                  <FormControl fullWidth>
-                    <InputLabel>Survey Type</InputLabel>
-                    <Select
-                      value={row.surveyName}
-                      label="Survey Type"
+                  {/* Survey Date */}
+                  <Grid2 size={{ xs: 12, md: 1.7 }}>
+                    <TextField
+                      label="Survey Date"
+                      type="date"
+                      fullWidth
+                      value={
+                        row.surveyDate
+                          ? moment(row.surveyDate).format("YYYY-MM-DD")
+                          : ""
+                      }
                       onChange={(e) =>
                         handleChange(
                           "classification",
                           index,
-                          "surveyName",
+                          "surveyDate",
                           e.target.value
                         )
                       }
-                    >
-                      {surveyTypes.map((type) => (
-                        <MenuItem key={type.value} value={type.label}>
-                          {type.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid2>
-
-                <Grid2 size={{ xs: 12, sm: 12, md: 12 }}>
-                  <TextField
-                    label="Survey Date"
-                    type="date"
-                    fullWidth
-                    value={
-                      row.surveyDate
-                        ? moment(row.surveyDate).format("YYYY-MM-DD")
-                        : ""
-                    }
-                    onChange={(e) =>
-                      handleChange(
-                        "classification",
-                        index,
-                        "surveyDate",
-                        e.target.value
-                      )
-                    }
-                    InputLabelProps={{ shrink: true }}
-                  />
-                </Grid2>
-
-                <Grid2 size={{ xs: 12, sm: 12, md: 12 }}>
-                  <TextField
-                    label="Assignment Date"
-                    type="date"
-                    fullWidth
-                    value={
-                      row.issuanceDate
-                        ? moment(row.issuanceDate).format("YYYY-MM-DD")
-                        : ""
-                    }
-                    onChange={(e) =>
-                      handleChange(
-                        "classification",
-                        index,
-                        "issuanceDate",
-                        e.target.value
-                      )
-                    }
-                    InputLabelProps={{ shrink: true }}
-                  />
-                </Grid2>
-
-                <Grid2 size={{ xs: 12, sm: 6, md: 4 }}>
-                  <TextField
-                    type="date"
-                    label="Due Date"
-                    fullWidth
-                    value={
-                      row.dueDate
-                        ? moment(row.dueDate).format("YYYY-MM-DD")
-                        : ""
-                    }
-                    onChange={(e) =>
-                      handleChange(
-                        "classification",
-                        index,
-                        "dueDate",
-                        e.target.value
-                      )
-                    }
-                    InputLabelProps={{ shrink: true }}
-                  />
-                </Grid2>
-
-                <Grid2 size={{ xs: 12, sm: 6, md: 4 }}>
-                  <TextField
-                    type="date"
-                    label="Range From"
-                    fullWidth
-                    value={
-                      row.rangeFrom
-                        ? moment(row.rangeFrom).format("YYYY-MM-DD")
-                        : ""
-                    }
-                    InputLabelProps={{ shrink: true }}
-                    onChange={(e) =>
-                      handleChange(
-                        "classification",
-                        index,
-                        "rangeFrom",
-                        e.target.value
-                      )
-                    }
-                  />
-                </Grid2>
-
-                <Grid2 size={{ xs: 12, sm: 6, md: 4 }}>
-                  <TextField
-                    type="date"
-                    label="Range To"
-                    fullWidth
-                    value={
-                      row.rangeTo
-                        ? moment(row.rangeTo).format("YYYY-MM-DD")
-                        : ""
-                    }
-                    InputLabelProps={{ shrink: true }}
-                    onChange={(e) =>
-                      handleChange(
-                        "classification",
-                        index,
-                        "rangeTo",
-                        e.target.value
-                      )
-                    }
-                  />
-                </Grid2>
-
-                <Grid2 size={{ xs: 12, sm: 6, md: 4 }}>
-                  <TextField
-                    label="Postponed Date"
-                    type="date"
-                    fullWidth
-                    value={
-                      row.postponed
-                        ? moment(row.postponed).format("YYYY-MM-DD")
-                        : ""
-                    }
-                    onChange={(e) =>
-                      handleChange(
-                        "classification",
-                        index,
-                        "postponed",
-                        e.target.value
-                      )
-                    }
-                    InputLabelProps={{ shrink: true }}
-                  />
-                </Grid2>
-
-                {mode !== "update" && (
-                  <Grid2 item xs={12}>
-                    <IconButton
-                      onClick={() => handleDeleteRow(index)}
-                      color="error"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+                      InputLabelProps={{ shrink: true }}
+                    />
                   </Grid2>
-                )}
-              </Grid2>
-            </Box>
-          ))}
 
-          {mode !== "update" && (
+                  {/* Issuance Date */}
+                  <Grid2 size={{ xs: 12, md: 1.7 }}>
+                    <TextField
+                      label="Issuance Date"
+                      type="date"
+                      fullWidth
+                      value={
+                        row.issuanceDate
+                          ? moment(row.issuanceDate).format("YYYY-MM-DD")
+                          : ""
+                      }
+                      onChange={(e) =>
+                        handleChange(
+                          "classification",
+                          index,
+                          "issuanceDate",
+                          e.target.value
+                        )
+                      }
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Grid2>
+
+                  {/* Due Date */}
+                  <Grid2 size={{ xs: 12, md: 1.7 }}>
+                    <TextField
+                      label="Due Date"
+                      type="date"
+                      fullWidth
+                      value={
+                        row.dueDate
+                          ? moment(row.dueDate).format("YYYY-MM-DD")
+                          : ""
+                      }
+                      onChange={(e) =>
+                        handleChange(
+                          "classification",
+                          index,
+                          "dueDate",
+                          e.target.value
+                        )
+                      }
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Grid2>
+
+                  {/* Range From */}
+                  <Grid2 size={{ xs: 12, md: 1.7 }}>
+                    <TextField
+                      label="Range From"
+                      type="date"
+                      fullWidth
+                      value={
+                        row.rangeFrom
+                          ? moment(row.rangeFrom).format("YYYY-MM-DD")
+                          : ""
+                      }
+                      onChange={(e) =>
+                        handleChange(
+                          "classification",
+                          index,
+                          "rangeFrom",
+                          e.target.value
+                        )
+                      }
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Grid2>
+
+                  {/* Range To */}
+                  <Grid2 size={{ xs: 12, md: 1.7 }}>
+                    <TextField
+                      label="Range To"
+                      type="date"
+                      fullWidth
+                      value={
+                        row.rangeTo
+                          ? moment(row.rangeTo).format("YYYY-MM-DD")
+                          : ""
+                      }
+                      onChange={(e) =>
+                        handleChange(
+                          "classification",
+                          index,
+                          "rangeTo",
+                          e.target.value
+                        )
+                      }
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Grid2>
+
+                  {/* Postponed Date */}
+                  <Grid2 size={{ xs: 12, md: 1.7 }}>
+                    <TextField
+                      label="Postponed Date"
+                      type="date"
+                      fullWidth
+                      value={
+                        row.postponed
+                          ? moment(row.postponed).format("YYYY-MM-DD")
+                          : ""
+                      }
+                      onChange={(e) =>
+                        handleChange(
+                          "classification",
+                          index,
+                          "postponed",
+                          e.target.value
+                        )
+                      }
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Grid2>
+
+                  {/* Delete button */}
+                  {mode !== "update" && (
+                    <Grid2
+                      size={{ xs: 12, md: 0.2 }}
+                      display="flex"
+                      justifyContent="center"
+                    >
+                      <IconButton
+                        onClick={() => handleDeleteRow(index)}
+                        color="error"
+                        size="small"
+                        sx={{ mr: -1 }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Grid2>
+                  )}
+                </Grid2>
+              </Box>
+            ))}
+
+            {mode !== "update" && (
+              <CommonButton
+                style={{ marginTop: "1.5rem" }}
+                variant="contained"
+                onClick={addRow}
+                text="Add Classification Surveys"
+              />
+            )}
+          </Box>
+        )}
+        {selectedShip?.id && (
+          <DialogActions>
             <CommonButton
-              style={{ marginTop: "1rem" }}
-              disabled={selectedShip.id === ""}
               variant="contained"
-              onClick={addRow}
-              text="Add Classification Surveys"
+              onClick={handleSave}
+              text="Save"
             />
-          )}
-        </Box>
-
-        <DialogActions>
-          <CommonButton variant="contained" onClick={handleSave} text="Save" />
-        </DialogActions>
-      </Paper>
-    </Stack>
+          </DialogActions>
+        )}
+      </Box>
+    </Box>
   );
 };
 

@@ -321,35 +321,31 @@ const TextEditor = ({ id }) => {
     return "";
   };
 
-  const getClassRangeIcon = (rangeTo, currentDate, rangeFrom) => {
-    if (!rangeTo || !rangeFrom) {
-      console.warn("Missing rangeFrom or rangeTo");
+  const getClassRangeIcon = (currentDate, rangeFrom, rangeTo) => {
+    const today = moment(currentDate, "YYYY-MM-DD");
+
+    if (!rangeFrom || !rangeTo) {
       return "";
     }
 
-    const to = moment(rangeTo, "DD/MM/YYYY");
-    const from = moment(rangeFrom, "DD/MM/YYYY");
-    const today = moment(currentDate, "DD/MM/YYYY");
+    const from = moment(rangeFrom, "YYYY-MM-DD");
+    const to = moment(rangeTo, "YYYY-MM-DD");
 
-    if (!to.isValid() || !from.isValid()) {
-      console.warn("Invalid rangeFrom or rangeTo:", rangeFrom, rangeTo);
+    if (!from.isValid() || !to.isValid()) {
       return "";
     }
 
-    // 1. Today not in range → nothing
-    if (!today.isBetween(from, to, "day", "[]")) {
-      return "";
-    }
-
-    // 2. Overdue
     if (today.isAfter(to, "day")) {
-      return "status-icon overdue";
+      return "status-icon expired";
     }
 
-    // 3. Expiring within 1 month
-    const daysDiff = to.diff(today, "days");
-    if (daysDiff <= 30) {
-      return "status-icon expire-within-range";
+    const daysToRangeTo = to.diff(today, "days");
+    if (daysToRangeTo >= 0 && daysToRangeTo < 30) {
+      return "status-icon expiring1m";
+    }
+
+    if (today.isBetween(from, to, "day", "[]") && daysToRangeTo >= 30) {
+      return "status-icon expiring3m";
     }
 
     return "";
@@ -628,12 +624,12 @@ const TextEditor = ({ id }) => {
                 <tr>
                     <td>${surveyName}</td>
                     <td>${
-                      getClassRangeIcon(rangeTo, currentDate, rangeFrom)
+                      getClassRangeIcon(currentDate, rangeFrom, rangeTo)
                         ? `<span class="${getClassRangeIcon(
-                            rangeTo,
                             currentDate,
-                            rangeFrom
-                          )}">C</span>`
+                            rangeFrom,
+                            rangeTo
+                          )}">S</span>`
                         : ""
                     }</td>              
                     <td>${
@@ -681,11 +677,11 @@ const TextEditor = ({ id }) => {
                 <tr>
                 <td>${surveyName}</td>
                 <td>${
-                  getClassRangeIcon(rangeTo, currentDate, rangeFrom)
+                  getClassRangeIcon(currentDate, rangeFrom, rangeTo)
                     ? `<span class="${getClassRangeIcon(
-                        rangeTo,
                         currentDate,
-                        rangeFrom
+                        rangeFrom,
+                        rangeTo
                       )}">C</span>`
                     : ""
                 }</td>              <td>${
@@ -1394,17 +1390,17 @@ const TextEditor = ({ id }) => {
                     .status-icon {
                         font-size: 14px;
                         margin-right: 1px;
-                    }
+                      }
                     
                     .expired {
                         color:white;
                         background-color: red;
                         width: 16px;
                         height: 16px;
-                        display: inline-flex;
+                        display: flex;
                         justify-content: center;
                         align-items: center;
-                        font-size: 10px;
+                        font-size: 11px;
                     }
                     
                     span.expiring1m{
@@ -1412,11 +1408,11 @@ const TextEditor = ({ id }) => {
                         clip-path: polygon(50% 2%, 98% 50%, 50% 98%, 2% 50%);
                         background-color: #ffc000;
                         width: 16px;
-                        height: 20px;
-                        display: inline-flex;
+                        height: 22px;
+                        display: flex;
                         justify-content: center;
                         align-items: center;
-                        font-size: 10px;
+                        font-size: 11px;
                         border-radius: 50%;
 
                     }
@@ -1427,10 +1423,10 @@ const TextEditor = ({ id }) => {
                         background-color: #00b050;
                         width: 16px;
                         height: 16px;
-                        display: inline-flex;
+                        display: flex;
                         justify-content: center;
                         align-items: center;
-                        font-size: 10px;
+                        font-size: 11px;
                         border-radius: 50%;
 
                     }

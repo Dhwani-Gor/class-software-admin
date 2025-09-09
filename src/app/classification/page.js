@@ -27,6 +27,7 @@ import {
 import { toast } from "react-toastify";
 import { FormControl, MenuItem, Select } from "@mui/material";
 import moment from "moment";
+import ClassificationForm from "@/components/AddClassificationForm";
 
 const Classifications = () => {
   const router = useRouter();
@@ -37,7 +38,7 @@ const Classifications = () => {
   const [clientsList, setClientsList] = useState([]);
   console.log(clientsList, "clientsList");
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(50);
   const [totalRows, setTotalRows] = useState(0);
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
@@ -45,6 +46,8 @@ const Classifications = () => {
   const [selectedShip, setSelectedShip] = useState({ id: "", shipName: "" });
   const [classificationRows, setClassificationRows] = useState([]);
   const [deleteRow, setDeleteRow] = useState(null);
+  const [editRowId, setEditRowId] = useState(null);
+
   const params = useSearchParams();
 
   const variableId = params.get("id");
@@ -233,7 +236,7 @@ const Classifications = () => {
           <Tooltip title="Edit Classification">
             <IconButton
               color="primary"
-              onClick={() => router.push(`/classification/${params?.id}`)}
+              onClick={() => setEditRowId(params?.id)}
             >
               <EditIcon />
             </IconButton>
@@ -296,33 +299,54 @@ const Classifications = () => {
             </Select>
           </FormControl>
         </Box>
+        <ClassificationForm
+          selectedShip={selectedShip}
+          mode={editRowId ? "update" : "create"}
+          variableId={editRowId} // 👈 pass row id here
+          onSuccess={() => {
+            setEditRowId(null);
+            getAllClassification();
+          }}
+        />
+
         <Box sx={{ width: "100%", mt: 4 }}>
           {loading ? (
             <Box
               display="flex"
               justifyContent="center"
               alignItems="center"
-              height="300px"
+              sx={{ height: 600, overflowY: "auto", mt: 2 }}
             >
               <CircularProgress />
             </Box>
           ) : selectedShip.id && clientsList.length > 0 ? (
-            <DataGrid
-              rows={classificationRows}
-              columns={columns}
-              loading={loading}
-              pagination={false}
-              disableColumnFilter
-              disableColumnMenu
-              disableColumnSelector
-              disableDensitySelector
-              disableRowSelectionOnClick
-              hideFooter
-              sx={{
-                backgroundColor: "#fff",
-                border: "none",
+            <Box
+              sx={{ height: 300, overflowY: "auto", mt: 2 }}
+              onScroll={(e) => {
+                const { scrollTop, scrollHeight, clientHeight } =
+                  e.currentTarget;
+                if (scrollHeight - scrollTop - clientHeight < 100) {
+                  fetchClassification();
+                }
               }}
-            />
+            >
+              <DataGrid
+                rows={classificationRows}
+                columns={columns}
+                loading={loading}
+                pagination={false}
+                disableColumnFilter
+                disableColumnMenu
+                disableColumnSelector
+                disableDensitySelector
+                disableRowSelectionOnClick
+                hideFooter
+                sx={{
+                  backgroundColor: "#fff",
+                  border: "none",
+                }}
+              />
+            </Box>
           ) : (
             <Typography
               variant="h6"
@@ -334,7 +358,7 @@ const Classifications = () => {
           )}
         </Box>
         <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-          <Pagination
+          {/* <Pagination
             count={Math.ceil(totalRows / limit)}
             page={page}
             onChange={handlePageChange}
@@ -342,7 +366,7 @@ const Classifications = () => {
             variant="outlined"
             shape="rounded"
             sx={{ marginTop: "10px" }}
-          />
+          /> */}
         </Box>
       </CommonCard>
 

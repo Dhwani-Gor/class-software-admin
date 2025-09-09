@@ -5,7 +5,7 @@ import { Controller, useForm } from "react-hook-form";
 import * as yup from "yup";
 import { useDispatch } from "react-redux";
 import Paper from "@mui/material/Paper";
-import FormControlLabel from '@mui/material/FormControlLabel';
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Box from "@mui/material/Box";
 import Grid2 from "@mui/material/Grid2";
 import { toast } from "react-toastify";
@@ -17,9 +17,21 @@ import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import CommonInput from "../CommonInput";
 import CommonButton from "../CommonButton";
-import { createClient, getSpecificClient, searchinvoicing_detail, searchmanager_detail, searchowner_detail, updateClient } from "@/api";
-import { Accordion, AccordionDetails, AccordionSummary, Typography } from "@mui/material";
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import {
+  createClient,
+  getSpecificClient,
+  searchinvoicing_detail,
+  searchmanager_detail,
+  searchowner_detail,
+  updateClient,
+} from "@/api";
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Typography,
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 const requiredFields = [
   "shipName",
@@ -43,13 +55,13 @@ const requiredFields = [
 const renderLabel = (field) => {
   const labelText = field
     .replace(/([A-Z])/g, " $1")
-    .replace(/^./, str => str.toUpperCase());
+    .replace(/^./, (str) => str.toUpperCase());
 
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+    <span style={{ display: "inline-flex", alignItems: "center" }}>
       <Typography fontStyle="italic">{labelText}</Typography>
       {requiredFields.includes(field) && (
-        <span style={{ color: 'red', marginLeft: 4 }}>*</span>
+        <span style={{ color: "red", marginLeft: 4 }}>*</span>
       )}
     </span>
   );
@@ -58,7 +70,7 @@ const renderLabel = (field) => {
 const schema = yup.object().shape({
   shipName: yup.string().required("Ship Name is required"),
   imoNumber: yup.string().required("IMO number is required"),
-  classId: yup.string().required("Class Id is required"),// 
+  classId: yup.string().required("Class Id is required"), //
   flag: yup.string().required("Flag is required"),
   portOfRegistry: yup.string().required("Port of Registry is required"),
   grossTonnage: yup.string().required("Gross Tonnage is required"),
@@ -83,25 +95,21 @@ const schema = yup.object().shape({
   ownerDetails: yup.object().shape({
     nameOfCompany: yup.string().required("Company Name is required"),
     companyAddress: yup.string().required("Complete Address is required"),
-    phoneNumber: yup
-      .string()
-      .required("Phone number is required"),
+    phoneNumber: yup.string().required("Phone number is required"),
     email: yup.string().required("Email is required").email("Invalid email"),
+    imoNumber: yup.string().optional(),
   }),
   managerDetails: yup.object().shape({
     nameOfCompany: yup.string().required("Company Name is required"),
     companyAddress: yup.string().required("Complete Address is required"),
-    phoneNumber: yup
-      .string()
-      .required("Phone number is required"),
+    phoneNumber: yup.string().required("Phone number is required"),
     email: yup.string().required("Email is required").email("Invalid email"),
+    imoNumber: yup.string().optional(),
   }),
   invoicingDetails: yup.object().shape({
     nameOfCompany: yup.string().required("Company Name is required"),
     companyAddress: yup.string().required("Complete Address is required"),
-    phoneNumber: yup
-      .string()
-      .required("Phone number is required"),
+    phoneNumber: yup.string().required("Phone number is required"),
     email: yup.string().required("Email is required").email("Invalid email"),
   }),
 });
@@ -111,7 +119,7 @@ const AddSurveyType = ({
   clientId = null,
   defaultValues = {},
   editingAllowed = true,
-  editReason = ''
+  editReason = "",
 }) => {
   const [loading, setLoading] = useState(false);
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
@@ -120,17 +128,17 @@ const AddSurveyType = ({
   const [isInvoiceSameAsOwner, setIsInvoiceSameAsOwner] = useState(false);
   const [isInvoiceSameAsManager, setIsInvoiceSameAsManager] = useState(false);
   const [ownerOptions, setOwnerOptions] = useState([]);
-  const [ownerInputValue, setOwnerInputValue] = useState('');
+  const [ownerInputValue, setOwnerInputValue] = useState("");
   const [managerOptions, setManagerOptions] = useState([]);
-  const [managerInputValue, setManagerInputValue] = useState('');
+  const [managerInputValue, setManagerInputValue] = useState("");
   const [isSearching, setIsSearching] = useState({
     owner: false,
     manager: false,
-    invoicing: false
+    invoicing: false,
   });
   const [invoicingOptions, setInvoicingOptions] = useState([]);
-  const [invoicingInputValue, setInvoicingInputValue] = useState('');
-  const [shipName, setShipName] = useState('');
+  const [invoicingInputValue, setInvoicingInputValue] = useState("");
+  const [shipName, setShipName] = useState("");
 
   // Flags to track manual edits
   const [manuallyEditedManager, setManuallyEditedManager] = useState(false);
@@ -181,12 +189,14 @@ const AddSurveyType = ({
         companyAddress: "",
         phoneNumber: "",
         email: "",
+        imoNumber: "",
       },
       managerDetails: {
         nameOfCompany: "",
         companyAddress: "",
         phoneNumber: "",
         email: "",
+        imoNumber: "",
       },
       invoicingDetails: {
         nameOfCompany: "",
@@ -200,7 +210,7 @@ const AddSurveyType = ({
   });
 
   const formatFieldText = (field) =>
-    field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase());
+    field.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase());
 
   // Copy values when checkboxes are checked
   useEffect(() => {
@@ -209,10 +219,10 @@ const AddSurveyType = ({
     const invoicingDetails = getValues("invoicingDetails");
     if (isManagerSameAsOwner && ownerDetails) {
       setValue("managerDetails", { ...ownerDetails });
-      clearErrors('managerDetails.companyAddress');
+      clearErrors("managerDetails.companyAddress");
       clearErrors("managerDetails.email");
       clearErrors("managerDetails.nameOfCompany");
-      clearErrors('managerDetails.phoneNumber');
+      clearErrors("managerDetails.phoneNumber");
       setManuallyEditedManager(false);
     }
 
@@ -221,11 +231,11 @@ const AddSurveyType = ({
         ...ownerDetails,
         gstNo: getValues("invoicingDetails.gstNo") || "",
       });
-      clearErrors('invoicingDetails');
-      clearErrors('invoicingDetails.companyAddress');
+      clearErrors("invoicingDetails");
+      clearErrors("invoicingDetails.companyAddress");
       clearErrors("invoicingDetails.email");
       clearErrors("invoicingDetails.nameOfCompany");
-      clearErrors('invoicingDetails.phoneNumber');
+      clearErrors("invoicingDetails.phoneNumber");
       setManuallyEditedInvoice(false);
     }
 
@@ -234,14 +244,21 @@ const AddSurveyType = ({
         ...managerDetails,
         gstNo: getValues("invoicingDetails.gstNo") || "",
       });
-      clearErrors('invoicingDetails');
-      clearErrors('invoicingDetails.companyAddress');
+      clearErrors("invoicingDetails");
+      clearErrors("invoicingDetails.companyAddress");
       clearErrors("invoicingDetails.email");
       clearErrors("invoicingDetails.nameOfCompany");
-      clearErrors('invoicingDetails.phoneNumber');
+      clearErrors("invoicingDetails.phoneNumber");
       setManuallyEditedInvoice(false);
     }
-  }, [isManagerSameAsOwner, isInvoiceSameAsOwner, isInvoiceSameAsManager, setValue, getValues, clearErrors]);
+  }, [
+    isManagerSameAsOwner,
+    isInvoiceSameAsOwner,
+    isInvoiceSameAsManager,
+    setValue,
+    getValues,
+    clearErrors,
+  ]);
 
   const ownerDetail = watch("ownerDetails");
   useEffect(() => {
@@ -255,7 +272,15 @@ const AddSurveyType = ({
         gstNo: getValues("invoicingDetails.gstNo") || "",
       });
     }
-  }, [ownerDetail, isManagerSameAsOwner, isInvoiceSameAsOwner, setValue, getValues, manuallyEditedManager, manuallyEditedInvoice]);
+  }, [
+    ownerDetail,
+    isManagerSameAsOwner,
+    isInvoiceSameAsOwner,
+    setValue,
+    getValues,
+    manuallyEditedManager,
+    manuallyEditedInvoice,
+  ]);
 
   const managerDetail = watch("managerDetails");
   useEffect(() => {
@@ -265,7 +290,13 @@ const AddSurveyType = ({
         gstNo: getValues("invoicingDetails.gstNo") || "",
       });
     }
-  }, [managerDetail, isInvoiceSameAsManager, setValue, getValues, manuallyEditedInvoice]);
+  }, [
+    managerDetail,
+    isInvoiceSameAsManager,
+    setValue,
+    getValues,
+    manuallyEditedInvoice,
+  ]);
 
   const normalizeValue = (value, defaultValue = "") => {
     return value === null || value === undefined ? defaultValue : value;
@@ -294,12 +325,14 @@ const AddSurveyType = ({
         companyAddress: normalizeValue(data.ownerDetails?.companyAddress),
         phoneNumber: normalizeValue(data.ownerDetails?.phoneNumber),
         email: normalizeValue(data.ownerDetails?.email),
+        imoNumber: normalizeValue(data.ownerDetails?.imoNumber),
       },
       managerDetails: {
         nameOfCompany: normalizeValue(data.managerDetails?.companyName),
         companyAddress: normalizeValue(data.managerDetails?.companyAddress),
         phoneNumber: normalizeValue(data.managerDetails?.phoneNumber),
         email: normalizeValue(data.managerDetails?.email),
+        imoNumber: normalizeValue(data.managerDetails?.imoNumber),
       },
       invoicingDetails: {
         nameOfCompany: normalizeValue(data.invoicingDetails?.companyName),
@@ -307,7 +340,7 @@ const AddSurveyType = ({
         phoneNumber: normalizeValue(data.invoicingDetails?.phoneNumber),
         email: normalizeValue(data.invoicingDetails?.email),
         gstNo: normalizeValue(data.invoicingDetails?.gstNo),
-      }
+      },
     };
 
     // Format date fields
@@ -316,9 +349,9 @@ const AddSurveyType = ({
       "keelLaidDate",
       "dateOfModification",
       "dateOfBuildingContract",
-      "dateOfDelivery"
+      "dateOfDelivery",
     ];
-    dateFields.forEach(field => {
+    dateFields.forEach((field) => {
       if (normalized[field]) {
         try {
           const date = new Date(normalized[field]);
@@ -344,9 +377,18 @@ const AddSurveyType = ({
         reset(normalizedData);
         setOwnerInputValue(normalizedData.ownerDetails.nameOfCompany);
 
-        setValue("ownerDetails.nameOfCompany", normalizedData.ownerDetails.nameOfCompany);
-        setValue("managerDetails.nameOfCompany", normalizedData.managerDetails.nameOfCompany);
-        setValue("invoicingDetails.nameOfCompany", normalizedData.invoicingDetails.nameOfCompany);
+        setValue(
+          "ownerDetails.nameOfCompany",
+          normalizedData.ownerDetails.nameOfCompany
+        );
+        setValue(
+          "managerDetails.nameOfCompany",
+          normalizedData.managerDetails.nameOfCompany
+        );
+        setValue(
+          "invoicingDetails.nameOfCompany",
+          normalizedData.invoicingDetails.nameOfCompany
+        );
       } else {
         toast.error("Something went wrong! Please try again after some time");
       }
@@ -358,7 +400,6 @@ const AddSurveyType = ({
     }
   };
 
-
   useEffect(() => {
     if (clientId) {
       fetchClient();
@@ -367,12 +408,12 @@ const AddSurveyType = ({
 
   // Handle search for owner company details
   const handleOwnerSearch = async (searchQuery) => {
-    if (!searchQuery || searchQuery.trim() === '') {
+    if (!searchQuery || searchQuery.trim() === "") {
       setOwnerOptions([]);
       return;
     }
 
-    setIsSearching(prev => ({ ...prev, owner: true }));
+    setIsSearching((prev) => ({ ...prev, owner: true }));
     try {
       const result = await searchowner_detail(searchQuery);
       if (result?.status === 200 && result?.data) {
@@ -390,17 +431,17 @@ const AddSurveyType = ({
       console.error("Error searching owner details:", error);
       setOwnerOptions([]);
     } finally {
-      setIsSearching(prev => ({ ...prev, owner: false }));
+      setIsSearching((prev) => ({ ...prev, owner: false }));
     }
   };
 
   const handleManagerSearch = async (searchQuery) => {
-    if (!searchQuery || searchQuery.trim() === '') {
+    if (!searchQuery || searchQuery.trim() === "") {
       setManagerOptions([]);
       return;
     }
 
-    setIsSearching(prev => ({ ...prev, manager: true }));
+    setIsSearching((prev) => ({ ...prev, manager: true }));
     try {
       const result = await searchmanager_detail(searchQuery);
       if (result?.status === 200 && result?.data) {
@@ -418,16 +459,16 @@ const AddSurveyType = ({
       console.error("Error searching manager details:", error);
       setManagerOptions([]);
     } finally {
-      setIsSearching(prev => ({ ...prev, manager: false }));
+      setIsSearching((prev) => ({ ...prev, manager: false }));
     }
   };
 
   const handleInvoicingSearch = async (searchQuery) => {
-    if (!searchQuery || searchQuery.trim() === '') {
+    if (!searchQuery || searchQuery.trim() === "") {
       setInvoicingOptions([]);
       return;
     }
-    setIsSearching(prev => ({ ...prev, invoicing: true }));
+    setIsSearching((prev) => ({ ...prev, invoicing: true }));
     try {
       const result = await searchinvoicing_detail(searchQuery);
       if (result?.status === 200 && result?.data) {
@@ -445,7 +486,7 @@ const AddSurveyType = ({
       console.error("Error searching invoicing details:", error);
       setInvoicingOptions([]);
     } finally {
-      setIsSearching(prev => ({ ...prev, invoicing: false }));
+      setIsSearching((prev) => ({ ...prev, invoicing: false }));
     }
   };
 
@@ -472,7 +513,6 @@ const AddSurveyType = ({
     return () => clearTimeout(timeout);
   }, [invoicingInputValue]);
 
-
   const snackbarClose = () => {
     setSnackBar({ open: false, message: "" });
   };
@@ -489,7 +529,9 @@ const AddSurveyType = ({
 
       // Helper function to check if value should be included
       const hasValue = (value) => {
-        return value !== null && value !== undefined && value !== '' && value !== 0;
+        return (
+          value !== null && value !== undefined && value !== "" && value !== 0
+        );
       };
 
       // Base payload with required fields only
@@ -516,31 +558,50 @@ const AddSurveyType = ({
           companyAddress: data.ownerDetails.companyAddress,
           phoneNumber: data.ownerDetails.phoneNumber,
           email: data.ownerDetails.email,
+          imoNumber: data.ownerDetails.imoNumber,
         },
         managerDetails: {
           nameOfCompany: data.managerDetails.nameOfCompany,
           companyAddress: data.managerDetails.companyAddress,
           phoneNumber: data.managerDetails.phoneNumber,
           email: data.managerDetails.email,
+          imoNumber: data.managerDetails.imoNumber,
         },
         invoicingDetails: {
           nameOfCompany: data.invoicingDetails.nameOfCompany,
           companyAddress: data.invoicingDetails.companyAddress,
           phoneNumber: data.invoicingDetails.phoneNumber,
           email: data.invoicingDetails.email,
-        }
+        },
       };
 
-      payload.keelLaidDate = hasValue(data.keelLaidDate) ? data.keelLaidDate : null;
-      payload.dateOfModification = hasValue(data.dateOfModification) ? data.dateOfModification : null;
-      payload.dateOfBuildingContract = hasValue(data.dateOfBuildingContract) ? data.dateOfBuildingContract : null;
-      payload.areaOfOperation = hasValue(data.areaOfOperation) ? data.areaOfOperation : null;
-      payload.carryingCapacity = hasValue(data.carryingCapacity) ? data.carryingCapacity : null;
-      payload.hullNotation = hasValue(data.hullNotation) ? data.hullNotation : null;
-      payload.machineryNotation = hasValue(data.machineryNotation) ? data.machineryNotation : null;
-      payload.descriptiveNotation = hasValue(data.descriptiveNotation) ? data.descriptiveNotation : null;
-      payload.invoicingDetails.gstNo = hasValue(data.invoicingDetails.gstNo) ? data.invoicingDetails.gstNo : null;
-
+      payload.keelLaidDate = hasValue(data.keelLaidDate)
+        ? data.keelLaidDate
+        : null;
+      payload.dateOfModification = hasValue(data.dateOfModification)
+        ? data.dateOfModification
+        : null;
+      payload.dateOfBuildingContract = hasValue(data.dateOfBuildingContract)
+        ? data.dateOfBuildingContract
+        : null;
+      payload.areaOfOperation = hasValue(data.areaOfOperation)
+        ? data.areaOfOperation
+        : null;
+      payload.carryingCapacity = hasValue(data.carryingCapacity)
+        ? data.carryingCapacity
+        : null;
+      payload.hullNotation = hasValue(data.hullNotation)
+        ? data.hullNotation
+        : null;
+      payload.machineryNotation = hasValue(data.machineryNotation)
+        ? data.machineryNotation
+        : null;
+      payload.descriptiveNotation = hasValue(data.descriptiveNotation)
+        ? data.descriptiveNotation
+        : null;
+      payload.invoicingDetails.gstNo = hasValue(data.invoicingDetails.gstNo)
+        ? data.invoicingDetails.gstNo
+        : null;
 
       if (clientId) {
         res = await updateClient(clientId, { ...payload, message: editReason });
@@ -549,14 +610,22 @@ const AddSurveyType = ({
       }
 
       if (res?.data?.status === "success") {
-        toast.success(clientId ? "Client updated successfully" : "Client created successfully");
-        router.push('/clients');
+        toast.success(
+          clientId
+            ? "Client updated successfully"
+            : "Client created successfully"
+        );
+        router.push("/clients");
       } else if (res?.response?.data?.status === "error") {
         toast.error(res?.response?.data?.message);
       }
     } catch (error) {
       console.error("Error submitting form:", error);
-      if (error.response && error.response.data && error.response.data.message) {
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
         toast.error(error.response.data.message);
       } else {
         toast.error("An unexpected error occurred. Please try again later.");
@@ -568,7 +637,7 @@ const AddSurveyType = ({
 
   const cancelBtn = () => {
     router.push("/clients");
-  }
+  };
 
   // Helper function to create change handler for manual edits
   const createManualEditHandler = (sectionKey) => {
@@ -611,40 +680,60 @@ const AddSurveyType = ({
             }
           }}
           onChange={(event, newValue) => {
-            if (typeof newValue === 'string') {
+            if (typeof newValue === "string") {
               field.onChange(newValue);
             } else if (newValue && newValue.label) {
               field.onChange(newValue.value);
 
               // Update other owner fields
-              setValue('ownerDetails.companyAddress', newValue.companyAddress || '');
-              setValue('ownerDetails.phoneNumber', newValue.phoneNumber || '');
-              setValue('ownerDetails.email', newValue.email || '');
+              setValue(
+                "ownerDetails.companyAddress",
+                newValue.companyAddress || ""
+              );
+              setValue("ownerDetails.phoneNumber", newValue.phoneNumber || "");
+              setValue("ownerDetails.email", newValue.email || "");
 
               // If checkboxes are checked, propagate the changes
               if (isManagerSameAsOwner) {
-                setValue('managerDetails.nameOfCompany', newValue.nameOfCompany || '');
-                setValue('managerDetails.companyAddress', newValue.companyAddress || '');
-                setValue('managerDetails.phoneNumber', newValue.phoneNumber || '');
-                setValue('managerDetails.email', newValue.email || '');
+                setValue(
+                  "managerDetails.nameOfCompany",
+                  newValue.nameOfCompany || ""
+                );
+                setValue(
+                  "managerDetails.companyAddress",
+                  newValue.companyAddress || ""
+                );
+                setValue(
+                  "managerDetails.phoneNumber",
+                  newValue.phoneNumber || ""
+                );
+                setValue("managerDetails.email", newValue.email || "");
               }
 
               if (isInvoiceSameAsOwner) {
-                setValue('invoicingDetails.nameOfCompany', newValue.nameOfCompany || '');
-                setValue('invoicingDetails.companyAddress', newValue.companyAddress || '');
-                setValue('invoicingDetails.phoneNumber', newValue.phoneNumber || '');
-                setValue('invoicingDetails.email', newValue.email || '');
+                setValue(
+                  "invoicingDetails.nameOfCompany",
+                  newValue.nameOfCompany || ""
+                );
+                setValue(
+                  "invoicingDetails.companyAddress",
+                  newValue.companyAddress || ""
+                );
+                setValue(
+                  "invoicingDetails.phoneNumber",
+                  newValue.phoneNumber || ""
+                );
+                setValue("invoicingDetails.email", newValue.email || "");
               }
             } else if (newValue === null) {
               // Handle clearing the field
-              field.onChange('');
+              field.onChange("");
             }
           }}
           getOptionLabel={(option) => {
-            if (typeof option === 'string') return option;
-            return option.label || '';
+            if (typeof option === "string") return option;
+            return option.label || "";
           }}
-
           // getOptionLabel={(option) => {
           //   // Value selected with enter, right from the input
           //   if (typeof option === 'string') {
@@ -656,7 +745,11 @@ const AddSurveyType = ({
             <CommonInput
               {...params}
               variant="standard"
-              label={<>Company Name <span style={{ color: 'red' }}>*</span></>}
+              label={
+                <>
+                  Company Name <span style={{ color: "red" }}>*</span>
+                </>
+              }
               placeholder="Company Name"
               disabled={!editingAllowed}
               error={Boolean(errors?.ownerDetails?.nameOfCompany)}
@@ -665,7 +758,9 @@ const AddSurveyType = ({
                 ...params.InputProps,
                 endAdornment: (
                   <>
-                    {isSearching.owner ? <CircularProgress color="inherit" size={20} /> : null}
+                    {isSearching.owner ? (
+                      <CircularProgress color="inherit" size={20} />
+                    ) : null}
                     {params.InputProps.endAdornment}
                   </>
                 ),
@@ -676,7 +771,6 @@ const AddSurveyType = ({
       )}
     />
   );
-
 
   const renderManageCompanyField = () => (
     <Controller
@@ -699,40 +793,63 @@ const AddSurveyType = ({
             }
           }}
           onChange={(event, newValue) => {
-            if (typeof newValue === 'string') {
+            if (typeof newValue === "string") {
               field.onChange(newValue);
             } else if (newValue && newValue.label) {
               field.onChange(newValue.value);
 
               // Update other owner fields
-              setValue('managerDetails.companyAddress', newValue.companyAddress || '');
-              setValue('managerDetails.phoneNumber', newValue.phoneNumber || '');
-              setValue('managerDetails.email', newValue.email || '');
+              setValue(
+                "managerDetails.companyAddress",
+                newValue.companyAddress || ""
+              );
+              setValue(
+                "managerDetails.phoneNumber",
+                newValue.phoneNumber || ""
+              );
+              setValue("managerDetails.email", newValue.email || "");
 
               // If checkboxes are checked, propagate the changes
               if (isManagerSameAsOwner) {
-                setValue('managerDetails.nameOfCompany', newValue.nameOfCompany || '');
-                setValue('managerDetails.companyAddress', newValue.companyAddress || '');
-                setValue('managerDetails.phoneNumber', newValue.phoneNumber || '');
-                setValue('managerDetails.email', newValue.email || '');
+                setValue(
+                  "managerDetails.nameOfCompany",
+                  newValue.nameOfCompany || ""
+                );
+                setValue(
+                  "managerDetails.companyAddress",
+                  newValue.companyAddress || ""
+                );
+                setValue(
+                  "managerDetails.phoneNumber",
+                  newValue.phoneNumber || ""
+                );
+                setValue("managerDetails.email", newValue.email || "");
               }
 
               if (isInvoiceSameAsOwner) {
-                setValue('invoicingDetails.nameOfCompany', newValue.nameOfCompany || '');
-                setValue('invoicingDetails.companyAddress', newValue.companyAddress || '');
-                setValue('invoicingDetails.phoneNumber', newValue.phoneNumber || '');
-                setValue('invoicingDetails.email', newValue.email || '');
+                setValue(
+                  "invoicingDetails.nameOfCompany",
+                  newValue.nameOfCompany || ""
+                );
+                setValue(
+                  "invoicingDetails.companyAddress",
+                  newValue.companyAddress || ""
+                );
+                setValue(
+                  "invoicingDetails.phoneNumber",
+                  newValue.phoneNumber || ""
+                );
+                setValue("invoicingDetails.email", newValue.email || "");
               }
             } else if (newValue === null) {
               // Handle clearing the field
-              field.onChange('');
+              field.onChange("");
             }
           }}
           getOptionLabel={(option) => {
-            if (typeof option === 'string') return option;
-            return option.label || '';
+            if (typeof option === "string") return option;
+            return option.label || "";
           }}
-
           // getOptionLabel={(option) => {
           //   // Value selected with enter, right from the input
           //   if (typeof option === 'string') {
@@ -744,7 +861,11 @@ const AddSurveyType = ({
             <CommonInput
               {...params}
               variant="standard"
-              label={<>Company Name <span style={{ color: 'red' }}>*</span></>}
+              label={
+                <>
+                  Company Name <span style={{ color: "red" }}>*</span>
+                </>
+              }
               placeholder="Company Name"
               disabled={!editingAllowed}
               error={Boolean(errors?.ownerDetails?.nameOfCompany)}
@@ -753,7 +874,9 @@ const AddSurveyType = ({
                 ...params.InputProps,
                 endAdornment: (
                   <>
-                    {isSearching.manager ? <CircularProgress color="inherit" size={20} /> : null}
+                    {isSearching.manager ? (
+                      <CircularProgress color="inherit" size={20} />
+                    ) : null}
                     {params.InputProps.endAdornment}
                   </>
                 ),
@@ -786,42 +909,65 @@ const AddSurveyType = ({
             }
           }}
           onChange={(event, newValue) => {
-            if (typeof newValue === 'string') {
+            if (typeof newValue === "string") {
               field.onChange(newValue);
             } else if (newValue && newValue.label) {
               field.onChange(newValue.value);
               // Update other owner fields
-              setValue('invoicingDetails.companyAddress', newValue.companyAddress || '');
-              setValue('invoicingDetails.phoneNumber', newValue.phoneNumber || '');
-              setValue('invoicingDetails.email', newValue.email || '');
-              setValue('invoicingDetails.gstNo', newValue.gstNo || '');
+              setValue(
+                "invoicingDetails.companyAddress",
+                newValue.companyAddress || ""
+              );
+              setValue(
+                "invoicingDetails.phoneNumber",
+                newValue.phoneNumber || ""
+              );
+              setValue("invoicingDetails.email", newValue.email || "");
+              setValue("invoicingDetails.gstNo", newValue.gstNo || "");
 
               // If checkboxes are checked, propagate the changes
               if (isInvoiceSameAsOwner) {
-                setValue('managerDetails.nameOfCompany', newValue.nameOfCompany || '');
-                setValue('managerDetails.companyAddress', newValue.companyAddress || '');
-                setValue('managerDetails.phoneNumber', newValue.phoneNumber || '');
-                setValue('managerDetails.email', newValue.email || '');
-                setValue('managerDetails.gstNo', newValue.gstNo || '');
+                setValue(
+                  "managerDetails.nameOfCompany",
+                  newValue.nameOfCompany || ""
+                );
+                setValue(
+                  "managerDetails.companyAddress",
+                  newValue.companyAddress || ""
+                );
+                setValue(
+                  "managerDetails.phoneNumber",
+                  newValue.phoneNumber || ""
+                );
+                setValue("managerDetails.email", newValue.email || "");
+                setValue("managerDetails.gstNo", newValue.gstNo || "");
               }
 
               if (isInvoiceSameAsOwner) {
-                setValue('invoicingDetails.nameOfCompany', newValue.nameOfCompany || '');
-                setValue('invoicingDetails.companyAddress', newValue.companyAddress || '');
-                setValue('invoicingDetails.phoneNumber', newValue.phoneNumber || '');
-                setValue('invoicingDetails.email', newValue.email || '');
-                setValue('invoicingDetails.gstNo', newValue.gstNo || 'hwlo');
+                setValue(
+                  "invoicingDetails.nameOfCompany",
+                  newValue.nameOfCompany || ""
+                );
+                setValue(
+                  "invoicingDetails.companyAddress",
+                  newValue.companyAddress || ""
+                );
+                setValue(
+                  "invoicingDetails.phoneNumber",
+                  newValue.phoneNumber || ""
+                );
+                setValue("invoicingDetails.email", newValue.email || "");
+                setValue("invoicingDetails.gstNo", newValue.gstNo || "hwlo");
               }
             } else if (newValue === null) {
               // Handle clearing the field
-              field.onChange('');
+              field.onChange("");
             }
           }}
           getOptionLabel={(option) => {
-            if (typeof option === 'string') return option;
-            return option.label || '';
+            if (typeof option === "string") return option;
+            return option.label || "";
           }}
-
           // getOptionLabel={(option) => {
           //   // Value selected with enter, right from the input
           //   if (typeof option === 'string') {
@@ -833,7 +979,11 @@ const AddSurveyType = ({
             <CommonInput
               {...params}
               variant="standard"
-              label={<>Company Name <span style={{ color: 'red' }}>*</span></>}
+              label={
+                <>
+                  Company Name <span style={{ color: "red" }}>*</span>
+                </>
+              }
               placeholder="Company Name"
               disabled={!editingAllowed}
               error={Boolean(errors?.ownerDetails?.nameOfCompany)}
@@ -842,7 +992,9 @@ const AddSurveyType = ({
                 ...params.InputProps,
                 endAdornment: (
                   <>
-                    {isSearching.invoicing ? <CircularProgress color="inherit" size={20} /> : null}
+                    {isSearching.invoicing ? (
+                      <CircularProgress color="inherit" size={20} />
+                    ) : null}
                     {params.InputProps.endAdornment}
                   </>
                 ),
@@ -856,36 +1008,39 @@ const AddSurveyType = ({
   // Common section renderer
   const renderContactSection = (sectionKey) => (
     <Stack gap={2}>
-      {sectionKey === "ownerDetails"
-        ? renderOwnerCompanyField()
-        : sectionKey === "managerDetails"
-          ? renderManageCompanyField()
-          : sectionKey === "invoicingDetails"
-            ? renderInvoicingCompanyField()
-            : (
-              <Controller
-                name={`${sectionKey}.nameOfCompany`}
-                control={control}
-                render={({ field }) => (
-                  <CommonInput
-                    {...field}
-                    fullWidth
-                    variant="standard"
-                    label="Company Name"
-                    placeholder="Company Name"
-                    disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) ||
-                      (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
-                    error={Boolean(errors?.[sectionKey]?.nameOfCompany)}
-                    helperText={errors?.[sectionKey]?.nameOfCompany?.message}
-                    onChange={(e) => {
-                      field.onChange(e.target.value);
-                      createManualEditHandler(sectionKey)();
-                    }}
-                  />
-                )}
-              />
-            )
-      }
+      {sectionKey === "ownerDetails" ? (
+        renderOwnerCompanyField()
+      ) : sectionKey === "managerDetails" ? (
+        renderManageCompanyField()
+      ) : sectionKey === "invoicingDetails" ? (
+        renderInvoicingCompanyField()
+      ) : (
+        <Controller
+          name={`${sectionKey}.nameOfCompany`}
+          control={control}
+          render={({ field }) => (
+            <CommonInput
+              {...field}
+              fullWidth
+              variant="standard"
+              label="Company Name"
+              placeholder="Company Name"
+              disabled={
+                !editingAllowed ||
+                (sectionKey === "managerDetails" && isManagerSameAsOwner) ||
+                (sectionKey === "invoicingDetails" &&
+                  (isInvoiceSameAsOwner || isInvoiceSameAsManager))
+              }
+              error={Boolean(errors?.[sectionKey]?.nameOfCompany)}
+              helperText={errors?.[sectionKey]?.nameOfCompany?.message}
+              onChange={(e) => {
+                field.onChange(e.target.value);
+                createManualEditHandler(sectionKey)();
+              }}
+            />
+          )}
+        />
+      )}
       <Controller
         name={`${sectionKey}.companyAddress`}
         control={control}
@@ -894,10 +1049,18 @@ const AddSurveyType = ({
             {...field}
             fullWidth
             variant="standard"
-            label={<>Complete Address <span style={{ color: 'red' }}>*</span></>}
+            label={
+              <>
+                Complete Address <span style={{ color: "red" }}>*</span>
+              </>
+            }
             placeholder="Enter Complete Address"
-            disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) ||
-              (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
+            disabled={
+              !editingAllowed ||
+              (sectionKey === "managerDetails" && isManagerSameAsOwner) ||
+              (sectionKey === "invoicingDetails" &&
+                (isInvoiceSameAsOwner || isInvoiceSameAsManager))
+            }
             error={Boolean(errors?.[sectionKey]?.companyAddress)}
             helperText={errors?.[sectionKey]?.companyAddress?.message}
             onChange={(e) => {
@@ -916,16 +1079,24 @@ const AddSurveyType = ({
             fullWidth
             variant="standard"
             type="text"
-            label={<>Phone Number <span style={{ color: 'red' }}>*</span></>}
+            label={
+              <>
+                Phone Number <span style={{ color: "red" }}>*</span>
+              </>
+            }
             placeholder="Enter Phone Number"
-            disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) ||
-              (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
+            disabled={
+              !editingAllowed ||
+              (sectionKey === "managerDetails" && isManagerSameAsOwner) ||
+              (sectionKey === "invoicingDetails" &&
+                (isInvoiceSameAsOwner || isInvoiceSameAsManager))
+            }
             error={Boolean(errors?.[sectionKey]?.phoneNumber)}
             helperText={errors?.[sectionKey]?.phoneNumber?.message}
             inputProps={{
               inputMode: "numeric",
               pattern: "[0-9]*",
-              maxLength: 10
+              maxLength: 10,
             }}
             onChange={(e) => {
               if (!editingAllowed) return;
@@ -945,10 +1116,18 @@ const AddSurveyType = ({
             fullWidth
             variant="standard"
             type="email"
-            label={<>Email <span style={{ color: 'red' }}>*</span></>}
+            label={
+              <>
+                Email <span style={{ color: "red" }}>*</span>
+              </>
+            }
             placeholder="Enter Email Address"
-            disabled={!editingAllowed || (sectionKey === "managerDetails" && isManagerSameAsOwner) ||
-              (sectionKey === "invoicingDetails" && (isInvoiceSameAsOwner || isInvoiceSameAsManager))}
+            disabled={
+              !editingAllowed ||
+              (sectionKey === "managerDetails" && isManagerSameAsOwner) ||
+              (sectionKey === "invoicingDetails" &&
+                (isInvoiceSameAsOwner || isInvoiceSameAsManager))
+            }
             error={Boolean(errors?.[sectionKey]?.email)}
             helperText={errors?.[sectionKey]?.email?.message}
             onChange={(e) => {
@@ -958,6 +1137,43 @@ const AddSurveyType = ({
           />
         )}
       />
+      {sectionKey !== "invoicingDetails" && (
+        <Controller
+          name={`${sectionKey}.imoNumber`}
+          control={control}
+          render={({ field }) => (
+            <CommonInput
+              {...field}
+              fullWidth
+              variant="standard"
+              type="text"
+              label={<>IMO Number</>}
+              placeholder="Enter IMO Number"
+              disabled={
+                !editingAllowed ||
+                (sectionKey === "managerDetails" && isManagerSameAsOwner) ||
+                (sectionKey === "invoicingDetails" &&
+                  (isInvoiceSameAsOwner || isInvoiceSameAsManager))
+              }
+              error={Boolean(errors?.[sectionKey]?.imoNumber)}
+              helperText={errors?.[sectionKey]?.imoNumber?.message}
+              inputProps={{
+                inputMode: "numeric",
+                pattern: "[0-9]*",
+                maxLength: 10,
+              }}
+              onChange={(e) => {
+                if (!editingAllowed) return;
+                const onlyDigits = e.target.value
+                  .replace(/\D/g, "")
+                  .slice(0, 10);
+                field.onChange(onlyDigits);
+                createManualEditHandler(sectionKey)();
+              }}
+            />
+          )}
+        />
+      )}
       {sectionKey === "invoicingDetails" ? (
         <Controller
           name="invoicingDetails.gstNo"
@@ -976,7 +1192,9 @@ const AddSurveyType = ({
             />
           )}
         />
-      ) : <></>}
+      ) : (
+        <></>
+      )}
     </Stack>
   );
 
@@ -993,10 +1211,10 @@ const AddSurveyType = ({
         expanded={expanded}
         onChange={handleAccordionChange}
         sx={{
-          borderRadius: '15px',
-          '&:before': {
-            display: 'none',
-          }
+          borderRadius: "15px",
+          "&:before": {
+            display: "none",
+          },
         }}
       >
         <AccordionSummary
@@ -1004,23 +1222,37 @@ const AddSurveyType = ({
           aria-controls="ship-particulars-content"
           id="ship-particulars-header"
           sx={{
-            bgcolor: expanded && '#f5f5f5',
+            bgcolor: expanded && "#f5f5f5",
             borderRadius: "15px",
-            minHeight: 56
+            minHeight: 56,
           }}
         >
-          <Typography fontWeight={600}>Ship Particulars {shipName && `-  [${shipName}]`}</Typography>
+          <Typography fontWeight={600}>
+            Ship Particulars {shipName && `-  [${shipName}]`}
+          </Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Grid2 container spacing={3}>
             {/* Fields with string type */}
             {[
-              "shipName", "imoNumber", "classId", "flag", "portOfRegistry",
-              "grossTonnage", "netTonnage", "lengthOfShip",
-              "shipBuilder", "countryOfBuild", "areaOfOperation",
-              "carryingCapacity", "hullNotation", "machineryNotation",
-              "descriptiveNotation", "typeOfShip"
+              "shipName",
+              "imoNumber",
+              "classId",
+              "flag",
+              "portOfRegistry",
+              "grossTonnage",
+              "netTonnage",
+              "lengthOfShip",
+              "shipBuilder",
+              "countryOfBuild",
+              "areaOfOperation",
+              "carryingCapacity",
+              "hullNotation",
+              "machineryNotation",
+              "descriptiveNotation",
+              "typeOfShip",
             ].map((field) => (
+              // eslint-disable-next-line react/jsx-key
               <Grid2 size={{ xs: 4 }}>
                 <Controller
                   name={field}
@@ -1032,7 +1264,9 @@ const AddSurveyType = ({
                       type="text"
                       variant="standard"
                       label={renderLabel(field)}
-                      placeholder={`Enter ${field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}`}
+                      placeholder={`Enter ${field
+                        .replace(/([A-Z])/g, " $1")
+                        .replace(/^./, (str) => str.toUpperCase())}`}
                       disabled={!editingAllowed}
                       error={Boolean(errors?.[field])}
                       helperText={errors?.[field]?.message}
@@ -1044,6 +1278,7 @@ const AddSurveyType = ({
 
             {/* Fields with number type */}
             {["deadweight"].map((field) => (
+              // eslint-disable-next-line react/jsx-key
               <Grid2 size={{ xs: 4 }}>
                 <Controller
                   name={field}
@@ -1054,13 +1289,24 @@ const AddSurveyType = ({
                       fullWidth
                       type="number"
                       variant="standard"
-                      label={<span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                        <Typography fontStyle="italic">
-                          {field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
-                        </Typography>
-                        <span style={{ color: 'red', marginLeft: 4 }}>*</span>
-                      </span>}
-                      placeholder={`Enter ${field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}`}
+                      label={
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Typography fontStyle="italic">
+                            {field
+                              .replace(/([A-Z])/g, " $1")
+                              .replace(/^./, (str) => str.toUpperCase())}
+                          </Typography>
+                          <span style={{ color: "red", marginLeft: 4 }}>*</span>
+                        </span>
+                      }
+                      placeholder={`Enter ${field
+                        .replace(/([A-Z])/g, " $1")
+                        .replace(/^./, (str) => str.toUpperCase())}`}
                       disabled={!editingAllowed}
                       error={Boolean(errors?.[field])}
                       helperText={errors?.[field]?.message}
@@ -1072,9 +1318,13 @@ const AddSurveyType = ({
 
             {/* Fields with date/string type */}
             {[
-              "dateOfBuild", "keelLaidDate", "dateOfModification",
-              "dateOfBuildingContract", "dateOfDelivery"
+              "dateOfBuild",
+              "keelLaidDate",
+              "dateOfModification",
+              "dateOfBuildingContract",
+              "dateOfDelivery",
             ].map((field) => (
+              // eslint-disable-next-line react/jsx-key
               <Grid2 size={{ xs: 4 }}>
                 <Controller
                   name={field}
@@ -1086,7 +1336,9 @@ const AddSurveyType = ({
                       type="date"
                       variant="standard"
                       label={renderLabel(field)}
-                      placeholder={`Enter ${field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}`}
+                      placeholder={`Enter ${field
+                        .replace(/([A-Z])/g, " $1")
+                        .replace(/^./, (str) => str.toUpperCase())}`}
                       disabled={!editingAllowed}
                       error={Boolean(errors?.[field])}
                       helperText={errors?.[field]?.message}
@@ -1098,6 +1350,7 @@ const AddSurveyType = ({
 
             {/* Special fields: Call Sign, Official No */}
             {["callSign", "officialNo"].map((field) => (
+              // eslint-disable-next-line react/jsx-key
               <Grid2 size={{ xs: 4 }}>
                 <Controller
                   name={field}
@@ -1107,13 +1360,24 @@ const AddSurveyType = ({
                       {...controllerField}
                       fullWidth
                       variant="standard"
-                      label={<span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                        <Typography fontStyle="italic">
-                          {field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
-                        </Typography>
-                        <span style={{ color: 'red', marginLeft: 4 }}>*</span>
-                      </span>}
-                      placeholder={`Enter ${field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}`}
+                      label={
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Typography fontStyle="italic">
+                            {field
+                              .replace(/([A-Z])/g, " $1")
+                              .replace(/^./, (str) => str.toUpperCase())}
+                          </Typography>
+                          <span style={{ color: "red", marginLeft: 4 }}>*</span>
+                        </span>
+                      }
+                      placeholder={`Enter ${field
+                        .replace(/([A-Z])/g, " $1")
+                        .replace(/^./, (str) => str.toUpperCase())}`}
                       disabled={!editingAllowed}
                       error={Boolean(errors?.[field])}
                       helperText={errors?.[field]?.message}
@@ -1125,9 +1389,8 @@ const AddSurveyType = ({
           </Grid2>
         </AccordionDetails>
       </Accordion>
-    )
+    );
   };
-
 
   return (
     <Box>
@@ -1168,12 +1431,16 @@ const AddSurveyType = ({
                             setIsManagerSameAsOwner(checked);
                             if (checked) {
                               // Immediately copy the values
-                              const currentOwnerDetails = getValues("ownerDetails");
+                              const currentOwnerDetails =
+                                getValues("ownerDetails");
                               setValue("managerDetails", {
-                                nameOfCompany: currentOwnerDetails.nameOfCompany || "",
-                                companyAddress: currentOwnerDetails.companyAddress || "",
-                                phoneNumber: currentOwnerDetails.phoneNumber || "",
-                                email: currentOwnerDetails.email || ""
+                                nameOfCompany:
+                                  currentOwnerDetails.nameOfCompany || "",
+                                companyAddress:
+                                  currentOwnerDetails.companyAddress || "",
+                                phoneNumber:
+                                  currentOwnerDetails.phoneNumber || "",
+                                email: currentOwnerDetails.email || "",
                               });
                               setManuallyEditedManager(false);
 
@@ -1193,7 +1460,12 @@ const AddSurveyType = ({
                 {/* Invoicing Details  */}
                 <Grid2 size={{ xs: 4 }}>
                   <h3 style={{ marginBottom: "10px" }}>Invoicing Detail</h3>
-                  <Stack flexDirection={'row'} spacing={2} justifyContent={'space-between'} alignItems={'center'}>
+                  <Stack
+                    flexDirection={"row"}
+                    spacing={2}
+                    justifyContent={"space-between"}
+                    alignItems={"center"}
+                  >
                     <FormControlLabel
                       sx={{ marginTop: "0px !important" }}
                       control={
@@ -1205,13 +1477,18 @@ const AddSurveyType = ({
                             setIsInvoiceSameAsOwner(checked);
                             if (checked) {
                               // Immediately copy the values
-                              const currentOwnerDetails = getValues("ownerDetails");
+                              const currentOwnerDetails =
+                                getValues("ownerDetails");
                               setValue("invoicingDetails", {
-                                nameOfCompany: currentOwnerDetails.nameOfCompany || "",
-                                companyAddress: currentOwnerDetails.companyAddress || "",
-                                phoneNumber: currentOwnerDetails.phoneNumber || "",
+                                nameOfCompany:
+                                  currentOwnerDetails.nameOfCompany || "",
+                                companyAddress:
+                                  currentOwnerDetails.companyAddress || "",
+                                phoneNumber:
+                                  currentOwnerDetails.phoneNumber || "",
                                 email: currentOwnerDetails.email || "",
-                                gstNo: getValues("invoicingDetails.gstNo") || "",
+                                gstNo:
+                                  getValues("invoicingDetails.gstNo") || "",
                               });
                               setIsInvoiceSameAsManager(false);
                               setManuallyEditedInvoice(false);
@@ -1237,13 +1514,18 @@ const AddSurveyType = ({
                             setIsInvoiceSameAsManager(checked);
                             if (checked) {
                               // Immediately copy the values
-                              const currentManagerDetails = getValues("invoicingDetails");
+                              const currentManagerDetails =
+                                getValues("invoicingDetails");
                               setValue("invoicingDetails", {
-                                nameOfCompany: currentManagerDetails.nameOfCompany || "",
-                                companyAddress: currentManagerDetails.companyAddress || "",
-                                phoneNumber: currentManagerDetails.phoneNumber || "",
+                                nameOfCompany:
+                                  currentManagerDetails.nameOfCompany || "",
+                                companyAddress:
+                                  currentManagerDetails.companyAddress || "",
+                                phoneNumber:
+                                  currentManagerDetails.phoneNumber || "",
                                 email: currentManagerDetails.email || "",
-                                gstNo: getValues("invoicingDetails.gstNo") || "",
+                                gstNo:
+                                  getValues("invoicingDetails.gstNo") || "",
                               });
                               setIsInvoiceSameAsOwner(false);
                               setManuallyEditedInvoice(false);
@@ -1276,13 +1558,24 @@ const AddSurveyType = ({
                       variant="contained"
                       text="Save"
                       disabled={loading}
-                      startIcon={loading ? <CircularProgress size={20} /> : null}
+                      startIcon={
+                        loading ? <CircularProgress size={20} /> : null
+                      }
                     />
-                    <CommonButton onClick={cancelBtn} variant="contained" text="Cancel" disabled={loading} />
+                    <CommonButton
+                      onClick={cancelBtn}
+                      variant="contained"
+                      text="Cancel"
+                      disabled={loading}
+                    />
                   </>
                 )}
                 {!editingAllowed && (
-                  <CommonButton onClick={cancelBtn} variant="contained" text="Back" />
+                  <CommonButton
+                    onClick={cancelBtn}
+                    variant="contained"
+                    text="Back"
+                  />
                 )}
               </Stack>
             </form>
