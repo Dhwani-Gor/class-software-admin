@@ -201,7 +201,7 @@ const Classifications = () => {
     },
     {
       field: "dueDate",
-      headerName: "Due' Date",
+      headerName: "Due Date",
       flex: 1,
       renderCell: (params) =>
         params.value ? moment(params.value).format("DD/MM/YYYY") : "-",
@@ -265,14 +265,14 @@ const Classifications = () => {
           <Typography variant="h4" fontWeight={700}>
             Classification
           </Typography>
-          <CommonButton
+          {/* <CommonButton
             sx={{ textTransform: "capitalize" }}
             text="Add Classification"
             variant="contained"
             onClick={() => {
               router.push("/classification/create");
             }}
-          />
+          /> */}
         </Stack>
       </CommonCard>
 

@@ -95,22 +95,22 @@ const schema = yup.object().shape({
   ownerDetails: yup.object().shape({
     nameOfCompany: yup.string().required("Company Name is required"),
     companyAddress: yup.string().required("Complete Address is required"),
-    phoneNumber: yup.string().required("Phone number is required"),
-    email: yup.string().required("Email is required").email("Invalid email"),
+    phoneNumber: yup.string().optional(),
+    email: yup.string().optional().email("Invalid email"),
     imoNumber: yup.string().optional(),
   }),
   managerDetails: yup.object().shape({
     nameOfCompany: yup.string().required("Company Name is required"),
     companyAddress: yup.string().required("Complete Address is required"),
-    phoneNumber: yup.string().required("Phone number is required"),
-    email: yup.string().required("Email is required").email("Invalid email"),
+    phoneNumber: yup.string().optional(),
+    email: yup.string().optional().email("Invalid email"),
     imoNumber: yup.string().optional(),
   }),
   invoicingDetails: yup.object().shape({
     nameOfCompany: yup.string().required("Company Name is required"),
     companyAddress: yup.string().required("Complete Address is required"),
-    phoneNumber: yup.string().required("Phone number is required"),
-    email: yup.string().required("Email is required").email("Invalid email"),
+    phoneNumber: yup.string().optional(),
+    email: yup.string().optional().email("Invalid email"),
   }),
 });
 
@@ -1079,11 +1079,7 @@ const AddSurveyType = ({
             fullWidth
             variant="standard"
             type="text"
-            label={
-              <>
-                Phone Number <span style={{ color: "red" }}>*</span>
-              </>
-            }
+            label={<>Phone Number</>}
             placeholder="Enter Phone Number"
             disabled={
               !editingAllowed ||
@@ -1116,11 +1112,7 @@ const AddSurveyType = ({
             fullWidth
             variant="standard"
             type="email"
-            label={
-              <>
-                Email <span style={{ color: "red" }}>*</span>
-              </>
-            }
+            label={<>Email</>}
             placeholder="Enter Email Address"
             disabled={
               !editingAllowed ||

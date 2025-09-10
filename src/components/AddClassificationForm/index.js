@@ -87,6 +87,7 @@ const ClassificationForm = ({
 }) => {
   const [classificationRows, setClassificationRows] = useState([]);
   const [clientsList, setClientsList] = useState([]);
+  const [cancelled, setCancelled] = useState(false);
 
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -212,8 +213,8 @@ const ClassificationForm = ({
           clientId: Number(selectedShip.id),
           surveyName: classificationRows[0].surveyName,
           surveyDate: classificationRows[0].surveyDate || "",
-          issuanceDate: classificationRows[0].issuanceDate,
-          dueDate: classificationRows[0].dueDate,
+          issuanceDate: classificationRows[0].issuanceDate || "",
+          dueDate: classificationRows[0].dueDate || "",
           rangeFrom: classificationRows[0].rangeFrom || "",
           rangeTo: classificationRows[0].rangeTo || "",
           postponed: classificationRows[0].postponed || "",
@@ -244,11 +245,11 @@ const ClassificationForm = ({
           clientId: Number(selectedShip.id),
           surveyName: rest.surveyName,
           surveyDate: rest.surveyDate || "",
-          issuanceDate: rest.issuanceDate,
-          dueDate: rest.dueDate,
-          rangeFrom: rest.rangeFrom,
-          rangeTo: rest.rangeTo,
-          postponed: rest.postponed,
+          issuanceDate: rest.issuanceDate || "",
+          dueDate: rest.dueDate || "",
+          rangeFrom: rest.rangeFrom || "",
+          rangeTo: rest.rangeTo || "",
+          postponed: rest.postponed || "",
         }));
 
       const response = await addClassificationSurvey(payload);
@@ -346,9 +347,14 @@ const ClassificationForm = ({
                   {/* Survey Type */}
                   <Grid2 size={{ xs: 12, md: 1.6 }}>
                     <FormControl fullWidth>
-                      <InputLabel>Survey Type</InputLabel>
+                      <InputLabel id={`survey-type-label-${index}`}>
+                        Survey Type
+                      </InputLabel>
                       <Select
-                        value={row.surveyName}
+                        labelId={`survey-type-label-${index}`}
+                        id={`survey-type-${index}`}
+                        value={row.surveyName || ""}
+                        label="Survey Type"
                         onChange={(e) =>
                           handleChange(
                             "classification",
@@ -372,6 +378,12 @@ const ClassificationForm = ({
                     <TextField
                       label="Survey Date"
                       type="date"
+                      // onBlur={(e) => {
+                      //   const formatted = moment(e.target.value).format(
+                      //     "DD/MM/YYYY"
+                      //   );
+                      //   console.log("Display format:", formatted);
+                      // }}
                       fullWidth
                       value={
                         row.surveyDate
@@ -526,7 +538,7 @@ const ClassificationForm = ({
               </Box>
             ))}
 
-            {mode !== "update" && (
+            {(mode !== "update" || cancelled) && (
               <CommonButton
                 style={{ marginTop: "1.5rem" }}
                 variant="contained"
@@ -538,6 +550,16 @@ const ClassificationForm = ({
         )}
         {selectedShip?.id && (
           <DialogActions>
+            {mode == "update" && (
+              <CommonButton
+                variant="contained"
+                onClick={() => {
+                  setClassificationRows([createEmptyRow()]);
+                  setCancelled(true);
+                }}
+                text="Clear"
+              />
+            )}
             <CommonButton
               variant="contained"
               onClick={handleSave}
