@@ -66,7 +66,7 @@ export const useCommonSubmit = (onSubmit, onClose, setFormData, onSave) => {
           acc[key] = options.map((opt) => (selectedValues.includes(opt) ? opt : applyStrikethrough(opt))).join(" / ");
         }
       } else if (typeof value === "boolean") {
-        acc[key] = value === true ? "\u2611" : "\u229F";
+        acc[key] = value === true ? "\u2611" : "\u2612";
       } else if (key.includes("date")) {
         const raw = String(value ?? "").trim();
         if (!raw || /^\/*undefined$/i.test(raw)) {
