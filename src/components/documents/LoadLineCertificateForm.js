@@ -1,21 +1,16 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import {
-  Dialog, DialogContent, DialogActions, TextField, Box, Typography, IconButton,
-  Divider, Button, Accordion, AccordionSummary, AccordionDetails,
-  TextareaAutosize
-} from "@mui/material";
+import { Dialog, DialogContent, DialogActions, TextField, Box, Typography, IconButton, Divider, Button, Accordion, AccordionSummary, AccordionDetails, TextareaAutosize } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
-import {
-  Close as CloseIcon, ExpandMore as ExpandMoreIcon,
-  CheckCircle as CheckIcon, Waves as WavesIcon
-} from "@mui/icons-material";
+import { Close as CloseIcon, ExpandMore as ExpandMoreIcon, CheckCircle as CheckIcon, Waves as WavesIcon } from "@mui/icons-material";
 import { formattedDate, formatDate } from "@/utils/date";
 import { getAllSystemVariables } from "@/api";
-import CommonButton from "../CommonButton";
 
 const applyStrikethrough = (text) =>
-  text?.split("").map((c) => c + "\u0336").join("");
+  text
+    ?.split("")
+    .map((c) => c + "\u0336")
+    .join("");
 
 const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [formValues, setFormValues] = useState({});
@@ -23,14 +18,13 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
   const [systemVariables, setSystemVariables] = useState();
   const [isLoadingVariables, setIsLoadingVariables] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [saveData, setSaveData] = useState(false);
 
   const handleImageSelect = (id) => {
     setSelectedImage(id);
   };
 
-  const timberImages = systemVariables?.data?.filter(
-    item => item.name.startsWith("timber_image")
-  ) || [];
+  const timberImages = systemVariables?.data?.filter((item) => item.name.startsWith("timber_image")) || [];
 
   const getSystemVariables = async () => {
     try {
@@ -56,40 +50,31 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
     }
   }, [open]);
 
-  const isStrikethroughText = (text) => text?.split('').some(c => c === '\u0336');
+  const isStrikethroughText = (text) => text?.split("").some((c) => c === "\u0336");
 
   useEffect(() => {
     if (fields && fields.length > 0) {
       const initialValues = {};
-      fields.forEach(field => {
+      fields.forEach((field) => {
         if (field.attribute.startsWith("_checkbox")) {
           if (reportDetails?.data && reportDetails?.data[field.attribute] === "\u2611") {
             initialValues[field.attribute] = true;
           } else {
             initialValues[field.attribute] = false;
           }
-        }
-        else if (field.attribute.startsWith("_st_")) {
+        } else if (field.attribute.startsWith("_st_")) {
           if (reportDetails && reportDetails[field.attribute]) {
-            const parts = reportDetails[field.attribute]
-              .split(" / ")
-              .map(s => s.trim());
+            const parts = reportDetails[field.attribute].split(" / ").map((s) => s.trim());
 
-            // Helper to clean strikethrough
-            const cleanText = txt => txt.replace(/\u0336/g, "");
+            const cleanText = (txt) => txt.replace(/\u0336/g, "");
 
-            // Selected = parts without strikethrough
-            const selectedOptions = parts
-              .filter(part => !/\u0336/.test(part)) // keep only non-struck
-              .map(cleanText);
+            const selectedOptions = parts.filter((part) => !/\u0336/.test(part)).map(cleanText);
 
             initialValues[field.attribute] = selectedOptions;
           } else {
             initialValues[field.attribute] = [];
           }
-        }
-
-        else {
+        } else {
           if (reportDetails?.data && reportDetails?.data[field.attribute]) {
             initialValues[field.attribute] = reportDetails?.data[field.attribute];
           } else {
@@ -107,7 +92,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
   };
 
   const handleInputChange = (fieldName, value) => {
-    setFormValues(prev => ({ ...prev, [fieldName]: value }));
+    setFormValues((prev) => ({ ...prev, [fieldName]: value }));
   };
 
   const handleSubmit = () => {
@@ -115,19 +100,16 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
       if (key.startsWith("_st_")) {
         const [, raw] = key?.split("_st_");
         const optionsRaw = raw.split("_");
-        const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
+        const options = optionsRaw.map((opt) => opt.replace(/-/g, " "));
 
         const selectedValues = Array.isArray(value) ? value : [];
 
         if (selectedValues.length === 0) {
           acc[key] = options.join(" / ");
         } else {
-          acc[key] = options
-            .map(opt => (selectedValues.includes(opt) ? opt : applyStrikethrough(opt)))
-            .join(" / ");
+          acc[key] = options.map((opt) => (selectedValues.includes(opt) ? opt : applyStrikethrough(opt))).join(" / ");
         }
-      }
-      else if (typeof value === "boolean") {
+      } else if (typeof value === "boolean") {
         acc[key] = value ? "\u2611" : "\u2612";
       } else if (key?.includes("date") && value) {
         acc[key] = formattedDate(value);
@@ -139,20 +121,23 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
       return acc;
     }, {});
 
-    const finalFilledValues = { ...filledValues, image: selectedImage };
+    const finalFilledValues = {
+      ...filledValues,
+      image: selectedImage,
+      save: saveData,
+    };
     onSubmit(finalFilledValues || {});
   };
-
 
   const categorizeFields = (fields) => {
     const categories = {
       freeboard: [],
       timberFreeboard: [],
       allowance: [],
-      others: []
+      others: [],
     };
 
-    fields.forEach(field => {
+    fields.forEach((field) => {
       const attr = field.attribute.toLowerCase();
       if (/_tropical_|_summer_|_winter_|_wna/.test(attr)) {
         categories.freeboard.push(field);
@@ -172,7 +157,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
 
   const renderFields = (fieldList) => (
     <Grid2 container spacing={2}>
-      {fieldList.map(field => {
+      {fieldList.map((field) => {
         const attr = field.attribute;
         const isDate = attr?.includes("date");
         const isCheckbox = attr.startsWith("_checkbox");
@@ -184,11 +169,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
             <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={attr}>
               <Grid2 size={{ xs: 12 }}>
                 <Box display="flex" alignItems="center">
-                  <input
-                    type="checkbox"
-                    checked={!!formValues[attr]}
-                    onChange={(e) => handleInputChange(attr, e.target.checked)}
-                  />
+                  <input type="checkbox" checked={!!formValues[attr]} onChange={(e) => handleInputChange(attr, e.target.checked)} />
                   <Typography variant="body2" sx={{ ml: 1 }}>
                     {field.label}
                   </Typography>
@@ -201,14 +182,15 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
         if (isStrikethroughRadio) {
           const [, raw] = attr?.split("_st_");
           const optionsRaw = raw.split("_");
-          const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
+          const options = optionsRaw.map((opt) => opt.replace(/-/g, " "));
           const selected = formValues[attr];
           return (
+            // eslint-disable-next-line react/jsx-key
             <Box display="flex" flexDirection="column" gap={1}>
               <Typography variant="body2" sx={{ mb: 1 }}>
                 {field.label}
               </Typography>
-              {options.map(opt => (
+              {options.map((opt) => (
                 <label key={opt}>
                   <input
                     type="checkbox"
@@ -221,7 +203,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
                       } else {
                         handleInputChange(
                           attr,
-                          selected.filter(item => item !== opt)
+                          selected.filter((item) => item !== opt)
                         );
                       }
                     }}
@@ -239,31 +221,14 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
               <Typography variant="body2" sx={{ mb: 1 }}>
                 {field.label}
               </Typography>
-              <TextareaAutosize
-                style={{ width: '100%' }}
-                minRows={4}
-                multiline
-                label={field.label}
-                value={formValues[attr] || ""}
-                onChange={(e) => handleInputChange(attr, e.target.value)}
-                placeholder={field.label}
-              />
+              <TextareaAutosize style={{ width: "100%" }} minRows={4} multiline label={field.label} value={formValues[attr] || ""} onChange={(e) => handleInputChange(attr, e.target.value)} placeholder={field.label} />
             </Grid2>
           );
         }
 
         return (
           <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={attr}>
-            <TextField
-              fullWidth
-              size="small"
-              label={field.label}
-              title={field.label}
-              value={isDate ? formatDate(formValues[attr]) : formValues[attr] || ""}
-              onChange={(e) => handleInputChange(attr, e.target.value)}
-              type={isDate ? "date" : "text"}
-              InputLabelProps={isDate ? { shrink: true } : undefined}
-            />
+            <TextField fullWidth size="small" label={field.label} title={field.label} value={isDate ? formatDate(formValues[attr]) : formValues[attr] || ""} onChange={(e) => handleInputChange(attr, e.target.value)} type={isDate ? "date" : "text"} InputLabelProps={isDate ? { shrink: true } : undefined} />
           </Grid2>
         );
       })}
@@ -273,42 +238,61 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
   const renderCategoryAccordion = (title, key, icon, fieldList) => {
     if (!fieldList.length) return null;
     return (
-      <Accordion
-        expanded={expandedSection === key}
-        onChange={() => setExpandedSection(expandedSection === key ? null : key)}
-        sx={{ mb: 2 }}
-      >
+      <Accordion expanded={expandedSection === key} onChange={() => setExpandedSection(expandedSection === key ? null : key)} sx={{ mb: 2 }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="h6">
             {title}
             <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
-              ({fieldList.filter(f => formValues[f.attribute]?.toString().trim()).length}/{fieldList.length})
+              ({fieldList.filter((f) => formValues[f.attribute]?.toString().trim()).length}/{fieldList.length})
             </Typography>
           </Typography>
         </AccordionSummary>
         <AccordionDetails>{renderFields(fieldList)}</AccordionDetails>
       </Accordion>
-
     );
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth PaperProps={{ sx: { height: '95vh', maxHeight: '1000px' } }}>
-      <Box sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', p: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ width: 48, height: 48, borderRadius: '12px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <WavesIcon sx={{ color: 'white' }} />
+    <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth PaperProps={{ sx: { height: "95vh", maxHeight: "1000px" } }}>
+      <Box
+        sx={{
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          color: "white",
+          p: 3,
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: "12px",
+                background: "rgba(255,255,255,0.2)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <WavesIcon sx={{ color: "white" }} />
             </Box>
             <Box>
-              <Typography variant="h5" fontWeight={700}>Load Line Certificate Details</Typography>
+              <Typography variant="h5" fontWeight={700}>
+                Load Line Certificate Details
+              </Typography>
               <Typography variant="body2">
                 Provide measurements and allowance details
                 {isLoadingVariables && " (Loading system variables...)"}
               </Typography>
             </Box>
           </Box>
-          <IconButton onClick={handleClose} sx={{ color: 'white' }}>
+          <IconButton onClick={handleClose} sx={{ color: "white" }}>
             <CloseIcon />
           </IconButton>
         </Box>
@@ -320,11 +304,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
         {renderCategoryAccordion("Fresh Water Allowance", "allowance", "💧", allowance)}
         {renderCategoryAccordion("Others", "others", "", others)}
         {timberImages.length > 0 && (
-          <Accordion
-            expanded={expandedSection === "images"}
-            onChange={() => setExpandedSection(expandedSection === "images" ? null : "images")}
-            sx={{ mb: 2 }}
-          >
+          <Accordion expanded={expandedSection === "images"} onChange={() => setExpandedSection(expandedSection === "images" ? null : "images")} sx={{ mb: 2 }}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography variant="h6">
                 Timber Images
@@ -346,22 +326,21 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
                         flexDirection: "column",
                         alignItems: "center",
                         gap: 1,
-                        transition: "all 0.2s ease"
+                        transition: "all 0.2s ease",
                       }}
                     >
                       <img
                         src={img.information}
                         alt={img.name}
-                        style={{ width: "100%", height: "150px", objectFit: "contain", borderRadius: 8 }}
+                        style={{
+                          width: "100%",
+                          height: "150px",
+                          objectFit: "contain",
+                          borderRadius: 8,
+                        }}
                       />
                       <Box display="flex" alignItems="center">
-                        <input
-                          type="radio"
-                          style={{ cursor: "pointer" }}
-                          name="timberImage"
-                          checked={selectedImage === img.id}
-                          onChange={() => handleImageSelect(img.id)}
-                        />
+                        <input type="radio" style={{ cursor: "pointer" }} name="timberImage" checked={selectedImage === img.id} onChange={() => handleImageSelect(img.id)} />
                         <Typography sx={{ ml: 1 }}>{img.name}</Typography>
                       </Box>
                     </Box>
@@ -378,11 +357,34 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
       <DialogActions
         sx={{
           p: 3,
-          background: 'white',
+          background: "white",
           gap: 2,
-          justifyContent: 'flex-end'
+          justifyContent: "flex-end",
         }}
       >
+        <Button
+          onClick={() => setSaveData(true)}
+          variant="outlined"
+          size="large"
+          sx={{
+            borderRadius: 2,
+            px: 3,
+            py: 1.5,
+            textTransform: "none",
+            fontWeight: 600,
+            borderColor: "rgba(102, 126, 234, 0.3)",
+            color: "text.secondary",
+            "&:hover": {
+              borderColor: "primary.main",
+              background: "rgba(102, 126, 234, 0.04)",
+              transform: "translateY(-1px)",
+              boxShadow: "0 4px 12px rgba(102, 126, 234, 0.15)",
+            },
+            transition: "all 0.2s ease",
+          }}
+        >
+          Save
+        </Button>
         <Button
           onClick={handleClose}
           variant="outlined"
@@ -391,17 +393,17 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
             borderRadius: 2,
             px: 3,
             py: 1.5,
-            textTransform: 'none',
+            textTransform: "none",
             fontWeight: 600,
-            borderColor: 'rgba(102, 126, 234, 0.3)',
-            color: 'text.secondary',
-            '&:hover': {
-              borderColor: 'primary.main',
-              background: 'rgba(102, 126, 234, 0.04)',
-              transform: 'translateY(-1px)',
-              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+            borderColor: "rgba(102, 126, 234, 0.3)",
+            color: "text.secondary",
+            "&:hover": {
+              borderColor: "primary.main",
+              background: "rgba(102, 126, 234, 0.04)",
+              transform: "translateY(-1px)",
+              boxShadow: "0 4px 12px rgba(102, 126, 234, 0.15)",
             },
-            transition: 'all 0.2s ease'
+            transition: "all 0.2s ease",
           }}
         >
           Cancel
@@ -416,19 +418,19 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
             borderRadius: 2,
             px: 4,
             py: 1.5,
-            textTransform: 'none',
+            textTransform: "none",
             fontWeight: 600,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
-              transform: 'translateY(-2px)',
-              boxShadow: '0 8px 25px rgba(102, 126, 234, 0.6)'
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)",
+            "&:hover": {
+              background: "linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)",
+              transform: "translateY(-2px)",
+              boxShadow: "0 8px 25px rgba(102, 126, 234, 0.6)",
             },
-            transition: 'all 0.2s ease'
+            transition: "all 0.2s ease",
           }}
         >
-          {isLoadingVariables ? 'Loading...' : 'Generate Report'}
+          {isLoadingVariables ? "Loading..." : "Generate Certificate"}
         </Button>
       </DialogActions>
     </Dialog>

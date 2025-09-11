@@ -405,7 +405,7 @@ const ClassificationForm = ({
                   {/* Issuance Date */}
                   <Grid2 size={{ xs: 12, md: 1.7 }}>
                     <TextField
-                      label="Issuance Date"
+                      label="Assignment Date"
                       type="date"
                       fullWidth
                       value={
