@@ -2,13 +2,13 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import CircularProgress from "@mui/material/CircularProgress";
-import Pagination from '@mui/material/Pagination';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogTitle from '@mui/material/DialogTitle';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
+import Pagination from "@mui/material/Pagination";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogTitle from "@mui/material/DialogTitle";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
 import Snackbar from "@mui/material/Snackbar";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
@@ -20,7 +20,7 @@ import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import CommonInput from "@/components/CommonInput";
-import {deleteSurveyType,getSurveyTypes } from "@/api";
+import { deleteSurveyType, getSurveyTypes } from "@/api";
 import { toast } from "react-toastify";
 
 const SurveyTypes = () => {
@@ -50,26 +50,26 @@ const SurveyTypes = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  const fetchAllSurveyTypes = async (search,page, limit ) => {
+  const fetchAllSurveyTypes = async (search, page, limit) => {
     try {
       setLoading(true);
       const result = await getSurveyTypes(search, page, limit);
       if (result?.status === 200) {
-        setSurveyTypes(result.data.data)
-        setTotalRows(result.data.results)
+        setSurveyTypes(result.data.data);
+        setTotalRows(result.data.results);
       } else {
-        toast.error("Something went wrong ! Please try again after some time")
+        toast.error("Something went wrong ! Please try again after some time");
       }
 
       setLoading(false);
     } catch (error) {
       setLoading(false);
-      toast.error(error)
+      toast.error(error);
     }
   };
 
   useEffect(() => {
-    fetchAllSurveyTypes(debouncedSearch,page, limit);
+    fetchAllSurveyTypes(debouncedSearch, page, limit);
   }, [debouncedSearch, page, limit]);
 
   const handleSearchChange = (event) => {
@@ -114,9 +114,9 @@ const SurveyTypes = () => {
       sortable: false,
       renderCell: (params) => {
         return (page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1;
-      }
-    },    
-    { field: "name", headerName: "Survey Tpe", flex: 1.5 },
+      },
+    },
+    { field: "name", headerName: "Survey Type", flex: 1.5 },
     { field: "abbreviation", headerName: "Abbreviation", flex: 1 },
     {
       field: "actions",
@@ -125,18 +125,12 @@ const SurveyTypes = () => {
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
           <Tooltip title="Edit Client">
-            <IconButton
-              color="primary"
-              onClick={() => router.push(`/survey-types/${params?.id}`)}
-            >
+            <IconButton color="primary" onClick={() => router.push(`/survey-types/${params?.id}`)}>
               <EditIcon />
             </IconButton>
           </Tooltip>
           <Tooltip title="Delete Client">
-            <IconButton
-              color="error"
-              onClick={() => handleDeleteClick(params?.id)}
-            >
+            <IconButton color="error" onClick={() => handleDeleteClick(params?.id)}>
               <DeleteIcon />
             </IconButton>
           </Tooltip>
@@ -148,11 +142,7 @@ const SurveyTypes = () => {
   return (
     <Layout>
       <CommonCard sx={{ mt: 0 }}>
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-        >
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Typography variant="h4" fontWeight={700}>
             Survey Types
           </Typography>
@@ -168,21 +158,10 @@ const SurveyTypes = () => {
       </CommonCard>
 
       <CommonCard>
-        <CommonInput
-          placeholder="Search Survey Types"
-          fullWidth
-          value={search}
-          onChange={handleSearchChange}
-          sx={{ marginBottom: 2 }}
-        />
+        <CommonInput placeholder="Search Survey Types" fullWidth value={search} onChange={handleSearchChange} sx={{ marginBottom: 2 }} />
         <Box sx={{ width: "100%", mt: 4 }}>
           {loading ? (
-            <Box
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              height="300px"
-            >
+            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
               <CircularProgress />
             </Box>
           ) : surveyTypes.length > 0 ? (
@@ -203,25 +182,13 @@ const SurveyTypes = () => {
               }}
             />
           ) : (
-            <Typography
-              variant="h6"
-              align="center"
-              sx={{ color: "gray", padding: 3 }}
-            >
+            <Typography variant="h6" align="center" sx={{ color: "gray", padding: 3 }}>
               No Data Found
             </Typography>
           )}
         </Box>
         <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-          <Pagination
-            count={Math.ceil(totalRows / limit)}
-            page={page}
-            onChange={handlePageChange}
-            color="primary"
-            variant="outlined"
-            shape="rounded"
-            sx={{ marginTop: "10px" }}
-          />
+          <Pagination count={Math.ceil(totalRows / limit)} page={page} onChange={handlePageChange} color="primary" variant="outlined" shape="rounded" sx={{ marginTop: "10px" }} />
         </Box>
       </CommonCard>
 

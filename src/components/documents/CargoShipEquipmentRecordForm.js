@@ -1,34 +1,29 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import {
-  Dialog, DialogContent, DialogActions,
-  TextField, Box, Typography, IconButton, Grid2, Divider, Button, Accordion, AccordionSummary, AccordionDetails,
-  TextareaAutosize,
-} from "@mui/material";
-import {
-  Close as CloseIcon, ExpandMore as ExpandMoreIcon,
-  CheckCircle as CheckIcon, Report as ReportIcon
-} from "@mui/icons-material";
+import { Dialog, DialogContent, DialogActions, TextField, Box, Typography, IconButton, Grid2, Divider, Button, Accordion, AccordionSummary, AccordionDetails, TextareaAutosize } from "@mui/material";
+import { Close as CloseIcon, ExpandMore as ExpandMoreIcon, CheckCircle as CheckIcon, Report as ReportIcon } from "@mui/icons-material";
 import { formattedDate, formatDate } from "@/utils/date";
-import CommonButton from "../CommonButton";
+import { useFormInitialization, useCommonSubmit } from "./useSubmit";
 
 const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
-  const [formValues, setFormValues] = useState({});
   const [expandedSection, setExpandedSection] = useState("lifeSaving");
+  const [saveData, setSaveData] = useState(false);
+  const { formData, setFormData } = useFormInitialization(fields, reportDetails, open);
+  const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, saveData);
 
   const handleClose = () => {
     onClose();
-    setFormValues({});
+    setFormData({});
   };
 
   const handleInputChange = (fieldName, value) => {
-    setFormValues(prev => ({ ...prev, [fieldName]: value }));
+    setFormData((prev) => ({ ...prev, [fieldName]: value }));
   };
 
   const groupByBaseLabel = (fieldList) => {
     const grouped = {};
 
-    fieldList.forEach(field => {
+    fieldList.forEach((field) => {
       const attr = field.attribute;
       const baseKey = attr.replace(/_P$|_S$/, "");
 
@@ -51,87 +46,88 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const renderInputField = (field) => {
     const attr = field.attribute;
     const isDate = attr?.includes("date");
-    const value = formValues[attr] || "";
+    const value = formData[attr] || "";
 
-    return (
-      <TextField
-        fullWidth
-        size="small"
-        value={value}
-        label={field.label || formatLabel(attr)}
-        title={field.label || formatLabel(attr)}
-        onChange={(e) => handleInputChange(attr, e.target.value)}
-        placeholder={formatLabel(attr).toLowerCase()}
-        type={isDate ? "date" : "text"}
-        InputLabelProps={isDate ? { shrink: true } : undefined}
-      />
-    );
+    return <TextField fullWidth size="small" value={value} label={field.label || formatLabel(attr)} title={field.label || formatLabel(attr)} onChange={(e) => handleInputChange(attr, e.target.value)} placeholder={formatLabel(attr).toLowerCase()} type={isDate ? "date" : "text"} InputLabelProps={isDate ? { shrink: true } : undefined} />;
   };
 
-  const isStrikethroughText = (text) => text?.split('').some(c => c === '\u0336');
+  const isStrikethroughText = (text) => text?.split("").some((c) => c === "\u0336");
+
+  // useEffect(() => {
+  //   if (fields && fields.length > 0) {
+  //     const initialValues = {};
+  //     fields.forEach((field) => {
+  //       if (field.attribute.startsWith("_checkbox")) {
+  //         if (reportDetails && reportDetails[field.attribute] === "\u2611") {
+  //           initialValues[field.attribute] = true;
+  //         } else {
+  //           initialValues[field.attribute] = false;
+  //         }
+  //       } else if (field.attribute.startsWith("_st_")) {
+  //         if (reportDetails && reportDetails[field.attribute]) {
+  //           const parts = reportDetails[field.attribute]
+  //             .split(" / ")
+  //             .map((s) => s.trim());
+
+  //           const selectedOptions = parts.filter(
+  //             (part) => !isStrikethroughText(part)
+  //           );
+  //           initialValues[field.attribute] = selectedOptions;
+  //         } else {
+  //           initialValues[field.attribute] = [];
+  //         }
+  //       } else {
+  //         if (reportDetails && reportDetails[field.attribute]) {
+  //           initialValues[field.attribute] = reportDetails[field.attribute];
+  //         } else {
+  //           initialValues[field.attribute] = "";
+  //         }
+  //       }
+  //     });
+  //     setFormData(initialValues);
+  //   }
+  // }, [fields, open]);
 
   useEffect(() => {
-    if (fields && fields.length > 0) {
-      const initialValues = {};
-      fields.forEach(field => {
-        if (field.attribute.startsWith("_checkbox")) {
-          if (reportDetails && reportDetails[field.attribute] === "\u2611") {
-            initialValues[field.attribute] = true;
-          } else {
-            initialValues[field.attribute] = false;
-          }
-        }
-        else if (field.attribute.startsWith("_st_")) {
-          if (reportDetails && reportDetails[field.attribute]) {
-            const parts = reportDetails[field.attribute]
-              .split(" / ")
-              .map(s => s.trim());
-
-            const selectedOptions = parts.filter(part => !isStrikethroughText(part));
-            initialValues[field.attribute] = selectedOptions;
-          } else {
-            initialValues[field.attribute] = [];
-          }
-        }
-        else {
-          if (reportDetails && reportDetails[field.attribute]) {
-            initialValues[field.attribute] = reportDetails[field.attribute];
-          } else {
-            initialValues[field.attribute] = "";
-          }
-        }
-      });
-      setFormValues(initialValues);
+    if (saveData) {
+      handleSubmit(formData);
+      setSaveData(false);
     }
-  }, [fields, open]);
-
+  }, [formData, handleSubmit, saveData]);
 
   const renderGroupedFields = (fieldList) => {
     const grouped = groupByBaseLabel(fieldList);
 
     return (
-      <Box sx={{ width: '100%', overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
+      <Box sx={{ width: "100%", overflowX: "auto" }}>
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            minWidth: "800px",
+          }}
+        >
           <thead>
-            <tr style={{ backgroundColor: '#f0f0f0' }}>
-              <th style={{ padding: '12px' }}>Description</th>
-              <th style={{ padding: '12px' }}>Port</th>
-              <th style={{ padding: '12px' }}>Starboard</th>
+            <tr style={{ backgroundColor: "#f0f0f0" }}>
+              <th style={{ padding: "12px" }}>Description</th>
+              <th style={{ padding: "12px" }}>Port</th>
+              <th style={{ padding: "12px" }}>Starboard</th>
             </tr>
           </thead>
           <tbody>
             {grouped.map(([baseKey, { label, port, starboard }], index) => (
-              <tr key={baseKey} style={{ backgroundColor: index % 2 === 0 ? '#fafafa' : 'white' }}>
-                <td style={{ padding: '12px', fontWeight: 500 }}>{label}</td>
+              <tr
+                key={baseKey}
+                style={{
+                  backgroundColor: index % 2 === 0 ? "#fafafa" : "white",
+                }}
+              >
+                <td style={{ padding: "12px", fontWeight: 500 }}>{label}</td>
 
                 {port || starboard ? (
                   <>
-                    <td style={{ padding: '12px' }}>
-                      {port ? renderInputField(port) : ""}
-                    </td>
-                    <td style={{ padding: '12px' }}>
-                      {starboard ? renderInputField(starboard) : ""}
-                    </td>
+                    <td style={{ padding: "12px" }}>{port ? renderInputField(port) : ""}</td>
+                    <td style={{ padding: "12px" }}>{starboard ? renderInputField(starboard) : ""}</td>
                   </>
                 ) : (
                   <>
@@ -143,53 +139,65 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
               </tr>
             ))}
           </tbody>
-
         </table>
       </Box>
     );
   };
 
-  const applyStrikethrough = (text) =>
-    text?.split("").map(c => c + "\u0336").join("");
+  // const applyStrikethrough = (text) =>
+  //   text
+  //     ?.split("")
+  //     .map((c) => c + "\u0336")
+  //     .join("");
 
-  const handleSubmit = () => {
-    const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
-      if (typeof value === "string" && (value?.includes("undefined") || value.trim() === "")) {
-        value = undefined;
-      }
-      if (key.startsWith("_st_")) {
-        const [, raw] = key?.split("_st_");
-        const optionsRaw = raw.split("_");
-        const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
+  // const handleSubmit = () => {
+  //   const filledValues = Object.entries(formData).reduce(
+  //     (acc, [key, value]) => {
+  //       if (
+  //         typeof value === "string" &&
+  //         (value?.includes("undefined") || value.trim() === "")
+  //       ) {
+  //         value = undefined;
+  //       }
+  //       if (key.startsWith("_st_")) {
+  //         const [, raw] = key?.split("_st_");
+  //         const optionsRaw = raw.split("_");
+  //         const options = optionsRaw.map((opt) => opt.replace(/-/g, " "));
 
-        const selectedValues = Array.isArray(value) ? value : [];
+  //         const selectedValues = Array.isArray(value) ? value : [];
 
-        if (selectedValues.length === 0) {
-          acc[key] = options.join(" / ");
-        } else {
-          acc[key] = options
-            .map(opt => (selectedValues.includes(opt) ? opt : applyStrikethrough(opt)))
-            .join(" / ");
-        }
-      }
-      else if (typeof value === "boolean") {
-        acc[key] = value ? "☑" : "☒";
-      } else if (key?.includes("date") && value) {
-        acc[key] = formattedDate(value);
-      } else if (typeof value === "string" && value.trim()) {
-        acc[key] = value;
-      } else {
-        acc[key] = "-";
-      }
+  //         if (selectedValues.length === 0) {
+  //           acc[key] = options.join(" / ");
+  //         } else {
+  //           acc[key] = options
+  //             .map((opt) =>
+  //               selectedValues.includes(opt) ? opt : applyStrikethrough(opt)
+  //             )
+  //             .join(" / ");
+  //         }
+  //       } else if (typeof value === "boolean") {
+  //         acc[key] = value ? "☑" : "☒";
+  //       } else if (key?.includes("date") && value) {
+  //         acc[key] = formattedDate(value);
+  //       } else if (typeof value === "string" && value.trim()) {
+  //         acc[key] = value;
+  //       } else {
+  //         acc[key] = "-";
+  //       }
 
-      return acc;
-    }, {});
+  //       return acc;
+  //     },
+  //     {}
+  //   );
 
-    onSubmit(filledValues);
-  };
+  //   onSubmit(filledValues);
+  // };
 
   const formatLabel = (attribute) =>
-    attribute.replace(/^_CSS_/, "").replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+    attribute
+      .replace(/^_CSS_/, "")
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (l) => l.toUpperCase());
 
   const categorizeFields = (fields) => {
     const categories = {
@@ -220,8 +228,8 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const { lifeSaving, portStarboard, navigation, uncategorized } = categorizeFields(fields);
 
   const renderFields = (fieldList) => (
-    <Box sx={{ width: '100%', overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
+    <Box sx={{ width: "100%", overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "800px" }}>
         <tbody>
           {fieldList?.map((field, index) => {
             const attr = field.attribute;
@@ -234,152 +242,144 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
               <tr
                 key={attr}
                 style={{
-                  backgroundColor: index % 2 === 0 ? '#fafafa' : 'white',
-                  borderBottom: '1px solid #eee'
+                  backgroundColor: index % 2 === 0 ? "#fafafa" : "white",
+                  borderBottom: "1px solid #eee",
                 }}
               >
-                <td style={{
-                  padding: '12px',
-                  verticalAlign: 'top',
-                  fontWeight: 500
-                }}>
+                <td
+                  style={{
+                    padding: "12px",
+                    verticalAlign: "top",
+                    fontWeight: 500,
+                  }}
+                >
                   {field.label || formatLabel(attr)}
                 </td>
-                <td style={{ padding: '12px', verticalAlign: 'top' }}>
+                <td style={{ padding: "12px", verticalAlign: "top" }}>
                   {isCheckbox ? (
                     <Grid2 size={{ xs: 12 }}>
                       <Box display="flex" alignItems="center">
-                        <input
-                          type="checkbox"
-                          checked={!!formValues[attr]}
-                          onChange={(e) => handleInputChange(attr, e.target.checked)}
-                          style={{ marginRight: '8px' }}
-                        />
+                        <input type="checkbox" checked={!!formData[attr]} onChange={(e) => handleInputChange(attr, e.target.checked)} style={{ marginRight: "8px" }} />
                       </Box>
                     </Grid2>
+                  ) : isStrikethroughRadio ? (
+                    (() => {
+                      const [, raw] = attr?.split("_st_");
+                      const optionsRaw = raw.split("_");
+                      const options = optionsRaw.map((opt) => opt.replace(/-/g, " "));
+                      const selected = formData[attr] || [];
 
-                  ) : isStrikethroughRadio ?
-                    (
-                      (() => {
-                        const [, raw] = attr?.split("_st_");
-                        const optionsRaw = raw.split("_");
-                        const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
-                        const selected = formValues[attr] || [];
-
-                        return (
-                          <Box display="flex" flexDirection="column" gap={1}>
-                            <Typography variant="body2" sx={{ mb: 1 }}>
-                              {field.label}
-                            </Typography>
-                            {options.map(opt => (
-                              <label key={opt}>
-                                <input
-                                  type="checkbox"
-                                  name={attr}
-                                  value={opt}
-                                  checked={selected?.includes(opt)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      handleInputChange(attr, [...selected, opt]);
-                                    } else {
-                                      handleInputChange(
-                                        attr,
-                                        selected?.filter(item => item !== opt)
-                                      );
-                                    }
-                                  }}
-                                />{" "}
-                                {opt}
-                              </label>
-                            ))}
-                          </Box>
-                        );
-                      })()
-                    ) : isTextarea ? (
-                      <Grid2 size={{ xs: 12, sm: 6, md: 12 }} key={attr}>
-                        <Typography variant="body2" sx={{ mb: 1 }}>
-                          {field.label || formatLabel(attr)}
-                        </Typography>
-                        <TextareaAutosize
-                          style={{ width: '100%' }}
-                          minRows={4}
-                          multiline
-                          label={field.label || formatLabel(attr)}
-                          value={formValues[attr] || ""}
-                          onChange={(e) => handleInputChange(attr, e.target.value)}
-                          placeholder={formatLabel(attr).toLowerCase()}
-                        />
-                      </Grid2>
-                    ) : (
-                      <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={attr}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          title={field.label || formatLabel(attr)}
-                          label={field.label || formatLabel(attr)}
-                          value={isDate ? formatDate(formValues[attr]) : formValues[attr] || ""}
-                          onChange={(e) => handleInputChange(attr, e.target.value)}
-                          placeholder={formatLabel(attr).toLowerCase()}
-                          type={isDate ? "date" : "text"}
-                          InputLabelProps={isDate ? { shrink: true } : undefined}
-                        />
-                      </Grid2>
-                    )}
+                      return (
+                        <Box display="flex" flexDirection="column" gap={1}>
+                          <Typography variant="body2" sx={{ mb: 1 }}>
+                            {field.label}
+                          </Typography>
+                          {options.map((opt) => (
+                            <label key={opt}>
+                              <input
+                                type="checkbox"
+                                name={attr}
+                                value={opt}
+                                checked={selected?.includes(opt)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    handleInputChange(attr, [...selected, opt]);
+                                  } else {
+                                    handleInputChange(
+                                      attr,
+                                      selected?.filter((item) => item !== opt)
+                                    );
+                                  }
+                                }}
+                              />{" "}
+                              {opt}
+                            </label>
+                          ))}
+                        </Box>
+                      );
+                    })()
+                  ) : isTextarea ? (
+                    <Grid2 size={{ xs: 12, sm: 6, md: 12 }} key={attr}>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        {field.label || formatLabel(attr)}
+                      </Typography>
+                      <TextareaAutosize style={{ width: "100%" }} minRows={4} multiline label={field.label || formatLabel(attr)} value={formData[attr] || ""} onChange={(e) => handleInputChange(attr, e.target.value)} placeholder={formatLabel(attr).toLowerCase()} />
+                    </Grid2>
+                  ) : (
+                    <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={attr}>
+                      <TextField fullWidth size="small" title={field.label || formatLabel(attr)} label={field.label || formatLabel(attr)} value={isDate ? formatDate(formData[attr]) : formData[attr] || ""} onChange={(e) => handleInputChange(attr, e.target.value)} placeholder={formatLabel(attr).toLowerCase()} type={isDate ? "date" : "text"} InputLabelProps={isDate ? { shrink: true } : undefined} />
+                    </Grid2>
+                  )}
                 </td>
-                <td style={{
-                  padding: '12px',
-                  textAlign: 'center',
-                  verticalAlign: 'middle'
-                }}>
-
-                </td>
+                <td
+                  style={{
+                    padding: "12px",
+                    textAlign: "center",
+                    verticalAlign: "middle",
+                  }}
+                ></td>
               </tr>
             );
           })}
         </tbody>
       </table>
-    </Box >
+    </Box>
   );
 
   const renderCategoryAccordion = (title, key, fieldList, useGroupedTable = false) => {
     if (!fieldList?.length) return null;
 
     return (
-      <Accordion
-        expanded={expandedSection === key}
-        onChange={() => setExpandedSection(expandedSection === key ? null : key)}
-        sx={{ mb: 2 }}
-      >
+      <Accordion expanded={expandedSection === key} onChange={() => setExpandedSection(expandedSection === key ? null : key)} sx={{ mb: 2 }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="h6">{title}</Typography>
           <Typography component="span" variant="body2" color="primary" sx={{ ml: 1, mt: 1 }}>
-            ({fieldList?.filter(f => formValues[f.attribute])?.length}/{fieldList?.length})
+            ({fieldList?.filter((f) => formData[f.attribute])?.length}/{fieldList?.length})
           </Typography>
         </AccordionSummary>
-        <AccordionDetails>
-          {useGroupedTable ? renderGroupedFields(fieldList) : renderFields(fieldList)}
-        </AccordionDetails>
-
+        <AccordionDetails>{useGroupedTable ? renderGroupedFields(fieldList) : renderFields(fieldList)}</AccordionDetails>
       </Accordion>
     );
   };
 
-
-
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth PaperProps={{ sx: { height: '95vh', maxHeight: '1000px' } }}>
-      <Box sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', p: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ width: 48, height: 48, borderRadius: '12px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <ReportIcon sx={{ color: 'white' }} />
+    <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth PaperProps={{ sx: { height: "95vh", maxHeight: "1000px" } }}>
+      <Box
+        sx={{
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          color: "white",
+          p: 3,
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: "12px",
+                background: "rgba(255,255,255,0.2)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <ReportIcon sx={{ color: "white" }} />
             </Box>
             <Box>
-              <Typography variant="h5" fontWeight={700}>CSS Equipment Details</Typography>
+              <Typography variant="h5" fontWeight={700}>
+                CSS Equipment Details
+              </Typography>
               <Typography variant="body2">Fill out cargo ship safety and equipment details including construction info, oil filtering systems, manuals, waivers, and monitoring systems.</Typography>
             </Box>
           </Box>
-          <IconButton onClick={handleClose} sx={{ color: 'white' }}>
+          <IconButton onClick={handleClose} sx={{ color: "white" }}>
             <CloseIcon />
           </IconButton>
         </Box>
@@ -390,7 +390,6 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
         {renderCategoryAccordion("Life-Saving Appliances", "lifeSaving", lifeSaving)}
         {renderCategoryAccordion("Navigational Systems", "navigation", navigation)}
         {renderCategoryAccordion("Other Fields", "uncategorized", uncategorized)}
-
       </DialogContent>
 
       <Divider />
@@ -398,11 +397,34 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
       <DialogActions
         sx={{
           p: 3,
-          background: 'white',
+          background: "white",
           gap: 2,
-          justifyContent: 'flex-end'
+          justifyContent: "flex-end",
         }}
       >
+        <Button
+          onClick={() => setSaveData(true)}
+          variant="outlined"
+          size="large"
+          sx={{
+            borderRadius: 2,
+            px: 3,
+            py: 1.5,
+            textTransform: "none",
+            fontWeight: 600,
+            borderColor: "rgba(102, 126, 234, 0.3)",
+            color: "text.secondary",
+            "&:hover": {
+              borderColor: "primary.main",
+              background: "rgba(102, 126, 234, 0.04)",
+              transform: "translateY(-1px)",
+              boxShadow: "0 4px 12px rgba(102, 126, 234, 0.15)",
+            },
+            transition: "all 0.2s ease",
+          }}
+        >
+          Save
+        </Button>
         <Button
           onClick={handleClose}
           variant="outlined"
@@ -411,17 +433,17 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
             borderRadius: 2,
             px: 3,
             py: 1.5,
-            textTransform: 'none',
+            textTransform: "none",
             fontWeight: 600,
-            borderColor: 'rgba(102, 126, 234, 0.3)',
-            color: 'text.secondary',
-            '&:hover': {
-              borderColor: 'primary.main',
-              background: 'rgba(102, 126, 234, 0.04)',
-              transform: 'translateY(-1px)',
-              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+            borderColor: "rgba(102, 126, 234, 0.3)",
+            color: "text.secondary",
+            "&:hover": {
+              borderColor: "primary.main",
+              background: "rgba(102, 126, 234, 0.04)",
+              transform: "translateY(-1px)",
+              boxShadow: "0 4px 12px rgba(102, 126, 234, 0.15)",
             },
-            transition: 'all 0.2s ease'
+            transition: "all 0.2s ease",
           }}
         >
           Cancel
@@ -435,19 +457,19 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
             borderRadius: 2,
             px: 4,
             py: 1.5,
-            textTransform: 'none',
+            textTransform: "none",
             fontWeight: 600,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
-              transform: 'translateY(-2px)',
-              boxShadow: '0 8px 25px rgba(102, 126, 234, 0.6)'
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)",
+            "&:hover": {
+              background: "linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)",
+              transform: "translateY(-2px)",
+              boxShadow: "0 8px 25px rgba(102, 126, 234, 0.6)",
             },
-            transition: 'all 0.2s ease'
+            transition: "all 0.2s ease",
           }}
         >
-          Generate Report
+          Generate Certificate
         </Button>
       </DialogActions>
     </Dialog>

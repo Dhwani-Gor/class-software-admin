@@ -38,7 +38,7 @@ import { getAllActivities } from "@/api";
 import moment from "moment";
 import { Stack } from "@mui/material";
 import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from 'yup';
+import * as yup from "yup";
 import { DialogForm } from "../documents/CommonDocumentForm";
 import InternationalTonnage from "../documents/TonnageCertificateForm";
 import IOPPForm from "../documents/OilPollutionPreventionCertificateForm";
@@ -47,42 +47,34 @@ import LoadLineCertificateForm from "../documents/LoadLineCertificateForm";
 import AntiFoulingCertificateForm from "../documents/AntiFoulingCertificateForm";
 import IAPPForm from "../documents/RecordOfConstructioCertificate";
 import EndorsementDialog from "../documents/EndorsementDialog";
+import { hiddenReports } from "@/utils/DocumentList";
 
 // Updated schema with correct field names
 const reportSchema = yup.object().shape({
-  typesOfSurvey: yup.string().required('Type of survey is required'),
-  typeOfCertificate: yup.string().required('Type of certificate is required'),
-  issuancedate: yup.string().required('Issuance date is required'),
-  validitydate: yup.string().required('Validity date is required'),
-  surveydate: yup.string().required('Survey date is required'),
+  typesOfSurvey: yup.string().required("Type of survey is required"),
+  typeOfCertificate: yup.string().required("Type of certificate is required"),
+  issuancedate: yup.string().required("Issuance date is required"),
+  validitydate: yup.string().optional(),
+  surveydate: yup.string().required("Survey date is required"),
   endorsementdate: yup.string().optional(),
   issuedBy: yup.string().optional(),
-  place: yup.string().required('Place is required'),
+  place: yup.string().required("Place is required"),
   newValidityDate: yup.string().optional(),
 });
 
-const DocumentUploadDialog = ({
-  open,
-  onClose,
-  onUpload,
-  selectedDocuments,
-  onRemoveDocument,
-  onPreviewDocument
-}) => {
+const DocumentUploadDialog = ({ open, onClose, onUpload, selectedDocuments, onRemoveDocument, onPreviewDocument }) => {
   const [documents, setDocuments] = useState([]);
 
   const handleFileChange = (event) => {
     if (event.target.files) {
       const newFiles = Array.from(event.target.files);
-      const validFiles = newFiles.filter(file =>
-        ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'video/mp4', 'video/mpeg'].includes(file.type)
-      );
+      const validFiles = newFiles.filter((file) => ["image/jpeg", "image/png", "image/gif", "application/pdf", "video/mp4", "video/mpeg"].includes(file.type));
 
       if (validFiles.length !== newFiles.length) {
         toast.warning("Some files were skipped due to invalid file type");
       }
 
-      setDocuments(prev => [...prev, ...validFiles]);
+      setDocuments((prev) => [...prev, ...validFiles]);
     }
   };
 
@@ -98,29 +90,29 @@ const DocumentUploadDialog = ({
   };
 
   const handleRemoveNewDocument = (index) => {
-    setDocuments(prev => prev.filter((_, i) => i !== index));
+    setDocuments((prev) => prev.filter((_, i) => i !== index));
   };
 
   const renderFileIcon = (file) => {
     let fileType;
 
     if (file?.type) {
-      fileType = file.type.split('/')[0];
+      fileType = file.type.split("/")[0];
     } else if (file?.fileType) {
-      fileType = file.fileType.split('/')[0];
+      fileType = file.fileType.split("/")[0];
     } else {
-      fileType = 'unknown';
+      fileType = "unknown";
     }
 
     switch (fileType) {
-      case 'image':
-        return '🖼️';
-      case 'application':
-        return '📄';
-      case 'video':
-        return '🎥';
+      case "image":
+        return "🖼️";
+      case "application":
+        return "📄";
+      case "video":
+        return "🎥";
       default:
-        return '📁';
+        return "📁";
     }
   };
 
@@ -130,7 +122,7 @@ const DocumentUploadDialog = ({
     } else if (file?.fileName) {
       return file.fileName;
     }
-    return 'Unknown file';
+    return "Unknown file";
   };
 
   const handleSafeRemoveDocument = (docId) => {
@@ -139,7 +131,7 @@ const DocumentUploadDialog = ({
       return;
     }
 
-    if (typeof onRemoveDocument === 'function') {
+    if (typeof onRemoveDocument === "function") {
       onRemoveDocument(docId);
     } else {
       toast.error("Remove function not available");
@@ -152,7 +144,7 @@ const DocumentUploadDialog = ({
       return;
     }
 
-    if (typeof onPreviewDocument === 'function') {
+    if (typeof onPreviewDocument === "function") {
       onPreviewDocument(doc);
     } else {
       toast.error("Preview function not available");
@@ -164,33 +156,17 @@ const DocumentUploadDialog = ({
       <DialogTitle>Upload Documents</DialogTitle>
       <DialogContent sx={{ minWidth: "50vw" }}>
         <Box>
-          <input
-            type="file"
-            multiple
-            accept="image/jpeg,image/png,image/gif,application/pdf,video/mp4,video/mpeg"
-            onChange={handleFileChange}
-            style={{ margin: '16px 0' }}
-          />
+          <input type="file" multiple accept="image/jpeg,image/png,image/gif,application/pdf,video/mp4,video/mpeg" onChange={handleFileChange} style={{ margin: "16px 0" }} />
 
           {documents.length > 0 && (
             <Box mt={2}>
               <Typography variant="subtitle1">New Documents:</Typography>
               {documents.map((file, index) => (
-                <Box
-                  key={index}
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  mb={1}
-                >
+                <Box key={index} display="flex" alignItems="center" justifyContent="space-between" mb={1}>
                   <Typography>
                     {renderFileIcon(file)} {getFileName(file)}
                   </Typography>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleRemoveNewDocument(index)}
-                    color="error"
-                  >
+                  <IconButton size="small" onClick={() => handleRemoveNewDocument(index)} color="error">
                     <DeleteIcon fontSize="small" />
                   </IconButton>
                 </Box>
@@ -202,32 +178,15 @@ const DocumentUploadDialog = ({
             <Box mt={2}>
               <Typography variant="subtitle1">Existing Documents:</Typography>
               {selectedDocuments.map((doc) => (
-                <Box
-                  key={doc.id}
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  mb={1}
-                >
+                <Box key={doc.id} display="flex" alignItems="center" justifyContent="space-between" mb={1}>
                   <Typography>
                     {renderFileIcon(doc)} {getFileName(doc)}
                   </Typography>
                   <Box>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleSafePreviewDocument(doc)}
-                      color="primary"
-                      title="Preview Document"
-                    >
+                    <IconButton size="small" onClick={() => handleSafePreviewDocument(doc)} color="primary" title="Preview Document">
                       <VisibilityIcon fontSize="small" />
                     </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleSafeRemoveDocument(doc.id)}
-                      color="error"
-                      title="Delete Document"
-                      disabled={!doc.id}
-                    >
+                    <IconButton size="small" onClick={() => handleSafeRemoveDocument(doc.id)} color="error" title="Delete Document" disabled={!doc.id}>
                       <DeleteIcon fontSize="small" />
                     </IconButton>
                   </Box>
@@ -239,10 +198,7 @@ const DocumentUploadDialog = ({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button
-          onClick={handleUpload}
-          disabled={documents.length === 0}
-        >
+        <Button onClick={handleUpload} disabled={documents.length === 0}>
           Upload
         </Button>
       </DialogActions>
@@ -251,8 +207,8 @@ const DocumentUploadDialog = ({
 };
 
 const DocumentPreviewModal = ({ open, onClose, document, loading }) => {
-  let fileUrl
-  let fileType
+  let fileUrl;
+  let fileType;
 
   const handleDownload = () => {
     const blobUrl = window.URL.createObjectURL(blob);
@@ -263,39 +219,29 @@ const DocumentPreviewModal = ({ open, onClose, document, loading }) => {
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(blobUrl);
-
   };
 
   const getPreviewContent = () => {
     if (!document) return null;
     fileUrl = document.filePath;
     fileType = document.fileType;
-    if (fileType?.startsWith('image/')) {
+    if (fileType?.startsWith("image/")) {
       return (
         <img
           src={fileUrl}
           alt="Document preview"
           style={{
-            maxWidth: '100%',
-            maxHeight: '70vh',
-            objectFit: 'contain'
+            maxWidth: "100%",
+            maxHeight: "70vh",
+            objectFit: "contain",
           }}
         />
       );
-    } else if (fileType === 'application/pdf') {
+    } else if (fileType === "application/pdf") {
+      return <iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`} style={{ width: "100%", height: "70vh", border: "none" }} title="PDF Preview" />;
+    } else if (fileType?.startsWith("video/")) {
       return (
-        <iframe
-          src={`https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`}
-          style={{ width: '100%', height: '70vh', border: 'none' }}
-          title="PDF Preview"
-        />
-      );
-    } else if (fileType?.startsWith('video/')) {
-      return (
-        <video
-          controls
-          style={{ maxWidth: '100%', maxHeight: '70vh' }}
-        >
+        <video controls style={{ maxWidth: "100%", maxHeight: "70vh" }}>
           <source src={fileUrl} type={fileType} />
           Your browser does not support the video tag.
         </video>
@@ -306,12 +252,7 @@ const DocumentPreviewModal = ({ open, onClose, document, loading }) => {
           <Typography variant="h6" gutterBottom>
             Preview not available for this file type
           </Typography>
-          <Button
-            variant="contained"
-            href={fileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <Button variant="contained" href={fileUrl} target="_blank" rel="noopener noreferrer">
             Download File
           </Button>
         </Box>
@@ -326,28 +267,17 @@ const DocumentPreviewModal = ({ open, onClose, document, loading }) => {
       maxWidth="md"
       fullWidth
       PaperProps={{
-        style: { minHeight: '80vh' }
+        style: { minHeight: "80vh" },
       }}
     >
       <DialogTitle>
         Document Preview
-        {document?.filePath && (
-          <Box
-            onClick={handleDownload}
-            style={{ float: 'right', textDecoration: 'none' }}
-          >
-          </Box>
-        )}
+        {document?.filePath && <Box onClick={handleDownload} style={{ float: "right", textDecoration: "none" }}></Box>}
       </DialogTitle>
 
       <DialogContent>
         {loading ? (
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            height="400px"
-          >
+          <Box display="flex" justifyContent="center" alignItems="center" height="400px">
             <CircularProgress />
           </Box>
         ) : (
@@ -370,7 +300,10 @@ const ReportingForm = () => {
   const [journals, setJournals] = useState([]);
   const [fullScreenRemarksVisible, setFullScreenRemarksVisible] = useState(null);
   const [selectedShip, setSelectedShip] = useState({ id: "", shipName: "" });
-  const [selectedReportNumber, setSelectedReportNumber] = useState({ journalTypeId: "", index: null });
+  const [selectedReportNumber, setSelectedReportNumber] = useState({
+    journalTypeId: "",
+    index: null,
+  });
   const [selectCertificate, setSelectCertificate] = useState("");
   const [showTable, setShowTable] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -394,6 +327,7 @@ const ReportingForm = () => {
   const [endorsementTitle, setEndorsementTitle] = useState([]);
   const [openEndrosemet, setOpenEndrosemet] = useState(false);
   const [endorsementValues, setEndorsementValues] = useState({});
+  const [loadingReport, setLoadingReport] = useState(false);
 
   useEffect(() => {
     if (selectCertificate === "full_term") {
@@ -411,8 +345,6 @@ const ReportingForm = () => {
     }
   }, [selectCertificate]);
 
-  const [loadingReport, setLoadingReport] = useState(false);
-
   const renderReportForm = () => {
     const trimmedReportName = reportName?.trim();
 
@@ -421,7 +353,7 @@ const ReportingForm = () => {
       onClose: () => setOpen(false),
       onSubmit: handleSubmitReport,
       fields: underscoreFields,
-      reportDetails: reportDetails?.data
+      reportDetails: reportDetails?.data,
     };
 
     switch (trimmedReportName) {
@@ -437,12 +369,7 @@ const ReportingForm = () => {
         return <CSSForm {...commonProps} />;
 
       case "INTERNATIONAL LOAD LINE CERTIFICATE":
-        return <LoadLineCertificateForm
-          open={open}
-          onClose={() => setOpen(false)}
-          onSubmit={handleSubmitReport}
-          fields={underscoreFields}
-          reportDetails={reportDetails} />;
+        return <LoadLineCertificateForm open={open} onClose={() => setOpen(false)} onSubmit={handleSubmitReport} fields={underscoreFields} reportDetails={reportDetails} />;
 
       case "International Anti-Fouling System Certificate":
         return <AntiFoulingCertificateForm {...commonProps} />;
@@ -456,7 +383,6 @@ const ReportingForm = () => {
     }
   };
 
-
   const {
     control,
     handleSubmit,
@@ -467,15 +393,15 @@ const ReportingForm = () => {
     clearErrors,
   } = useForm({
     defaultValues: {
-      remarks: '',
-      typesOfSurvey: '',
-      typeOfCertificate: '',
-      issuancedate: '',
-      validitydate: '',
-      surveydate: '',
-      endorsementdate: '',
-      issuedBy: '',
-      place: '',
+      remarks: "",
+      typesOfSurvey: "",
+      typeOfCertificate: "",
+      issuancedate: "",
+      validitydate: "",
+      surveydate: "",
+      endorsementdate: "",
+      issuedBy: "",
+      place: "",
     },
     resolver: yupResolver(reportSchema),
   });
@@ -494,53 +420,53 @@ const ReportingForm = () => {
 
   const handleClientChange = (event) => {
     const selectedId = event.target.value;
-    const selectedClient = clientsList.find(client => client.id === selectedId);
+    const selectedClient = clientsList.find((client) => client.id === selectedId);
     setSelectedShip({
       id: selectedId,
-      shipName: selectedClient ? selectedClient.shipName : ""
+      shipName: selectedClient ? selectedClient.shipName : "",
     });
   };
 
   const handleReportNumber = (event) => {
-    setShowTable(false)
+    setShowTable(false);
     const selectedJournalTypeId = event.target.value;
-    const selectedIndex = journals.findIndex(journal => journal.journalTypeId === selectedJournalTypeId);
-    setjournalId(journals[selectedIndex]?.id)
+    const selectedIndex = journals.findIndex((journal) => journal.journalTypeId === selectedJournalTypeId);
+    setjournalId(journals[selectedIndex]?.id);
     setSelectedReportNumber({
       journalTypeId: selectedJournalTypeId,
-      index: selectedIndex !== -1 ? selectedIndex : null
+      index: selectedIndex !== -1 ? selectedIndex : null,
     });
-    setTableData(journals[selectedIndex]?.activities)
-    setShowTable(true)
+    setTableData(journals[selectedIndex]?.activities);
+    setShowTable(true);
   };
 
   const handleCertificate = (event) => {
     const value = event.target.value;
     setSelectCertificate(value);
-    setValue('typeOfCertificate', value);
+    setValue("typeOfCertificate", value);
     if (value && errors.typeOfCertificate) {
-      clearErrors('typeOfCertificate');
+      clearErrors("typeOfCertificate");
     }
   };
 
   const handleSurveyor = (event) => {
     const value = event.target.value;
     setSelectSurveyor(value);
-    setValue('issuedBy', value);
+    setValue("issuedBy", value);
     if (value && errors.issuedBy) {
-      clearErrors('issuedBy');
+      clearErrors("issuedBy");
     }
   };
 
   const handleFieldChange = (fieldName, value) => {
-    if (value && value.trim() !== '' && errors[fieldName]) {
+    if (value && value.trim() !== "" && errors[fieldName]) {
       clearErrors(fieldName);
     }
   };
 
   const handleShowTable = () => {
     setShowTable(true);
-    getAllActivity(journalId)
+    getAllActivity(journalId);
   };
 
   const handleGenerateReport = async () => {
@@ -562,25 +488,21 @@ const ReportingForm = () => {
       typeOfSurvey: values.typesOfSurvey || null,
       typeOfCertificate: values.typeOfCertificate || null,
       issuanceDate: values.issuancedate ? formatDate(values.issuancedate) : null,
-      validityDate: values.validitydate ? formatDate(values.validitydate) : null,
       surveyDate: values.surveydate ? formatDate(values.surveydate) : null,
       issuedBy: Number(values.issuedBy) || null,
-      place: values.place || null,
-      ...(selectCertificate === "full_term" || selectCertificate === "extended") &&
-        values.endorsementdate
-        ? { endorsementDate: formatDate(values.endorsementdate) }
-        : {},
-      ...(selectCertificate === "extended"
-        ? {
-          newValidityDate: values.newValidityDate
-            ? formatDate(values.newValidityDate)
-            : null,
-        }
-        : {}),
+      place: values.place || "",
+      validityDate: hiddenReports?.includes(reportName) ? "" : values.validitydate ? formatDate(values.validitydate) : "",
+
+      ...((selectCertificate === "full_term" || selectCertificate === "extended") && {
+        endorsementDate: values.endorsementdate ? formatDate(values.endorsementdate) : "",
+      }),
+      ...(selectCertificate === "extended" && {
+        newValidityDate: values.newValidityDate ? formatDate(values.newValidityDate) : "",
+      }),
     };
 
     if (reportDetails) {
-      updateReport(payload)
+      updateReport(payload);
     } else {
       generateReport(payload);
     }
@@ -590,9 +512,9 @@ const ReportingForm = () => {
     try {
       setLoading(true);
       const result = await createReportDetail(payload);
-      if (result?.data?.status === 'success') {
+      if (result?.data?.status === "success") {
         setReportDetails(result?.data?.data);
-        toast.success("Report saved successfully.")
+        toast.success("Report saved successfully.");
       } else {
         toast.error("Failed to generate report");
       }
@@ -607,16 +529,16 @@ const ReportingForm = () => {
     try {
       setLoading(true);
       const result = await updateReportDetail(reportDetails?.id, payload);
-      if (result?.data?.status === 'success') {
+      if (result?.data?.status === "success") {
         setReportDetails(result?.data?.data);
-        toast.success("Report updated successfully.")
+        toast.success("Report updated successfully.");
       } else {
-        toast.error(result?.data?.message)
+        toast.error(result?.data?.message);
       }
       setLoading(false);
     } catch (error) {
       setLoading(false);
-      toast.error(error?.message || "An error occurred")
+      toast.error(error?.message || "An error occurred");
     }
   };
 
@@ -626,7 +548,6 @@ const ReportingForm = () => {
         setOpen(true);
       } else {
         setLoadingReport(true);
-        const isCertificateOfClass = reportDetails?.activity?.surveyType?.report?.name?.toLowerCase() === 'certificate of class';
 
         const payload = {
           reportDetailId: reportDetails?.id,
@@ -635,10 +556,10 @@ const ReportingForm = () => {
             image: 7,
             stamp: 6,
             companyText: 8,
-            ...(reportName?.toLocaleLowerCase() === 'certificate of class' && { logo: 7 })
-
-
-          }
+            ...(reportName?.toLocaleLowerCase() === "certificate of class" && {
+              logo: 7,
+            }),
+          },
         };
 
         // const result = await generateFullReport({
@@ -651,30 +572,16 @@ const ReportingForm = () => {
         // });
 
         const result = await generateFullReport(payload);
-
+        console.log(result, "result");
+        if (result.data.status == "success") {
+          toast.success("Report generated successfully.");
+        }
         const fileUrl = result?.data?.data;
 
         if (!fileUrl) {
           toast.error("Invalid file URL received.");
           return;
         }
-
-       
-        // if (!response.ok) throw new Error("Failed to fetch file.");
-
-        // const blob = await response.blob();
-        // const filename = fileUrl.split('/').pop();
-
-        // const blobUrl = window.URL.createObjectURL(blob);
-        // const link = document.createElement("a");
-        // link.href = blobUrl;
-        // link.download = filename;
-        // document.body.appendChild(link);
-        // link.click();
-        // document.body.removeChild(link);
-        // window.URL.revokeObjectURL(blobUrl);
-
-        toast.success("Report downloaded successfully.");
       }
     } catch (error) {
       console.error("Download error:", error);
@@ -690,51 +597,32 @@ const ReportingForm = () => {
     setOpen(true);
 
     try {
-      const surveyAbbr = surveyorName?.abbreviation || 'Survey';
-      const certType = selectCertificate || 'Type';
-      const reportNo = selectedReportNumber?.journalTypeId || 'Unknown';
-
-      const isCertificateOfClass = reportDetails?.activity?.surveyType?.report?.name?.toLowerCase() === 'certificate of class';
       const payload = {
         reportDetailId: reportDetails?.id,
 
         data: {
           ...extraFields,
-          type: 'image',
+          type: "image",
           stamp: 6,
           companyText: 8,
-          ...(reportName.toLocaleLowerCase() === 'certificate of class' && { logo: 7 })
-        }
-
-
+          ...(reportName.toLocaleLowerCase() === "certificate of class" && {
+            logo: 7,
+          }),
+        },
       };
       const result = await generateFullReport(payload);
-      const fileUrl = result?.data?.data;
-      console.log(fileUrl,"file url")
-      if (!fileUrl) { 
-        toast.error("Invalid file URL received.");
+
+      if (result.data.status == "success") {
+        toast.success("Report Download Sucessfully");
         return;
       }
+      const fileUrl = result?.data?.data;
 
       const response = await fetch(fileUrl);
       if (!response.ok) throw new Error("Network response was not ok");
-      
-      
-      // const blob = await response.blob();
-      // const downloadUrl = window.URL.createObjectURL(blob);
-
-      // const link = document.createElement("a");
-      // link.href = downloadUrl;
-      // link.target = "_blank";
-      // link.download = `${surveyAbbr}_${certType}_${reportNo}.pdf`;
-      // document.body.appendChild(link);
-      // link.click();
-      // link.remove();
-      // window.URL.revokeObjectURL(downloadUrl);
-      if (response.status == "success") {
+      if (result.data.status == "success") {
         toast.success("Report generated successfully.");
       }
-
     } catch (err) {
       console.error("Error downloading report:", err);
       toast.error("Failed to generate full report");
@@ -745,21 +633,17 @@ const ReportingForm = () => {
   };
 
   const handleStatusChange = async (id, value) => {
-    setShowForm(false)
-    setTableData((prevData) =>
-      prevData.map((item) =>
-        item.id === id ? { ...item, status: value } : item
-      )
-    );
+    setShowForm(false);
+    setTableData((prevData) => prevData.map((item) => (item.id === id ? { ...item, status: value } : item)));
     try {
       const response = await updateActivityDetails(id, { status: value });
-      if (response?.data?.status === 'success') {
+      if (response?.data?.status === "success") {
         toast.success("Status updated successfully.");
       } else {
-        toast.error("Something went wrong ! Please try again after some time")
+        toast.error("Something went wrong ! Please try again after some time");
       }
     } catch (error) {
-      toast.error("Something went wrong ! Please try again after some time")
+      toast.error("Something went wrong ! Please try again after some time");
     }
   };
 
@@ -769,20 +653,16 @@ const ReportingForm = () => {
       return;
     }
 
-    setTableData((prevData) =>
-      prevData.map((item) =>
-        item.id === id ? { ...item, remarks: value } : item
-      )
-    );
+    setTableData((prevData) => prevData.map((item) => (item.id === id ? { ...item, remarks: value } : item)));
     try {
       const response = await updateActivityDetails(id, { remarks: value });
-      if (response?.data?.status === 'success') {
+      if (response?.data?.status === "success") {
         toast.success("Remarks updated successfully.");
       } else {
-        toast.error("Something went wrong ! Please try again after some time")
+        toast.error("Something went wrong ! Please try again after some time");
       }
     } catch (error) {
-      toast.error("Something went wrong ! Please try again after some time", error)
+      toast.error("Something went wrong ! Please try again after some time", error);
     }
   };
 
@@ -798,34 +678,32 @@ const ReportingForm = () => {
         // setOpenEndrosemet(true);
       }
       const data = extractUnderscoreFields(row);
-      setUnderscoreFields(data)
+      setUnderscoreFields(data);
 
       if (result?.data?.status === "success") {
         setReportDetails(result?.data?.data[0]);
-
-        router.push('#reportDetails');
+        router.push("#reportDetails");
         const reportData = result?.data?.data[0];
         setShowForm(true);
         setSelectedRow(row);
-
         clearErrors();
 
-        setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
+        setValue("typesOfSurvey", getSurveyTitle(row.surveyTypes?.name));
         setSurveyorName(getSurveyTitle(row.surveyTypes));
-        setValue('typeOfCertificate', reportData?.typeOfCertificate || "");
+        setValue("typeOfCertificate", reportData?.typeOfCertificate || "");
         setSelectCertificate(reportData?.typeOfCertificate || "");
-        setValue('issuancedate', reportData?.issuanceDate ? moment(reportData?.issuanceDate).format("YYYY-MM-DD") : '');
-        setValue('validitydate', reportData?.validityDate ? moment(reportData?.validityDate).format("YYYY-MM-DD") : '');
-        setValue('surveydate', reportData?.surveyDate ? moment(reportData?.surveyDate).format("YYYY-MM-DD") : "");
-        setValue('endorsementdate', reportData?.endorsementDate ? moment(reportData?.endorsementDate).format("YYYY-MM-DD") : "");
-        setValue('issuedBy', reportData?.issuedBy?.toString() || "");
+        setValue("issuancedate", reportData?.issuanceDate ? moment(reportData?.issuanceDate).format("YYYY-MM-DD") : "");
+        setValue("validitydate", reportData?.validityDate ? moment(reportData?.validityDate).format("YYYY-MM-DD") : "");
+        setValue("surveydate", reportData?.surveyDate ? moment(reportData?.surveyDate).format("YYYY-MM-DD") : "");
+        setValue("endorsementdate", reportData?.endorsementDate ? moment(reportData?.endorsementDate).format("YYYY-MM-DD") : "");
+        setValue("issuedBy", reportData?.issuedBy?.toString() || "");
         setSelectSurveyor(reportData?.issuedBy?.toString() || "");
-        setValue('place', reportData?.place || "");
+        setValue("place", reportData?.place || "");
       } else {
         clearErrors();
         setShowForm(true);
         setSelectedRow(row);
-        setValue('typesOfSurvey', getSurveyTitle(row.surveyTypes?.name));
+        setValue("typesOfSurvey", getSurveyTitle(row.surveyTypes?.name));
       }
     } catch (error) {
       toast.error(error?.message || "An error occurred");
@@ -852,41 +730,43 @@ const ReportingForm = () => {
       setLoading(true);
       const result = await getAllClients();
       if (result?.status === 200) {
-        setClientsList(result.data.data)
+        setClientsList(result.data.data);
       } else {
-        toast.error(result?.message)
+        toast.error(result?.message);
       }
       setLoading(false);
     } catch (error) {
       setLoading(false);
-      toast.error(error?.message || "Failed to fetch clients")
+      toast.error(error?.message || "Failed to fetch clients");
     }
   };
 
   const fetchReportDetails = async () => {
-    const response = await getSelectedReportDetails(reportDetails?.id)
+    const response = await getSelectedReportDetails(reportDetails?.id);
     // setReportDetails(response?.data?.data)
-
-  }
+  };
 
   useEffect(() => {
     fetchClients();
-    fetchReportDetails()
+    fetchReportDetails();
   }, []);
 
   const fetchAllJournals = async () => {
     try {
       setLoading(true);
-      const result = await getAllJournals({ filterKey: 'clientId', filterValue: selectedShip.id });
+      const result = await getAllJournals({
+        filterKey: "clientId",
+        filterValue: selectedShip.id,
+      });
       if (result?.status === 200) {
-        setJournals(result.data.data)
+        setJournals(result.data.data);
       } else {
-        toast.error("Something went wrong ! Please try again after some time")
+        toast.error("Something went wrong ! Please try again after some time");
       }
       setLoading(false);
     } catch (error) {
       setLoading(false);
-      toast.error(error?.message || "Failed to fetch journals")
+      toast.error(error?.message || "Failed to fetch journals");
     }
   };
 
@@ -897,19 +777,17 @@ const ReportingForm = () => {
   }, [selectedShip.id]);
 
   const getSurveyTitle = (val) => {
-    return TYPE_OF_SURVEYS.find(ele => ele.value === val)?.label || val;
-  }
+    return TYPE_OF_SURVEYS.find((ele) => ele.value === val)?.label || val;
+  };
 
   const handleDocumentUpload = async (rowId, documents) => {
     setTableData((prevData) =>
       prevData.map((item) =>
         item.id === rowId
           ? {
-            ...item,
-            attachments: item.attachments
-              ? [...item.attachments, ...documents]
-              : documents
-          }
+              ...item,
+              attachments: item.attachments ? [...item.attachments, ...documents] : documents,
+            }
           : item
       )
     );
@@ -951,14 +829,14 @@ const ReportingForm = () => {
       const response = await deleteAttachment(activityId, documentId);
       setDocumentUploadDialogOpen(false);
       getAllActivity(journalId);
-      if (response?.data?.status === 'success') {
+      if (response?.data?.status === "success") {
         setTableData((prevData) =>
           prevData.map((item) =>
             item.id === activityId
               ? {
-                ...item,
-                attachments: item.attachments ? item.attachments.filter((doc) => doc.id !== documentId) : []
-              }
+                  ...item,
+                  attachments: item.attachments ? item.attachments.filter((doc) => doc.id !== documentId) : [],
+                }
               : item
           )
         );
@@ -991,7 +869,7 @@ const ReportingForm = () => {
   const getAllActivity = async (id) => {
     try {
       setLoading(true);
-      const result = await getAllActivities('journalId', id);
+      const result = await getAllActivities("journalId", id);
       if (result?.data?.status === "success") {
         setTableData(result?.data?.data);
       } else {
@@ -1002,7 +880,7 @@ const ReportingForm = () => {
       setLoading(false);
       toast.error(error?.message || "Failed to fetch activity");
     }
-  }
+  };
 
   useEffect(() => {
     if (journalId) {
@@ -1013,7 +891,7 @@ const ReportingForm = () => {
 
   const getEndorsedIssuedByList = async (journalId) => {
     try {
-      const result = await getEndorsedIssuedBy('journalId', journalId);
+      const result = await getEndorsedIssuedBy("journalId", journalId);
       if (result?.data?.status === "success") {
         setEndorsedIssuedBy(result?.data.uniqueSurveyors);
       } else {
@@ -1026,12 +904,12 @@ const ReportingForm = () => {
 
   const extractUnderscoreFields = (data) => {
     const fields = [];
-    if (data && typeof data === 'object') {
+    if (data && typeof data === "object") {
       data?.surveyTypes?.report?.fields?.forEach((field) => {
         if (field?.attribute?.startsWith("_")) {
           fields.push({
             label: field.label,
-            attribute: field.attribute
+            attribute: field.attribute,
           });
         }
       });
@@ -1050,12 +928,7 @@ const ReportingForm = () => {
           Preliminary Report
         </Typography>
         {loading ? (
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            height="100vh"
-          >
+          <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
             <CircularProgress />
           </Box>
         ) : (
@@ -1065,11 +938,7 @@ const ReportingForm = () => {
                 <Typography variant="body1" mb={1}>
                   Select the Ship / Work
                 </Typography>
-                <Select
-                  value={selectedShip.id || ""}
-                  onChange={handleClientChange}
-                  displayEmpty
-                >
+                <Select value={selectedShip.id || ""} onChange={handleClientChange} displayEmpty>
                   <MenuItem value="" disabled>
                     Select the Ship / Work
                   </MenuItem>
@@ -1088,17 +957,14 @@ const ReportingForm = () => {
                   <Typography variant="body1" mb={1}>
                     Select Report Number
                   </Typography>
-                  <Select
-                    value={selectedReportNumber.journalTypeId || ""}
-                    onChange={handleReportNumber}
-                    displayEmpty
-                  >
-                    {journals.length > 0 ?
+                  <Select value={selectedReportNumber.journalTypeId || ""} onChange={handleReportNumber} displayEmpty>
+                    {journals.length > 0 ? (
                       <MenuItem value="" disabled>
                         Select Report
-                      </MenuItem> :
+                      </MenuItem>
+                    ) : (
                       <MenuItem disabled>No Journals found for this Client</MenuItem>
-                    }
+                    )}
                     {journals.map((report, index) => (
                       <MenuItem key={index} value={report.journalTypeId}>
                         {report.journalTypeId}
@@ -1109,13 +975,7 @@ const ReportingForm = () => {
               </Box>
             )}
 
-            {selectedShip.id && selectedReportNumber.journalTypeId && (
-              <CommonButton
-                onClick={handleShowTable}
-                sx={{ marginTop: 3 }}
-                text="Continue"
-              />
-            )}
+            {selectedShip.id && selectedReportNumber.journalTypeId && <CommonButton onClick={handleShowTable} sx={{ marginTop: 3 }} text="Continue" />}
           </Box>
         )}
       </CommonCard>
@@ -1128,9 +988,7 @@ const ReportingForm = () => {
                 <TableHead>
                   <TableRow>
                     <TableCell sx={{ fontWeight: "bold" }}>ID</TableCell>
-                    <TableCell sx={{ fontWeight: "bold" }}>
-                      Activity Name
-                    </TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>Activity Name</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Remarks</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Attachments</TableCell>
@@ -1139,23 +997,14 @@ const ReportingForm = () => {
                 </TableHead>
                 <TableBody>
                   {tableData.map((row, index) => (
-                    <TableRow
-                      key={row.id}
-                      sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                    >
+                    <TableRow key={row.id} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
                       <TableCell component="th" scope="row">
                         {index + 1}
                       </TableCell>
                       <TableCell>{getSurveyTitle(row?.surveyTypes?.name || row?.name)}</TableCell>
                       <TableCell>
                         <FormControl fullWidth size="small">
-                          <Select
-                            value={row.status}
-                            onChange={(e) =>
-                              handleStatusChange(row.id, e.target.value)
-                            }
-                            displayEmpty
-                          >
+                          <Select value={row.status} onChange={(e) => handleStatusChange(row.id, e.target.value)} displayEmpty>
                             <MenuItem value="" disabled>
                               Select Status
                             </MenuItem>
@@ -1202,31 +1051,17 @@ const ReportingForm = () => {
                         />
                       </TableCell>
                       <TableCell align="center">
-                        <IconButton
-                          color="primary"
-                          onClick={() => openDocumentUpload(row)}
-                          size="small"
-                          aria-label="upload attachments"
-                        >
+                        <IconButton color="primary" onClick={() => openDocumentUpload(row)} size="small" aria-label="upload attachments">
                           <AttachmentIcon />
                           {row.attachments && row.attachments.length > 0 && (
-                            <Typography
-                              variant="caption"
-                              color="primary"
-                              sx={{ marginLeft: 1 }}
-                            >
+                            <Typography variant="caption" color="primary" sx={{ marginLeft: 1 }}>
                               {row.attachments.length}
                             </Typography>
                           )}
                         </IconButton>
                       </TableCell>
                       <TableCell align="center">
-                        <IconButton
-                          color="primary"
-                          onClick={() => handleReportClick(row)}
-                          size="small"
-                          aria-label="view report"
-                        >
+                        <IconButton color="primary" onClick={() => handleReportClick(row)} size="small" aria-label="view report">
                           <DescriptionIcon />
                         </IconButton>
                       </TableCell>
@@ -1242,7 +1077,7 @@ const ReportingForm = () => {
       {showForm && (
         <Box id="reportDetails">
           <CommonCard sx={{ mt: 2 }}>
-            <Typography fontSize={'18px'} fontWeight={'600'} mt={2} mb={4}>
+            <Typography fontSize={"18px"} fontWeight={"600"} mt={2} mb={4}>
               Endorsement/Issuance Details for {selectedRow.surveyTypes?.name}
             </Typography>
             <Grid2 container spacing={2}>
@@ -1254,7 +1089,11 @@ const ReportingForm = () => {
                     <CommonInput
                       {...field}
                       disabled
-                      label={<>Type of Survey <span style={{ color: 'red' }}>*</span></>}
+                      label={
+                        <>
+                          Type of Survey <span style={{ color: "red" }}>*</span>
+                        </>
+                      }
                       placeholder="Type of Survey"
                     />
                   )}
@@ -1267,15 +1106,10 @@ const ReportingForm = () => {
               </Grid2>
               <Grid2 item size={{ md: 9 }}>
                 <FormControl fullWidth sx={{ maxWidth: 255 }}>
-                  <Typography variant="body1" fontWeight={'500'} mb={1.5}>
-                    Type Of Certificate <span style={{ color: 'red' }}>*</span>
+                  <Typography variant="body1" fontWeight={"500"} mb={1.5}>
+                    Type Of Certificate <span style={{ color: "red" }}>*</span>
                   </Typography>
-                  <Select
-                    value={selectCertificate}
-                    onChange={handleCertificate}
-                    displayEmpty
-                    error={!!errors.typeOfCertificate}
-                  >
+                  <Select value={selectCertificate} onChange={handleCertificate} displayEmpty error={!!errors.typeOfCertificate}>
                     <MenuItem value="" disabled>
                       Select Certificate
                     </MenuItem>
@@ -1300,10 +1134,14 @@ const ReportingForm = () => {
                     <CommonInput
                       {...field}
                       type="date"
-                      label={<>Issuance Date <span style={{ color: 'red' }}>*</span></>}
+                      label={
+                        <>
+                          Issuance Date <span style={{ color: "red" }}>*</span>
+                        </>
+                      }
                       onChange={(e) => {
                         field.onChange(e);
-                        handleFieldChange('issuancedate', e.target.value);
+                        handleFieldChange("issuancedate", e.target.value);
                       }}
                     />
                   )}
@@ -1314,30 +1152,38 @@ const ReportingForm = () => {
                   </Typography>
                 )}
               </Grid2>
-              <Grid2 size={{ md: 3 }}>
-                <Controller
-                  name="validitydate"
-                  control={control}
-                  render={({ field }) => (
-                    <CommonInput
-                      {...field}
-                      type="date"
-                      label={<>Validity Date <span style={{ color: 'red' }}>*</span></>}
-                      error={!!errors.validitydate}
-                      helperText={errors.validitydate?.message}
-                      onChange={(e) => {
-                        field.onChange(e);
-                        handleFieldChange('validitydate', e.target.value);
-                      }}
+              {!hiddenReports.includes(reportName) && (
+                <>
+                  <Grid2 size={{ md: 3 }}>
+                    <Controller
+                      name="validitydate"
+                      control={control}
+                      render={({ field }) => (
+                        <CommonInput
+                          {...field}
+                          type="date"
+                          label={
+                            <>
+                              Validity Date <span style={{ color: "red" }}>*</span>
+                            </>
+                          }
+                          error={!!errors.validitydate}
+                          helperText={errors.validitydate?.message}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            handleFieldChange("validitydate", e.target.value);
+                          }}
+                        />
+                      )}
                     />
-                  )}
-                />
-                {errors.validitydate && (
-                  <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                    {errors.validitydate.message}
-                  </Typography>
-                )}
-              </Grid2>
+                    {errors.validitydate && (
+                      <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                        {errors.validitydate.message}
+                      </Typography>
+                    )}
+                  </Grid2>
+                </>
+              )}
               <Grid2 size={{ md: 3 }}>
                 <Controller
                   name="surveydate"
@@ -1346,10 +1192,14 @@ const ReportingForm = () => {
                     <CommonInput
                       {...field}
                       type="date"
-                      label={<>Survey Date <span style={{ color: 'red' }}>*</span></>}
+                      label={
+                        <>
+                          Survey Date <span style={{ color: "red" }}>*</span>
+                        </>
+                      }
                       onChange={(e) => {
                         field.onChange(e);
-                        handleFieldChange('surveydate', e.target.value);
+                        handleFieldChange("surveydate", e.target.value);
                       }}
                     />
                   )}
@@ -1361,7 +1211,6 @@ const ReportingForm = () => {
                 )}
               </Grid2>
               {showEndorsementField && (
-                // Render Endorsement Date field
                 <Grid2 size={{ md: 3 }}>
                   <Controller
                     name="endorsementdate"
@@ -1373,53 +1222,47 @@ const ReportingForm = () => {
                         label={<>Endorsement Date</>}
                         onChange={(e) => {
                           field.onChange(e);
-                          handleFieldChange('endorsementdate', e.target.value);
+                          handleFieldChange("endorsementdate", e.target.value);
                         }}
                       />
                     )}
                   />
-
                 </Grid2>
               )}
-              {(
-                showExtraEndorsementField ||
-                reportDetails?.typeOfCertificate === "extended"
-              ) && (
-                  <Grid2 size={{ md: 3 }}>
-                    <Controller
-                      name="newValidityDate"
-                      control={control}
-                      render={({ field }) => (
-                        <CommonInput
-                          {...field}
-                          type="date"
-                          label={<>New Validity Date <span style={{ color: 'red' }}>*</span></>}
-                          onChange={(e) => {
-                            field.onChange(e);
-                            handleFieldChange('newValidityDate', e.target.value);
-                          }}
-                        />
-                      )}
-                    />
-                    {errors.newValidityDate && (
-                      <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                        {errors.newValidityDate.message}
-                      </Typography>
+              {(showExtraEndorsementField || reportDetails?.typeOfCertificate === "extended") && (
+                <Grid2 size={{ md: 3 }}>
+                  <Controller
+                    name="newValidityDate"
+                    control={control}
+                    render={({ field }) => (
+                      <CommonInput
+                        {...field}
+                        type="date"
+                        label={
+                          <>
+                            New Validity Date <span style={{ color: "red" }}>*</span>
+                          </>
+                        }
+                        onChange={(e) => {
+                          field.onChange(e);
+                          handleFieldChange("newValidityDate", e.target.value);
+                        }}
+                      />
                     )}
-                  </Grid2>
-                )}
+                  />
+                  {errors.newValidityDate && (
+                    <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                      {errors.newValidityDate.message}
+                    </Typography>
+                  )}
+                </Grid2>
+              )}
               <Grid2 item size={{ md: 3 }}>
                 <FormControl fullWidth sx={{ maxWidth: 255 }}>
                   <Typography variant="body1" mb={1.5} fontWeight={500}>
-                    Endorsed / Issued By <span style={{ color: 'red' }}>*</span>
+                    Endorsed / Issued By <span style={{ color: "red" }}>*</span>
                   </Typography>
-                  <Select
-                    value={selectSurveyor}
-                    onChange={handleSurveyor}
-                    displayEmpty
-                    name="issuedBy"
-                    error={!!errors.issuedBy}
-                  >
+                  <Select value={selectSurveyor} onChange={handleSurveyor} displayEmpty name="issuedBy" error={!!errors.issuedBy}>
                     <MenuItem value="" disabled>
                       Select Endorsed / Issued By
                     </MenuItem>
@@ -1443,11 +1286,15 @@ const ReportingForm = () => {
                   render={({ field }) => (
                     <CommonInput
                       {...field}
-                      label={<>Place Of Issuance <span style={{ color: "red" }}>*</span></>}
+                      label={
+                        <>
+                          Place Of Issuance <span style={{ color: "red" }}>*</span>
+                        </>
+                      }
                       placeholder="Enter place name"
                       onChange={(e) => {
                         field.onChange(e);
-                        handleFieldChange('place', e.target.value);
+                        handleFieldChange("place", e.target.value);
                       }}
                     />
                   )}
@@ -1459,20 +1306,9 @@ const ReportingForm = () => {
                 )}
               </Grid2>
             </Grid2>
-            <Stack direction="row" gap={'20px'}>
-              <CommonButton
-                onClick={handleGenerateReport}
-                sx={{ marginTop: 3 }}
-                text="Save"
-                isLoading={loading}
-              />
-              {selectedRow?.status === 'Completed' && <CommonButton
-                onClick={handleFullReportGeneration}
-                sx={{ marginTop: 3 }}
-                text="Generate Certificate"
-                isLoading={loading}
-                disabled={!reportDetails}
-              />}
+            <Stack direction="row" gap={"20px"}>
+              <CommonButton onClick={handleGenerateReport} sx={{ marginTop: 3 }} text="Save" isLoading={loading} />
+              {selectedRow?.status === "Completed" && <CommonButton onClick={handleFullReportGeneration} sx={{ marginTop: 3 }} text="Generate Certificate" isLoading={loading} disabled={!reportDetails} />}
             </Stack>
           </CommonCard>
         </Box>
@@ -1497,45 +1333,25 @@ const ReportingForm = () => {
           handlePreviewDocument(document);
         }}
       />
-      <DocumentPreviewModal
-        open={openPreviewModal}
-        onClose={() => setOpenPreviewModal(false)}
-        document={previewDocument}
-        loading={loadingPreview}
-      />
-
+      <DocumentPreviewModal open={openPreviewModal} onClose={() => setOpenPreviewModal(false)} document={previewDocument} loading={loadingPreview} />
 
       <FullScreenRemarksDialog
         open={fullScreenRemarksVisible}
         onCancel={() => setFullScreenRemarksVisible(null)}
         onConfirm={(value) => {
-          if (fullScreenRemarksVisible && typeof fullScreenRemarksVisible === 'object') {
+          if (fullScreenRemarksVisible && typeof fullScreenRemarksVisible === "object") {
             handleRemarksChange(fullScreenRemarksVisible.id, value);
           }
           setFullScreenRemarksVisible(null);
         }}
-        title={fullScreenRemarksVisible && typeof fullScreenRemarksVisible === 'object'
-          ? `Remarks for ${fullScreenRemarksVisible.surveyTypes.name}`
-          : "Remarks"}
+        title={fullScreenRemarksVisible && typeof fullScreenRemarksVisible === "object" ? `Remarks for ${fullScreenRemarksVisible.surveyTypes.name}` : "Remarks"}
       />
       {renderReportForm()}
       {loadingReport && (
-        <Box
-          position="fixed"
-          top={0}
-          left={0}
-          width="100vw"
-          height="100vh"
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          bgcolor="rgba(255,255,255,0.6)"
-          zIndex={9999}
-        >
+        <Box position="fixed" top={0} left={0} width="100vw" height="100vh" display="flex" justifyContent="center" alignItems="center" bgcolor="rgba(255,255,255,0.6)" zIndex={9999}>
           <CircularProgress />
         </Box>
       )}
-
     </Box>
   );
 };

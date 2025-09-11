@@ -1,979 +1,838 @@
-import React, { useEffect, useState } from 'react';
-import {
-    Accordion,
-    AccordionSummary,
-    AccordionDetails,
-    Typography,
-    TextField,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Paper,
-    Box,
-    Divider,
-    Card,
-    CardContent,
-    DialogActions,
-    Dialog,
-    Button,
-    Grid2,
-    IconButton,
-    DialogContent,
-    FormControlLabel,
-    Checkbox,
-    TextareaAutosize
-} from '@mui/material';
-import { ExpandMore as ExpandMoreIcon, Science as ScienceIcon, Close as CloseIcon, CheckCircle as CheckIcon } from '@mui/icons-material';
+import React, { useEffect, useState } from "react";
+import { Accordion, AccordionSummary, AccordionDetails, Typography, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, Divider, Card, CardContent, DialogActions, Dialog, Button, Grid2, IconButton, DialogContent, FormControlLabel, Checkbox, TextareaAutosize } from "@mui/material";
+import { ExpandMore as ExpandMoreIcon, Science as ScienceIcon, Close as CloseIcon, CheckCircle as CheckIcon } from "@mui/icons-material";
 import { formattedDate, formatDate } from "@/utils/date";
-import CommonButton from '../CommonButton';
+import CommonButton from "../CommonButton";
+import { useCommonSubmit, useFormInitialization } from "./useSubmit";
 
 const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
-    const [expandedSection, setExpandedSection] = useState("systemInfo");
+  const [expandedSection, setExpandedSection] = useState("systemInfo");
 
-    const [formValues, setFormValues] = useState({});
+  const isStrikethroughText = (text) => text?.split("").some((c) => c === "\u0336");
 
-    const isStrikethroughText = (text) => text?.split('').some(c => c === '\u0336');
+  const { formData, setFormData } = useFormInitialization(fields, reportDetails, open);
 
-    useEffect(() => {
-        if (fields && fields.length > 0) {
-            const initialValues = {};
-            fields.forEach(field => {
-                if (field.attribute.startsWith("_checkbox")) {
-                    if (reportDetails && reportDetails[field.attribute] === "\u2611") {
-                        initialValues[field.attribute] = true;
-                    } else {
-                        initialValues[field.attribute] = false;
-                    }
-                }
-                else if (field.attribute.startsWith("_st_")) {
-                    if (reportDetails && reportDetails[field.attribute]) {
-                        const parts = reportDetails[field.attribute]
-                            .split(' / ')
-                            .map(s => s.trim());
+  const [saveData, setSaveData] = useState(false);
+  const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, saveData);
 
-                        const hasStrikethrough = parts.some(part => isStrikethroughText(part));
+  const handleInputChange = (fieldName, value) => {
+    setFormData((prev) => ({ ...prev, [fieldName]: value }));
+  };
 
-                        if (!hasStrikethrough) {
-                            initialValues[field.attribute] = "";
-                        } else {
-                            const selectedOption = parts.find(part => !isStrikethroughText(part));
-                            initialValues[field.attribute] = selectedOption || "";
-                        }
-                    } else {
-                        initialValues[field.attribute] = "";
-                    }
-                }
-                else {
-                    if (reportDetails && reportDetails[field.attribute]) {
-                        if (field.attribute?.includes("date")) {
-                            initialValues[field.attribute] = formattedDate(reportDetails[field.attribute]);
-                        } else {
-                            initialValues[field.attribute] = reportDetails[field.attribute];
-                        }
-                    } else {
-                        initialValues[field.attribute] = "";
-                    }
-                }
-            });
-            setFormValues(initialValues);
-        }
-    }, [fields, open]);
+  const onSubmitForm = () => {
+    handleSubmit(formData);
+  };
 
-
-    const handleClose = () => {
-        onClose();
-        setFormValues({});
-    };
-
-    const handleInputChange = (field, value) => {
-        setFormValues(prev => ({
-            ...prev,
-            [field]: value
-        }));
-    };
-
-    const applyStrikethrough = (text) =>
-        text?.split("").map(c => c + "\u0336").join("");
-
-    const handleSubmit = () => {
-        const finalPayload = {};
-
-        fields.forEach(({ attribute }) => {
-            let value = formValues[attribute];
-            if (typeof value === "string" && (value?.includes("undefined") || value.trim() === "")) {
-                value = undefined;
-            }
-
-            if (key.startsWith("_st_")) {
-                const [, raw] = key?.split("_st_");
-                const optionsRaw = raw.split("_");
-                const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
-
-                if (!value) {
-                    acc[key] = options.join(" / ");
-                } else {
-                    acc[key] = options
-                        .map(opt => (opt === value ? opt : applyStrikethrough(opt)))
-                        .join(" / ");
-                }
-            } else if (attribute.startsWith("_checkbox")) {
-                finalPayload[attribute] = value === true ? "\u2611" : "\u2612";
-            } else if (attribute?.includes("date")) {
-                finalPayload[attribute] = value ? formattedDate(value) : "-";
-            } else if (typeof value === "string" && value.trim()) {
-                finalPayload[attribute] = value;
-            } else {
-                finalPayload[attribute] = "-";
-            }
-        });
-        onSubmit(finalPayload);
-    };
-
-
-    const engineNumbers = new Set();
-
-    fields?.forEach(field => {
-        const match = field.attribute?.match(/_engine_(\d+)_/);
-        if (match) {
-            engineNumbers.add(Number(match[1]));
-        }
-    });
-
-    const maxEngineNumber = engineNumbers.size > 0 ? Math.max(...engineNumbers) : 0;
-
-    const engineFields = [];
-
-    for (let i = 1; i <= maxEngineNumber; i++) {
-        fields.forEach(field => {
-            const fixedAttr = field.attribute?.replace("_engine__", `_engine_${i}_`);
-            engineFields.push({
-                label: `Engine ${i} ${field.label?.replace('Engine ', '')}`,
-                attribute: fixedAttr
-            });
-        });
+  useEffect(() => {
+    if (saveData) {
+      handleSubmit(formData);
+      setSaveData(false);
     }
-    console.log(maxEngineNumber, "maxEngineNumber")
+  }, [formData, handleSubmit, saveData]);
 
-    const vocFields = fields.filter(field =>
-        field.attribute && field.attribute?.includes('_IAPP_VOC_')
-    );
+  const handleClose = () => {
+    onClose();
+    setFormData({});
+  };
+  // useEffect(() => {
+  //     if (fields && fields.length > 0) {
+  //         const initialValues = {};
+  //         fields.forEach(field => {
+  //             if (field.attribute.startsWith("_checkbox")) {
+  //                 if (reportDetails && reportDetails[field.attribute] === "\u2611") {
+  //                     initialValues[field.attribute] = true;
+  //                 } else {
+  //                     initialValues[field.attribute] = false;
+  //                 }
+  //             }
+  //             else if (field.attribute.startsWith("_st_")) {
+  //                 if (reportDetails && reportDetails[field.attribute]) {
+  //                     const parts = reportDetails[field.attribute]
+  //                         .split(' / ')
+  //                         .map(s => s.trim());
 
-    const checkboxFields = fields.filter(field =>
-        field.attribute && (
-            field.attribute?.includes('checkbox') ||
-            field.attribute.startsWith('_checkbox')
-        )
-    );
+  //                     const hasStrikethrough = parts.some(part => isStrikethroughText(part));
 
-    const radioFields = fields.filter(field =>
-        field.attribute && field.attribute.startsWith('_st_')
-    );
+  //                     if (!hasStrikethrough) {
+  //                         initialValues[field.attribute] = "";
+  //                     } else {
+  //                         const selectedOption = parts.find(part => !isStrikethroughText(part));
+  //                         initialValues[field.attribute] = selectedOption || "";
+  //                     }
+  //                 } else {
+  //                     initialValues[field.attribute] = "";
+  //                 }
+  //             }
+  //             else {
+  //                 if (reportDetails && reportDetails[field.attribute]) {
+  //                     if (field.attribute?.includes("date")) {
+  //                         initialValues[field.attribute] = formattedDate(reportDetails[field.attribute]);
+  //                     } else {
+  //                         initialValues[field.attribute] = reportDetails[field.attribute];
+  //                     }
+  //                 } else {
+  //                     initialValues[field.attribute] = "";
+  //                 }
+  //             }
+  //         });
+  //         setFormData(initialValues);
+  //     }
+  // }, [fields, open]);
 
-    const remarksFields = fields.filter(field =>
-        field.attribute && field.attribute.startsWith('_ta_')
-    );
+  // const handleClose = () => {
+  //     onClose();
+  //     setFormData({});
+  // };
 
-    const ozoneNumbers = new Set();
+  //   const handleInputChange = (field, value) => {
+  //     setFormData((prev) => ({
+  //       ...prev,
+  //       [field]: value,
+  //     }));
+  //   };
 
-    fields.forEach(f => {
-        const match = f.attribute?.match(/_IAPP_oz_(?:eq|loc|sub)_(\d+)$/);
-        if (match) {
-            ozoneNumbers.add(Number(match[1]));
-        }
-    });
+  const applyStrikethrough = (text) =>
+    text
+      ?.split("")
+      .map((c) => c + "\u0336")
+      .join("");
 
-    const maxOzoneNumber = ozoneNumbers.size > 0 ? Math.max(...ozoneNumbers) : 0;
+  //   const handleSubmit = () => {
+  //     const finalPayload = {};
 
-    const groupedOzoneFields = [];
+  //     fields.forEach(({ attribute }) => {
+  //       let value = formData[attribute];
+  //       if (
+  //         typeof value === "string" &&
+  //         (value?.includes("undefined") || value.trim() === "")
+  //       ) {
+  //         value = undefined;
+  //       }
 
-    for (let i = 1; i <= maxOzoneNumber; i++) {
-        const eqField = fields.find(f => f.attribute === `_IAPP_oz_eq_${i}`);
-        const locField = fields.find(f => f.attribute === `_IAPP_oz_loc_${i}`);
-        const subField = fields.find(f => f.attribute === `_IAPP_oz_sub_${i}`);
+  //       if (key.startsWith("_st_")) {
+  //         const [, raw] = key?.split("_st_");
+  //         const optionsRaw = raw.split("_");
+  //         const options = optionsRaw.map((opt) => opt.replace(/-/g, " "));
 
-        if (eqField || locField || subField) {
-            groupedOzoneFields.push({
-                equipment: eqField,
-                location: locField,
-                substance: subField
-            });
-        }
+  //         if (!value) {
+  //           acc[key] = options.join(" / ");
+  //         } else {
+  //           acc[key] = options
+  //             .map((opt) => (opt === value ? opt : applyStrikethrough(opt)))
+  //             .join(" / ");
+  //         }
+  //       } else if (attribute.startsWith("_checkbox")) {
+  //         finalPayload[attribute] = value === true ? "\u2611" : "\u2612";
+  //       } else if (attribute?.includes("date")) {
+  //         finalPayload[attribute] = value ? formattedDate(value) : "-";
+  //       } else if (typeof value === "string" && value.trim()) {
+  //         finalPayload[attribute] = value;
+  //       } else {
+  //         finalPayload[attribute] = "-";
+  //       }
+  //     });
+  //     onSubmit(finalPayload);
+  //   };
+
+  const engineNumbers = new Set();
+
+  fields?.forEach((field) => {
+    const match = field.attribute?.match(/_engine_(\d+)_/);
+    if (match) {
+      engineNumbers.add(Number(match[1]));
     }
+  });
 
-    const hcfcNumbers = new Set();
+  const maxEngineNumber = engineNumbers.size > 0 ? Math.max(...engineNumbers) : 0;
 
-    fields.forEach(f => {
-        const match = f.attribute?.match(/_IAPP_HCFC_(?:eq|loc|sub)_(\d+)$/);
-        if (match) {
-            hcfcNumbers.add(Number(match[1]));
-        }
+  const engineFields = [];
+
+  for (let i = 1; i <= maxEngineNumber; i++) {
+    fields.forEach((field) => {
+      const fixedAttr = field.attribute?.replace("_engine__", `_engine_${i}_`);
+      engineFields.push({
+        label: `Engine ${i} ${field.label?.replace("Engine ", "")}`,
+        attribute: fixedAttr,
+      });
     });
+  }
+  console.log(maxEngineNumber, "maxEngineNumber");
 
-    const maxHcfcNumber = hcfcNumbers.size > 0 ? Math.max(...hcfcNumbers) : 0;
+  const vocFields = fields.filter((field) => field.attribute && field.attribute?.includes("_IAPP_VOC_"));
 
-    const groupedHcfcFields = [];
-    for (let i = 1; i <= maxHcfcNumber; i++) {
-        const eqField = fields.find(f => f.attribute === `_IAPP_HCFC_eq_${i}`);
-        const locField = fields.find(f => f.attribute === `_IAPP_HCFC_loc_${i}`);
-        const subField = fields.find(f => f.attribute === `_IAPP_HCFC_sub_${i}`);
-        if (eqField || locField || subField) {
-            groupedHcfcFields.push({
-                equipment: eqField,
-                location: locField,
-                substance: subField
-            });
-        }
+  const checkboxFields = fields.filter((field) => field.attribute && (field.attribute?.includes("checkbox") || field.attribute.startsWith("_checkbox")));
+
+  const radioFields = fields.filter((field) => field.attribute && field.attribute.startsWith("_st_"));
+
+  const remarksFields = fields.filter((field) => field.attribute && field.attribute.startsWith("_ta_"));
+
+  const ozoneNumbers = new Set();
+
+  fields.forEach((f) => {
+    const match = f.attribute?.match(/_IAPP_oz_(?:eq|loc|sub)_(\d+)$/);
+    if (match) {
+      ozoneNumbers.add(Number(match[1]));
     }
+  });
 
-    const groupedEngineFields = {};
+  const maxOzoneNumber = ozoneNumbers.size > 0 ? Math.max(...ozoneNumbers) : 0;
 
-    engineFields.forEach(field => {
-        const match = field.attribute.match(/^_(?:date_|checkbox_)?engine_(\d+)_(.+)$/);
-        if (match) {
-            const engineNum = match[1];
-            const key = match[2];
-            if (!groupedEngineFields[engineNum]) groupedEngineFields[engineNum] = {};
-            groupedEngineFields[engineNum][key] = field.attribute;
-        }
-    });
+  const groupedOzoneFields = [];
 
-    const equivalentNumbers = new Set();
-    fields.forEach(f => {
-        const match = f.attribute?.match(/_IAPP_reg4_(?:eq|loc|ref)_(\d+)$/);
-        if (match) {
-            equivalentNumbers.add(Number(match[1]));
-        }
-    });
+  for (let i = 1; i <= maxOzoneNumber; i++) {
+    const eqField = fields.find((f) => f.attribute === `_IAPP_oz_eq_${i}`);
+    const locField = fields.find((f) => f.attribute === `_IAPP_oz_loc_${i}`);
+    const subField = fields.find((f) => f.attribute === `_IAPP_oz_sub_${i}`);
 
-    const maxEquivalentNumber = equivalentNumbers.size > 0 ? Math.max(...equivalentNumbers) : 0;
-    const groupedEquivalentFields = [];
-    for (let i = 1; i <= maxEquivalentNumber; i++) {
-        const eqField = fields.find(f => f.attribute === `_IAPP_reg4_eq_${i}`);
-        const locField = fields.find(f => f.attribute === `_IAPP_reg4_loc_${i}`);
-        const refField = fields.find(f => f.attribute === `_IAPP_reg4_ref_${i}`);
-        if (eqField || locField || refField) {
-            groupedEquivalentFields.push({
-                equipment: eqField,
-                location: locField,
-                reference: refField
-            });
-        }
+    if (eqField || locField || subField) {
+      groupedOzoneFields.push({
+        equipment: eqField,
+        location: locField,
+        substance: subField,
+      });
     }
+  }
 
+  const hcfcNumbers = new Set();
 
-    const fieldLabels = {
-        ship_name: 'Ship Name',
-        IMO_no: 'IMO Number',
-        keel_laid_date: 'Keel Laid Date',
-        length: 'Length (L) metres',
-        _IAPP_VOC_ref: 'VOC Management Plan Approval Reference',
-        issuance_place: 'Issuance Place',
-        issuance_date: 'Issuance Date',
-        issued_by: 'Issued By',
-        company_stamp: 'Company Stamp'
+  fields.forEach((f) => {
+    const match = f.attribute?.match(/_IAPP_HCFC_(?:eq|loc|sub)_(\d+)$/);
+    if (match) {
+      hcfcNumbers.add(Number(match[1]));
     }
+  });
 
-    const renderBasicFields = (fieldList, title) => {
-        return (
-            <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" gutterBottom color="primary">
-                    {title}
-                </Typography>
-                <Grid2 container spacing={2}>
-                    {fieldList.map(field => {
-                        const attr = field.attribute;
-                        const isCheckbox = attr?.includes("checkbox") || attr?.startsWith("_checkbox");
-                        const isDate = attr?.includes("date") || attr?.endsWith("_date");
-                        const isTextarea = attr.startsWith("_ta_");
-                        const isStrikethroughRadio = attr.startsWith("_st_");
-                        const value = formValues[attr];
+  const maxHcfcNumber = hcfcNumbers.size > 0 ? Math.max(...hcfcNumbers) : 0;
 
-                        if (isCheckbox) {
-                            return (
-                                <Grid2 key={attr} size={{ xs: 12 }}>
-                                    <Box display="flex" alignItems="center">
-                                        <input
-                                            type="checkbox"
-                                            checked={!!value}
-                                            onChange={(e) => handleInputChange(attr, e.target.checked)}
-                                        />
-                                        <Typography sx={{ ml: 1 }}>{field.label || formatLabel(attr)}</Typography>
-                                    </Box>
-                                </Grid2>
-                            );
-                        }
+  const groupedHcfcFields = [];
+  for (let i = 1; i <= maxHcfcNumber; i++) {
+    const eqField = fields.find((f) => f.attribute === `_IAPP_HCFC_eq_${i}`);
+    const locField = fields.find((f) => f.attribute === `_IAPP_HCFC_loc_${i}`);
+    const subField = fields.find((f) => f.attribute === `_IAPP_HCFC_sub_${i}`);
+    if (eqField || locField || subField) {
+      groupedHcfcFields.push({
+        equipment: eqField,
+        location: locField,
+        substance: subField,
+      });
+    }
+  }
 
-                        if (isStrikethroughRadio) {
-                            const [, raw] = attr?.split("_st_");
-                            const optionsRaw = raw.split("_");
-                            const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
-                            const selected = formValues[attr];
+  const groupedEngineFields = {};
 
-                            return (
-                                <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={attr}>
-                                    <Box display="flex" flexDirection="column" gap={1}>
-                                        <Typography variant="body2" sx={{ mb: 1 }}>
-                                            {field.label}
-                                        </Typography>
-                                        {options.map(opt => (
-                                            <label key={opt}>
-                                                <input
-                                                    type="radio"
-                                                    name={attr}
-                                                    value={opt}
-                                                    checked={selected === opt}
-                                                    onChange={() => handleInputChange(attr, opt)}
-                                                /> {opt}
-                                            </label>
-                                        ))}
-                                        {selected && (
-                                            <CommonButton
-                                                variant="outlined"
-                                                text="Clear selection"
-                                                onClick={() => handleInputChange(attr, "")}
-                                                sx={{ width: "30%" }}
-                                            />
-                                        )}
-                                    </Box>
-                                </Grid2>
-                            );
-                        }
+  engineFields.forEach((field) => {
+    const match = field.attribute.match(/^_(?:date_|checkbox_)?engine_(\d+)_(.+)$/);
+    if (match) {
+      const engineNum = match[1];
+      const key = match[2];
+      if (!groupedEngineFields[engineNum]) groupedEngineFields[engineNum] = {};
+      groupedEngineFields[engineNum][key] = field.attribute;
+    }
+  });
 
+  const equivalentNumbers = new Set();
+  fields.forEach((f) => {
+    const match = f.attribute?.match(/_IAPP_reg4_(?:eq|loc|ref)_(\d+)$/);
+    if (match) {
+      equivalentNumbers.add(Number(match[1]));
+    }
+  });
 
+  const maxEquivalentNumber = equivalentNumbers.size > 0 ? Math.max(...equivalentNumbers) : 0;
+  const groupedEquivalentFields = [];
+  for (let i = 1; i <= maxEquivalentNumber; i++) {
+    const eqField = fields.find((f) => f.attribute === `_IAPP_reg4_eq_${i}`);
+    const locField = fields.find((f) => f.attribute === `_IAPP_reg4_loc_${i}`);
+    const refField = fields.find((f) => f.attribute === `_IAPP_reg4_ref_${i}`);
+    if (eqField || locField || refField) {
+      groupedEquivalentFields.push({
+        equipment: eqField,
+        location: locField,
+        reference: refField,
+      });
+    }
+  }
 
-                        if (isTextarea) {
-                            return (
-                                <>
-                                    <Typography variant="body2">
-                                        {field.label}
-                                    </Typography>
-                                    <Box sx={{ width: '100%' }}>
-                                        <TextareaAutosize
-                                            style={{ width: '100%' }}
-                                            minRows={4}
-                                            value={value || ""}
-                                            onChange={(e) => handleInputChange(attr, e.target.value)}
-                                            placeholder={field.label}
-                                        />
-                                    </Box>
-                                </>
-                            );
-                        }
+  const fieldLabels = {
+    ship_name: "Ship Name",
+    IMO_no: "IMO Number",
+    keel_laid_date: "Keel Laid Date",
+    length: "Length (L) metres",
+    _IAPP_VOC_ref: "VOC Management Plan Approval Reference",
+    issuance_place: "Issuance Place",
+    issuance_date: "Issuance Date",
+    issued_by: "Issued By",
+    company_stamp: "Company Stamp",
+  };
 
-                        return (
-                            <Grid2 item xs={12} sm={6} md={4} key={attr}>
-                                <TextField
-                                    fullWidth
-                                    size="small"
-                                    label={field.label}
-                                    title={field.label}
-                                    value={isDate ? formatDate(value) : value || ""}
-                                    onChange={(e) => handleInputChange(attr, e.target.value)}
-                                    placeholder={field.label}
-                                    type={isDate ? "date" : "text"}
-                                    InputLabelProps={isDate ? { shrink: true } : undefined}
-                                />
-                            </Grid2>
-                        );
-                    })}
-                </Grid2>
-            </Box>
-        );
-    };
-
-
-    const renderTableWithGroups = (groups, title, columns) => (
-        <Card variant="outlined" sx={{ mb: 2 }}>
-            <CardContent>
-                <Typography variant="h6" gutterBottom color="primary">
-                    {title}
-                </Typography>
-                <TableContainer component={Paper} variant="outlined">
-                    <Table size="small">
-                        <TableHead>
-                            <TableRow sx={{ bgcolor: '#f8f9fa' }}>
-                                {columns.map(col => (
-                                    <TableCell key={col.key} sx={{ fontWeight: 'bold' }}>
-                                        {col.label}
-                                    </TableCell>
-                                ))}
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {groups.map((group, index) => {
-                                return (
-                                    <TableRow key={index} sx={{
-                                        '&:nth-of-type(odd)': { bgcolor: '#fafafa' },
-                                        '&:hover': { bgcolor: '#f0f7ff' }
-                                    }}>
-                                        {columns.map(col => {
-                                            const fieldObj = group[col.key];
-                                            const attr = fieldObj?.attribute;
-                                            const isCheckbox = attr?.includes("checkbox") || attr?.startsWith("_checkbox");
-                                            const isDate = attr?.includes("date");
-
-                                            return (
-                                                <TableCell key={col.key}>
-                                                    {isCheckbox ? (
-                                                        <FormControlLabel
-                                                            control={
-                                                                <Checkbox
-                                                                    checked={!!formValues[fieldObj?.attribute]}
-                                                                    onChange={(e) => handleInputChange(fieldObj?.attribute, e.target.checked)}
-                                                                    color="primary"
-                                                                    size="small"
-                                                                />
-                                                            }
-                                                            label={fieldObj?.label}
-                                                        />
-                                                    ) : (
-                                                        <TextField
-                                                            fullWidth
-                                                            size="small"
-                                                            label={fieldObj?.label}
-                                                            value={isDate ? formatDate(formValues[fieldObj?.attribute]) : formValues[fieldObj?.attribute] || ""}
-                                                            onChange={(e) => handleInputChange(fieldObj?.attribute, e.target.value)}
-                                                            placeholder={fieldObj?.label}
-                                                            type={isDate ? "date" : "text"}
-                                                            InputLabelProps={isDate ? { shrink: true } : undefined}
-                                                        />
-                                                    )}
-                                                </TableCell>
-                                            );
-                                        })}
-                                    </TableRow>
-                                )
-                            })}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            </CardContent>
-        </Card>
-    );
-
-
-    const usedAttributes = new Set();
-
-    const baseEngineFields = fields?.filter(field =>
-        field.attribute && field.attribute?.includes("_engine_")
-    );
-
-    baseEngineFields?.forEach(f => {
-        if (f.attribute) usedAttributes?.add(f.attribute);
-    });
-
-    groupedOzoneFields?.forEach(group => {
-        if (group.equipment?.attribute) usedAttributes?.add(group.equipment.attribute);
-        if (group.location?.attribute) usedAttributes?.add(group.location.attribute);
-        if (group.substance?.attribute) usedAttributes.add(group.substance.attribute);
-    });
-
-    groupedHcfcFields.forEach(group => {
-        if (group.equipment?.attribute) usedAttributes.add(group.equipment.attribute);
-        if (group.location?.attribute) usedAttributes.add(group.location.attribute);
-        if (group.substance?.attribute) usedAttributes.add(group.substance.attribute);
-    });
-
-    groupedEquivalentFields.forEach(group => {
-        if (group.equipment?.attribute) usedAttributes.add(group.equipment.attribute);
-        if (group.location?.attribute) usedAttributes.add(group.location.attribute);
-        if (group.reference?.attribute) usedAttributes.add(group.reference.attribute);
-    });
-
-    vocFields.forEach(f => {
-        if (f.attribute) usedAttributes.add(f.attribute);
-    });
-
-    checkboxFields.forEach(f => {
-        if (f.attribute) usedAttributes.add(f.attribute);
-    });
-
-    radioFields.forEach(f => {
-        if (f.attribute) usedAttributes.add(f.attribute);
-    });
-
-    remarksFields.forEach(f => {
-        if (f.attribute) usedAttributes.add(f.attribute);
-    });
-    const remainingFields = fields?.filter(f => {
-        return f.attribute && !usedAttributes.has(f.attribute);
-    });
-
-    const renderEngineTable = () => {
-        const engineNumbers = Object.keys(groupedEngineFields)
-            .filter(key => key !== 'undefined' && !!groupedEngineFields[key])
-            .sort();
-        if (engineNumbers.length === 0) {
-            return (
-                <Card variant="outlined" sx={{ mb: 2 }}>
-                    <CardContent>
-                        <Typography variant="h6" gutterBottom color="primary">
-                            Engine Information (NOx Regulation 13)
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            No engine fields found in the document.
-                        </Typography>
-                    </CardContent>
-                </Card>
-            );
-        }
-
-        const engineAttributes = [
-            { key: 'MM', label: 'Manufacturer & Model' },
-            { key: 'SL', label: 'Serial Number' },
-            { key: 'app_cycle', label: 'Application Cycle' },
-            { key: 'power', label: 'Rated Power (kW)' },
-            { key: 'speed', label: 'Rated Speed (RPM)' },
-            { key: '6', label: 'Identical Engine Exempted' },
-            { key: '7', label: 'Installation Date' }
-        ];
-
-        const tierAttributes = [
-            { key: '8a', label: 'Major Conversion 13.2.1.1 & 13.2.2' },
-            { key: '8b', label: 'Major Conversion 13.2.1.2 & 13.2.3' },
-            { key: '8c', label: 'Major Conversion 13.2.1.3 & 13.2.3' },
-            { key: '9a', label: 'Tier I - 13.3' },
-            { key: '9b', label: 'Tier I - 13.2.2' },
-            { key: '9c', label: 'Tier I - 13.2.3.1' },
-            { key: '9d', label: 'Tier I - 13.2.3.2' },
-            { key: '9e', label: 'Tier I - 13.7.1.2' },
-            { key: '10a', label: 'Tier II - 13.4' },
-            { key: '10b', label: 'Tier II - 13.2.2' },
-            { key: '10c', label: 'Tier II - 13.2.2 (Tier III not possible)' },
-            { key: '10d', label: 'Tier II - 13.2.3.2' },
-            { key: '10e', label: 'Tier II - 13.5.2 (Exemptions)' },
-            { key: '10f', label: 'Tier II - 13.7.1.2' },
-            { key: '11a', label: 'Tier III (ECA-NOx) - 13.5.1.1' },
-            { key: '11b', label: 'Tier III (ECA-NOx) - 13.2.2' },
-            { key: '11c', label: 'Tier III (ECA-NOx) - 13.2.3.2' },
-            { key: '11d', label: 'Tier III (ECA-NOx) - 13.7.1.2' },
-            { key: '12', label: 'AM Installed' },
-            { key: '13', label: 'AM Not Commercially Available' },
-            { key: '14', label: 'AM Not Applicable' }
-        ];
-
-        console.log(remainingFields, "remainingFields")
-        return (
-            <Card variant="outlined" sx={{ mb: 2 }}>
-                <CardContent>
-                    <Typography variant="h6" gutterBottom color="primary">
-                        Engine Information (NOx Regulation 13)
-                    </Typography>
-
-                    {/* Basic Engine Information */}
-                    <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>
-                        Basic Engine Details
-                    </Typography>
-                    <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
-                        <Table size="small">
-                            <TableHead>
-                                <TableRow sx={{ bgcolor: '#f8f9fa' }}>
-                                    <TableCell sx={{ fontWeight: 'bold' }}>Attribute</TableCell>
-                                    {engineNumbers.map(num => (
-                                        <TableCell key={num} sx={{ fontWeight: 'bold' }}>
-                                            Engine #{num}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {engineAttributes.map(attr => (
-                                    <TableRow key={attr.key} sx={{
-                                        '&:nth-of-type(odd)': { bgcolor: '#fafafa' },
-                                        '&:hover': { bgcolor: '#f0f7ff' }
-                                    }}>
-                                        <TableCell sx={{ fontWeight: 'medium' }}>{attr.label}</TableCell>
-                                        {engineNumbers.map(num => {
-                                            const fieldKey = groupedEngineFields[num]?.[attr.key];
-                                            const isCheckbox = fieldKey?.includes("checkbox") || fieldKey?.startsWith("_checkbox");
-                                            const isDate = fieldKey?.includes("date") || fieldKey?.endsWith("_date");
-                                            return (
-                                                <TableCell key={num}>
-                                                    {isCheckbox ? (
-                                                        <Box display="flex" alignItems="center" sx={{ height: '100%' }}>
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={!!formValues[fieldKey]}
-                                                                onChange={(e) => handleInputChange(fieldKey, e.target.checked)}
-                                                            />
-                                                            <Typography sx={{ ml: 1 }}>{attr.label}</Typography>
-                                                        </Box>
-                                                    ) : (
-                                                        <TextField
-                                                            fullWidth
-                                                            size="small"
-                                                            label={attr.label}
-                                                            value={isDate ? formatDate(formValues[fieldKey]) : formValues[fieldKey] || ""}
-                                                            onChange={(e) => handleInputChange(fieldKey, e.target.value)}
-                                                            disabled={!fieldKey}
-                                                            placeholder={!fieldKey ? "N/A" : ""}
-                                                            type={isDate ? "date" : "text"}
-                                                            InputLabelProps={isDate ? { shrink: true } : undefined}
-                                                        />
-                                                    )}
-                                                </TableCell>
-                                            );
-                                        })}
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-
-                    {/* Tier Compliance Information */}
-                    <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>
-                        Tier Compliance & Regulations
-                    </Typography>
-                    <TableContainer component={Paper} variant="outlined">
-                        <Table size="small">
-                            <TableHead>
-                                <TableRow sx={{ bgcolor: '#f8f9fa' }}>
-                                    <TableCell sx={{ fontWeight: 'bold' }}>Regulation</TableCell>
-                                    {engineNumbers.map(num => (
-                                        <TableCell key={num} sx={{ fontWeight: 'bold' }}>
-                                            Engine #{num}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {tierAttributes.map(attr => (
-                                    <TableRow key={attr.key} sx={{
-                                        '&:nth-of-type(odd)': { bgcolor: '#fafafa' },
-                                        '&:hover': { bgcolor: '#f0f7ff' }
-                                    }}>
-                                        <TableCell sx={{ fontWeight: 'medium', fontSize: '0.85rem' }}>
-                                            {attr.label}
-                                        </TableCell>
-                                        {engineNumbers.map(num => {
-                                            const fieldKey = groupedEngineFields[num]?.[attr.key];
-                                            const isDate = fieldKey?.includes("date");
-                                            const isCheckbox = fieldKey?.includes("checkbox") || fieldKey?.startsWith("_checkbox");
-                                            return (
-                                                <TableCell key={num}>
-                                                    {isCheckbox ? (
-                                                        <FormControlLabel
-                                                            control={
-                                                                <Checkbox
-                                                                    checked={!!formValues[fieldKey]}
-                                                                    onChange={(e) => handleInputChange(fieldKey, e.target.checked)}
-                                                                    color="primary"
-                                                                    size="small"
-                                                                />
-                                                            }
-                                                            label=""
-                                                        />
-                                                    ) : (
-                                                        <TextField
-                                                            fullWidth
-                                                            size="small"
-                                                            label={attr.label}
-                                                            value={isDate ? formatDate(formValues[fieldKey]) : formValues[fieldKey] || ""}
-                                                            onChange={(e) => handleInputChange(fieldKey, e.target.value)}
-                                                            disabled={!fieldKey}
-                                                            placeholder={!fieldKey ? "N/A" : ""}
-                                                            type={isDate ? "date" : "text"}
-                                                            InputLabelProps={isDate ? { shrink: true } : undefined}
-                                                        />
-                                                    )}
-                                                </TableCell>
-                                            );
-                                        })}
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </CardContent>
-            </Card>
-        );
-    };
-
-    const getEngineFieldStats = () => {
-        let total = 0;
-        let filled = 0;
-
-        Object.values(groupedEngineFields).forEach(engineFieldGroup => {
-            Object.values(engineFieldGroup || {}).forEach(fieldKey => {
-                total += 1;
-                const value = formValues[fieldKey];
-
-                if (
-                    (typeof value === "boolean") ||
-                    (typeof value === "string" && value.trim())
-                ) {
-                    filled += 1;
-                }
-            });
-        });
-
-        return { filled, total };
-    };
-
-
+  const renderBasicFields = (fieldList, title) => {
     return (
-        <Dialog
-            open={open}
-            onClose={onClose}
-            maxWidth="xl"
-            fullWidth
-            PaperProps={{
-                sx: { height: '95vh', maxHeight: '1000px' }
-            }}
-        >
-            <Box sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', p: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Box sx={{ width: 48, height: 48, borderRadius: '12px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <ScienceIcon sx={{ color: 'white' }} />
-                        </Box>
-                        <Box>
-                            <Typography variant="h5" fontWeight={700}>IAPP Certificate - Record of Construction and Equipment</Typography>
-                            <Typography variant="body2">International Air Pollution Prevention Certificate Supplement</Typography>
-                        </Box>
-                    </Box>
-                    <IconButton onClick={handleClose} sx={{ color: 'white' }}>
-                        <CloseIcon />
-                    </IconButton>
-                </Box>
-            </Box>
-            <DialogContent dividers sx={{ p: 3 }}>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h6" gutterBottom color="primary">
+          {title}
+        </Typography>
+        <Grid2 container spacing={2}>
+          {fieldList.map((field) => {
+            const attr = field.attribute;
+            const isCheckbox = attr?.includes("checkbox") || attr?.startsWith("_checkbox");
+            const isDate = attr?.includes("date") || attr?.endsWith("_date");
+            const isTextarea = attr.startsWith("_ta_");
+            const isStrikethroughRadio = attr.startsWith("_st_");
+            const value = formData[attr];
 
-                <Accordion
-                    expanded={expandedSection === "ozone"}
-                    onChange={() => setExpandedSection(expandedSection === "ozone" ? null : "ozone")}
-                    sx={{ mb: 2 }}
-                >
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="h6">
-                            Ozone-Depleting Substances (Regulation 12)
-                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
-                                <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
-                                    ({
-                                        groupedOzoneFields?.filter(group =>
-                                            (group.equipment && formValues[group.equipment.attribute]) ||
-                                            (group.location && formValues[group.location.attribute]) ||
-                                            (group.substance && formValues[group.substance.attribute])
-                                        ).length
-                                    }/{groupedOzoneFields?.length})
-                                </Typography>
-                            </Typography>
-                        </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        {renderTableWithGroups(
-                            groupedOzoneFields,
-                            "Fire-extinguishing systems and equipment containing ozone depleting substances",
-                            [
-                                { key: 'equipment', label: 'System Equipment' },
-                                { key: 'location', label: 'Location on Board' },
-                                { key: 'substance', label: 'Substance' }
-                            ]
-                        )}
-                    </AccordionDetails>
-                </Accordion>
+            if (isCheckbox) {
+              return (
+                <Grid2 key={attr} size={{ xs: 12 }}>
+                  <Box display="flex" alignItems="center">
+                    <input type="checkbox" checked={!!value} onChange={(e) => handleInputChange(attr, e.target.checked)} />
+                    <Typography sx={{ ml: 1 }}>{field.label || formatLabel(attr)}</Typography>
+                  </Box>
+                </Grid2>
+              );
+            }
 
-                <Accordion
-                    expanded={expandedSection === "hcfc"}
-                    onChange={() => setExpandedSection(expandedSection === "hcfc" ? null : "hcfc")}
-                    sx={{ mb: 2 }}
-                >
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="h6">
-                            HCFC Systems (Regulation 12)
-                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
-                                ({
-                                    groupedHcfcFields?.filter(group =>
-                                        (group.equipment && formValues[group.equipment.attribute]) ||
-                                        (group.location && formValues[group.location.attribute]) ||
-                                        (group.substance && formValues[group.substance.attribute])
-                                    ).length
-                                }/{groupedHcfcFields?.length})
-                            </Typography>
+            if (isStrikethroughRadio) {
+              const [, raw] = attr?.split("_st_");
+              const optionsRaw = raw.split("_");
+              const options = optionsRaw.map((opt) => opt.replace(/-/g, " "));
+              const selected = formData[attr];
 
-                        </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        {renderTableWithGroups(
-                            groupedHcfcFields,
-                            "Systems containing hydro-chlorofluorocarbons (HCFCs)",
-                            [
-                                { key: 'equipment', label: 'System Equipment' },
-                                { key: 'location', label: 'Location on Board' },
-                                { key: 'substance', label: 'Substance' }
-                            ]
-                        )}
-                    </AccordionDetails>
-                </Accordion>
+              return (
+                <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={attr}>
+                  <Box display="flex" flexDirection="column" gap={1}>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      {field.label}
+                    </Typography>
+                    {options.map((opt) => (
+                      <label key={opt}>
+                        <input type="radio" name={attr} value={opt} checked={selected === opt} onChange={() => handleInputChange(attr, opt)} /> {opt}
+                      </label>
+                    ))}
+                    {selected && <CommonButton variant="outlined" text="Clear selection" onClick={() => handleInputChange(attr, "")} sx={{ width: "30%" }} />}
+                  </Box>
+                </Grid2>
+              );
+            }
 
-                <Accordion
-                    expanded={expandedSection === "engine"}
-                    onChange={() => setExpandedSection(expandedSection === "engine" ? null : "engine")}
-                    sx={{ mb: 2 }}
-                >
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="h6">
-                            Nitrogen Oxides (NOx) - Engine Information
-                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
-                                ({getEngineFieldStats().filled}/{getEngineFieldStats().total})
-                            </Typography>
-                        </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        {renderEngineTable()}
-                    </AccordionDetails>
-                </Accordion>
+            if (isTextarea) {
+              return (
+                <>
+                  <Typography variant="body2">{field.label}</Typography>
+                  <Box sx={{ width: "100%" }}>
+                    <TextareaAutosize style={{ width: "100%" }} minRows={4} value={value || ""} onChange={(e) => handleInputChange(attr, e.target.value)} placeholder={field.label} />
+                  </Box>
+                </>
+              );
+            }
 
-                <Accordion
-                    expanded={expandedSection === "voc"}
-                    onChange={() => setExpandedSection(expandedSection === "voc" ? null : "voc")}
-                    sx={{ mb: 2 }}
-                >
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="h6">Volatile Organic Compounds (VOCs)
-                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
-                                ({vocFields?.filter(f => formValues[f.attribute])?.length}/{vocFields?.length})
-                            </Typography>
-                        </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        {renderBasicFields(vocFields)}
-                    </AccordionDetails>
-                </Accordion>
-                <Accordion
-                    expanded={expandedSection === "shipboard"}
-                    onChange={() => setExpandedSection(expandedSection === "shipboard" ? null : "shipboard")}
-                    sx={{ mb: 2 }}
-                >
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="h6">Shipboard incineration (Regulation 12)
-                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
-                                ({checkboxFields?.filter(f => formValues[f.attribute])?.length}/{checkboxFields?.length + radioFields?.length + remarksFields?.length})
-                            </Typography>
-                        </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        {renderBasicFields([...checkboxFields])}
-                        {renderBasicFields([...radioFields])}
-                        {renderBasicFields([...remarksFields])}
-
-                    </AccordionDetails>
-                </Accordion>
-                <Accordion
-                    expanded={expandedSection === "equivalent"}
-                    onChange={() => setExpandedSection(expandedSection === "equivalent" ? null : "equivalent")}
-                    sx={{ mb: 2 }}
-                >
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="h6">Equivalent Arrangements (Regulation 4)
-                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
-                                ({
-                                    groupedEquivalentFields?.filter(group =>
-                                        (group.equipment && formValues[group.equipment.attribute]) ||
-                                        (group.location && formValues[group.location.attribute]) ||
-                                        (group.reference && formValues[group.reference.attribute])
-                                    ).length
-                                }/{groupedEquivalentFields?.length})
-                            </Typography>
-
-                        </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        {renderTableWithGroups(
-                            groupedEquivalentFields,
-                            "Alternative fittings, materials, appliances or procedures",
-                            [
-                                { key: 'equipment', label: 'System Equipment' },
-                                { key: 'location', label: 'Location on Board' },
-                                { key: 'reference', label: 'Approval Reference' }
-                            ]
-                        )}
-                    </AccordionDetails>
-                </Accordion>
-                <Accordion
-                    expanded={expandedSection === "hcfc"}
-                    onChange={() => setExpandedSection(expandedSection === "hcfc" ? null : "hcfc")}
-                    sx={{ mb: 2 }}
-                >
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography variant="h6">
-                            Others
-                            <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
-                                ({
-                                    remainingFields?.filter(group =>
-                                        (group?.attribute && formValues[group.attribute])
-                                    ).length
-                                }/{remainingFields?.length})
-                            </Typography>
-
-                        </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        {renderBasicFields([...remainingFields])}
-                    </AccordionDetails>
-                </Accordion>
-            </DialogContent>
-            <Divider sx={{ borderColor: 'rgba(102, 126, 234, 0.1)' }} />
-            <DialogActions
-                sx={{
-                    p: 3,
-                    background: 'white',
-                    gap: 2,
-                    justifyContent: 'flex-end'
-                }}
-            >
-                <Button
-                    onClick={onClose}
-                    variant="outlined"
-                    size="large"
-                    sx={{
-                        borderRadius: 2,
-                        px: 3,
-                        py: 1.5,
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        borderColor: 'rgba(102, 126, 234, 0.3)',
-                        color: 'text.secondary',
-                        '&:hover': {
-                            borderColor: 'primary.main',
-                            background: 'rgba(102, 126, 234, 0.04)',
-                            transform: 'translateY(-1px)',
-                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
-                        },
-                        transition: 'all 0.2s ease'
-                    }}
-                >
-                    Cancel
-                </Button>
-                <Button
-                    onClick={handleSubmit}
-                    variant="contained"
-                    size="large"
-                    startIcon={<CheckIcon />}
-                    sx={{
-                        borderRadius: 2,
-                        px: 4,
-                        py: 1.5,
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-                        '&:hover': {
-                            background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 8px 25px rgba(102, 126, 234, 0.6)'
-                        },
-                        transition: 'all 0.2s ease'
-                    }}
-                >
-                    Generate Report
-                </Button>
-            </DialogActions>
-        </Dialog>
+            return (
+              <Grid2 item xs={12} sm={6} md={4} key={attr}>
+                <TextField fullWidth size="small" label={field.label} title={field.label} value={isDate ? formatDate(value) : value || ""} onChange={(e) => handleInputChange(attr, e.target.value)} placeholder={field.label} type={isDate ? "date" : "text"} InputLabelProps={isDate ? { shrink: true } : undefined} />
+              </Grid2>
+            );
+          })}
+        </Grid2>
+      </Box>
     );
+  };
+
+  const renderTableWithGroups = (groups, title, columns) => (
+    <Card variant="outlined" sx={{ mb: 2 }}>
+      <CardContent>
+        <Typography variant="h6" gutterBottom color="primary">
+          {title}
+        </Typography>
+        <TableContainer component={Paper} variant="outlined">
+          <Table size="small">
+            <TableHead>
+              <TableRow sx={{ bgcolor: "#f8f9fa" }}>
+                {columns.map((col) => (
+                  <TableCell key={col.key} sx={{ fontWeight: "bold" }}>
+                    {col.label}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {groups.map((group, index) => {
+                return (
+                  <TableRow
+                    key={index}
+                    sx={{
+                      "&:nth-of-type(odd)": { bgcolor: "#fafafa" },
+                      "&:hover": { bgcolor: "#f0f7ff" },
+                    }}
+                  >
+                    {columns.map((col) => {
+                      const fieldObj = group[col.key];
+                      const attr = fieldObj?.attribute;
+                      const isCheckbox = attr?.includes("checkbox") || attr?.startsWith("_checkbox");
+                      const isDate = attr?.includes("date");
+
+                      return <TableCell key={col.key}>{isCheckbox ? <FormControlLabel control={<Checkbox checked={!!formData[fieldObj?.attribute]} onChange={(e) => handleInputChange(fieldObj?.attribute, e.target.checked)} color="primary" size="small" />} label={fieldObj?.label} /> : <TextField fullWidth size="small" label={fieldObj?.label} value={isDate ? formatDate(formData[fieldObj?.attribute]) : formData[fieldObj?.attribute] || ""} onChange={(e) => handleInputChange(fieldObj?.attribute, e.target.value)} placeholder={fieldObj?.label} type={isDate ? "date" : "text"} InputLabelProps={isDate ? { shrink: true } : undefined} />}</TableCell>;
+                    })}
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </CardContent>
+    </Card>
+  );
+
+  const usedAttributes = new Set();
+
+  const baseEngineFields = fields?.filter((field) => field.attribute && field.attribute?.includes("_engine_"));
+
+  baseEngineFields?.forEach((f) => {
+    if (f.attribute) usedAttributes?.add(f.attribute);
+  });
+
+  groupedOzoneFields?.forEach((group) => {
+    if (group.equipment?.attribute) usedAttributes?.add(group.equipment.attribute);
+    if (group.location?.attribute) usedAttributes?.add(group.location.attribute);
+    if (group.substance?.attribute) usedAttributes.add(group.substance.attribute);
+  });
+
+  groupedHcfcFields.forEach((group) => {
+    if (group.equipment?.attribute) usedAttributes.add(group.equipment.attribute);
+    if (group.location?.attribute) usedAttributes.add(group.location.attribute);
+    if (group.substance?.attribute) usedAttributes.add(group.substance.attribute);
+  });
+
+  groupedEquivalentFields.forEach((group) => {
+    if (group.equipment?.attribute) usedAttributes.add(group.equipment.attribute);
+    if (group.location?.attribute) usedAttributes.add(group.location.attribute);
+    if (group.reference?.attribute) usedAttributes.add(group.reference.attribute);
+  });
+
+  vocFields.forEach((f) => {
+    if (f.attribute) usedAttributes.add(f.attribute);
+  });
+
+  checkboxFields.forEach((f) => {
+    if (f.attribute) usedAttributes.add(f.attribute);
+  });
+
+  radioFields.forEach((f) => {
+    if (f.attribute) usedAttributes.add(f.attribute);
+  });
+
+  remarksFields.forEach((f) => {
+    if (f.attribute) usedAttributes.add(f.attribute);
+  });
+  const remainingFields = fields?.filter((f) => {
+    return f.attribute && !usedAttributes.has(f.attribute);
+  });
+
+  const renderEngineTable = () => {
+    const engineNumbers = Object.keys(groupedEngineFields)
+      .filter((key) => key !== "undefined" && !!groupedEngineFields[key])
+      .sort();
+    if (engineNumbers.length === 0) {
+      return (
+        <Card variant="outlined" sx={{ mb: 2 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom color="primary">
+              Engine Information (NOx Regulation 13)
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              No engine fields found in the document.
+            </Typography>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    const engineAttributes = [
+      { key: "MM", label: "Manufacturer & Model" },
+      { key: "SL", label: "Serial Number" },
+      { key: "app_cycle", label: "Application Cycle" },
+      { key: "power", label: "Rated Power (kW)" },
+      { key: "speed", label: "Rated Speed (RPM)" },
+      { key: "6", label: "Identical Engine Exempted" },
+      { key: "7", label: "Installation Date" },
+    ];
+
+    const tierAttributes = [
+      { key: "8a", label: "Major Conversion 13.2.1.1 & 13.2.2" },
+      { key: "8b", label: "Major Conversion 13.2.1.2 & 13.2.3" },
+      { key: "8c", label: "Major Conversion 13.2.1.3 & 13.2.3" },
+      { key: "9a", label: "Tier I - 13.3" },
+      { key: "9b", label: "Tier I - 13.2.2" },
+      { key: "9c", label: "Tier I - 13.2.3.1" },
+      { key: "9d", label: "Tier I - 13.2.3.2" },
+      { key: "9e", label: "Tier I - 13.7.1.2" },
+      { key: "10a", label: "Tier II - 13.4" },
+      { key: "10b", label: "Tier II - 13.2.2" },
+      { key: "10c", label: "Tier II - 13.2.2 (Tier III not possible)" },
+      { key: "10d", label: "Tier II - 13.2.3.2" },
+      { key: "10e", label: "Tier II - 13.5.2 (Exemptions)" },
+      { key: "10f", label: "Tier II - 13.7.1.2" },
+      { key: "11a", label: "Tier III (ECA-NOx) - 13.5.1.1" },
+      { key: "11b", label: "Tier III (ECA-NOx) - 13.2.2" },
+      { key: "11c", label: "Tier III (ECA-NOx) - 13.2.3.2" },
+      { key: "11d", label: "Tier III (ECA-NOx) - 13.7.1.2" },
+      { key: "12", label: "AM Installed" },
+      { key: "13", label: "AM Not Commercially Available" },
+      { key: "14", label: "AM Not Applicable" },
+    ];
+
+    console.log(remainingFields, "remainingFields");
+    return (
+      <Card variant="outlined" sx={{ mb: 2 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom color="primary">
+            Engine Information (NOx Regulation 13)
+          </Typography>
+
+          {/* Basic Engine Information */}
+          <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: "bold" }}>
+            Basic Engine Details
+          </Typography>
+          <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ bgcolor: "#f8f9fa" }}>
+                  <TableCell sx={{ fontWeight: "bold" }}>Attribute</TableCell>
+                  {engineNumbers.map((num) => (
+                    <TableCell key={num} sx={{ fontWeight: "bold" }}>
+                      Engine #{num}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {engineAttributes.map((attr) => (
+                  <TableRow
+                    key={attr.key}
+                    sx={{
+                      "&:nth-of-type(odd)": { bgcolor: "#fafafa" },
+                      "&:hover": { bgcolor: "#f0f7ff" },
+                    }}
+                  >
+                    <TableCell sx={{ fontWeight: "medium" }}>{attr.label}</TableCell>
+                    {engineNumbers.map((num) => {
+                      const fieldKey = groupedEngineFields[num]?.[attr.key];
+                      const isCheckbox = fieldKey?.includes("checkbox") || fieldKey?.startsWith("_checkbox");
+                      const isDate = fieldKey?.includes("date") || fieldKey?.endsWith("_date");
+                      return (
+                        <TableCell key={num}>
+                          {isCheckbox ? (
+                            <Box display="flex" alignItems="center" sx={{ height: "100%" }}>
+                              <input type="checkbox" checked={!!formData[fieldKey]} onChange={(e) => handleInputChange(fieldKey, e.target.checked)} />
+                              <Typography sx={{ ml: 1 }}>{attr.label}</Typography>
+                            </Box>
+                          ) : (
+                            <TextField fullWidth size="small" label={attr.label} value={isDate ? formatDate(formData[fieldKey]) : formData[fieldKey] || ""} onChange={(e) => handleInputChange(fieldKey, e.target.value)} disabled={!fieldKey} placeholder={!fieldKey ? "N/A" : ""} type={isDate ? "date" : "text"} InputLabelProps={isDate ? { shrink: true } : undefined} />
+                          )}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          {/* Tier Compliance Information */}
+          <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: "bold" }}>
+            Tier Compliance & Regulations
+          </Typography>
+          <TableContainer component={Paper} variant="outlined">
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ bgcolor: "#f8f9fa" }}>
+                  <TableCell sx={{ fontWeight: "bold" }}>Regulation</TableCell>
+                  {engineNumbers.map((num) => (
+                    <TableCell key={num} sx={{ fontWeight: "bold" }}>
+                      Engine #{num}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {tierAttributes.map((attr) => (
+                  <TableRow
+                    key={attr.key}
+                    sx={{
+                      "&:nth-of-type(odd)": { bgcolor: "#fafafa" },
+                      "&:hover": { bgcolor: "#f0f7ff" },
+                    }}
+                  >
+                    <TableCell sx={{ fontWeight: "medium", fontSize: "0.85rem" }}>{attr.label}</TableCell>
+                    {engineNumbers.map((num) => {
+                      const fieldKey = groupedEngineFields[num]?.[attr.key];
+                      const isDate = fieldKey?.includes("date");
+                      const isCheckbox = fieldKey?.includes("checkbox") || fieldKey?.startsWith("_checkbox");
+                      return <TableCell key={num}>{isCheckbox ? <FormControlLabel control={<Checkbox checked={!!formData[fieldKey]} onChange={(e) => handleInputChange(fieldKey, e.target.checked)} color="primary" size="small" />} label="" /> : <TextField fullWidth size="small" label={attr.label} value={isDate ? formatDate(formData[fieldKey]) : formData[fieldKey] || ""} onChange={(e) => handleInputChange(fieldKey, e.target.value)} disabled={!fieldKey} placeholder={!fieldKey ? "N/A" : ""} type={isDate ? "date" : "text"} InputLabelProps={isDate ? { shrink: true } : undefined} />}</TableCell>;
+                    })}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const getEngineFieldStats = () => {
+    let total = 0;
+    let filled = 0;
+
+    Object.values(groupedEngineFields).forEach((engineFieldGroup) => {
+      Object.values(engineFieldGroup || {}).forEach((fieldKey) => {
+        total += 1;
+        const value = formData[fieldKey];
+
+        if (typeof value === "boolean" || (typeof value === "string" && value.trim())) {
+          filled += 1;
+        }
+      });
+    });
+
+    return { filled, total };
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="xl"
+      fullWidth
+      PaperProps={{
+        sx: { height: "95vh", maxHeight: "1000px" },
+      }}
+    >
+      <Box
+        sx={{
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          color: "white",
+          p: 3,
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: "12px",
+                background: "rgba(255,255,255,0.2)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <ScienceIcon sx={{ color: "white" }} />
+            </Box>
+            <Box>
+              <Typography variant="h5" fontWeight={700}>
+                IAPP Certificate - Record of Construction and Equipment
+              </Typography>
+              <Typography variant="body2">International Air Pollution Prevention Certificate Supplement</Typography>
+            </Box>
+          </Box>
+          <IconButton onClick={handleClose} sx={{ color: "white" }}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+      </Box>
+      <DialogContent dividers sx={{ p: 3 }}>
+        <Accordion expanded={expandedSection === "ozone"} onChange={() => setExpandedSection(expandedSection === "ozone" ? null : "ozone")} sx={{ mb: 2 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="h6">
+              Ozone-Depleting Substances (Regulation 12)
+              <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                  ({groupedOzoneFields?.filter((group) => (group.equipment && formData[group.equipment.attribute]) || (group.location && formData[group.location.attribute]) || (group.substance && formData[group.substance.attribute])).length}/{groupedOzoneFields?.length})
+                </Typography>
+              </Typography>
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            {renderTableWithGroups(groupedOzoneFields, "Fire-extinguishing systems and equipment containing ozone depleting substances", [
+              { key: "equipment", label: "System Equipment" },
+              { key: "location", label: "Location on Board" },
+              { key: "substance", label: "Substance" },
+            ])}
+          </AccordionDetails>
+        </Accordion>
+
+        <Accordion expanded={expandedSection === "hcfc"} onChange={() => setExpandedSection(expandedSection === "hcfc" ? null : "hcfc")} sx={{ mb: 2 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="h6">
+              HCFC Systems (Regulation 12)
+              <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                ({groupedHcfcFields?.filter((group) => (group.equipment && formData[group.equipment.attribute]) || (group.location && formData[group.location.attribute]) || (group.substance && formData[group.substance.attribute])).length}/{groupedHcfcFields?.length})
+              </Typography>
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            {renderTableWithGroups(groupedHcfcFields, "Systems containing hydro-chlorofluorocarbons (HCFCs)", [
+              { key: "equipment", label: "System Equipment" },
+              { key: "location", label: "Location on Board" },
+              { key: "substance", label: "Substance" },
+            ])}
+          </AccordionDetails>
+        </Accordion>
+
+        <Accordion expanded={expandedSection === "engine"} onChange={() => setExpandedSection(expandedSection === "engine" ? null : "engine")} sx={{ mb: 2 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="h6">
+              Nitrogen Oxides (NOx) - Engine Information
+              <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                ({getEngineFieldStats().filled}/{getEngineFieldStats().total})
+              </Typography>
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>{renderEngineTable()}</AccordionDetails>
+        </Accordion>
+
+        <Accordion expanded={expandedSection === "voc"} onChange={() => setExpandedSection(expandedSection === "voc" ? null : "voc")} sx={{ mb: 2 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="h6">
+              Volatile Organic Compounds (VOCs)
+              <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                ({vocFields?.filter((f) => formData[f.attribute])?.length}/{vocFields?.length})
+              </Typography>
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>{renderBasicFields(vocFields)}</AccordionDetails>
+        </Accordion>
+        <Accordion expanded={expandedSection === "shipboard"} onChange={() => setExpandedSection(expandedSection === "shipboard" ? null : "shipboard")} sx={{ mb: 2 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="h6">
+              Shipboard incineration (Regulation 12)
+              <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                ({checkboxFields?.filter((f) => formData[f.attribute])?.length}/{checkboxFields?.length + radioFields?.length + remarksFields?.length})
+              </Typography>
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            {renderBasicFields([...checkboxFields])}
+            {renderBasicFields([...radioFields])}
+            {renderBasicFields([...remarksFields])}
+          </AccordionDetails>
+        </Accordion>
+        <Accordion expanded={expandedSection === "equivalent"} onChange={() => setExpandedSection(expandedSection === "equivalent" ? null : "equivalent")} sx={{ mb: 2 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="h6">
+              Equivalent Arrangements (Regulation 4)
+              <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                ({groupedEquivalentFields?.filter((group) => (group.equipment && formData[group.equipment.attribute]) || (group.location && formData[group.location.attribute]) || (group.reference && formData[group.reference.attribute])).length}/{groupedEquivalentFields?.length})
+              </Typography>
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            {renderTableWithGroups(groupedEquivalentFields, "Alternative fittings, materials, appliances or procedures", [
+              { key: "equipment", label: "System Equipment" },
+              { key: "location", label: "Location on Board" },
+              { key: "reference", label: "Approval Reference" },
+            ])}
+          </AccordionDetails>
+        </Accordion>
+        <Accordion expanded={expandedSection === "hcfc"} onChange={() => setExpandedSection(expandedSection === "hcfc" ? null : "hcfc")} sx={{ mb: 2 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="h6">
+              Others
+              <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
+                ({remainingFields?.filter((group) => group?.attribute && formData[group.attribute]).length}/{remainingFields?.length})
+              </Typography>
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>{renderBasicFields([...remainingFields])}</AccordionDetails>
+        </Accordion>
+      </DialogContent>
+      <Divider sx={{ borderColor: "rgba(102, 126, 234, 0.1)" }} />
+      <DialogActions
+        sx={{
+          p: 3,
+          background: "white",
+          gap: 2,
+          justifyContent: "flex-end",
+        }}
+      >
+        <Button
+          onClick={() => setSaveData(true)}
+          variant="outlined"
+          size="large"
+          sx={{
+            borderRadius: 2,
+            px: 3,
+            py: 1.5,
+            textTransform: "none",
+            fontWeight: 600,
+            borderColor: "rgba(102, 126, 234, 0.3)",
+            color: "text.secondary",
+            "&:hover": {
+              borderColor: "primary.main",
+              background: "rgba(102, 126, 234, 0.04)",
+              transform: "translateY(-1px)",
+              boxShadow: "0 4px 12px rgba(102, 126, 234, 0.15)",
+            },
+            transition: "all 0.2s ease",
+          }}
+        >
+          Save
+        </Button>
+        <Button
+          onClick={onClose}
+          variant="outlined"
+          size="large"
+          sx={{
+            borderRadius: 2,
+            px: 3,
+            py: 1.5,
+            textTransform: "none",
+            fontWeight: 600,
+            borderColor: "rgba(102, 126, 234, 0.3)",
+            color: "text.secondary",
+            "&:hover": {
+              borderColor: "primary.main",
+              background: "rgba(102, 126, 234, 0.04)",
+              transform: "translateY(-1px)",
+              boxShadow: "0 4px 12px rgba(102, 126, 234, 0.15)",
+            },
+            transition: "all 0.2s ease",
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={onSubmitForm}
+          variant="contained"
+          size="large"
+          startIcon={<CheckIcon />}
+          sx={{
+            borderRadius: 2,
+            px: 4,
+            py: 1.5,
+            textTransform: "none",
+            fontWeight: 600,
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)",
+            "&:hover": {
+              background: "linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)",
+              transform: "translateY(-2px)",
+              boxShadow: "0 8px 25px rgba(102, 126, 234, 0.6)",
+            },
+            transition: "all 0.2s ease",
+          }}
+        >
+          Generate Certificate
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 };
 
 export default IAPPForm;
