@@ -16,13 +16,11 @@ const AuthProvider = ({ children }) => {
   const pathname = usePathname();
 
   const allowedRoutesRole1 = ["/clients", "/staff", "/journal", "/reporting", "/certificates", "/survey-types", "/documents", "/system-variables", "/settings", "/survey-report", "/classification","/survey-status-report"]
-  const allowedRoutesRole2 = ["/journal", "/reporting", "/certificates", "/settings", "/clients", "/system-variables", "survey-types", "/documents", "/classification", "/survey-status-report"];
+  const allowedRoutesRole2 = ["/journal", "/reporting", "/certificates", "/settings", "/clients", "/system-variables", "survey-types", "/documents", "/classification", "/survey-status-report","/survey-report"];
   const allowedRoutesRole3 = ["/reporting", "/certificates", "/settings"];
 
-  // Define public routes that don't require authentication
   const publicRoutes = ["/login", "/digital-document"];
 
-  // Helper function to get default route for role
   const getDefaultRouteForRole = (roleId) => {
     switch (roleId) {
       case "1":
