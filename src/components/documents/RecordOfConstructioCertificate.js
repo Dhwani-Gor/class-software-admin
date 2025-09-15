@@ -4,6 +4,7 @@ import { ExpandMore as ExpandMoreIcon, Science as ScienceIcon, Close as CloseIco
 import { formattedDate, formatDate } from "@/utils/date";
 import CommonButton from "../CommonButton";
 import { useCommonSubmit, useFormInitialization } from "./useSubmit";
+import CommonConfirmationDialog from "../Dialogs/CommonConfirmationDialog";
 
 const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [expandedSection, setExpandedSection] = useState("systemInfo");
@@ -14,6 +15,20 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
   const [saveData, setSaveData] = useState(false);
   const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, saveData);
+  const [openDialog, setOpenDialog] = useState(false);
+
+  const handleCancel = () => {
+    setOpenDialog(false);
+  };
+
+  const handleConfirm = () => {
+    setOpenDialog(false);
+    handleSubmit(formData);
+  };
+
+  const handleGenerateClick = () => {
+    setOpenDialog(true);
+  };
 
   const handleInputChange = (fieldName, value) => {
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
@@ -25,7 +40,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
   useEffect(() => {
     if (saveData) {
-      handleSubmit(formData);
+      handleSubmit(formData, false);
       setSaveData(false);
     }
   }, [formData, handleSubmit, saveData]);
@@ -808,7 +823,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
           Cancel
         </Button>
         <Button
-          onClick={onSubmitForm}
+          onClick={handleGenerateClick}
           variant="contained"
           size="large"
           startIcon={<CheckIcon />}
@@ -831,6 +846,7 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
           Generate Certificate
         </Button>
       </DialogActions>
+      <CommonConfirmationDialog open={openDialog} onCancel={handleCancel} onConfirm={handleConfirm} title="Are you sure the form data is complete and you want to generate cvertificate?" />
     </Dialog>
   );
 };

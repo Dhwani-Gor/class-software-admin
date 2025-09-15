@@ -316,7 +316,7 @@ const ReportingForm = () => {
   const [endorsedIssuedBy, setEndorsedIssuedBy] = useState([]);
   const [selectSurveyor, setSelectSurveyor] = useState("");
   const [surveyorName, setSurveyorName] = useState({});
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState();
   const [openPreviewModal, setOpenPreviewModal] = useState(false);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [previewDocument, setPreviewDocument] = useState(null);
@@ -328,6 +328,7 @@ const ReportingForm = () => {
   const [openEndrosemet, setOpenEndrosemet] = useState(false);
   const [endorsementValues, setEndorsementValues] = useState({});
   const [loadingReport, setLoadingReport] = useState(false);
+  const [confirmGenerate, setConfirmGenerate] = useState(false);
 
   useEffect(() => {
     if (selectCertificate === "full_term") {
@@ -575,6 +576,7 @@ const ReportingForm = () => {
         console.log(result, "result");
         if (result.data.status == "success") {
           toast.success("Report generated successfully.");
+          setOpen(false);
         }
         const fileUrl = result?.data?.data;
 
@@ -585,7 +587,6 @@ const ReportingForm = () => {
       }
     } catch (error) {
       console.error("Download error:", error);
-      toast.error("Failed to generate full report");
     } finally {
       setLoadingReport(false);
     }
@@ -594,12 +595,10 @@ const ReportingForm = () => {
   const handleSubmitReport = async (extraFields) => {
     setLoading(true);
     setLoadingReport(true);
-    setOpen(true);
 
     try {
       const payload = {
         reportDetailId: reportDetails?.id,
-
         data: {
           ...extraFields,
           type: "image",
@@ -610,22 +609,26 @@ const ReportingForm = () => {
           }),
         },
       };
+
       const result = await generateFullReport(payload);
-
-      if (result.data.status == "success") {
-        toast.success("Report Download Sucessfully");
+      if (result?.data?.status == "success" && result?.data?.message) {
+        toast.success(result.data.message);
+        setOpen(false);
         return;
-      }
-      const fileUrl = result?.data?.data;
-
-      const response = await fetch(fileUrl);
-      if (!response.ok) throw new Error("Network response was not ok");
-      if (result.data.status == "success") {
-        toast.success("Report generated successfully.");
+      } else if (result?.data?.data) {
+        const fileUrl = result?.data?.data;
+        if (fileUrl) {
+          toast.success("Report generated successfully.");
+          setOpen(false);
+        }
+        const response = await fetch(fileUrl);
+        if (!response.ok) throw new Error("Network response was not ok");
+      } else {
+        throw new Error(result?.data?.message || "Failed to generate report");
       }
     } catch (err) {
       console.error("Error downloading report:", err);
-      toast.error("Failed to generate full report");
+      toast.error(err.message || "Failed to generate full report");
     } finally {
       setLoading(false);
       setLoadingReport(false);

@@ -5,6 +5,7 @@ import Grid2 from "@mui/material/Grid2";
 import { Close as CloseIcon, ExpandMore as ExpandMoreIcon, CheckCircle as CheckIcon, Waves as WavesIcon } from "@mui/icons-material";
 import { formattedDate, formatDate } from "@/utils/date";
 import { getAllSystemVariables } from "@/api";
+import CommonConfirmationDialog from "../Dialogs/CommonConfirmationDialog";
 
 const applyStrikethrough = (text) =>
   text
@@ -19,9 +20,22 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
   const [isLoadingVariables, setIsLoadingVariables] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [saveData, setSaveData] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
 
   const handleImageSelect = (id) => {
     setSelectedImage(id);
+  };
+  const handleCancel = () => {
+    setOpenDialog(false);
+  };
+
+  const handleConfirm = () => {
+    setOpenDialog(false);
+    handleSubmit(formData);
+  };
+
+  const handleGenerateClick = () => {
+    setOpenDialog(true);
   };
 
   const timberImages = systemVariables?.data?.filter((item) => item.name.startsWith("timber_image")) || [];
@@ -96,7 +110,12 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
   };
 
   const handleSubmit = () => {
-    const filledValues = Object.entries(formValues).reduce((acc, [key, value]) => {
+    const filledValues = Object.entries(formValues).reduce((acc, [key, raw]) => {
+      let value = raw;
+      if (typeof value === "string" && (value.includes("undefined") || !value.trim())) {
+        value = undefined;
+      }
+
       if (key.startsWith("_st_")) {
         const [, raw] = key?.split("_st_");
         const optionsRaw = raw.split("_");
@@ -363,7 +382,10 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
         }}
       >
         <Button
-          onClick={() => setSaveData(true)}
+          onClick={() => {
+            setSaveData(true);
+            handleSubmit();
+          }}
           variant="outlined"
           size="large"
           sx={{
@@ -409,7 +431,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
           Cancel
         </Button>
         <Button
-          onClick={handleSubmit}
+          onClick={handleGenerateClick}
           variant="contained"
           size="large"
           startIcon={<CheckIcon />}
@@ -433,6 +455,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
           {isLoadingVariables ? "Loading..." : "Generate Certificate"}
         </Button>
       </DialogActions>
+      <CommonConfirmationDialog open={openDialog} onCancel={handleCancel} onConfirm={handleConfirm} title="Are you sure the form data is complete and you want to generate cvertificate?" />
     </Dialog>
   );
 };

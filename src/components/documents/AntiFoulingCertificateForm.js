@@ -5,49 +5,28 @@ import Grid2 from "@mui/material/Grid2";
 import { Close as CloseIcon, ExpandMore as ExpandMoreIcon, CheckCircle as CheckIcon, Science as ScienceIcon } from "@mui/icons-material";
 import { formattedDate, formatDate } from "@/utils/date";
 import { useCommonSubmit, useFormInitialization } from "./useSubmit";
+import CommonConfirmationDialog from "../Dialogs/CommonConfirmationDialog";
 
 const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [expandedSection, setExpandedSection] = useState("systemInfo");
   const [saveData, setSaveData] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [isLoadingVariable, setIsLoadingVariable] = useState(false);
+
   const { formData, setFormData } = useFormInitialization(fields, reportDetails, open);
   const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, save);
 
   const isStrikethroughText = (text) => text?.split("").some((c) => c === "\u0336");
 
-  // useEffect(() => {
-  //   if (fields && fields.length > 0) {
-  //     const initialValues = {};
-  //     fields.forEach((field) => {
-  //       if (field.attribute.startsWith("_checkbox")) {
-  //         if (reportDetails && reportDetails[field.attribute] === "\u2611") {
-  //           initialValues[field.attribute] = true;
-  //         } else {
-  //           initialValues[field.attribute] = false;
-  //         }
-  //       } else if (field.attribute.startsWith("_st_")) {
-  //         if (reportDetails && reportDetails[field.attribute]) {
-  //           const parts = reportDetails[field.attribute]
-  //             .split(" / ")
-  //             .map((s) => s.trim());
+  const handleCancel = () => {
+    setOpenDialog(false);
+  };
 
-  //           const selectedOptions = parts.filter(
-  //             (part) => !isStrikethroughText(part)
-  //           );
-  //           initialValues[field.attribute] = selectedOptions || "";
-  //         } else {
-  //           initialValues[field.attribute] = "";
-  //         }
-  //       } else {
-  //         if (reportDetails && reportDetails[field.attribute]) {
-  //           initialValues[field.attribute] = reportDetails[field.attribute];
-  //         } else {
-  //           initialValues[field.attribute] = "";
-  //         }
-  //       }
-  //     });
-  //     setFormData(initialValues);
-  //   }
-  // }, [fields, open]);
+  const handleConfirm = () => {
+    setOpenDialog(false);
+    handleSubmit(formData);
+  };
 
   const handleClose = () => {
     onClose();
@@ -58,59 +37,16 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
   };
 
-  const applyStrikethrough = (text) =>
-    text
-      ?.split("")
-      .map((c) => c + "\u0336")
-      .join("");
-
-  // const handleSubmit = () => {
-  //   const filledValues = Object.entries(formData).reduce(
-  //     (acc, [key, value]) => {
-  //       if (
-  //         typeof value === "string" &&
-  //         (value?.includes("undefined") || value.trim() === "")
-  //       ) {
-  //         value = undefined;
-  //       }
-  //       if (key?.startsWith("_st_")) {
-  //         const [, raw] = key?.split("_st_");
-  //         const optionsRaw = raw.split("_");
-  //         const options = optionsRaw.map((opt) => opt.replace(/-/g, " "));
-  //         const selectedValues = Array.isArray(value) ? value : [];
-  //         if (selectedValues.length === 0) {
-  //           acc[key] = options.join(" / ");
-  //         } else {
-  //           acc[key] = options
-  //             .map((opt) =>
-  //               selectedValues.includes(opt) ? opt : applyStrikethrough(opt)
-  //             )
-  //             .join(" / ");
-  //         }
-  //       } else if (typeof value === "boolean") {
-  //         acc[key] = value ? "☑" : "☒";
-  //       } else if (key?.includes("date") && value) {
-  //         acc[key] = formattedDate(value);
-  //       } else if (typeof value === "string" && value.trim()) {
-  //         acc[key] = value;
-  //       } else {
-  //         acc[key] = "-";
-  //       }
-
-  //       return acc;
-  //     },
-  //     {}
-  //   );
-
-  //   onSubmit(filledValues);
-  // };
-
   useEffect(() => {
     if (saveData) {
-      handleSubmit(formData);
+      handleSubmit(formData, false);
       setSaveData(false);
     }
   }, [formData, handleSubmit, saveData]);
+
+  const handleGenerateClick = () => {
+    setOpenDialog(true);
+  };
 
   const formatLabel = (attribute) =>
     attribute
@@ -352,7 +288,7 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
           Cancel
         </Button>
         <Button
-          onClick={handleSubmit(formData)}
+          onClick={handleGenerateClick}
           variant="contained"
           size="large"
           startIcon={<CheckIcon />}
@@ -375,6 +311,8 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
           Generate Certificate
         </Button>
       </DialogActions>
+
+      <CommonConfirmationDialog open={openDialog} onCancel={handleCancel} onConfirm={handleConfirm} title="Are you sure the form data is complete and you want to generate cvertificate?" />
     </Dialog>
   );
 };
