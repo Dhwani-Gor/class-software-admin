@@ -1,10 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Box, Typography, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Accordion, AccordionSummary, AccordionDetails, Grid, Divider, Button, Grid2, TextareaAutosize } from "@mui/material";
-// import {
-//   Close as CloseIcon,
-//   ExpandMore as ExpandMoreIcon,
-// } from "@mui/icons-material";
 import { Close as CloseIcon, Description as ReportIcon, CheckCircle as CheckIcon, ExpandMore as ExpandMoreIcon } from "@mui/icons-material";
 import { formattedDate, formatDate } from "@/utils/date";
 import { useCommonSubmit, useFormInitialization } from "./useSubmit";
@@ -20,6 +16,20 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
 
   const [saveData, setSaveData] = useState(false);
   const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, saveData);
+  const [openDialog, setOpenDialog] = useState(false);
+
+  const handleCancel = () => {
+    setOpenDialog(false);
+  };
+
+  const handleConfirm = () => {
+    setOpenDialog(false);
+    handleSubmit(formData);
+  };
+
+  const handleGenerateClick = () => {
+    setOpenDialog(true);
+  };
 
   const handleInputChange = (fieldName, value) => {
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
@@ -31,7 +41,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
 
   useEffect(() => {
     if (saveData) {
-      handleSubmit(formData);
+      handleSubmit(formData, false);
       setSaveData(false);
     }
   }, [formData, handleSubmit, saveData]);
@@ -599,7 +609,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
           Cancel
         </Button>
         <Button
-          onClick={onSubmitForm}
+          onClick={handleGenerateClick}
           variant="contained"
           size="large"
           startIcon={<CheckIcon />}
@@ -622,6 +632,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
           Generate Certificate
         </Button>
       </DialogActions>
+      <CommonConfirmationDialog open={openDialog} onCancel={handleCancel} onConfirm={handleConfirm} title="Are you sure the form data is complete and you want to generate cvertificate?" />
     </Dialog>
   );
 };

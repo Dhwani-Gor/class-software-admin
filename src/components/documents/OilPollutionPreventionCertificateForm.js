@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogActions, TextField, Box, Typography, IconB
 import { Close as CloseIcon, Description as ReportIcon, CheckCircle as CheckIcon, ExpandMore as ExpandMoreIcon } from "@mui/icons-material";
 import { formattedDate, formatDate } from "@/utils/date";
 import { useCommonSubmit, useFormInitialization } from "./useSubmit";
+import CommonConfirmationDialog from "../Dialogs/CommonConfirmationDialog";
 
 const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [expandedSection, setExpandedSection] = useState("basicInfo");
@@ -11,6 +12,21 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const { formData, setFormData } = useFormInitialization(fields, reportDetails, open);
 
   const [saveData, setSaveData] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
+
+  const handleCancel = () => {
+    setOpenDialog(false);
+  };
+
+  const handleConfirm = () => {
+    setOpenDialog(false);
+    handleSubmit(formData);
+  };
+
+  const handleGenerateClick = () => {
+    setOpenDialog(true);
+  };
+
   const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, saveData);
 
   const handleInputChange = (fieldName, value) => {
@@ -116,7 +132,7 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
   useEffect(() => {
     if (saveData) {
-      handleSubmit(formData);
+      handleSubmit(formData, false);
       setSaveData(false);
     }
   }, [formData, handleSubmit, saveData]);
@@ -343,6 +359,29 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
       <DialogActions sx={{ p: 3, background: "white", gap: 2, justifyContent: "flex-end" }}>
         <Button
+          onClick={() => setSaveData(true)}
+          variant="outlined"
+          size="large"
+          sx={{
+            borderRadius: 2,
+            px: 3,
+            py: 1.5,
+            textTransform: "none",
+            fontWeight: 600,
+            borderColor: "rgba(102, 126, 234, 0.3)",
+            color: "text.secondary",
+            "&:hover": {
+              borderColor: "primary.main",
+              background: "rgba(102, 126, 234, 0.04)",
+              transform: "translateY(-1px)",
+              boxShadow: "0 4px 12px rgba(102, 126, 234, 0.15)",
+            },
+            transition: "all 0.2s ease",
+          }}
+        >
+          Save
+        </Button>
+        <Button
           onClick={handleClose}
           variant="outlined"
           size="large"
@@ -366,7 +405,7 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
           Cancel
         </Button>
         <Button
-          onClick={onSubmitForm}
+          onClick={handleGenerateClick}
           variant="contained"
           size="large"
           startIcon={<CheckIcon />}
@@ -389,6 +428,7 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
           Generate Certificate
         </Button>
       </DialogActions>
+      <CommonConfirmationDialog open={openDialog} onCancel={handleCancel} onConfirm={handleConfirm} title="Are you sure the form data is complete and you want to generate cvertificate?" />
     </Dialog>
   );
 };
