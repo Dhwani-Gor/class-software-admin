@@ -220,7 +220,7 @@ const SurveyTypeForm = ({ mode = "create", surveyTypeId = null, defaultValues = 
                     <FormControl fullWidth variant="standard" error={Boolean(errors.reportId)}>
                       <FormLabel component="legend" sx={{ mb: 1 }}>
                         <Typography color="#000000DE" fontWeight={"500"}>
-                          Reports <span style={{ color: "red" }}>*</span>
+                          Reports 
                         </Typography>
                       </FormLabel>
                       <Controller
