@@ -55,7 +55,14 @@ const SurveyTypes = () => {
       setLoading(true);
       const result = await getSurveyTypes(search, page, limit);
       if (result?.status === 200) {
-        setSurveyTypes(result.data.data);
+        const formatted = result.data.data.map((item) => {
+          let type = "-";
+          if (item.statutorySurvey) type = "Statutory";
+          else if (item.classificationSurvey) type = "Classification";
+          else if (item.auditSurvey) type = "Audit";
+          return { ...item, type };
+        });
+        setSurveyTypes(formatted);
         setTotalRows(result.data.results);
       } else {
         toast.error("Something went wrong ! Please try again after some time");
@@ -118,6 +125,7 @@ const SurveyTypes = () => {
     },
     { field: "name", headerName: "Survey Type", flex: 1.5 },
     { field: "abbreviation", headerName: "Abbreviation", flex: 1 },
+    { field: "type", headerName: "Type", flex: 1 },
     {
       field: "actions",
       headerName: "Actions",

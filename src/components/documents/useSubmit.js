@@ -33,7 +33,12 @@ export const useFormInitialization = (fields, reportDetails, open) => {
           }
         } else {
           if (reportDetails && reportDetails[field.attribute]) {
-            initialValues[field.attribute] = reportDetails[field.attribute];
+            const val = reportDetails[field.attribute];
+            if (field.attribute.toLowerCase().includes("date") && (!val || String(val).includes("undefined"))) {
+              initialValues[field.attribute] = "";
+            } else {
+              initialValues[field.attribute] = val;
+            }
           } else {
             initialValues[field.attribute] = "";
           }
@@ -69,7 +74,7 @@ export const useCommonSubmit = (onSubmit, onClose, setFormData, onSave) => {
         acc[key] = value === true ? "\u2611" : "\u2612";
       } else if (key.includes("date")) {
         const raw = String(value ?? "").trim();
-        if (!raw || /^\/*undefined$/i.test(raw)) {
+        if (!raw || raw.toLowerCase().includes("undefined")) {
           acc[key] = "-";
         } else {
           acc[key] = formattedDate(raw);
