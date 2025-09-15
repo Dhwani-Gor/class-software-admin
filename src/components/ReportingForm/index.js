@@ -1344,7 +1344,7 @@ const ReportingForm = () => {
           }
           setFullScreenRemarksVisible(null);
         }}
-        title={fullScreenRemarksVisible && typeof fullScreenRemarksVisible === "object" ? `Remarks for ${fullScreenRemarksVisible.surveyTypes.name}` : "Remarks"}
+        title={fullScreenRemarksVisible && typeof fullScreenRemarksVisible === "object" ? `Remarks for ${fullScreenRemarksVisible.surveyTypes?.name}` : "Remarks"}
       />
       {renderReportForm()}
       {loadingReport && (
