@@ -24,6 +24,7 @@ const CommonButton = ({
   sx = {},
   endIcon,
   disabled,
+  startIcon,
   ...props
 }) => {
   const theme = useTheme();
@@ -61,6 +62,7 @@ const CommonButton = ({
       variant={variant}
       {...props}
       sx={buttonStyles}
+      startIcon={startIcon}
     >
       {isLoading ? (
         <CircularProgress
