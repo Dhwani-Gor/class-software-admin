@@ -902,3 +902,13 @@ export const addArchiveDocument = async (clientId) => {
     return e;
   }
 };
+
+export const getAllClassificationSurveyType = async () => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/surveyTypes?type=classification`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
