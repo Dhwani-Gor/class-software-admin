@@ -66,7 +66,10 @@ const Certificates = () => {
   // Remove unused functions and effects
   const handleFilterChange = (newFilter) => {
     setSelectedFilter(newFilter);
+    setPage(1)
+    router.push(`/certificates?page=${1}&limit=${limit}`);
   };
+ 
 
   const snackbarClose = () => {
     setSnackBar({ open: false, message: "" });
