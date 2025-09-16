@@ -892,3 +892,13 @@ export const deleteSurveyReport = async (id) => {
   }
   return result;
 };
+
+export const addArchiveDocument = async (clientId) => {
+  try {
+    const result = await axiosInstance.post("/reportDetails/markAsArchived", { clientId });
+    return result;
+  } catch (e) {
+    console.error("Error archiving document:", e);
+    return e;
+  }
+};

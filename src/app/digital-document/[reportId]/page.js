@@ -541,7 +541,7 @@ const DigitalDocument = ({ params }) => {
               {reportDetails.generatedDoc?.split("/").pop() || "Document"}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Marine Classification Bureau Gambia Ltd
+              {companyName}
             </Typography>
           </Box>
         </Paper>

@@ -487,7 +487,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
           Generate Certificate
         </Button>
       </DialogActions>
-      <CommonConfirmationDialog open={openDialog} onCancel={handleCancel} onConfirm={handleConfirm} title="Are you sure the form data is complete and you want to generate cvertificate?" />
+      <CommonConfirmationDialog open={openDialog} onCancel={handleCancel} onConfirm={handleConfirm} title="Are you sure the form data is complete and you want to generate certificate?" />
     </Dialog>
   );
 };

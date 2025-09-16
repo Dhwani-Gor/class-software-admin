@@ -281,7 +281,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
       </Dialog>
 
       {/* ✅ Confirmation Dialog */}
-      <CommonConfirmationDialog open={openDialog} onCancel={handleCancel} onConfirm={handleConfirm} title="Are you sure the form data is complete and you want to generate cvertificate?" />
+      <CommonConfirmationDialog open={openDialog} onCancel={handleCancel} onConfirm={handleConfirm} title="Are you sure the form data is complete and you want to generate certificate?" />
     </>
   );
 };

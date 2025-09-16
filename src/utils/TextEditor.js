@@ -1347,8 +1347,8 @@ const TextEditor = ({ id }) => {
         }}
       />
       <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-        <CommonButton onClick={() => router.push("/clients")} text="Back" />
-        <CommonButton onClick={downloadEditorContentAsPdf} text="Download PDF" />
+      <CommonButton onClick={() => router.push(`/clients/${id}`)} text="Back" />
+      <CommonButton onClick={downloadEditorContentAsPdf} text="Download PDF" />
       </Box>
     </>
   );

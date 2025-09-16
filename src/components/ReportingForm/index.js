@@ -30,7 +30,7 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
 import { useRouter } from "next/navigation";
-import { createReportDetail, deleteAttachment, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, uploadSurveyReport } from "@/api";
+import { addArchiveDocument, createReportDetail, deleteAttachment, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, uploadSurveyReport } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { updateActivityDetails } from "@/api";
@@ -49,7 +49,6 @@ import IAPPForm from "../documents/RecordOfConstructioCertificate";
 import EndorsementDialog from "../documents/EndorsementDialog";
 import { hiddenReports } from "@/utils/DocumentList";
 
-// Updated schema with correct field names
 const reportSchema = yup.object().shape({
   typesOfSurvey: yup.string().required("Type of survey is required"),
   typeOfCertificate: yup.string().required("Type of certificate is required"),
@@ -329,6 +328,37 @@ const ReportingForm = () => {
   const [endorsementValues, setEndorsementValues] = useState({});
   const [loadingReport, setLoadingReport] = useState(false);
   const [confirmGenerate, setConfirmGenerate] = useState(false);
+  const [continueBtnLoading, setContinueBtnLoading] = useState(false);
+
+  const areAllActivitiesCompleted = () => {
+    return tableData.length > 0 && tableData.every((activity) => activity.status === "Completed");
+  };
+
+  console.log(areAllActivitiesCompleted(), "areAllActivitiesCompleted");
+
+  const handleContinue = async () => {
+    if (!selectedShip.id) {
+      toast.error("Client ID not found");
+      return;
+    }
+
+    try {
+      setContinueBtnLoading(true);
+
+      const result = await addArchiveDocument(selectedShip.id);
+      console.log(result, "result");
+      if (result.data.status == "success") {
+        toast.success(result.data.message);
+      } else {
+        toast.error("Failed to continue process");
+      }
+    } catch (error) {
+      console.error("Continue process error:", error);
+      toast.error(error?.message || "Failed to continue process");
+    } finally {
+      setContinueBtnLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (selectCertificate === "full_term") {
@@ -544,6 +574,14 @@ const ReportingForm = () => {
   };
 
   const handleFullReportGeneration = async () => {
+    const result = await getSelectedActivityReportDetails(selectedRow?.id);
+
+    if (result?.data?.status !== "success") {
+      toast.error("Unable to fetch the latest report data.");
+      return;
+    }
+    const reportData = result?.data?.data[0];
+    setReportDetails(reportData);
     try {
       if (underscoreFields.length > 0) {
         setOpen(true);
@@ -573,7 +611,6 @@ const ReportingForm = () => {
         // });
 
         const result = await generateFullReport(payload);
-        console.log(result, "result");
         if (result.data.status == "success") {
           toast.success("Report generated successfully.");
           setOpen(false);
@@ -613,7 +650,7 @@ const ReportingForm = () => {
       const result = await generateFullReport(payload);
       if (result?.data?.status == "success" && result?.data?.message) {
         toast.success(result.data.message);
-        setOpen(false);
+        setOpen(true);
         return;
       } else if (result?.data?.data) {
         const fileUrl = result?.data?.data;
@@ -746,13 +783,14 @@ const ReportingForm = () => {
 
   const fetchReportDetails = async () => {
     const response = await getSelectedReportDetails(reportDetails?.id);
-    // setReportDetails(response?.data?.data)
+    setReportDetails(response?.data?.data)
   };
 
   useEffect(() => {
     fetchClients();
     fetchReportDetails();
-  }, []);
+    areAllActivitiesCompleted()
+  }, [reportDetails?.id]);
 
   const fetchAllJournals = async () => {
     try {
@@ -783,76 +821,89 @@ const ReportingForm = () => {
     return TYPE_OF_SURVEYS.find((ele) => ele.value === val)?.label || val;
   };
 
-  const handleDocumentUpload = async (rowId, documents) => {
-    setTableData((prevData) =>
-      prevData.map((item) =>
-        item.id === rowId
-          ? {
-              ...item,
-              attachments: item.attachments ? [...item.attachments, ...documents] : documents,
-            }
-          : item
-      )
-    );
-    const formData = new FormData();
-    documents.forEach((doc, index) => {
-      formData.append("attachments", doc);
-    });
+const handleDocumentUpload = async (rowId, documents) => {
+  if (!rowId || !documents?.length) return;
 
-    try {
-      const response = await updateActivityDetails(rowId, formData);
-      if (response?.data?.status === "success") {
-        toast.success("Documents uploaded successfully.");
-      } else {
-        toast.error("Something went wrong! Please try again after some time");
-      }
-    } catch (err) {
-      toast.error("Upload failed. Please check your internet or file format.");
-      console.error(err);
-    }
-  };
+  // optimistic update: show files immediately (using minimal metadata)
+  setTableData((prev) =>
+    prev.map((item) =>
+      item.id === rowId
+        ? {
+            ...item,
+            attachments: item.attachments
+              ? [...item.attachments, ...documents.map((f) => ({ name: f.name, _tmp: true }))]
+              : documents.map((f) => ({ name: f.name, _tmp: true })),
+          }
+        : item
+    )
+  );
 
-  const handleRemoveDocument = async (activityId, documentId) => {
-    if (!activityId) {
-      toast.error("Invalid activity ID");
-      return;
-    }
+  const formData = new FormData();
+  // Backend may expect "attachments" repeated or "attachments[]". Check your API.
+  documents.forEach((doc) => formData.append("attachments", doc));
 
-    if (!documentId) {
-      toast.error("Invalid document ID");
-      return;
-    }
+  try {
+    const response = await updateActivityDetails(rowId, formData);
 
-    const confirmDelete = window.confirm("Are you sure you want to delete this document?");
-    if (!confirmDelete) {
-      return;
-    }
-
-    try {
-      const response = await deleteAttachment(activityId, documentId);
-      setDocumentUploadDialogOpen(false);
-      getAllActivity(journalId);
-      if (response?.data?.status === "success") {
-        setTableData((prevData) =>
-          prevData.map((item) =>
-            item.id === activityId
-              ? {
-                  ...item,
-                  attachments: item.attachments ? item.attachments.filter((doc) => doc.id !== documentId) : [],
-                }
-              : item
-          )
+    // If backend returns updated activity / attachments, prefer that to keep UI consistent
+    if (response?.data?.status === "success") {
+      const serverAttachments = response?.data?.data?.attachments;
+      if (Array.isArray(serverAttachments)) {
+        setTableData((prev) =>
+          prev.map((item) => (item.id === rowId ? { ...item, attachments: serverAttachments } : item))
         );
-
-        toast.success("Document removed successfully.");
       } else {
-        // toast.error(response?.data?.message || "Failed to remove document");
+        await getAllActivity(journalId);
       }
-    } catch (error) {
-      console.error("Error removing document:", error);
-      toast.error("Failed to remove document. Please try again.");
+      toast.success("Documents uploaded successfully.");
+    } else {
+      await getAllActivity(journalId);
+      toast.error(response?.data?.message || "Something went wrong! Please try again after some time");
     }
-  };
+  } catch (err) {
+    console.error("Upload error:", err);
+    await getAllActivity(journalId);
+    toast.error("Upload failed. Please check your internet or file format.");
+  }
+};
+
+const handleRemoveDocument = async (activityId, documentId) => {
+  if (!activityId) {
+    toast.error("Invalid activity ID");
+    return;
+  }
+  if (!documentId) {
+    toast.error("Invalid document ID");
+    return;
+  }
+
+  const confirmDelete = window.confirm("Are you sure you want to delete this document?");
+  if (!confirmDelete) return;
+
+  try {
+    const response = await deleteAttachment(activityId, documentId);
+    setDocumentUploadDialogOpen(false);
+
+    await getAllActivity(journalId);
+
+    if (response?.data?.status === "success") {
+      setTableData((prev) =>
+        prev.map((item) =>
+          item.id === activityId
+            ? { ...item, attachments: item.attachments ? item.attachments.filter((d) => d.id !== documentId) : [] }
+            : item
+        )
+      );
+
+      toast.success("Document removed successfully.");
+    }
+  } catch (error) {
+    console.error("Error removing document:", error);
+    await getAllActivity(journalId);
+    toast.error("Failed to remove document. Please try again.");
+  }
+};
+
 
   const handlePreviewDocument = (document) => {
     setPreviewDocument(document);
@@ -978,7 +1029,8 @@ const ReportingForm = () => {
               </Box>
             )}
 
-            {selectedShip.id && selectedReportNumber.journalTypeId && <CommonButton onClick={handleShowTable} sx={{ marginTop: 3 }} text="Continue" />}
+            {<CommonButton onClick={handleShowTable} sx={{ marginTop: 3 }} text="Continue" />}
+            {selectedShip.id && selectedReportNumber.journalTypeId && <CommonButton onClick={handleContinue} disabled={!areAllActivitiesCompleted()} sx={{ marginTop: 3, marginLeft: 2 }} text="Completed" />}
           </Box>
         )}
       </CommonCard>
@@ -1336,6 +1388,7 @@ const ReportingForm = () => {
           handlePreviewDocument(document);
         }}
       />
+
       <DocumentPreviewModal open={openPreviewModal} onClose={() => setOpenPreviewModal(false)} document={previewDocument} loading={loadingPreview} />
 
       <FullScreenRemarksDialog

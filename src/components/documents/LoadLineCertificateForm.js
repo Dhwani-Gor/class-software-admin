@@ -31,11 +31,18 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
 
   const handleConfirm = () => {
     setOpenDialog(false);
-    handleSubmit(formData);
+    handleSubmit(formValues);
   };
 
   const handleGenerateClick = () => {
+    setSaveData(false);
     setOpenDialog(true);
+  };
+  
+
+  const handleSaveClick = () => {
+    setSaveData(true);
+    handleSubmit(formValues);
   };
 
   const timberImages = systemVariables?.data?.filter((item) => item.name.startsWith("timber_image")) || [];
@@ -382,10 +389,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
         }}
       >
         <Button
-          onClick={() => {
-            setSaveData(true);
-            handleSubmit();
-          }}
+          onClick={handleSaveClick}
           variant="outlined"
           size="large"
           sx={{
@@ -431,7 +435,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
           Cancel
         </Button>
         <Button
-          onClick={handleGenerateClick}
+          onClick={()=>handleGenerateClick()}
           variant="contained"
           size="large"
           startIcon={<CheckIcon />}
@@ -455,7 +459,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
           {isLoadingVariables ? "Loading..." : "Generate Certificate"}
         </Button>
       </DialogActions>
-      <CommonConfirmationDialog open={openDialog} onCancel={handleCancel} onConfirm={handleConfirm} title="Are you sure the form data is complete and you want to generate cvertificate?" />
+      <CommonConfirmationDialog open={openDialog} onCancel={handleCancel} onConfirm={handleConfirm} title="Are you sure the form data is complete and you want to generate certificate?" />
     </Dialog>
   );
 };
