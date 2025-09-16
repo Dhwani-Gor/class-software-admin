@@ -111,7 +111,7 @@ const Certificates = () => {
       }
 
       const searchQuery = debouncedSearch.trim();
-      const markAsArchive = selectedFilter === "archive-documents";
+      const markAsArchive = selectedFilter === "Archive Documents";
       
       const res = await getAllIssuedDocuments(
         filterKeys,
@@ -332,7 +332,7 @@ const Certificates = () => {
 
       <CommonCard>
         <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-          {["certificates", "archive-documents"].map((type) => (
+          {["certificates", "Archive Documents"].map((type) => (
             <Chip
               key={type}
               label={type.charAt(0).toUpperCase() + type.slice(1)}

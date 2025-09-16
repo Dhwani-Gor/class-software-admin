@@ -703,7 +703,6 @@ export const getAllIssuedDocuments = async (filterKeys = [], filterValues = [], 
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
     if(markAsArchive) params.markAsArchive = markAsArchive;
-
     const result = await axiosInstance.get("/reportDetails", { params });
     return result;
   } catch (error) {
