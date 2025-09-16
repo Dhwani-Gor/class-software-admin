@@ -892,3 +892,14 @@ export const deleteSurveyReport = async (id) => {
   }
   return result;
 };
+
+
+export const getAllClassificationSurveyType = async () => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/surveyTypes?type=classification`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
