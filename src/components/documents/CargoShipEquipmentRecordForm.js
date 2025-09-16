@@ -10,6 +10,8 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [expandedSection, setExpandedSection] = useState("lifeSaving");
   const [saveData, setSaveData] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
+  
   const handleCancel = () => {
     setOpenDialog(false);
   };
