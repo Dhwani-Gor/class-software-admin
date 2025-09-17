@@ -8,11 +8,10 @@ import CommonConfirmationDialog from "../Dialogs/CommonConfirmationDialog";
 
 const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [expandedSection, setExpandedSection] = useState("basicInfo");
-
   const { formData, setFormData } = useFormInitialization(fields, reportDetails, open);
-
   const [saveData, setSaveData] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleCancel = () => {
     setOpenDialog(false);
@@ -20,11 +19,23 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
   const handleConfirm = () => {
     setOpenDialog(false);
-    handleSubmit(formData);
+    handleSubmit(formData, false);
   };
 
   const handleGenerateClick = () => {
+    setSaveData(false);
     setOpenDialog(true);
+  };
+
+  const handleSaveClick = async () => {
+    try {
+      setIsSaving(true);
+      await handleSubmit(formData, true);
+    } catch (error) {
+      console.error('Save error:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, saveData);
@@ -32,110 +43,6 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const handleInputChange = (fieldName, value) => {
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
   };
-
-  const onSubmitForm = () => {
-    handleSubmit(formData);
-  };
-
-  const isStrikethroughText = (text) => text?.split("").some((c) => c === "\u0336");
-
-  //   useEffect(() => {
-  //     if (fields && fields.length > 0) {
-  //       const initialValues = {};
-  //       fields.forEach((field) => {
-  //         if (field.attribute.startsWith("_checkbox")) {
-  //           if (reportDetails && reportDetails[field.attribute] === "\u2611") {
-  //             initialValues[field.attribute] = true;
-  //           } else {
-  //             initialValues[field.attribute] = false;
-  //           }
-  //         } else if (field.attribute.startsWith("_st_")) {
-  //           if (reportDetails && reportDetails[field.attribute]) {
-  //             const parts = reportDetails[field.attribute]
-  //               .split(" / ")
-  //               .map((s) => s.trim());
-
-  //             const selectedOptions = parts.filter(
-  //               (part) => !isStrikethroughText(part)
-  //             );
-
-  //             initialValues[field.attribute] = selectedOptions;
-  //           } else {
-  //             initialValues[field.attribute] = [];
-  //           }
-  //         } else {
-  //           if (reportDetails && reportDetails[field.attribute]) {
-  //             if (field.attribute?.includes("date")) {
-  //               initialValues[field.attribute] = formattedDate(
-  //                 reportDetails[field.attribute]
-  //               );
-  //             } else {
-  //               initialValues[field.attribute] = reportDetails[field.attribute];
-  //             }
-  //           } else {
-  //             initialValues[field.attribute] = "";
-  //           }
-  //         }
-  //       });
-  //       setFormData(initialValues);
-  //     }
-  //   }, [fields, open]);
-
-  //   const handleClose = () => {
-  //     onClose();
-  //     setFormData({});
-  //   };
-
-  // const handleInputChange = (fieldName, value) => {
-  //     setFormData(prev => ({ ...prev, [fieldName]: value }));
-  // };
-
-  const applyStrikethrough = (text) =>
-    text
-      ?.split("")
-      .map((c) => c + "\u0336")
-      .join("");
-
-  // const handleSubmit = () => {
-  //     const finalPayload = {};
-
-  //     fields.forEach(({ attribute }) => {
-  //         let value = formData[attribute];
-  //         if (typeof value === "string" && (value?.includes("undefined") || value.trim() === "")) {
-  //             value = undefined;
-  //         }
-  //         if (attribute?.startsWith("_st_")) {
-  //             const [, raw] = attribute?.split("_st_");
-  //             const optionsRaw = raw.split("_");
-  //             const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
-
-  //             // `value` is the array of selected options
-  //             const selected = Array.isArray(value) ? value : [];
-
-  //             finalPayload[attribute] = options
-  //                 .map(opt => selected.includes(opt) ? opt : applyStrikethrough(opt))
-  //                 .join(" / ");
-  //         }
-  //         else if (attribute.startsWith("_checkbox")) {
-  //             finalPayload[attribute] = value === true ? "\u2611" : "\u2612";
-  //         } else if (attribute?.includes("date") && value) {
-  //             finalPayload[attribute] = formattedDate(value);
-  //         } else if (typeof value === "string" && value.trim()) {
-  //             finalPayload[attribute] = value;
-  //         } else {
-  //             finalPayload[attribute] = "-";
-  //         }
-  //     });
-
-  //     onSubmit(finalPayload);
-  // };
-
-  useEffect(() => {
-    if (saveData) {
-      handleSubmit(formData, false);
-      setSaveData(false);
-    }
-  }, [formData, handleSubmit, saveData]);
 
   const handleClose = () => {
     onClose();
@@ -197,7 +104,11 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
           return (
             <Grid2 size={{ xs: 12 }} key={attr}>
               <Box display="flex" alignItems="center">
-                <input type="checkbox" checked={!!formData[attr]} onChange={(e) => handleInputChange(attr, e.target.checked)} />
+                <input 
+                  type="checkbox" 
+                  checked={formData[attr] === true || formData[attr] === "\u2611"}
+                  onChange={(e) => handleInputChange(attr, e.target.checked)} 
+                />
                 <Typography sx={{ ml: 1 }}>{field.label}</Typography>
               </Box>
             </Grid2>
@@ -208,36 +119,37 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
           const [, raw] = attr?.split("_st_");
           const optionsRaw = raw.split("_");
           const options = optionsRaw.map((opt) => opt.replace(/-/g, " "));
-          const selected = formData[attr] || "";
+          const selected = formData[attr] || [];
 
           return (
-            // eslint-disable-next-line react/jsx-key
-            <Box display="flex" flexDirection="column" gap={1}>
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                {field.label}
-              </Typography>
-              {options.map((opt) => (
-                <label key={opt}>
-                  <input
-                    type="checkbox"
-                    name={attr}
-                    value={opt}
-                    checked={selected?.includes(opt)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        handleInputChange(attr, [...selected, opt]);
-                      } else {
-                        handleInputChange(
-                          attr,
-                          selected?.filter((item) => item !== opt)
-                        );
-                      }
-                    }}
-                  />
-                  {opt}
-                </label>
-              ))}
-            </Box>
+            <Grid2 size={{ xs: 12 }} key={attr}>
+              <Box display="flex" flexDirection="column" gap={1}>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  {field.label}
+                </Typography>
+                {options.map((opt) => (
+                  <label key={opt}>
+                    <input
+                      type="checkbox"
+                      name={attr}
+                      value={opt}
+                      checked={selected?.includes(opt)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          handleInputChange(attr, [...selected, opt]);
+                        } else {
+                          handleInputChange(
+                            attr,
+                            selected?.filter((item) => item !== opt)
+                          );
+                        }
+                      }}
+                    />
+                    {opt}
+                  </label>
+                ))}
+              </Box>
+            </Grid2>
           );
         }
 
@@ -245,7 +157,7 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
           return (
             <Grid2 size={{ xs: 12 }} key={attr}>
               <Typography variant="body2" sx={{ mb: 1 }}>
-                {field.label || formatLabel(attr)}
+                {field.label}
               </Typography>
               <TextareaAutosize style={{ width: "100%" }} minRows={4} multiline label={field.label} value={formData[attr] || ""} onChange={(e) => handleInputChange(attr, e.target.value)} placeholder={field.label.toLowerCase()} />
             </Grid2>
@@ -359,9 +271,10 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
       <DialogActions sx={{ p: 3, background: "white", gap: 2, justifyContent: "flex-end" }}>
         <Button
-          onClick={() => setSaveData(true)}
+          onClick={handleSaveClick}
           variant="outlined"
           size="large"
+          disabled={isSaving}
           sx={{
             borderRadius: 2,
             px: 3,
@@ -379,7 +292,7 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
             transition: "all 0.2s ease",
           }}
         >
-          Save
+          {isSaving ? "Saving..." : "Save"}
         </Button>
         <Button
           onClick={handleClose}

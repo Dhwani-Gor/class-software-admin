@@ -8,9 +8,6 @@ import CommonConfirmationDialog from "../Dialogs/CommonConfirmationDialog";
 
 const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [expandedSection, setExpandedSection] = useState("systemInfo");
-
-  const isStrikethroughText = (text) => text?.split("").some((c) => c === "\u0336");
-
   const { formData, setFormData } = useFormInitialization(fields, reportDetails, open);
 
   const [saveData, setSaveData] = useState(false);
@@ -49,106 +46,6 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
     onClose();
     setFormData({});
   };
-  // useEffect(() => {
-  //     if (fields && fields.length > 0) {
-  //         const initialValues = {};
-  //         fields.forEach(field => {
-  //             if (field.attribute.startsWith("_checkbox")) {
-  //                 if (reportDetails && reportDetails[field.attribute] === "\u2611") {
-  //                     initialValues[field.attribute] = true;
-  //                 } else {
-  //                     initialValues[field.attribute] = false;
-  //                 }
-  //             }
-  //             else if (field.attribute.startsWith("_st_")) {
-  //                 if (reportDetails && reportDetails[field.attribute]) {
-  //                     const parts = reportDetails[field.attribute]
-  //                         .split(' / ')
-  //                         .map(s => s.trim());
-
-  //                     const hasStrikethrough = parts.some(part => isStrikethroughText(part));
-
-  //                     if (!hasStrikethrough) {
-  //                         initialValues[field.attribute] = "";
-  //                     } else {
-  //                         const selectedOption = parts.find(part => !isStrikethroughText(part));
-  //                         initialValues[field.attribute] = selectedOption || "";
-  //                     }
-  //                 } else {
-  //                     initialValues[field.attribute] = "";
-  //                 }
-  //             }
-  //             else {
-  //                 if (reportDetails && reportDetails[field.attribute]) {
-  //                     if (field.attribute?.includes("date")) {
-  //                         initialValues[field.attribute] = formattedDate(reportDetails[field.attribute]);
-  //                     } else {
-  //                         initialValues[field.attribute] = reportDetails[field.attribute];
-  //                     }
-  //                 } else {
-  //                     initialValues[field.attribute] = "";
-  //                 }
-  //             }
-  //         });
-  //         setFormData(initialValues);
-  //     }
-  // }, [fields, open]);
-
-  // const handleClose = () => {
-  //     onClose();
-  //     setFormData({});
-  // };
-
-  //   const handleInputChange = (field, value) => {
-  //     setFormData((prev) => ({
-  //       ...prev,
-  //       [field]: value,
-  //     }));
-  //   };
-
-  const applyStrikethrough = (text) =>
-    text
-      ?.split("")
-      .map((c) => c + "\u0336")
-      .join("");
-
-  //   const handleSubmit = () => {
-  //     const finalPayload = {};
-
-  //     fields.forEach(({ attribute }) => {
-  //       let value = formData[attribute];
-  //       if (
-  //         typeof value === "string" &&
-  //         (value?.includes("undefined") || value.trim() === "")
-  //       ) {
-  //         value = undefined;
-  //       }
-
-  //       if (key.startsWith("_st_")) {
-  //         const [, raw] = key?.split("_st_");
-  //         const optionsRaw = raw.split("_");
-  //         const options = optionsRaw.map((opt) => opt.replace(/-/g, " "));
-
-  //         if (!value) {
-  //           acc[key] = options.join(" / ");
-  //         } else {
-  //           acc[key] = options
-  //             .map((opt) => (opt === value ? opt : applyStrikethrough(opt)))
-  //             .join(" / ");
-  //         }
-  //       } else if (attribute.startsWith("_checkbox")) {
-  //         finalPayload[attribute] = value === true ? "\u2611" : "\u2612";
-  //       } else if (attribute?.includes("date")) {
-  //         finalPayload[attribute] = value ? formattedDate(value) : "-";
-  //       } else if (typeof value === "string" && value.trim()) {
-  //         finalPayload[attribute] = value;
-  //       } else {
-  //         finalPayload[attribute] = "-";
-  //       }
-  //     });
-  //     onSubmit(finalPayload);
-  //   };
-
   const engineNumbers = new Set();
 
   fields?.forEach((field) => {

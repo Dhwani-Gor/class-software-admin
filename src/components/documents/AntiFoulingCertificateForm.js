@@ -13,14 +13,24 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [isLoadingVariable, setIsLoadingVariable] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const { formData, setFormData } = useFormInitialization(fields, reportDetails, open);
   const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, save);
 
-  const isStrikethroughText = (text) => text?.split("").some((c) => c === "\u0336");
-
   const handleCancel = () => {
     setOpenDialog(false);
+  };
+
+  const handleSaveClick = async () => {
+    try {
+      setIsSaving(true);
+      await onSubmit(formData, { saveOnly: true });
+    } catch (error) {
+      console.error('Save error:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleConfirm = () => {
@@ -99,7 +109,9 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
               return (
                 <Grid2 key={attr} size={{ xs: 12 }}>
                   <Box display="flex" alignItems="center">
-                    <input type="checkbox" checked={!!formData[attr]} onChange={(e) => handleInputChange(attr, e.target.checked)} />
+                    <input type="checkbox" 
+                     checked={formData[attr] === true || formData[attr] === "\u2611"}
+                     onChange={(e) => handleInputChange(attr, e.target.checked)} />
                     <Typography sx={{ ml: 1 }}>{field.label || formatLabel(attr)}</Typography>
                   </Box>
                 </Grid2>
@@ -119,7 +131,7 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
               const [, raw] = attr?.split("_st_");
               const optionsRaw = raw.split("_");
               const options = optionsRaw.map((opt) => opt.replace(/-/g, " "));
-              const selected = formData[attr] || "";
+              const selected = formData[attr] || [];
 
               return (
                 <Box display="flex" flexDirection="column" gap={1}>
@@ -242,8 +254,8 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
 
       <DialogActions sx={{ p: 3, background: "white", gap: 2, justifyContent: "flex-end" }}>
         <Button
-          onClick={() => setSaveData(true)}
-          variant="outlined"
+  onClick={handleSaveClick}
+  variant="outlined"
           size="large"
           sx={{
             borderRadius: 2,
@@ -262,7 +274,7 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
             transition: "all 0.2s ease",
           }}
         >
-          Save
+        {isSaving ? "Saving..." : "Save"}
         </Button>
         <Button
           onClick={handleClose}
