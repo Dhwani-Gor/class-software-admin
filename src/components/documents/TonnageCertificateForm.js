@@ -4,6 +4,7 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Box, Typo
 import { Close as CloseIcon, Description as ReportIcon, CheckCircle as CheckIcon, ExpandMore as ExpandMoreIcon } from "@mui/icons-material";
 import { formattedDate, formatDate } from "@/utils/date";
 import { useCommonSubmit, useFormInitialization } from "./useSubmit";
+import CommonConfirmationDialog from "../Dialogs/CommonConfirmationDialog";
 
 const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [expandedSection, setExpandedSection] = useState("basicInfo");
@@ -632,7 +633,7 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
           Generate Certificate
         </Button>
       </DialogActions>
-      <CommonConfirmationDialog open={openDialog} onCancel={handleCancel} onConfirm={handleConfirm} title="Are you sure the form data is complete and you want to generate cvertificate?" />
+      <CommonConfirmationDialog open={openDialog} onCancel={handleCancel} onConfirm={handleConfirm} title="Are you sure the form data is complete and you want to generate certificate?" />
     </Dialog>
   );
 };

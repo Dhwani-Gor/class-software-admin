@@ -31,7 +31,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
 
   const handleConfirm = () => {
     setOpenDialog(false);
-    handleSubmit(formData);
+    handleSubmit(formValues);
   };
 
   const handleGenerateClick = () => {
@@ -455,7 +455,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
           {isLoadingVariables ? "Loading..." : "Generate Certificate"}
         </Button>
       </DialogActions>
-      <CommonConfirmationDialog open={openDialog} onCancel={handleCancel} onConfirm={handleConfirm} title="Are you sure the form data is complete and you want to generate cvertificate?" />
+      <CommonConfirmationDialog open={openDialog} onCancel={handleCancel} onConfirm={handleConfirm} title="Are you sure the form data is complete and you want to generate certificate?" />
     </Dialog>
   );
 };

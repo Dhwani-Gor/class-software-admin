@@ -749,7 +749,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                   onClick={handleAddField}
                   sx={{ alignSelf: "flex-start" }}
                 />
-                <CommonButton
+                {/* <CommonButton
                   text="Export XLSX"
                   variant="contained"
                   onClick={handleExportCSV}
@@ -773,7 +773,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                       startIcon={<UploadIcon />}
                     />
                   </label>
-                </Box>
+                </Box> */}
               </Stack>
             </Stack>
 
