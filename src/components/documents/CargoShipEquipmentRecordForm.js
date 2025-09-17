@@ -4,27 +4,10 @@ import { Dialog, DialogContent, DialogActions, TextField, Box, Typography, IconB
 import { Close as CloseIcon, ExpandMore as ExpandMoreIcon, CheckCircle as CheckIcon, Report as ReportIcon } from "@mui/icons-material";
 import { formattedDate, formatDate } from "@/utils/date";
 import { useFormInitialization, useCommonSubmit } from "./useSubmit";
-import CommonConfirmationDialog from "../Dialogs/CommonConfirmationDialog";
 
 const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [expandedSection, setExpandedSection] = useState("lifeSaving");
   const [saveData, setSaveData] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [openDialog, setOpenDialog] = useState(false);
-  
-  const handleCancel = () => {
-    setOpenDialog(false);
-  };
-
-  const handleConfirm = () => {
-    setOpenDialog(false);
-    handleSubmit(formData);
-  };
-
-  const handleGenerateClick = () => {
-    setOpenDialog(true);
-  };
-
   const { formData, setFormData } = useFormInitialization(fields, reportDetails, open);
   const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, saveData);
 
@@ -107,7 +90,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
   useEffect(() => {
     if (saveData) {
-      handleSubmit(formData, false);
+      handleSubmit(formData);
       setSaveData(false);
     }
   }, [formData, handleSubmit, saveData]);
@@ -466,7 +449,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
           Cancel
         </Button>
         <Button
-          onClick={handleGenerateClick}
+       onClick={() => handleSubmit(formData)}
           variant="contained"
           size="large"
           startIcon={<CheckIcon />}
@@ -489,7 +472,6 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
           Generate Certificate
         </Button>
       </DialogActions>
-      <CommonConfirmationDialog open={openDialog} onCancel={handleCancel} onConfirm={handleConfirm} title="Are you sure the form data is complete and you want to generate cvertificate?" />
     </Dialog>
   );
 };
