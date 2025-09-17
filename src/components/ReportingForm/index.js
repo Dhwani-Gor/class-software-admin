@@ -580,6 +580,7 @@ const ReportingForm = () => {
       toast.error("Unable to fetch the latest report data.");
       return;
     }
+    console.log(result?.data?.data  ,"result?.data?.data")
     const reportData = result?.data?.data[0];
     setReportDetails(reportData);
     try {
@@ -629,10 +630,13 @@ const ReportingForm = () => {
     }
   };
 
-  const handleSubmitReport = async (extraFields) => {
+  const handleSubmitReport = async (extraFields, options = {}) => {
     setLoading(true);
-    setLoadingReport(true);
-
+    
+    if (!options.saveOnly) {
+      setLoadingReport(true);
+    }
+  
     try {
       const payload = {
         reportDetailId: reportDetails?.id,
@@ -646,7 +650,21 @@ const ReportingForm = () => {
           }),
         },
       };
-
+  
+      if (options.saveOnly) {
+        const result = await updateReportDetail(reportDetails?.id, {
+          data: extraFields
+        });
+        
+        if (result?.data?.status === "success") {
+          toast.success("Data saved successfully.");
+          setReportDetails(result?.data?.data);
+        } else {
+          throw new Error(result?.data?.message || "Failed to save data");
+        }
+        return;
+      }
+  
       const result = await generateFullReport(payload);
       if (result?.data?.status == "success" && result?.data?.message) {
         toast.success(result.data.message);
@@ -664,14 +682,16 @@ const ReportingForm = () => {
         throw new Error(result?.data?.message || "Failed to generate report");
       }
     } catch (err) {
-      console.error("Error downloading report:", err);
-      toast.error(err.message || "Failed to generate full report");
+      console.error("Error:", err);
+      toast.error(err.message || `Failed to ${options.saveOnly ? 'save data' : 'generate full report'}`);
     } finally {
       setLoading(false);
-      setLoadingReport(false);
+      if (!options.saveOnly) {
+        setLoadingReport(false);
+      }
     }
   };
-
+ 
   const handleStatusChange = async (id, value) => {
     setShowForm(false);
     setTableData((prevData) => prevData.map((item) => (item.id === id ? { ...item, status: value } : item)));

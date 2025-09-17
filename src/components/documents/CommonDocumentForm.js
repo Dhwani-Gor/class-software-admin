@@ -14,6 +14,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
   const [saveData, setSaveData] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [isLoadingVariable, setIsLoadingVariable] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, saveData);
 
   const handleInputChange = (fieldName, value) => {
@@ -38,6 +39,17 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
     setOpenDialog(true);
   };
 
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      await onSubmit(formData, { saveOnly: true });
+    } catch (error) {
+      console.error('Save error:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   useEffect(() => {
     if (saveData) {
       handleSubmit(formData, false);
@@ -47,7 +59,6 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
 
   return (
     <>
-      {/* Main Dialog */}
       <Dialog
         open={open}
         onClose={handleClose}
@@ -64,7 +75,6 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
           },
         }}
       >
-        {/* Header */}
         <Box
           sx={{
             background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
@@ -135,7 +145,11 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
                       <Box>
                         {isCheckbox ? (
                           <Box display="flex" alignItems="center">
-                            <input type="checkbox" checked={!!formData[attr]} onChange={(e) => handleInputChange(attr, e.target.checked)} />
+                            <input 
+                              type="checkbox" 
+                              checked={formData[attr] === "\u2611" || formData[attr] === true} 
+                              onChange={(e) => handleInputChange(attr, e.target.checked ? "\u2611" : "\u2612")} 
+                            />
                             <Typography variant="body2" sx={{ ml: 1 }}>
                               {field.label}
                             </Typography>
@@ -205,12 +219,10 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
           }}
         >
           <Button
-            onClick={() => {
-              setSaveData(true);
-              handleSubmit();
-            }}
+            onClick={handleSave}
             variant="outlined"
             size="large"
+            disabled={isSaving}
             sx={{
               borderRadius: 2,
               px: 3,
@@ -228,7 +240,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
               transition: "all 0.2s ease",
             }}
           >
-            Save
+            {isSaving ? "Saving..." : "Save"}
           </Button>
           <Button
             onClick={handleClose}
@@ -280,7 +292,6 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
         </DialogActions>
       </Dialog>
 
-      {/* ✅ Confirmation Dialog */}
       <CommonConfirmationDialog open={openDialog} onCancel={handleCancel} onConfirm={handleConfirm} title="Are you sure the form data is complete and you want to generate certificate?" />
     </>
   );
