@@ -18,6 +18,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
   const [expandedSection, setExpandedSection] = useState("freeboard");
   const [systemVariables, setSystemVariables] = useState();
   const [isLoadingVariables, setIsLoadingVariables] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [saveData, setSaveData] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
@@ -25,24 +26,30 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
   const handleImageSelect = (id) => {
     setSelectedImage(id);
   };
+  
   const handleCancel = () => {
     setOpenDialog(false);
   };
 
   const handleConfirm = () => {
     setOpenDialog(false);
-    handleSubmit(formValues);
+    handleSubmit(formValues, false); // Generate certificate
   };
 
   const handleGenerateClick = () => {
     setSaveData(false);
     setOpenDialog(true);
   };
-  
 
-  const handleSaveClick = () => {
-    setSaveData(true);
-    handleSubmit(formValues);
+  const handleSaveClick = async () => {
+    try {
+      setIsSaving(true);
+      await handleSubmit(formValues, true); // Save only
+    } catch (error) {
+      console.error('Save error:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const timberImages = systemVariables?.data?.filter((item) => item.name.startsWith("timber_image")) || [];
@@ -78,29 +85,24 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
       const initialValues = {};
       fields.forEach((field) => {
         if (field.attribute.startsWith("_checkbox")) {
-          if (reportDetails?.data && reportDetails?.data[field.attribute] === "\u2611") {
-            initialValues[field.attribute] = true;
-          } else {
-            initialValues[field.attribute] = false;
-          }
+          // Handle checkbox values properly for both "\u2611" and boolean
+          const value = reportDetails?.data?.[field.attribute];
+          initialValues[field.attribute] = value === "\u2611" || value === true;
         } else if (field.attribute.startsWith("_st_")) {
-          if (reportDetails && reportDetails[field.attribute]) {
-            const parts = reportDetails[field.attribute].split(" / ").map((s) => s.trim());
-
+          const value = reportDetails?.data?.[field.attribute];
+          if (value && typeof value === 'string') {
+            const parts = value.split(" / ").map((s) => s.trim());
             const cleanText = (txt) => txt.replace(/\u0336/g, "");
-
             const selectedOptions = parts.filter((part) => !/\u0336/.test(part)).map(cleanText);
-
             initialValues[field.attribute] = selectedOptions;
+          } else if (Array.isArray(value)) {
+            initialValues[field.attribute] = value;
           } else {
             initialValues[field.attribute] = [];
           }
         } else {
-          if (reportDetails?.data && reportDetails?.data[field.attribute]) {
-            initialValues[field.attribute] = reportDetails?.data[field.attribute];
-          } else {
-            initialValues[field.attribute] = "";
-          }
+          const value = reportDetails?.data?.[field.attribute];
+          initialValues[field.attribute] = value || "";
         }
       });
       setFormValues(initialValues);
@@ -116,16 +118,16 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
     setFormValues((prev) => ({ ...prev, [fieldName]: value }));
   };
 
-  const handleSubmit = () => {
-    const filledValues = Object.entries(formValues).reduce((acc, [key, raw]) => {
+  const handleSubmit = (values = formValues, saveOnly = false) => {
+    const filledValues = Object.entries(values).reduce((acc, [key, raw]) => {
       let value = raw;
       if (typeof value === "string" && (value.includes("undefined") || !value.trim())) {
         value = undefined;
       }
 
       if (key.startsWith("_st_")) {
-        const [, raw] = key?.split("_st_");
-        const optionsRaw = raw.split("_");
+        const [, rawOptions] = key?.split("_st_");
+        const optionsRaw = rawOptions.split("_");
         const options = optionsRaw.map((opt) => opt.replace(/-/g, " "));
 
         const selectedValues = Array.isArray(value) ? value : [];
@@ -150,9 +152,11 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
     const finalFilledValues = {
       ...filledValues,
       image: selectedImage,
-      save: saveData,
+      save: saveOnly,
     };
-    onSubmit(finalFilledValues || {});
+
+    // Call onSubmit with saveOnly flag
+    return onSubmit(finalFilledValues || {}, { saveOnly });
   };
 
   const categorizeFields = (fields) => {
@@ -195,7 +199,11 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
             <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={attr}>
               <Grid2 size={{ xs: 12 }}>
                 <Box display="flex" alignItems="center">
-                  <input type="checkbox" checked={!!formValues[attr]} onChange={(e) => handleInputChange(attr, e.target.checked)} />
+                  <input 
+                    type="checkbox" 
+                    checked={formValues[attr] === true}
+                    onChange={(e) => handleInputChange(attr, e.target.checked)} 
+                  />
                   <Typography variant="body2" sx={{ ml: 1 }}>
                     {field.label}
                   </Typography>
@@ -209,35 +217,36 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
           const [, raw] = attr?.split("_st_");
           const optionsRaw = raw.split("_");
           const options = optionsRaw.map((opt) => opt.replace(/-/g, " "));
-          const selected = formValues[attr];
+          const selected = formValues[attr] || [];
           return (
-            // eslint-disable-next-line react/jsx-key
-            <Box display="flex" flexDirection="column" gap={1}>
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                {field.label}
-              </Typography>
-              {options.map((opt) => (
-                <label key={opt}>
-                  <input
-                    type="checkbox"
-                    name={attr}
-                    value={opt}
-                    checked={selected?.includes(opt)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        handleInputChange(attr, [...selected, opt]);
-                      } else {
-                        handleInputChange(
-                          attr,
-                          selected.filter((item) => item !== opt)
-                        );
-                      }
-                    }}
-                  />{" "}
-                  {opt}
-                </label>
-              ))}
-            </Box>
+            <Grid2 size={{ xs: 12 }} key={attr}>
+              <Box display="flex" flexDirection="column" gap={1}>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  {field.label}
+                </Typography>
+                {options.map((opt) => (
+                  <label key={opt}>
+                    <input
+                      type="checkbox"
+                      name={attr}
+                      value={opt}
+                      checked={selected?.includes(opt)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          handleInputChange(attr, [...selected, opt]);
+                        } else {
+                          handleInputChange(
+                            attr,
+                            selected.filter((item) => item !== opt)
+                          );
+                        }
+                      }}
+                    />{" "}
+                    {opt}
+                  </label>
+                ))}
+              </Box>
+            </Grid2>
           );
         }
 
@@ -392,6 +401,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
           onClick={handleSaveClick}
           variant="outlined"
           size="large"
+          disabled={isSaving}
           sx={{
             borderRadius: 2,
             px: 3,
@@ -409,7 +419,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
             transition: "all 0.2s ease",
           }}
         >
-          Save
+          {isSaving ? "Saving..." : "Save"}
         </Button>
         <Button
           onClick={handleClose}
@@ -435,7 +445,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
           Cancel
         </Button>
         <Button
-          onClick={()=>handleGenerateClick()}
+          onClick={handleGenerateClick}
           variant="contained"
           size="large"
           startIcon={<CheckIcon />}
