@@ -377,7 +377,7 @@ const DigitalDocument = ({ params }) => {
           <Box display="flex" justifyContent="center" mb={3}>
             <Box
               component="img"
-              src={companyLogo}
+              src="/assets/company_logo.jfif"
               alt="Marine Assure Logo"
               sx={{
                 width: "auto",
@@ -407,7 +407,7 @@ const DigitalDocument = ({ params }) => {
               The following details are confirmed by:
             </Typography>
             <Typography variant="body2" color="primary" fontWeight="bold">
-             {companyName}
+            MCBG CLASS
             </Typography>
           </Box>
 
@@ -541,7 +541,7 @@ const DigitalDocument = ({ params }) => {
               {reportDetails.generatedDoc?.split("/").pop() || "Document"}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Marine Classification Bureau Gambia Ltd
+            MCBG CLASS            
             </Typography>
           </Box>
         </Paper>
