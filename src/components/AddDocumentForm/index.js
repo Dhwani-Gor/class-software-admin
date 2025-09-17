@@ -22,7 +22,11 @@ import { toast } from "react-toastify";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import { createDocument, getDocumentDetails, updateDocument } from "@/api";
+import UploadIcon from '@mui/icons-material/Upload';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { Chip } from "@mui/material";
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import * as XLSX from 'xlsx';
 
 const documentValidityType = [
   { value: "interim", label: "Interim" },
@@ -54,6 +58,8 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
   });
   const [additionalFields, setAdditionalFields] = useState([]);
   const [endorsements, setEndorsements] = useState([]);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [previewState, setPreviewState] = useState({
     open: false,
@@ -180,6 +186,90 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
     return !Object.values(newErrors).some(Boolean);
   };
 
+  const handleExportCSV = () => {
+    if (additionalFields.length === 0) {
+      toast.warning("No additional fields to export");
+      return;
+    }
+
+    const wsData = [
+      ['attribute', 'label'],
+      ...additionalFields.map(field => [field.attribute || '', field.label || ''])
+    ];
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Additional Fields');
+
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    const filename = `additional_fields_${timestamp}.xlsx`;
+
+    XLSX.writeFile(wb, filename);
+    toast.success("Additional fields exported successfully");
+  };
+
+  const handleImportCSV = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = e.target.result;
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        if (jsonData.length < 2) {
+          toast.error("Invalid file format. File should contain at least headers and one data row.");
+          return;
+        }
+
+        // Check if headers are correct
+        const headers = jsonData[0].map(header => header.toLowerCase().trim());
+        const attributeIndex = headers.indexOf('attribute');
+        const labelIndex = headers.indexOf('label');
+
+        if (attributeIndex === -1 || labelIndex === -1) {
+          toast.error("Invalid file format. File should contain 'attribute' and 'label' columns.");
+          return;
+        }
+
+        // Extract data rows (skip header)
+        const newFields = [];
+        for (let i = 1; i < jsonData.length; i++) {
+          const row = jsonData[i];
+          const attribute = row[attributeIndex]?.toString().trim() || '';
+          const label = row[labelIndex]?.toString().trim() || '';
+          
+          // Only add rows that have at least one non-empty field
+          if (attribute || label) {
+            newFields.push({ attribute, label });
+          }
+        }
+
+        if (newFields.length === 0) {
+          toast.warning("No valid data found in the file.");
+          return;
+        }
+
+        // Append to existing fields
+        setAdditionalFields(prev => [...prev, ...newFields]);
+        toast.success(`${newFields.length} fields imported successfully`);
+
+      } catch (error) {
+        console.error("Error importing file:", error);
+        toast.error("Error reading file. Please make sure it's a valid CSV or Excel file.");
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+    // Clear the input value to allow importing the same file again
+    event.target.value = '';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
@@ -284,7 +374,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
         }
       }
 
-      // ✅ Common success handling
+      // Common success handling
       if (response?.status === 200 || response?.status === 201) {
         toast.success(
           mode === "duplicate"
@@ -346,6 +436,47 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
     updatedFields.splice(index, 1);
     setAdditionalFields(updatedFields);
     toast.success("Field removed successfully");
+  };
+
+  // Drag and drop handlers for additional fields
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', e.target);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) return;
+
+    const updatedFields = [...additionalFields];
+    const draggedItem = updatedFields[draggedIndex];
+    
+    // Remove the dragged item
+    updatedFields.splice(draggedIndex, 1);
+    
+    // Insert at new position
+    const newIndex = draggedIndex < dropIndex ? dropIndex - 1 : dropIndex;
+    updatedFields.splice(newIndex, 0, draggedItem);
+    
+    setAdditionalFields(updatedFields);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   // Endorsement handlers
@@ -557,40 +688,96 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
             <Stack spacing={2}>
               {Array.isArray(additionalFields) && additionalFields.length > 0 &&
                 additionalFields.map((field, index) => (
-                  <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box 
+                    key={index} 
+                    sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 1,
+                      p: 1.5,
+                      border: '1px solid',
+                      borderColor: dragOverIndex === index ? 'primary.main' : 'grey.300',
+                      borderRadius: 1,
+                      backgroundColor: draggedIndex === index ? 'grey.50' : 'transparent',
+                      opacity: draggedIndex === index ? 0.5 : 1,
+                      transition: 'all 0.2s ease',
+                      cursor: 'move'
+                    }}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, index)}
+                  >
+                    <DragIndicatorIcon 
+                      sx={{ 
+                        color: 'grey.500', 
+                        cursor: 'grab',
+                        '&:active': { cursor: 'grabbing' }
+                      }} 
+                    />
                     <TextField
                       label="Attribute"
                       value={field.attribute || ""}
                       onChange={(e) => handleFieldChange(index, "attribute", e.target.value)}
                       fullWidth
+                      size="small"
                     />
                     <TextField
                       label="Label"
                       value={field.label || ""}
                       onChange={(e) => handleFieldChange(index, "label", e.target.value)}
                       fullWidth
+                      size="small"
                     />
                     <IconButton
                       color="error"
                       onClick={() => handleDeleteField(index)}
                       aria-label="delete field"
+                      size="small"
                     >
                       <DeleteIcon />
                     </IconButton>
                   </Box>
                 ))}
 
-
-              <CommonButton
-                text="Add Attribute"
-                variant="outlined"
-                onClick={handleAddField}
-                sx={{ alignSelf: "flex-start" }}
-              />
+              <Stack direction={"row"} spacing={2}>
+                <CommonButton
+                  text="Add Attribute"
+                  variant="outlined"
+                  onClick={handleAddField}
+                  sx={{ alignSelf: "flex-start" }}
+                />
+                <CommonButton
+                  text="Export XLSX"
+                  variant="contained"
+                  onClick={handleExportCSV}
+                  sx={{ alignSelf: "flex-start" }}
+                  startIcon={<FileDownloadIcon />}
+                />
+                <Box>
+                  <input
+                    type="file"
+                    accept=".csv,.xlsx,.xls"
+                    onChange={handleImportCSV}
+                    style={{ display: 'none' }}
+                    id="import-csv-input"
+                  />
+                  <label htmlFor="import-csv-input">
+                    <CommonButton
+                      text="Import CSV/XLSX"
+                      variant="contained"
+                      component="span"
+                      sx={{ alignSelf: "flex-start" }}
+                      startIcon={<UploadIcon />}
+                    />
+                  </label>
+                </Box>
+              </Stack>
             </Stack>
 
             {/* Endorsements Section */}
-            {/* <Typography variant="h6">Endorsements</Typography> */}
             <Stack spacing={2}>
               {Array.isArray(endorsements) && endorsements.length > 0 &&
                 endorsements.map((endorsement, index) => (
@@ -623,7 +810,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                         size="small"
                       />
                       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-
                         <TextField
                           label="Endorsed By"
                           value={endorsement.endorsedby_1 || ""}
@@ -656,13 +842,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                     </Stack>
                   </Box>
                 ))}
-
-              {/* <CommonButton
-                text="Add Endorsement"
-                variant="outlined"
-                onClick={handleAddEndorsement}
-                sx={{ alignSelf: "flex-start" }}
-              /> */}
             </Stack>
 
             <Stack
@@ -736,7 +915,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
               style={{ width: '100%', height: '100%', border: 'none' }}
               title="File Preview"
               onLoad={() => setLoadingPreview(false)}
-
             />
           </div>
         </DialogContent>

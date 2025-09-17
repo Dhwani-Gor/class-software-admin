@@ -1,0 +1,40 @@
+.checkbox-field,
+.form-field[data-type="checkbox"],
+.checkbox-display {
+  font-family: 'Segoe UI Symbol', 'Segoe UI', 'Arial Unicode MS', sans-serif !important;
+  font-size: 16px !important;
+  line-height: 20px !important;
+  display: inline-block !important;
+  width: 18px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+  font-weight: normal !important;
+}
+
+/* For table cells containing checkboxes */
+.table-cell-checkbox,
+td.checkbox,
+th.checkbox {
+  font-family: 'Segoe UI Symbol', 'Segoe UI', 'Arial Unicode MS', sans-serif !important;
+  font-size: 16px !important;
+  text-align: center !important;
+}
+
+/* For form display elements */
+.form-display .checkbox-value,
+.display-checkbox {
+  font-family: 'Segoe UI Symbol', 'Segoe UI', 'Arial Unicode MS', sans-serif !important;
+  font-size: 16px !important;
+  display: inline-block !important;
+  width: 18px !important;
+  height: 18px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+  line-height: 18px !important;
+}
+
+/* Generic checkbox styling */
+[class*="checkbox"] {
+  font-family: 'Segoe UI Symbol', 'Segoe UI', 'Arial Unicode MS', sans-serif !important;
+  font-size: 16px !important;
+}
