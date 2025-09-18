@@ -10,17 +10,14 @@ import CommonConfirmationDialog from "../Dialogs/CommonConfirmationDialog";
 const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [expandedSection, setExpandedSection] = useState("systemInfo");
   const [saveData, setSaveData] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
-  const [isLoadingVariable, setIsLoadingVariable] = useState(false);
 
   const { formData, setFormData } = useFormInitialization(fields, reportDetails, open);
-  const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, save);
-
-  const isStrikethroughText = (text) => text?.split("").some((c) => c === "\u0336");
+  const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, saveData);
 
   const handleCancel = () => {
     setOpenDialog(false);
+    setFormData({});
   };
 
   const handleConfirm = () => {
@@ -30,7 +27,6 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
 
   const handleClose = () => {
     onClose();
-    setFormData({});
   };
 
   const handleInputChange = (fieldName, value) => {
@@ -311,7 +307,6 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
           Generate Certificate
         </Button>
       </DialogActions>
-
       <CommonConfirmationDialog open={openDialog} onCancel={handleCancel} onConfirm={handleConfirm} title="Are you sure the form data is complete and you want to generate certificate?" />
     </Dialog>
   );

@@ -22,6 +22,7 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
 
   const handleCancel = () => {
     setOpenDialog(false);
+    setFormData({});
   };
 
   const handleConfirm = () => {
@@ -31,7 +32,6 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
 
   const handleClose = () => {
     onClose();
-    setFormData({});
   };
 
   const handleGenerateClick = () => {

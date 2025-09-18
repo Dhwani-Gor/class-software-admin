@@ -16,6 +16,8 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
   const handleCancel = () => {
     setOpenDialog(false);
+    setFormData({});
+
   };
 
   const handleConfirm = () => {
@@ -139,7 +141,6 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
   const handleClose = () => {
     onClose();
-    setFormData({});
   };
 
   const extractCheckboxFields = (fields = []) => {

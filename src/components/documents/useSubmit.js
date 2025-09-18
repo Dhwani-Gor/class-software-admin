@@ -11,29 +11,42 @@ const isStrikethroughText = (text) => text?.split("").some((c) => c === "\u0336"
 
 export const useFormInitialization = (fields, reportDetails, open) => {
   const [formData, setFormData] = useState({});
-console.log(reportDetails,"reportDetails")
+
   useEffect(() => {
     if (!fields || fields.length === 0) return;
 
     const initialValues = {};
-    console.log("==?welcome",fields);
+
     fields.forEach((field) => {
       const attr = field.attribute;
+
       if (attr.startsWith("_checkbox")) {
-        initialValues[attr] = reportDetails && reportDetails[attr] === "\u2611" ? true : false;
+        initialValues[attr] =
+          reportDetails && reportDetails[attr] === "\u2611" ? true : false;
 
       } else if (attr.startsWith("_st_")) {
-        if (reportDetails && reportDetails[attr]) {
-          const parts = reportDetails[attr].split(" / ").map((s) => s.trim());
+        const rawValue =
+          reportDetails && typeof reportDetails[attr] === "string"
+            ? reportDetails[attr]
+            : "";
+        if (rawValue) {
+          const parts = rawValue.split(" / ").map((s) => s.trim());
           initialValues[attr] = parts.filter((p) => !isStrikethroughText(p));
         } else {
           initialValues[attr] = [];
         }
 
       } else {
-        if (reportDetails && reportDetails[attr]) {
-          const val = String(reportDetails[attr]);
-          if (attr.toLowerCase().includes("date") && (!val || val.toLowerCase().includes("undefined"))) {
+        if (reportDetails && reportDetails[attr] !== undefined && reportDetails[attr] !== null) {
+          const val =
+            typeof reportDetails[attr] === "string" ||
+            typeof reportDetails[attr] === "number"
+              ? String(reportDetails[attr])
+              : "";
+          if (
+            attr.toLowerCase().includes("date") &&
+            (!val || val.toLowerCase().includes("undefined"))
+          ) {
             initialValues[attr] = "";
           } else {
             initialValues[attr] = val;
@@ -49,7 +62,6 @@ console.log(reportDetails,"reportDetails")
 
   return { formData, setFormData };
 };
-
 
 export const useCommonSubmit = (onSubmit, onClose, setFormData, onSave) => {
   
@@ -125,8 +137,9 @@ export const useCommonSubmit = (onSubmit, onClose, setFormData, onSave) => {
 
     if (shouldClose) {
       onClose();
+      setFormData({});
+
     }
-    setFormData({});
   };
 
   return { handleSubmit };

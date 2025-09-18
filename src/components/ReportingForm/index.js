@@ -370,9 +370,9 @@ const ReportingForm = () => {
         return <CSSForm {...commonProps} />;
 
       case "INTERNATIONAL LOAD LINE CERTIFICATE":
-        return <LoadLineCertificateForm open={open} onClose={() => setOpen(false)} onSubmit={handleSubmitReport} fields={underscoreFields} reportDetails={reportDetails} />;
+        return <LoadLineCertificateForm {...commonProps} />;
 
-      case "International Anti-Fouling System Certificate":
+      case "International Anti-Fouling System Statement of Compliance":
         return <AntiFoulingCertificateForm {...commonProps} />;
 
       case "RECORD OF CONSTRUCTION AND EQUIPMENT":
@@ -544,6 +544,8 @@ const ReportingForm = () => {
   };
 
   const handleFullReportGeneration = async () => {
+
+    fetchReportDetails(reportDetails?.id);
     try {
       if (underscoreFields.length > 0) {
         setOpen(true);
@@ -613,7 +615,6 @@ const ReportingForm = () => {
       const result = await generateFullReport(payload);
       if (result?.data?.status == "success" && result?.data?.message) {
         toast.success(result.data.message);
-        setOpen(false);
         return;
       } else if (result?.data?.data) {
         const fileUrl = result?.data?.data;
@@ -746,7 +747,7 @@ const ReportingForm = () => {
 
   const fetchReportDetails = async () => {
     const response = await getSelectedReportDetails(reportDetails?.id);
-    // setReportDetails(response?.data?.data)
+    setReportDetails(response?.data?.data)
   };
 
   useEffect(() => {

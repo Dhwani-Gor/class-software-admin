@@ -19,6 +19,8 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
   const handleCancel = () => {
     setOpenDialog(false);
+    setFormData({});
+
   };
 
   const handleConfirm = () => {
@@ -47,7 +49,6 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
   const handleClose = () => {
     onClose();
-    setFormData({});
   };
   // useEffect(() => {
   //     if (fields && fields.length > 0) {

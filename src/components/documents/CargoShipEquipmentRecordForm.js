@@ -9,12 +9,22 @@ import CommonConfirmationDialog from "../Dialogs/CommonConfirmationDialog";
 const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [expandedSection, setExpandedSection] = useState("lifeSaving");
   const [saveData, setSaveData] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
   const { formData, setFormData } = useFormInitialization(fields, reportDetails, open);
   const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, saveData);
 
   const handleClose = () => {
     onClose();
+  };
+
+  const handleCancel = () => {
+    setOpenDialog(false);
     setFormData({});
+  };
+
+  const handleConfirm = () => {
+    setOpenDialog(false);
+    handleSubmit(formData);
   };
 
   const handleInputChange = (fieldName, value) => {
@@ -91,7 +101,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
   useEffect(() => {
     if (saveData) {
-      handleSubmit(formData);
+      handleSubmit(formData,false);
       setSaveData(false);
     }
   }, [formData, handleSubmit, saveData]);

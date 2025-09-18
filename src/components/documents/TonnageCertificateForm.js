@@ -21,6 +21,8 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
 
   const handleCancel = () => {
     setOpenDialog(false);
+    setFormData({});
+
   };
 
   const handleConfirm = () => {
@@ -40,16 +42,9 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
     handleSubmit(formData);
   };
 
-  useEffect(() => {
-    if (saveData) {
-      handleSubmit(formData, false);
-      setSaveData(false);
-    }
-  }, [formData, handleSubmit, saveData]);
 
   const handleClose = () => {
     onClose();
-    setFormData({});
   };
 
   const isStrikethroughText = (text) => text?.split("").some((c) => c === "\u0336");
