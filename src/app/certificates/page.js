@@ -11,15 +11,15 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { DataGrid } from "@mui/x-data-grid";
-
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import GetAppIcon from "@mui/icons-material/GetApp";
 import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonInput from "@/components/CommonInput";
 import { getAllIssuedDocuments, getAllJournals } from "@/api";
-import { MenuItem, Select, TextField } from "@mui/material";
+import { Chip, MenuItem, Select, TextField } from "@mui/material";
 import CommonButton from "@/components/CommonButton";
+
 
 const Certificates = () => {
   const dispatch = useDispatch();
@@ -39,11 +39,12 @@ const Certificates = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState("certificates");
 
 
   // Client-side search functionality
 
-  const filteredCertificates = certificatesList.filter(certificate => {
+  const filteredCertificates = certificatesList.filter((certificate) => {
     if (!search.trim()) return true;
 
     const searchTerm = search.toLowerCase();
@@ -60,7 +61,7 @@ const Certificates = () => {
 
   // Remove unused functions and effects
   const handleFilterChange = (newFilter) => {
-    // Not needed anymore
+    setSelectedFilter(newFilter);
   };
 
   const snackbarClose = () => {
@@ -106,6 +107,7 @@ const Certificates = () => {
       }
 
       const searchQuery = debouncedSearch.trim();
+      const markAsArchive = selectedFilter == "Archive Documents";
 
       const res = await getAllIssuedDocuments(
         filterKeys,
@@ -114,7 +116,8 @@ const Certificates = () => {
         page,
         limit,
         startDate,
-        endDate
+        endDate,
+        markAsArchive
       );
 
       const data = res?.data;
@@ -137,7 +140,7 @@ const Certificates = () => {
 
   useEffect(() => {
     fetchCertificatesData();
-  }, [selectedReportNumber, placeFilter, statusFilter, debouncedSearch, page, limit, startDate, endDate]);
+  }, [selectedFilter,selectedReportNumber, placeFilter, statusFilter, debouncedSearch, page, limit, startDate, endDate]);
 
   const handleSearchChange = (event) => {
     setSearch(event.target.value);
@@ -303,6 +306,18 @@ const Certificates = () => {
       </CommonCard>
 
       <CommonCard>
+      <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+          {["certificates", "Archive Documents"].map((type) => (
+            <Chip
+              key={type}
+              label={type.charAt(0).toUpperCase() + type.slice(1)}
+              color={selectedFilter === type ? "primary" : "default"}
+              onClick={() => handleFilterChange(type)}
+              clickable
+              sx={{ fontWeight: selectedFilter === type ? 600 : 400, px: 2 }}
+            />
+          ))}
+        </Stack>
         <CommonInput
           placeholder="Search Certificate By Place or Type"
           fullWidth
@@ -339,6 +354,8 @@ const Certificates = () => {
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
           /> */}
+
+          
           <TextField
             label="Survey Date From"
             type="date"

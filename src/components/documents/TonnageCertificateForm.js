@@ -47,6 +47,14 @@ const InternationalTonnage = ({ open, onClose, onSubmit, fields, reportDetails }
     onClose();
   };
 
+    useEffect(() => {
+      if (saveData) {
+        handleSubmit(formData,false);
+        setSaveData(false);
+      }
+    }, [formData, handleSubmit, saveData]);
+  
+
   const isStrikethroughText = (text) => text?.split("").some((c) => c === "\u0336");
 
   // useEffect(() => {

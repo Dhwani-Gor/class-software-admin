@@ -3,6 +3,7 @@ import {
   addClassificationSurvey,
   deleteClassificationSurvey,
   getAllClassificationSurveys,
+  getAllClassificationSurveyType,
   getAllClients,
   getSingleClassificationSurveyDetails,
   getSurveyReportData,
@@ -37,47 +38,47 @@ import moment from "moment";
 import CommonButton from "../CommonButton";
 import { toast } from "react-toastify";
 
-const surveyTypes = [
-  { label: "Special Survey Hull", value: "special_survey_hull" },
-  { label: "Special Survey Machinery", value: "special_survey_machinery" },
-  { label: "Continuous survey Hull", value: "continuous_survey_hull" },
-  {
-    label: "Continuous survey Machinery",
-    value: "continuous_survey_machinery",
-  },
-  { label: "Annual Survey", value: "annual_survey" },
-  { label: "Docking Survey", value: "docking_survey" },
-  { label: "In Water Survey", value: "in_water_survey" },
-  { label: "Special Survey (UMS)", value: "special_survey_ums" },
-  { label: "Annual Survey (UMS)", value: "annual_survey_ums" },
-  { label: "Special Survey IG system", value: "special_survey_ig_system" },
-  { label: "Annual Survey IG System", value: "annual_survey_ig_system" },
-  { label: "Special Survey (Fi-Fi)", value: "special_survey_fi_fi" },
-  { label: "Annual Survey (Fi-Fi)", value: "annual_survey_fi_fi" },
-  { label: "Intermediate survey", value: "intermediate_survey" },
-  {
-    label: "Tail Shaft condition monitoring annual survey",
-    value: "tailshaft_condition_monitoring_annual_survey",
-  },
-  { label: "Main Boiler survey", value: "main_boiler_survey" },
-  {
-    label: "Thermal Oil Heating Systems Survey",
-    value: "thermal_oil_heating_systems_survey",
-  },
-  {
-    label: "Exhaust Gas steam generators and economisers survey",
-    value: "exhaust_gas_steam_generators_and_economisers_survey",
-  },
-  { label: "Special Survey", value: "special_survey" },
-  { label: "Bottom Survey", value: "bottom_survey" },
-  { label: "Auxiliary Boiler Survey (OF)", value: "boiler_survey_of" },
-  { label: "Auxiliary Boiler Survey (EXH)", value: "boiler_survey_exh" },
-  { label: "Auxiliary Boiler Survey (OF) P", value: "boiler_survey_of_p" },
-  { label: "Auxiliary Boiler Survey (OF) S", value: "boiler_survey_of_s" },
-  { label: "Tail Shaft Survey", value: "tailshaft_survey" },
-  { label: "Cargo Gear Survey - annual", value: "cargo_gear_survey_annual" },
-  { label: "Cargo Gear Survey - renewal", value: "cargo_gear_survey_renewal" },
-];
+// const surveyTypes = [
+//   { label: "Special Survey Hull", value: "special_survey_hull" },
+//   { label: "Special Survey Machinery", value: "special_survey_machinery" },
+//   { label: "Continuous survey Hull", value: "continuous_survey_hull" },
+//   {
+//     label: "Continuous survey Machinery",
+//     value: "continuous_survey_machinery",
+//   },
+//   { label: "Annual Survey", value: "annual_survey" },
+//   { label: "Docking Survey", value: "docking_survey" },
+//   { label: "In Water Survey", value: "in_water_survey" },
+//   { label: "Special Survey (UMS)", value: "special_survey_ums" },
+//   { label: "Annual Survey (UMS)", value: "annual_survey_ums" },
+//   { label: "Special Survey IG system", value: "special_survey_ig_system" },
+//   { label: "Annual Survey IG System", value: "annual_survey_ig_system" },
+//   { label: "Special Survey (Fi-Fi)", value: "special_survey_fi_fi" },
+//   { label: "Annual Survey (Fi-Fi)", value: "annual_survey_fi_fi" },
+//   { label: "Intermediate survey", value: "intermediate_survey" },
+//   {
+//     label: "Tail Shaft condition monitoring annual survey",
+//     value: "tailshaft_condition_monitoring_annual_survey",
+//   },
+//   { label: "Main Boiler survey", value: "main_boiler_survey" },
+//   {
+//     label: "Thermal Oil Heating Systems Survey",
+//     value: "thermal_oil_heating_systems_survey",
+//   },
+//   {
+//     label: "Exhaust Gas steam generators and economisers survey",
+//     value: "exhaust_gas_steam_generators_and_economisers_survey",
+//   },
+//   { label: "Special Survey", value: "special_survey" },
+//   { label: "Bottom Survey", value: "bottom_survey" },
+//   { label: "Auxiliary Boiler Survey (OF)", value: "boiler_survey_of" },
+//   { label: "Auxiliary Boiler Survey (EXH)", value: "boiler_survey_exh" },
+//   { label: "Auxiliary Boiler Survey (OF) P", value: "boiler_survey_of_p" },
+//   { label: "Auxiliary Boiler Survey (OF) S", value: "boiler_survey_of_s" },
+//   { label: "Tail Shaft Survey", value: "tailshaft_survey" },
+//   { label: "Cargo Gear Survey - annual", value: "cargo_gear_survey_annual" },
+//   { label: "Cargo Gear Survey - renewal", value: "cargo_gear_survey_renewal" },
+// ];
 
 const ClassificationForm = ({
   mode = "create",
@@ -88,7 +89,7 @@ const ClassificationForm = ({
   const [classificationRows, setClassificationRows] = useState([]);
   const [clientsList, setClientsList] = useState([]);
   const [cancelled, setCancelled] = useState(false);
-
+  const [surveyTypes,setSurveyTypes] = useState([])
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -101,6 +102,28 @@ const ClassificationForm = ({
     rangeTo: "",
     postponed: "",
   });
+
+  const fetchAllSurveyTypes = async() => {
+    try{
+      const response = await getAllClassificationSurveyType();
+     if(response?.data?.status === "success"){
+      let temp = [] 
+      response?.data?.data?.forEach((ele,index) => {
+        temp.push({
+          label:ele?.name,
+          value:ele?.value
+        })
+      })
+      setSurveyTypes(temp)
+     }
+    }catch(e){
+      console.log(e)
+    }
+  }
+
+  useEffect(() => {
+    fetchAllSurveyTypes()
+  },[])
 
   const calculateDates = (issuanceDate) => {
     if (!issuanceDate) return { dueDate: "", rangeFrom: "", rangeTo: "" };

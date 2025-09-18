@@ -30,7 +30,7 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
 import { useRouter } from "next/navigation";
-import { createReportDetail, deleteAttachment, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, uploadSurveyReport } from "@/api";
+import { createReportDetail, deleteAttachment, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { updateActivityDetails } from "@/api";
@@ -65,6 +65,10 @@ const reportSchema = yup.object().shape({
 const DocumentUploadDialog = ({ open, onClose, onUpload, selectedDocuments, onRemoveDocument, onPreviewDocument }) => {
   const [documents, setDocuments] = useState([]);
 
+  const areAllActivitiesCompleted = () => {
+    return tableData.length > 0 && tableData.every((activity) => activity.status === "Completed");
+  };
+  
   const handleFileChange = (event) => {
     if (event.target.files) {
       const newFiles = Array.from(event.target.files);
@@ -419,6 +423,10 @@ const ReportingForm = () => {
     { value: "extended", label: "Extended" },
   ];
 
+  const areAllActivitiesCompleted = () => {
+    return tableData.length > 0 && tableData.every((activity) => activity.status === "Completed");
+  };
+
   const handleClientChange = (event) => {
     const selectedId = event.target.value;
     const selectedClient = clientsList.find((client) => client.id === selectedId);
@@ -469,6 +477,31 @@ const ReportingForm = () => {
     setShowTable(true);
     getAllActivity(journalId);
   };
+
+  const handleContinue = async () => {
+    if (!selectedShip.id) {
+      toast.error("Client ID not found");
+      return;
+    }
+
+    try {
+      // setContinueBtnLoading(true);
+
+      const result = await addArchiveDocument(selectedShip.id);
+      console.log(result, "result");
+      if (result.data.status == "success") {
+        toast.success(result.data.message);
+      } else {
+        toast.error("Failed to continue process");
+      }
+    } catch (error) {
+      console.error("Continue process error:", error);
+      toast.error(error?.message || "Failed to continue process");
+    } finally {
+      // setContinueBtnLoading(false);
+    }
+  };
+
 
   const handleGenerateReport = async () => {
     const isValid = await trigger();
@@ -753,6 +786,8 @@ const ReportingForm = () => {
   useEffect(() => {
     fetchClients();
     fetchReportDetails();
+    areAllActivitiesCompleted()
+
   }, []);
 
   const fetchAllJournals = async () => {
@@ -785,34 +820,51 @@ const ReportingForm = () => {
   };
 
   const handleDocumentUpload = async (rowId, documents) => {
-    setTableData((prevData) =>
-      prevData.map((item) =>
+    if (!rowId || !documents?.length) return;
+  
+    // optimistic update: show files immediately (using minimal metadata)
+    setTableData((prev) =>
+      prev.map((item) =>
         item.id === rowId
           ? {
               ...item,
-              attachments: item.attachments ? [...item.attachments, ...documents] : documents,
+              attachments: item.attachments
+                ? [...item.attachments, ...documents.map((f) => ({ name: f.name, _tmp: true }))]
+                : documents.map((f) => ({ name: f.name, _tmp: true })),
             }
           : item
       )
     );
+  
     const formData = new FormData();
-    documents.forEach((doc, index) => {
-      formData.append("attachments", doc);
-    });
-
+    // Backend may expect "attachments" repeated or "attachments[]". Check your API.
+    documents.forEach((doc) => formData.append("attachments", doc));
+  
     try {
       const response = await updateActivityDetails(rowId, formData);
+  
+      // If backend returns updated activity / attachments, prefer that to keep UI consistent
       if (response?.data?.status === "success") {
+        const serverAttachments = response?.data?.data?.attachments;
+        if (Array.isArray(serverAttachments)) {
+          setTableData((prev) =>
+            prev.map((item) => (item.id === rowId ? { ...item, attachments: serverAttachments } : item))
+          );
+        } else {
+          await getAllActivity(journalId);
+        }
         toast.success("Documents uploaded successfully.");
       } else {
-        toast.error("Something went wrong! Please try again after some time");
+        await getAllActivity(journalId);
+        toast.error(response?.data?.message || "Something went wrong! Please try again after some time");
       }
     } catch (err) {
+      console.error("Upload error:", err);
+      await getAllActivity(journalId);
       toast.error("Upload failed. Please check your internet or file format.");
-      console.error(err);
     }
   };
-
+  
   const handleRemoveDocument = async (activityId, documentId) => {
     if (!activityId) {
       toast.error("Invalid activity ID");
@@ -869,6 +921,7 @@ const ReportingForm = () => {
     setCurrentRowForDocuments(row);
     setDocumentUploadDialogOpen(true);
   };
+  
 
   const getAllActivity = async (id) => {
     try {
@@ -980,6 +1033,8 @@ const ReportingForm = () => {
             )}
 
             {selectedShip.id && selectedReportNumber.journalTypeId && <CommonButton onClick={handleShowTable} sx={{ marginTop: 3 }} text="Continue" />}
+            {selectedShip.id && selectedReportNumber.journalTypeId && <CommonButton onClick={handleContinue} disabled={!areAllActivitiesCompleted()} sx={{ marginTop: 3, marginLeft: 2 }} text="Completed" />}
+ 
           </Box>
         )}
       </CommonCard>
