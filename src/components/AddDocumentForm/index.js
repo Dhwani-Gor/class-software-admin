@@ -753,7 +753,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                   text="Export XLSX"
                   variant="contained"
                   onClick={handleExportCSV}
-                  sx={{ alignSelf: "flex-start" }}
+                  sx={{ aliTnSelf: "flex-start" }}
                   startIcon={<FileDownloadIcon />}
                 />
                 <Box>
