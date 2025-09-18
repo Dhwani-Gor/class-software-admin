@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogActions, TextField, Box, Typography, IconB
 import { Close as CloseIcon, ExpandMore as ExpandMoreIcon, CheckCircle as CheckIcon, Report as ReportIcon } from "@mui/icons-material";
 import { formattedDate, formatDate } from "@/utils/date";
 import { useFormInitialization, useCommonSubmit } from "./useSubmit";
+import CommonConfirmationDialog from "../Dialogs/CommonConfirmationDialog";
 
 const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [expandedSection, setExpandedSection] = useState("lifeSaving");
@@ -449,7 +450,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
           Cancel
         </Button>
         <Button
-       onClick={() => handleSubmit(formData)}
+          onClick={() => handleSubmit(formData)}
           variant="contained"
           size="large"
           startIcon={<CheckIcon />}
@@ -472,6 +473,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
           Generate Certificate
         </Button>
       </DialogActions>
+      <CommonConfirmationDialog open={openDialog} onCancel={handleCancel} onConfirm={handleConfirm} title="Are you sure the form data is complete and you want to generate certificate?" />
     </Dialog>
   );
 };
