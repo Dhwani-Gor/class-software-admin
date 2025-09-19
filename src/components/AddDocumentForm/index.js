@@ -212,7 +212,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
   const handleImportCSV = (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
+  
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
@@ -221,52 +221,65 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
+  
         if (jsonData.length < 2) {
           toast.error("Invalid file format. File should contain at least headers and one data row.");
           return;
         }
-
-        // Check if headers are correct
+  
         const headers = jsonData[0].map(header => header.toLowerCase().trim());
         const attributeIndex = headers.indexOf('attribute');
         const labelIndex = headers.indexOf('label');
-
+  
         if (attributeIndex === -1 || labelIndex === -1) {
           toast.error("Invalid file format. File should contain 'attribute' and 'label' columns.");
           return;
         }
-
-        // Extract data rows (skip header)
-        const newFields = [];
+  
+        const importedFields = [];
         for (let i = 1; i < jsonData.length; i++) {
           const row = jsonData[i];
           const attribute = row[attributeIndex]?.toString().trim() || '';
           const label = row[labelIndex]?.toString().trim() || '';
           
-          // Only add rows that have at least one non-empty field
           if (attribute || label) {
-            newFields.push({ attribute, label });
+            importedFields.push({ attribute, label });
           }
         }
-
-        if (newFields.length === 0) {
+  
+        if (importedFields.length === 0) {
           toast.warning("No valid data found in the file.");
           return;
         }
-
-        // Append to existing fields
+  
+        const newFields = importedFields.filter(importedField => {
+          return !additionalFields.some(existingField => 
+            existingField.attribute.trim().toLowerCase() === importedField.attribute.trim().toLowerCase() &&
+            existingField.label.trim().toLowerCase() === importedField.label.trim().toLowerCase()
+          );
+        });
+  
+        if (newFields.length === 0) {
+          toast.warning("All fields from the file already exist. No new fields were added.");
+          return;
+        }
+  
         setAdditionalFields(prev => [...prev, ...newFields]);
-        toast.success(`${newFields.length} fields imported successfully`);
-
+        
+        if (newFields.length < importedFields.length) {
+          const duplicateCount = importedFields.length - newFields.length;
+          toast.success(`${newFields.length} new fields imported successfully`);
+        } else {
+          toast.success(`${newFields.length} fields imported successfully`);
+        }
+  
       } catch (error) {
         console.error("Error importing file:", error);
         toast.error("Error reading file. Please make sure it's a valid CSV or Excel file.");
       }
     };
-
+  
     reader.readAsArrayBuffer(file);
-    // Clear the input value to allow importing the same file again
     event.target.value = '';
   };
 
@@ -350,7 +363,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
             ...(editReason && { reason: editReason }),
           };
 
-          // Add existing document paths if they exist
           if (formValues.fullTermDocument && typeof formValues.fullTermDocument === 'string') {
             payload.fullTermDocument = formValues.fullTermDocument;
           }
@@ -374,7 +386,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
         }
       }
 
-      // Common success handling
       if (response?.status === 200 || response?.status === 201) {
         toast.success(
           mode === "duplicate"
@@ -749,7 +760,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                   onClick={handleAddField}
                   sx={{ alignSelf: "flex-start" }}
                 />
-                {/* <CommonButton
+                <CommonButton
                   text="Export XLSX"
                   variant="contained"
                   onClick={handleExportCSV}
@@ -773,7 +784,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                       startIcon={<UploadIcon />}
                     />
                   </label>
-                </Box> */}
+                </Box>
               </Stack>
             </Stack>
 
