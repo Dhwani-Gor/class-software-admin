@@ -913,3 +913,14 @@ export const addArchiveDocument = async (clientId) => {
     return e;
   }
 };
+
+export const getAllModules = async() => {
+
+  let result;
+  try {
+    result = await axiosInstance.get(`/modules`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+}
