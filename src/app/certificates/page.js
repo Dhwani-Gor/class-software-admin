@@ -16,7 +16,7 @@ import GetAppIcon from "@mui/icons-material/GetApp";
 import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonInput from "@/components/CommonInput";
-import { getAllIssuedDocuments, getAllJournals } from "@/api";
+import { getAllIssuedDocuments, getAllJournals, getJournalsList } from "@/api";
 import { Chip, MenuItem, Select, TextField } from "@mui/material";
 import CommonButton from "@/components/CommonButton";
 
@@ -271,7 +271,7 @@ const Certificates = () => {
 
   const fetchJournals = async () => {
     try {
-      const response = await getAllJournals();
+      const response = await getJournalsList();
       const data = response?.data;
       if (data?.status === "success" && Array.isArray(data?.data)) {
         setJournals(data.data);
