@@ -11,41 +11,86 @@ export const AuthContext = createContext();
 const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [roleId, setRoleId] = useState(null);
+  const [permissions, setPermissions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
-  const allowedRoutesRole1 = ["/clients", "/staff", "/journal", "/reporting", "/certificates", "/survey-types", "/documents", "/system-variables", "/settings", "/survey-report", "/classification","/survey-status-report"]
-  const allowedRoutesRole2 = ["/journal", "/reporting", "/certificates", "/settings", "/clients", "/system-variables", "survey-types", "/documents", "/classification", "/survey-status-report","/survey-report"];
+  // Module to route mapping
+  const moduleRouteMapping = {
+    "Clients": ["/clients"],
+    "Staff/Inspector": ["/staff"],
+    "Journals": ["/journal"],
+    "Reporting": ["/reporting", "/survey-report", "/survey-status-report"],
+    "IssuedDocument": ["/certificates"],
+    "SurveyType": ["/survey-types"],
+    "Documents": ["/documents"],
+    "SystemVariable": ["/system-variables"],
+    "Classification": ["/classification"],
+    "Settings": ["/settings"]
+  };
+
+  // Base role routes (fallback)
+  const allowedRoutesRole1 = ["/clients", "/staff", "/journal", "/reporting", "/certificates", "/survey-types", "/documents", "/system-variables", "/settings", "/survey-report", "/classification", "/survey-status-report"];
+  const allowedRoutesRole2 = ["/journal", "/reporting", "/certificates", "/settings", "/clients", "/system-variables", "/survey-types", "/documents", "/classification", "/survey-status-report", "/survey-report"];
   const allowedRoutesRole3 = ["/reporting", "/certificates", "/settings"];
 
   const publicRoutes = ["/login", "/digital-document"];
 
-  const getDefaultRouteForRole = (roleId) => {
-    switch (roleId) {
-      case "1":
-        return allowedRoutesRole1[0];
-      case "2":
-        const rights = JSON.parse(localStorage.getItem("data"))?.dataEntryRights;
-        return rights === true ? "/clients" : "/journal";
-      case "3":
-        return allowedRoutesRole3[0];
-      default:
-        return "/login";
+  // Get allowed routes based on permissions
+  const getAllowedRoutes = (userPermissions, userData) => {
+    let allowedRoutes = [];
+
+    // Add routes based on permission modules ONLY
+    userPermissions.forEach(module => {
+      if (moduleRouteMapping[module]) {
+        allowedRoutes = [...allowedRoutes, ...moduleRouteMapping[module]];
+      }
+    });
+
+    // Add Clients route only if user has both Clients permission AND dataEntryRights
+    if (userPermissions.includes("Clients") && userData?.dataEntryRights) {
+      if (!allowedRoutes.includes("/clients")) {
+        allowedRoutes.push("/clients");
+      }
     }
+
+    // Always allow settings
+    allowedRoutes.push("/settings");
+
+    // Remove duplicates
+    return [...new Set(allowedRoutes)];
   };
-  
+
+  const getDefaultRouteForUser = (userPermissions, userData) => {
+    const allowedRoutes = getAllowedRoutes(userPermissions, userData);
+    
+    // Priority order for default route
+    const routePriority = ["/clients", "/journal", "/reporting", "/certificates", "/settings"];
+    
+    for (const route of routePriority) {
+      if (allowedRoutes.includes(route)) {
+        return route;
+      }
+    }
+    
+    // If no priority route found, return first allowed route
+    return allowedRoutes[0] || "/login";
+  };
 
   useEffect(() => {
     const token =
       typeof window !== "undefined" ? localStorage.getItem("token") : null;
     const storedRoleId =
       typeof window !== "undefined" ? localStorage.getItem("roleId") : null;
+    const storedData =
+      typeof window !== "undefined" ? localStorage.getItem("data") : null;
 
-    if (token) {
+    if (token && storedData) {
       try {
         const decodedToken = jwtDecode(token);
         const currentTime = Math.floor(Date.now() / 1000);
+        const userData = JSON.parse(storedData);
 
         if (decodedToken.exp < currentTime) {
           toast.error("Session expired! Please log in again.");
@@ -53,6 +98,8 @@ const AuthProvider = ({ children }) => {
         } else {
           setIsAuthenticated(true);
           setRoleId(storedRoleId);
+          setPermissions(userData.permissionModule || []);
+          
           setTimeout(() => {
             toast.error("Session expired! Please log in again.");
             logout();
@@ -80,28 +127,21 @@ const AuthProvider = ({ children }) => {
     // Check if current route is public
     const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
 
-    // Only apply role-based routing for authenticated users on non-public routes
-    if (isAuthenticated && roleId && !isPublicRoute) {
-      const isAllowedRoute = (allowedRoutes) => {
-        return allowedRoutes.some((route) => pathname.startsWith(route) || pathname.includes(route));
-      };
+    // Only apply permission-based routing for authenticated users on non-public routes
+    if (isAuthenticated && permissions.length > 0 && !isPublicRoute) {
+      const userData = JSON.parse(localStorage.getItem("data") || "{}");
+      const allowedRoutes = getAllowedRoutes(permissions, userData);
+      
+      const isAllowedRoute = allowedRoutes.some(route => 
+        pathname.startsWith(route) || pathname.includes(route)
+      );
 
-      if (roleId === "1") {
-        if (!isAllowedRoute(allowedRoutesRole1)) {
-          router.replace(allowedRoutesRole1[0]);
-        }
-      } else if (roleId === "2") {
-        if (!isAllowedRoute(allowedRoutesRole2)) {
-          router.replace(allowedRoutesRole2[0]);
-        }
-      } else if (roleId === "3") {
-        if (!isAllowedRoute(allowedRoutesRole3)) {
-          router.replace(allowedRoutesRole3[0]);
-        }
+      if (!isAllowedRoute) {
+        const defaultRoute = getDefaultRouteForUser(permissions, userData);
+        router.replace(defaultRoute);
       }
     }
-  }, [isAuthenticated, roleId, pathname, router]);
-
+  }, [isAuthenticated, permissions, pathname, router]);
 
   const login = (data) => {
     localStorage.setItem("token", data?.token);
@@ -109,30 +149,36 @@ const AuthProvider = ({ children }) => {
     localStorage.setItem("data", JSON.stringify(data));
     setIsAuthenticated(true);
     setRoleId(data?.roleId);
+    setPermissions(data?.permissionModule || []);
 
-    // Redirect to appropriate route based on role
-    const defaultRoute = getDefaultRouteForRole(data?.roleId);
+    // Redirect to appropriate route based on permissions
+    const defaultRoute = getDefaultRouteForUser(data?.permissionModule || [], data);
     router.replace(defaultRoute);
-
-    // const decodedToken = jwtDecode(data?.token);
-    // const currentTime = Math.floor(Date.now() / 1000);
-    // setTimeout(() => {
-    //   toast.error("Session expired! Please log in again.");
-    //   logout();
-    // }, (decodedToken.exp - currentTime) * 1000);
   };
 
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("roleId");
+    localStorage.removeItem("data");
     setIsAuthenticated(false);
     setRoleId(null);
-    localStorage.removeItem("data");
+    setPermissions([]);
     router.replace("/login");
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, roleId, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ 
+      isAuthenticated, 
+      roleId, 
+      permissions, 
+      isLoading, 
+      login, 
+      logout,
+      getAllowedRoutes: () => {
+        const userData = JSON.parse(localStorage.getItem("data") || "{}");
+        return getAllowedRoutes(permissions, userData);
+      }
+    }}>
       <ToastContainer position="top-right" autoClose={3000} />
       {isLoading ? (
         <Box
