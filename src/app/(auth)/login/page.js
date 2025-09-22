@@ -65,7 +65,7 @@ const Login = () => {
       }
       dispatch(saveUserInfo(res?.data?.data))
       login(res?.data?.data);
-      toast.success(res?.data?.status)
+      toast.success("login successfully")
     } catch (err) {
       console.log("error", err);
       toast.error(err?.response?.data?.message)

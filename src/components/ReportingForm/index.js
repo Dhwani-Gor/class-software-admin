@@ -992,10 +992,10 @@ const ReportingForm = () => {
 
       console.log("👉 Raw response:", response);
 
-      // if(response?.response?.data?.status === "error"){
-      //    toast.error(response?.response?.data?.message);
-      //    return;
-      // }
+      if(response?.response?.data?.status === "error"){
+         toast.error(response?.response?.data?.message);
+         return;
+      }
 
       const payload = response?.data;
       if (payload?.status === "success") {
