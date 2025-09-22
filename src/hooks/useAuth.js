@@ -14,7 +14,7 @@ export const useAuth = () => {
   const getUserData = () => {
     if (typeof window !== "undefined") {
       const data = localStorage.getItem("data");
-      return data ? JSON.parse(data) : {};
+      return data ? JSON?.parse(data) : {};
     }
     return {};
   };

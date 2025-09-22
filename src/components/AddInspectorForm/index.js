@@ -46,7 +46,6 @@ const roles = [
     label: "Staff",
     value: "staff",
   },
-
 ];
 
 const schema = yup.object().shape({
@@ -396,103 +395,107 @@ const AddInspectorForm = ({
 
                 <Box>
                   {/* Dynamic Permissions */}
-                  <Box sx={{ mt: 2 }}>
-                    <Stack>
-                      <Typography fontWeight={500}>Permission</Typography>
-                    </Stack>
-                    <Grid2 container>
-                      {permissionData.map((permissionItem, index) => (
-                        <Grid2 key={index} item xs={12} sx={{ mt: 1 }}>
-                          <Controller
-                            name="permissionModule"
-                            control={control}
-                            render={({ field }) => {
-                              const { value, onChange } = field;
-                              const checked = value?.includes(
-                                permissionItem.value
-                              );
+                  {permissionData?.length > 0 && (
+                    <Box sx={{ mt: 2 }}>
+                      <Stack>
+                        <Typography fontWeight={500}>Permission</Typography>
+                      </Stack>
+                      <Grid2 container>
+                        {permissionData.map((permissionItem, index) => (
+                          <Grid2 key={index} item xs={12} sx={{ mt: 1 }}>
+                            <Controller
+                              name="permissionModule"
+                              control={control}
+                              render={({ field }) => {
+                                const { value, onChange } = field;
+                                const checked = value?.includes(
+                                  permissionItem.value
+                                );
 
-                              return (
-                                <FormControlLabel
-                                  control={
-                                    <Checkbox
-                                      checked={checked}
-                                      onChange={(e) => {
-                                        if (e.target.checked) {
-                                          onChange([
-                                            ...(value || []),
-                                            permissionItem.value,
-                                          ]);
-                                        } else {
-                                          onChange(
-                                            (value || []).filter(
-                                              (item) =>
-                                                item !== permissionItem.value
-                                            )
-                                          );
-                                        }
-                                      }}
-                                    />
-                                  }
-                                  label={permissionItem.label}
-                                />
-                              );
-                            }}
-                          />
-                        </Grid2>
-                      ))}
-                    </Grid2>
-                  </Box>
+                                return (
+                                  <FormControlLabel
+                                    control={
+                                      <Checkbox
+                                        checked={checked}
+                                        onChange={(e) => {
+                                          if (e.target.checked) {
+                                            onChange([
+                                              ...(value || []),
+                                              permissionItem.value,
+                                            ]);
+                                          } else {
+                                            onChange(
+                                              (value || []).filter(
+                                                (item) =>
+                                                  item !== permissionItem.value
+                                              )
+                                            );
+                                          }
+                                        }}
+                                      />
+                                    }
+                                    label={permissionItem.label}
+                                  />
+                                );
+                              }}
+                            />
+                          </Grid2>
+                        ))}
+                      </Grid2>
+                    </Box>
+                  )}
 
-                  <Box sx={{ mt: 2 }}>
-                    <Stack>
-                      <Typography fontWeight={500}>
-                        Special Permission
-                      </Typography>
-                    </Stack>
-                    <Grid2 container>
-                      {specialPermissionData.map((sPermission, index) => (
-                        <Grid2 key={index} item xs={12} sx={{ mt: 1 }}>
-                          <Controller
-                            name="specialPermission"
-                            control={control}
-                            render={({ field }) => {
-                              const { value, onChange } = field;
-                              const checked = value?.includes(
-                                sPermission.value
-                              );
+                  {specialPermissionData?.length > 0 && (
+                    <Box sx={{ mt: 2 }}>
+                      <Stack>
+                        <Typography fontWeight={500}>
+                          Special Permission
+                        </Typography>
+                      </Stack>
+                      <Grid2 container>
+                        {specialPermissionData.map((sPermission, index) => (
+                          <Grid2 key={index} item xs={12} sx={{ mt: 1 }}>
+                            <Controller
+                              name="specialPermission"
+                              control={control}
+                              render={({ field }) => {
+                                const { value, onChange } = field;
+                                const checked = value?.includes(
+                                  sPermission.value
+                                );
 
-                              return (
-                                <FormControlLabel
-                                  control={
-                                    <Checkbox
-                                      checked={checked}
-                                      onChange={(e) => {
-                                        if (e.target.checked) {
-                                          onChange([
-                                            ...(value || []),
-                                            sPermission.value,
-                                          ]);
-                                        } else {
-                                          onChange(
-                                            (value || []).filter(
-                                              (item) =>
-                                                item !== sPermission.value
-                                            )
-                                          );
-                                        }
-                                      }}
-                                    />
-                                  }
-                                  label={sPermission.label}
-                                />
-                              );
-                            }}
-                          />
-                        </Grid2>
-                      ))}
-                    </Grid2>
-                  </Box>
+                                return (
+                                  <FormControlLabel
+                                    control={
+                                      <Checkbox
+                                        checked={checked}
+                                        onChange={(e) => {
+                                          if (e.target.checked) {
+                                            onChange([
+                                              ...(value || []),
+                                              sPermission.value,
+                                            ]);
+                                          } else {
+                                            onChange(
+                                              (value || []).filter(
+                                                (item) =>
+                                                  item !== sPermission.value
+                                              )
+                                            );
+                                          }
+                                        }}
+                                      />
+                                    }
+                                    label={sPermission.label}
+                                  />
+                                );
+                              }}
+                            />
+                          </Grid2>
+                        ))}
+                      </Grid2>
+                    </Box>
+                  )}
                 </Box>
 
                 <Stack

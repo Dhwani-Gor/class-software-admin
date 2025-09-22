@@ -15,6 +15,7 @@ import { adminLogin } from "@/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useDispatch } from "react-redux";
 import { saveUserInfo } from "@/redux/slice/authSlice";
+import { toast } from "react-toastify";
 
 const MainWrapper = styled(Box)(({}) => ({
   height: "100vh",
@@ -54,17 +55,23 @@ const Login = () => {
   const onSubmit = async (data) => {
     try {
       const res = await adminLogin(data);
+      console.log(res)
+      if(res?.response?.data?.status ==="error"){
+        return toast.error(res?.response?.data?.message)
+      }
+
       if (!res?.data?.data?.status) {
         setSnackBar({ open: true, message: res?.response?.data?.message });
       }
       dispatch(saveUserInfo(res?.data?.data))
       login(res?.data?.data);
-      setSnackBar({ open: true, message: res?.data.status });
+      toast.success(res?.data?.status)
     } catch (err) {
       console.log("error", err);
-      setSnackBar({ open: true, message: response?.data?.message });
+      toast.error(err?.response?.data?.message)
     }
   };
+ 
 
   return (
     <MainWrapper>

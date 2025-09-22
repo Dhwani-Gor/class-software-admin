@@ -22,6 +22,7 @@ const Sidebar = styled(Drawer)(({ theme }) => ({
 
 const SidebarComponent = ({ isSidebarOpen }) => {
   const { roleId, permissions } = useAuth(); // Get permissions from context
+  console.log("=>permissions",permissions)
   const pathName = usePathname();
   const [activeTab, setActiveTab] = useState(pathName);
   
