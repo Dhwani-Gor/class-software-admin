@@ -1,17 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import {
-  Box,
-  AppBar,
-  Toolbar,
-  IconButton,
-  Typography,
-  Divider,
-  Menu,
-  MenuItem,
-  Avatar,
-  Tooltip,
-} from "@mui/material";
+import { Box, AppBar, Toolbar, IconButton, Typography, Divider, Menu, MenuItem, Avatar, Tooltip } from "@mui/material";
 import { Stack, styled } from "@mui/system";
 import MenuIcon from "@mui/icons-material/Menu";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -36,14 +25,13 @@ const MainContent = styled(Box)(({ theme }) => ({
 // App Header
 const Header = styled(AppBar)(({ theme }) => ({
   zIndex: theme.zIndex.drawer + 1,
-  backgroundColor:
-    theme.palette.mode === "dark" ? theme.palette.background.default : "white",
+  backgroundColor: theme.palette.mode === "dark" ? theme.palette.background.default : "white",
   color: theme.palette.mode === "dark" ? theme.palette.text.primary : "#000000",
   boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
 }));
 
 const Layout = ({ children }) => {
-  const { roleId,logout } = useAuth();
+  const { roleId, logout } = useAuth();
   const dispatch = useDispatch();
   const userInfo = useSelector((state) => state.auth.userInfo);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -62,21 +50,15 @@ const Layout = ({ children }) => {
   };
 
   const onLogout = () => {
-    logout()
-  }
+    logout();
+  };
 
   return (
     <Box sx={{ display: "flex" }}>
       <Header position="fixed">
         <Toolbar sx={{ justifyContent: "space-between" }}>
           <Box display="flex" alignItems="center">
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              edge="start"
-              onClick={toggleSidebar}
-              sx={{ mr: 2, ...(isSidebarOpen && { display: "none" }) }}
-            >
+            <IconButton color="inherit" aria-label="open drawer" edge="start" onClick={toggleSidebar} sx={{ mr: 2, ...(isSidebarOpen && { display: "none" }) }}>
               <MenuIcon />
             </IconButton>
             <Typography variant="h4" fontWeight={"700"}>
@@ -95,7 +77,7 @@ const Layout = ({ children }) => {
                   "&:hover": { opacity: 0.8 },
                 }}
               >
-                A
+                {userInfo?.name?.charAt(0).toUpperCase()}
               </Avatar>
             </Tooltip>
 
@@ -109,12 +91,7 @@ const Layout = ({ children }) => {
               }}
             >
               <MenuItem>
-                <Box
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  width="100%"
-                >
+                <Box display="flex" alignItems="center" justifyContent="space-between" width="100%">
                   <Typography> {userInfo?.name}</Typography>
                 </Box>
               </MenuItem>

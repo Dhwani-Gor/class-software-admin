@@ -30,7 +30,7 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
 import { useRouter } from "next/navigation";
-import { createReportDetail, deleteAttachment, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument } from "@/api";
+import { createReportDetail, deleteAttachment, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument, addUnArchiveDocument } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { updateActivityDetails } from "@/api";
@@ -525,13 +525,22 @@ const ReportingForm = () => {
 
     try {
       // setContinueBtnLoading(true);
-
-      const result = await addArchiveDocument(selectedShip.id);
-      console.log(result, "result");
-      if (result.data.status == "success") {
-        toast.success(result.data.message);
+      if (journals?.archived?.length > 0) {
+        const result = await addUnArchiveDocument(selectedShip.id);
+        console.log(result, "result");
+        if (result.data.status == "success") {
+          toast.success(result.data.message);
+        } else {
+          toast.error("Failed to continue process");
+        }
       } else {
-        toast.error("Failed to continue process");
+        const result = await addArchiveDocument(selectedShip.id);
+        console.log(result, "result");
+        if (result.data.status == "success") {
+          toast.success(result.data.message);
+        } else {
+          toast.error("Failed to continue process");
+        }
       }
     } catch (error) {
       console.error("Continue process error:", error);
@@ -743,7 +752,7 @@ const ReportingForm = () => {
   const handleReportClick = async (row) => {
     try {
       setLoading(true);
-      const result = await getSelectedReportDetails(row?.id);
+      const result = await getSelectedActivityReportDetails(row?.id);
       setReportName(row?.surveyTypes?.report?.name);
       const endorsements = row?.surveyTypes?.report?.fields?.[0]?.endorsements || [];
 
@@ -889,7 +898,6 @@ const ReportingForm = () => {
     try {
       const response = await updateActivityDetails(rowId, formData);
 
-      // If backend returns updated activity / attachments, prefer that to keep UI consistent
       if (response?.data?.status === "success") {
         const serverAttachments = response?.data?.data?.attachments;
         if (Array.isArray(serverAttachments)) {
@@ -1083,7 +1091,7 @@ const ReportingForm = () => {
               </Box>
             )}
             {selectedShip.id && selectedReportNumber.journalTypeId && <CommonButton onClick={handleShowTable} sx={{ marginTop: 3 }} text="Continue" />}
-            {selectedShip.id && selectedReportNumber.journalTypeId && <CommonButton onClick={handleContinue} disabled={!areAllActivitiesCompleted()} sx={{ marginTop: 3, marginLeft: 2 }} text="Completed" />}
+            {selectedShip.id && selectedReportNumber.journalTypeId && <CommonButton onClick={handleContinue} disabled={!areAllActivitiesCompleted()} sx={{ marginTop: 3, marginLeft: 2 }} text={specialPermission && journals?.archived?.length > 0 ? "Open To Archive" : "Completed"} />}
           </Box>
         )}
       </CommonCard>

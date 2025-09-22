@@ -919,3 +919,13 @@ export const addArchiveDocument = async (clientId) => {
     return e;
   }
 };
+
+export const addUnArchiveDocument = async (clientId) => {
+  try {
+    const result = await axiosInstance.post("/reportDetails/markAsUnArchived", { clientId });
+    return result;
+  } catch (e) {
+    console.error("Error archiving document:", e);
+    return e;
+  }
+};
