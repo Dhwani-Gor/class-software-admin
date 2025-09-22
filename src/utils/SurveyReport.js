@@ -1,29 +1,29 @@
-import { Editor } from '@tinymce/tinymce-react';
+import { Editor } from "@tinymce/tinymce-react";
 import { useEffect, useState, useCallback } from "react";
 import { getAllSystemVariables, getSpecificClient, getSurveyReportData, getVisitDetails, uploadSurveyReport } from "../api";
 import { toast } from "react-toastify";
 import { PDFDocument } from "pdf-lib";
 import html2canvas from "html2canvas";
-import moment from 'moment';
-import CommonButton from '@/components/CommonButton';
-import { Box } from '@mui/material';
-import Loader from '@/components/Loader';
-import { useRouter } from 'next/navigation';
+import moment from "moment";
+import CommonButton from "@/components/CommonButton";
+import { Box } from "@mui/material";
+import Loader from "@/components/Loader";
+import { useRouter } from "next/navigation";
 
 const SurveyReport = ({ id }) => {
-  const router = useRouter()
+  const router = useRouter();
   const [reportDetails, setReportDetails] = useState(null);
   const [clientData, setClientData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [editorContent, setEditorContent] = useState('');
+  const [editorContent, setEditorContent] = useState("");
   const [systemVariables, setSystemVariables] = useState(null);
   const [firstVisit, setFirstVisit] = useState(null);
   const [lastVisit, setLastVisit] = useState(null);
   const [numOfVisit, setNumOfVisit] = useState(null);
-  const [journalId, setJournalId] = useState('');
+  const [journalId, setJournalId] = useState("");
   const currentDate = new Date();
-  
-  useEffect(() => { 
+
+  useEffect(() => {
     const getSystemVariables = async () => {
       try {
         const response = await getAllSystemVariables();
@@ -39,22 +39,22 @@ const SurveyReport = ({ id }) => {
   }, []);
 
   const downloadEditorContentAsPdf = async () => {
-          const iframe = document.querySelector("iframe.tox-edit-area__iframe");
-          const contentDocument = iframe?.contentDocument;
-          const contentBody = contentDocument?.body;
-  
-          if (!contentBody) {
-              console.error("Could not find editor content");
-              return;
-          }
-  
-          const originalOverflow = contentBody.style.overflow;
-          const originalHeight = contentBody.style.height;
-          const originalMaxHeight = contentBody.style.maxHeight;
-  
-          try {
-              const style = contentDocument.createElement("style");
-              style.innerHTML = `
+    const iframe = document.querySelector("iframe.tox-edit-area__iframe");
+    const contentDocument = iframe?.contentDocument;
+    const contentBody = contentDocument?.body;
+
+    if (!contentBody) {
+      console.error("Could not find editor content");
+      return;
+    }
+
+    const originalOverflow = contentBody.style.overflow;
+    const originalHeight = contentBody.style.height;
+    const originalMaxHeight = contentBody.style.maxHeight;
+
+    try {
+      const style = contentDocument.createElement("style");
+      style.innerHTML = `
               * {
                   font-family: Arial, sans-serif !important;
                   font-size: 11px !important;
@@ -97,201 +97,185 @@ const SurveyReport = ({ id }) => {
                   break-inside: avoid !important;
               }
           `;
-              contentDocument.head.appendChild(style);
-  
-              // Add no-break class to all table rows programmatically
-              const tableRows = contentDocument.querySelectorAll('table tr');
-              tableRows.forEach(row => {
-                  row.classList.add('no-break');
-                  row.style.pageBreakInside = 'avoid';
-                  row.style.breakInside = 'avoid';
-              });
-  
-              contentBody.style.overflow = 'visible';
-              contentBody.style.height = 'auto';
-              contentBody.style.maxHeight = 'none';
-  
-              await document.fonts.ready;
-              await new Promise(resolve => setTimeout(resolve, 500));
-  
-              const pageWidth = 595.28;
-              const pageHeight = 841.89;
-              const dpiRatio = 1.3333;
-              const canvasWidth = pageWidth * dpiRatio;
-              const canvasHeight = contentBody.scrollHeight;
-  
-              const canvas = await html2canvas(contentBody, {
-                  scale: 2,
-                  useCORS: true,
-                  allowTaint: true,
-                  scrollX: 0,
-                  scrollY: 0,
-                  backgroundColor: '#ffffff',
-                  width: canvasWidth,
-                  height: canvasHeight,
-                  windowWidth: canvasWidth,
-                  windowHeight: canvasHeight,
-              });
-  
-              const imgWidth = canvas.width;
-              const imgHeight = canvas.height;
-  
-              const pdfDoc = await PDFDocument.create();
-              const margin = 40;
-              const usableWidth = pageWidth - 2 * margin;
-              const usableHeight = pageHeight - 2 * margin;
-              const scaleFactor = usableWidth / imgWidth;
-  
-              const baseSliceHeight = Math.floor((usableHeight - 20) / scaleFactor);
-  
-              const getTableRowPositions = () => {
-                  const rows = contentDocument.querySelectorAll('table tr');
-                  const positions = [];
-  
-                  rows.forEach(row => {
-                      const rect = row.getBoundingClientRect();
-                      const bodyRect = contentBody.getBoundingClientRect();
-                      const relativeTop = rect.top - bodyRect.top + contentBody.scrollTop;
-                      const relativeBottom = relativeTop + rect.height;
-  
-                      positions.push({
-                          top: Math.floor(relativeTop * 2),
-                          bottom: Math.floor(relativeBottom * 2),
-                          height: Math.floor(rect.height * 2)
-                      });
-                  });
-  
-                  return positions;
-              };
-  
-              const rowPositions = getTableRowPositions();
-  
-              const getOptimalSliceHeight = (startY, maxSliceHeight) => {
-                  let optimalHeight = maxSliceHeight;
-                  const sliceEndY = startY + maxSliceHeight;
-  
-                  for (const row of rowPositions) {
-                      if (row.top < sliceEndY && row.bottom > sliceEndY) {
-                          if (row.top > startY + 100) {
-                              optimalHeight = row.top - startY;
-                          } else if (row.bottom < startY + maxSliceHeight + row.height) {
-                              optimalHeight = row.bottom - startY;
-                          }
-                          break;
-                      }
-                  }
-  
-                  return Math.max(optimalHeight, 100);
-              };
-  
-              let currentY = 0;
-              let pageIndex = 0;
-  
-              while (currentY < imgHeight) {
-                  const maxSliceHeight = Math.min(baseSliceHeight, imgHeight - currentY);
-                  const sliceHeight = getOptimalSliceHeight(currentY, maxSliceHeight);
-  
-                  const sliceCanvas = document.createElement("canvas");
-                  sliceCanvas.width = imgWidth;
-                  sliceCanvas.height = sliceHeight;
-  
-                  const ctx = sliceCanvas.getContext("2d");
-                  ctx.drawImage(
-                      canvas,
-                      0, currentY,
-                      imgWidth, sliceHeight,
-                      0, 0,
-                      imgWidth, sliceHeight
-                  );
-  
-                  const pngUrl = sliceCanvas.toDataURL("image/png");
-                  const pngImage = await pdfDoc.embedPng(pngUrl);
-                  const scaledHeight = sliceHeight * scaleFactor;
-  
-                  const page = pdfDoc.addPage([pageWidth, pageHeight]);
-                  page.drawImage(pngImage, {
-                      x: margin,
-                      y: pageHeight - margin - scaledHeight,
-                      width: usableWidth,
-                      height: scaledHeight,
-                  });
-  
-                  // Footer
-                  const footerY = margin / 2;
-                  const totalPages = Math.ceil(imgHeight / baseSliceHeight); // Approximate
-                  const pageText = `Page ${pageIndex + 1} of ${totalPages}`;
-  
-                  page.drawText(pageText, {
-                      x: pageWidth - margin - pageText.length * 5.5,
-                      y: footerY,
-                      size: 9,
-                  });
-  
-                  currentY += sliceHeight;
-                  pageIndex++;
-              }
-  
-              const pdfBytes = await pdfDoc.save();
-              const blob = new Blob([pdfBytes], { type: "application/pdf" });
-  
-              const file = new File([blob], "survey-report.pdf", { type: "application/pdf" });
-              const formData = new FormData();
-              formData.append("clientId", id);
-              formData.append("generatedDoc", file);
-  
-              const res = await uploadSurveyReport(formData);
-              if (res) {
-                toast.success("Survey Report Downloaded Successfully");
-              }
-              console.log("response")
-              const url = URL.createObjectURL(blob);
-              const link = document.createElement("a");
-              link.href = url;
-              link.download = `MCB Survey Report - ${clientData?.imoNumber}-${clientData?.shipName}-${moment(currentDate).format("DD-MM-YYYY")}.pdf`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              URL.revokeObjectURL(url);
-  
-          } finally {
-              contentBody.style.overflow = originalOverflow;
-              contentBody.style.height = originalHeight;
-              contentBody.style.maxHeight = originalMaxHeight;
-          }
+      contentDocument.head.appendChild(style);
+
+      // Add no-break class to all table rows programmatically
+      const tableRows = contentDocument.querySelectorAll("table tr");
+      tableRows.forEach((row) => {
+        row.classList.add("no-break");
+        row.style.pageBreakInside = "avoid";
+        row.style.breakInside = "avoid";
+      });
+
+      contentBody.style.overflow = "visible";
+      contentBody.style.height = "auto";
+      contentBody.style.maxHeight = "none";
+
+      await document.fonts.ready;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      const pageWidth = 595.28;
+      const pageHeight = 841.89;
+      const dpiRatio = 1.3333;
+      const canvasWidth = pageWidth * dpiRatio;
+      const canvasHeight = contentBody.scrollHeight;
+
+      const canvas = await html2canvas(contentBody, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        scrollX: 0,
+        scrollY: 0,
+        backgroundColor: "#ffffff",
+        width: canvasWidth,
+        height: canvasHeight,
+        windowWidth: canvasWidth,
+        windowHeight: canvasHeight,
+      });
+
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+
+      const pdfDoc = await PDFDocument.create();
+      const margin = 40;
+      const usableWidth = pageWidth - 2 * margin;
+      const usableHeight = pageHeight - 2 * margin;
+      const scaleFactor = usableWidth / imgWidth;
+
+      const baseSliceHeight = Math.floor((usableHeight - 20) / scaleFactor);
+
+      const getTableRowPositions = () => {
+        const rows = contentDocument.querySelectorAll("table tr");
+        const positions = [];
+
+        rows.forEach((row) => {
+          const rect = row.getBoundingClientRect();
+          const bodyRect = contentBody.getBoundingClientRect();
+          const relativeTop = rect.top - bodyRect.top + contentBody.scrollTop;
+          const relativeBottom = relativeTop + rect.height;
+
+          positions.push({
+            top: Math.floor(relativeTop * 2),
+            bottom: Math.floor(relativeBottom * 2),
+            height: Math.floor(rect.height * 2),
+          });
+        });
+
+        return positions;
       };
 
-  const generateHtmlContent = useCallback(() => {
-    if (!clientData || !reportDetails || !systemVariables) return '';
+      const rowPositions = getTableRowPositions();
 
-    const companyName = systemVariables?.data?.find(item => item.name === "company_name")?.information || '-';
-    const companyLogo = systemVariables?.data?.find(item => item.name === "company_logo")?.information || '-';
-    const stamp = systemVariables?.data?.find(item => item.name === "company_stamp")?.information || '-';
+      const getOptimalSliceHeight = (startY, maxSliceHeight) => {
+        let optimalHeight = maxSliceHeight;
+        const sliceEndY = startY + maxSliceHeight;
+
+        for (const row of rowPositions) {
+          if (row.top < sliceEndY && row.bottom > sliceEndY) {
+            if (row.top > startY + 100) {
+              optimalHeight = row.top - startY;
+            } else if (row.bottom < startY + maxSliceHeight + row.height) {
+              optimalHeight = row.bottom - startY;
+            }
+            break;
+          }
+        }
+
+        return Math.max(optimalHeight, 100);
+      };
+
+      let currentY = 0;
+      let pageIndex = 0;
+
+      while (currentY < imgHeight) {
+        const maxSliceHeight = Math.min(baseSliceHeight, imgHeight - currentY);
+        const sliceHeight = getOptimalSliceHeight(currentY, maxSliceHeight);
+
+        const sliceCanvas = document.createElement("canvas");
+        sliceCanvas.width = imgWidth;
+        sliceCanvas.height = sliceHeight;
+
+        const ctx = sliceCanvas.getContext("2d");
+        ctx.drawImage(canvas, 0, currentY, imgWidth, sliceHeight, 0, 0, imgWidth, sliceHeight);
+
+        const pngUrl = sliceCanvas.toDataURL("image/png");
+        const pngImage = await pdfDoc.embedPng(pngUrl);
+        const scaledHeight = sliceHeight * scaleFactor;
+
+        const page = pdfDoc.addPage([pageWidth, pageHeight]);
+        page.drawImage(pngImage, {
+          x: margin,
+          y: pageHeight - margin - scaledHeight,
+          width: usableWidth,
+          height: scaledHeight,
+        });
+
+        // Footer
+        const footerY = margin / 2;
+        const totalPages = Math.ceil(imgHeight / baseSliceHeight); // Approximate
+        const pageText = `Page ${pageIndex + 1} of ${totalPages}`;
+
+        page.drawText(pageText, {
+          x: pageWidth - margin - pageText.length * 5.5,
+          y: footerY,
+          size: 9,
+        });
+
+        currentY += sliceHeight;
+        pageIndex++;
+      }
+
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+
+      const file = new File([blob], "survey-report.pdf", { type: "application/pdf" });
+      const formData = new FormData();
+      formData.append("clientId", id);
+      formData.append("generatedDoc", file);
+
+      const res = await uploadSurveyReport(formData);
+      if (res) {
+        toast.success("Survey Report Downloaded Successfully");
+      }
+      console.log("response");
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `MCB Survey Report - ${clientData?.imoNumber}-${clientData?.shipName}-${moment(currentDate).format("DD-MM-YYYY")}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } finally {
+      contentBody.style.overflow = originalOverflow;
+      contentBody.style.height = originalHeight;
+      contentBody.style.maxHeight = originalMaxHeight;
+    }
+  };
+
+  const generateHtmlContent = useCallback(() => {
+    if (!clientData || !reportDetails || !systemVariables) return "";
+
+    const companyName = systemVariables?.data?.find((item) => item.name === "company_name")?.information || "-";
+    const companyLogo = systemVariables?.data?.find((item) => item.name === "company_logo")?.information || "-";
+    const stamp = systemVariables?.data?.find((item) => item.name === "company_stamp")?.information || "-";
     const issuer = reportDetails?.map((item) => item?.issuer?.name);
     const portOfSurvey = reportDetails?.map((item) => item?.place?.toLowerCase());
-    const uniquePorts = [...new Set(portOfSurvey)].join(',').toUpperCase();
-    const uniqueSurveyors = [...new Set(issuer)].join(',').toUpperCase();
-
+    const uniquePorts = [...new Set(portOfSurvey)].join(",").toUpperCase();
+    const uniqueSurveyors = [...new Set(issuer)].join(",").toUpperCase();
 
     const surveyRows = reportDetails
       ?.map((cert) => {
-        const type = cert?.typeOfCertificate === "short_term"
-          ? "ST"
-          : cert?.typeOfCertificate === "full_term"
-            ? "FT"
-            : cert?.typeOfCertificate === "intrim"
-              ? "IT"
-              : cert?.typeOfCertificate === "extended"
-                ? "ET"
-                : cert?.typeOfCertificate || "[Type]";
+        const type = cert?.typeOfCertificate === "short_term" ? "ST" : cert?.typeOfCertificate === "full_term" ? "FT" : cert?.typeOfCertificate === "intrim" ? "IT" : cert?.typeOfCertificate === "extended" ? "ET" : cert?.typeOfCertificate || "[Type]";
 
         return `
             <tr>
               <td>${cert?.activity?.surveyTypes?.report?.name}</td>
               <td style="text-align: center;">${type}</td>
-              <td style="text-align: center;">${cert?.endorsementDate ? moment(cert.endorsementDate).format('DD/MM/YYYY') : '-'}</td>
+              <td style="text-align: center;">${cert?.endorsementDate ? moment(cert.endorsementDate).format("DD/MM/YYYY") : "-"}</td>
               <td>${cert?.activity?.surveyTypes?.name}</td>
-              <td style="text-align: center;">${cert?.issuanceDate ? moment(cert.issuanceDate).format('DD/MM/YYYY') : ''}</td>
-              <td style="text-align: center;">${cert?.validityDate ? moment(cert.validityDate).format('DD/MM/YYYY') : ''}</td>
+              <td style="text-align: center;">${cert?.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : ""}</td>
+              <td style="text-align: center;">${cert?.validityDate ? moment(cert.validityDate).format("DD/MM/YYYY") : ""}</td>
             </tr>
           `;
       })
@@ -333,7 +317,7 @@ const SurveyReport = ({ id }) => {
  <table class="three-columns-table" style="width: 100%; border: 1px dotted gray;">
     <tr style="border: 1px dotted gray;">
       <td class="label" style="border: 1px dotted gray;"><strong>Ship's Name:</strong></td>
-      <td style="border: 1px dotted gray;">${clientData?.shipName || '-'}</td>
+      <td style="border: 1px dotted gray;">${clientData?.shipName || "-"}</td>
             <td class="label" style="border: 1px dotted gray;"><strong></strong></td>
 
       <td class="label" style="border: 1px dotted gray;"><strong></strong></td>
@@ -343,31 +327,31 @@ const SurveyReport = ({ id }) => {
     </tr>
     <tr style="border: 1px dotted gray;">
       <td class="label" style="border: 1px dotted gray;"><strong>Date of Build:</strong></td>
-      <td style="border: 1px dotted gray;">${clientData && moment(clientData?.dateOfBuild).format('DD/MM/YYYY') || '-'}</td>
+      <td style="border: 1px dotted gray;">${(clientData && moment(clientData?.dateOfBuild).format("DD/MM/YYYY")) || "-"}</td>
       <td class="label" style="border: 1px dotted gray;"><strong>Ship Type:</strong></td>
-      <td style="border: 1px dotted gray;">${clientData?.typeOfShip || '-'}</td>
+      <td style="border: 1px dotted gray;">${clientData?.typeOfShip || "-"}</td>
       <td class="label" style="border: 1px dotted gray;"><strong>Flag:</strong></td>
-      <td style="border: 1px dotted gray;">${clientData?.flag || '-'}</td>
+      <td style="border: 1px dotted gray;">${clientData?.flag || "-"}</td>
     </tr>
     <tr style="border: 1px dotted gray;">
       <td style="border: 1px dotted gray;"><strong>IMO Number:</strong></td>
-      <td style="border: 1px dotted gray;">${clientData?.imoNumber || '-'}</td>
+      <td style="border: 1px dotted gray;">${clientData?.imoNumber || "-"}</td>
       <td style="border: 1px dotted gray;"><strong>First Visit:</strong></td>
-      <td style="border: 1px dotted gray;">${firstVisit ? moment(firstVisit).format('DD/MM/YYYY') : '-'}</td>
+      <td style="border: 1px dotted gray;">${firstVisit ? moment(firstVisit).format("DD/MM/YYYY") : "-"}</td>
       <td style="border: 1px dotted gray;"><strong>Port of Survey:</strong></td>
-      <td style="border: 1px dotted gray;">${uniquePorts || '-'}</td>
+      <td style="border: 1px dotted gray;">${uniquePorts || "-"}</td>
     </tr>
     <tr style="border: 1px dotted gray;">
       <td style="border: 1px dotted gray;"><strong>Port of Registry:</strong></td>
-      <td style="border: 1px dotted gray;">${clientData?.portOfRegistry || '-'}</td>
+      <td style="border: 1px dotted gray;">${clientData?.portOfRegistry || "-"}</td>
       <td style="border: 1px dotted gray;"><strong>Last Visit:</strong></td>
-      <td style="border: 1px dotted gray;">${lastVisit ? moment(lastVisit).format('DD/MM/YYYY') : '-'}</td>
+      <td style="border: 1px dotted gray;">${lastVisit ? moment(lastVisit).format("DD/MM/YYYY") : "-"}</td>
       <td style="border: 1px dotted gray;"><strong>No of Visits:</strong></td>
-      <td style="border: 1px dotted gray;">${numOfVisit || '-'}</td>
+      <td style="border: 1px dotted gray;">${numOfVisit || "-"}</td>
     </tr>
     <tr style="border: 1px dotted gray;">
       <td class="label" style="border: 1px dotted gray;"><strong>Gross Tons:</strong></td>
-      <td style="border: 1px dotted gray;">${clientData?.grossTonnage || '-'}</td>
+      <td style="border: 1px dotted gray;">${clientData?.grossTonnage || "-"}</td>
       <td style="border: 1px dotted gray;"></td>
       <td style="border: 1px dotted gray;"></td>
       <td style="border: 1px dotted gray;"></td>
@@ -390,12 +374,12 @@ const SurveyReport = ({ id }) => {
         <table style="width: 100%; border: 1px dotted gray;">
   <tr style="border: 1px dotted gray;">
     <td style="border: 1px dotted gray;"><strong>Surveyors</strong></td>
-    <td style="border: 1px dotted gray; word-wrap: break-word; width: 10%; ">${uniqueSurveyors || '-'}</td>
+    <td style="border: 1px dotted gray; word-wrap: break-word; width: 10%; ">${uniqueSurveyors || "-"}</td>
     <td style="border: 1px dotted gray;"><strong>This Report is Reviewed and Authorized by:</strong></td>
   </tr>
   <tr style="border: 1px dotted gray;">
     <td style="border: 1px dotted gray;"><strong>Port</strong></td>
-    <td style="border: 1px dotted gray; word-wrap: break-word; width: 50%">${uniquePorts || '-'}</td>
+    <td style="border: 1px dotted gray; word-wrap: break-word; width: 50%">${uniquePorts || "-"}</td>
     <td style="border: 1px dotted gray;"><strong>Reviewed On:</strong>  ${new Date().toLocaleDateString()}</td>
   </tr>
   <tr style="border: 1px dotted gray;">
@@ -416,13 +400,10 @@ const SurveyReport = ({ id }) => {
     const loadAllData = async () => {
       try {
         setLoading(true);
-        setEditorContent(''); // Reset content
+        setEditorContent(""); // Reset content
 
         // Load client data and report details in parallel
-        const [clientResult, reportResult] = await Promise.all([
-          getSpecificClient(id),
-          getSurveyReportData(id)
-        ]);
+        const [clientResult, reportResult] = await Promise.all([getSpecificClient(id), getSurveyReportData(id)]);
 
         if (clientResult?.status === 200) {
           setClientData(clientResult.data.data);
@@ -436,16 +417,14 @@ const SurveyReport = ({ id }) => {
           setReportDetails(reportData);
 
           // Extract unique journal ID
-          const journalIds = reportData
-            .map(item => item?.activity?.journal?.id)
-            .filter(Boolean);
+          const journalIds = reportData.map((item) => item?.activity?.journal?.id).filter(Boolean);
           const uniqueJournalId = [...new Set(journalIds)][0];
 
           if (uniqueJournalId) {
             setJournalId(uniqueJournalId);
 
             // Load visit details
-            const visitResponse = await getVisitDetails('journalId', uniqueJournalId);
+            const visitResponse = await getVisitDetails("journalId", uniqueJournalId);
             const visits = visitResponse?.data?.data;
 
             if (visits?.length) {
@@ -480,7 +459,7 @@ const SurveyReport = ({ id }) => {
 
   const handleEditorChange = (content) => {
     setEditorContent(content);
-    console.log('Editor content changed:', content);
+    console.log("Editor content changed:", content);
   };
 
   // Show loading state
@@ -497,7 +476,6 @@ const SurveyReport = ({ id }) => {
       <Editor
         apiKey="p9j94lg0okz82u9rr4v3zhap0pimbq1hob48rzesv3c5dylj"
         value={editorContent}
-
         onEditorChange={handleEditorChange}
         init={{
           disabled: false,
@@ -505,16 +483,12 @@ const SurveyReport = ({ id }) => {
           menubar: true,
           visual: false,
           content_css: false,
-          plugins: [
-            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
-            'print', 'preview', 'searchreplace', 'wordcount', 'code', 'fullscreen'
-          ],
-          toolbar: 'undo redo | formatselect | bold italic | alignleft aligncenter alignright | outdent indent | link image | code fullscreen',
+          plugins: ["advlist", "autolink", "lists", "link", "image", "charmap", "print", "preview", "searchreplace", "wordcount", "code", "fullscreen"],
+          toolbar: "undo redo | formatselect | bold italic | alignleft aligncenter alignright | outdent indent | link image | code fullscreen",
           readonly: false,
           setup: (editor) => {
-            editor.on('input', () => {
-              setTimeout(() => {
-              }, 100);
+            editor.on("input", () => {
+              setTimeout(() => {}, 100);
             });
           },
           content_style: `
@@ -579,11 +553,11 @@ const SurveyReport = ({ id }) => {
             em {
               font-style: italic;
             }
-          `
+          `,
         }}
       />
       <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-        <CommonButton onClick={() => router.push('/clients')} text="Back" />
+        <CommonButton onClick={() => router.push(`/clients/${id}`)} text="Back" />
         <CommonButton onClick={downloadEditorContentAsPdf} text="Download PDF" />
       </Box>
     </>
