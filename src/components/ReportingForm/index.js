@@ -30,13 +30,13 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
 import { useRouter } from "next/navigation";
-import { createReportDetail, deleteAttachment, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument } from "@/api";
+import { createReportDetail, deleteAttachment, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument, addUnArchiveDocument } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { updateActivityDetails } from "@/api";
 import { getAllActivities } from "@/api";
 import moment from "moment";
-import { Stack } from "@mui/material";
+import { Checkbox, FormControlLabel, Stack } from "@mui/material";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { DialogForm } from "../documents/CommonDocumentForm";
@@ -68,7 +68,7 @@ const DocumentUploadDialog = ({ open, onClose, onUpload, selectedDocuments, onRe
   const areAllActivitiesCompleted = () => {
     return tableData.length > 0 && tableData.every((activity) => activity.status === "Completed");
   };
-  
+
   const handleFileChange = (event) => {
     if (event.target.files) {
       const newFiles = Array.from(event.target.files);
@@ -304,6 +304,8 @@ const ReportingForm = () => {
   const [journals, setJournals] = useState([]);
   const [fullScreenRemarksVisible, setFullScreenRemarksVisible] = useState(null);
   const [selectedShip, setSelectedShip] = useState({ id: "", shipName: "" });
+  const [specialPermission, setSpecialPermission] = useState(false);
+  const [filteredJournals, setFilteredJournals] = useState([]);
   const [selectedReportNumber, setSelectedReportNumber] = useState({
     journalTypeId: "",
     index: null,
@@ -349,6 +351,42 @@ const ReportingForm = () => {
       setShowExtraEndorsementField(false);
     }
   }, [selectCertificate]);
+
+  useEffect(() => {
+    console.log("specialPermission:", specialPermission);
+    console.log("journals state:", journals);
+
+    if (!journals) return;
+    const data = specialPermission ? journals.archived : journals.unarchived;
+    console.log("filtered data:", data);
+
+    setFilteredJournals(data);
+  }, [specialPermission, journals]);
+
+  const handleSpecialPermission = (event) => {
+    const checked = event.target.checked;
+    setSpecialPermission(checked);
+    // Reset dropdown and table
+    setSelectedReportNumber({});
+    setShowTable(false);
+  };
+
+  useEffect(() => {
+    if (!journals) return;
+
+    console.log(journals, "journals");
+
+    const data = specialPermission ? journals.archived : journals.unarchived;
+
+    setFilteredJournals(data);
+
+    // Set only the id if data exists
+    if (data && data.length > 0) {
+      setjournalId(data[0].id);
+    } else {
+      setjournalId(null);
+    }
+  }, [specialPermission, journals]);
 
   const renderReportForm = () => {
     const trimmedReportName = reportName?.trim();
@@ -439,13 +477,13 @@ const ReportingForm = () => {
   const handleReportNumber = (event) => {
     setShowTable(false);
     const selectedJournalTypeId = event.target.value;
-    const selectedIndex = journals.findIndex((journal) => journal.journalTypeId === selectedJournalTypeId);
-    setjournalId(journals[selectedIndex]?.id);
+    const selectedIndex = filteredJournals.findIndex((j) => j.journalTypeId === selectedJournalTypeId);
+    // setJournalId(selectedJournalTypeId);
     setSelectedReportNumber({
       journalTypeId: selectedJournalTypeId,
       index: selectedIndex !== -1 ? selectedIndex : null,
     });
-    setTableData(journals[selectedIndex]?.activities);
+    setTableData(filteredJournals[selectedIndex]?.activities || []);
     setShowTable(true);
   };
 
@@ -474,6 +512,7 @@ const ReportingForm = () => {
   };
 
   const handleShowTable = () => {
+    console.log(journalId, "journalId");
     setShowTable(true);
     getAllActivity(journalId);
   };
@@ -486,13 +525,22 @@ const ReportingForm = () => {
 
     try {
       // setContinueBtnLoading(true);
-
-      const result = await addArchiveDocument(selectedShip.id);
-      console.log(result, "result");
-      if (result.data.status == "success") {
-        toast.success(result.data.message);
+      if (journals?.archived?.length > 0) {
+        const result = await addUnArchiveDocument(selectedShip.id);
+        console.log(result, "result");
+        if (result.data.status == "success") {
+          toast.success(result.data.message);
+        } else {
+          toast.error("Failed to continue process");
+        }
       } else {
-        toast.error("Failed to continue process");
+        const result = await addArchiveDocument(selectedShip.id);
+        console.log(result, "result");
+        if (result.data.status == "success") {
+          toast.success(result.data.message);
+        } else {
+          toast.error("Failed to continue process");
+        }
       }
     } catch (error) {
       console.error("Continue process error:", error);
@@ -501,7 +549,6 @@ const ReportingForm = () => {
       // setContinueBtnLoading(false);
     }
   };
-
 
   const handleGenerateReport = async () => {
     const isValid = await trigger();
@@ -577,10 +624,9 @@ const ReportingForm = () => {
   };
 
   const handleFullReportGeneration = async () => {
-
     fetchReportDetails(reportDetails?.id);
     try {
-      if (underscoreFields.length > 0) {
+      if (underscoreFields?.length > 0) {
         setOpen(true);
       } else {
         setLoadingReport(true);
@@ -686,7 +732,7 @@ const ReportingForm = () => {
 
   const handleRemarksChange = async (id, value) => {
     const row = tableData.find((item) => item.id === id);
-    if (row && row.maxLength && value.length > row.maxLength) {
+    if (row && row.maxLength && value?.length > row.maxLength) {
       return;
     }
 
@@ -780,32 +826,43 @@ const ReportingForm = () => {
 
   const fetchReportDetails = async () => {
     const response = await getSelectedReportDetails(reportDetails?.id);
-    setReportDetails(response?.data?.data)
+    setReportDetails(response?.data?.data);
   };
 
   useEffect(() => {
     fetchClients();
     fetchReportDetails();
-    areAllActivitiesCompleted()
-
+    areAllActivitiesCompleted();
   }, []);
 
   const fetchAllJournals = async () => {
     try {
       setLoading(true);
-      const result = await getAllJournals({
+      const response = await getAllJournals({
         filterKey: "clientId",
         filterValue: selectedShip.id,
       });
-      if (result?.status === 200) {
-        setJournals(result.data.data);
+
+      console.log("👉 Raw response:", response);
+
+      const payload = response?.data; // this is your inner "data"
+      if (payload?.status === "success") {
+        console.log("👉 unarchived:", payload.unarchived);
+        console.log("👉 marksAsArchive:", payload.marksAsArchive);
+
+        setJournals({
+          archived: payload.marksAsArchive || [],
+          unarchived: payload.unarchived || [],
+        });
       } else {
-        toast.error("Something went wrong ! Please try again after some time");
+        console.warn("Status mismatch:", payload?.status);
+        toast.error("Something went wrong! Please try again later.");
       }
+    } catch (err) {
+      console.error("Fetch error:", err);
+      toast.error(err?.message || "Failed to fetch journals");
+    } finally {
       setLoading(false);
-    } catch (error) {
-      setLoading(false);
-      toast.error(error?.message || "Failed to fetch journals");
     }
   };
 
@@ -821,35 +878,30 @@ const ReportingForm = () => {
 
   const handleDocumentUpload = async (rowId, documents) => {
     if (!rowId || !documents?.length) return;
-  
+
     // optimistic update: show files immediately (using minimal metadata)
     setTableData((prev) =>
       prev.map((item) =>
         item.id === rowId
           ? {
               ...item,
-              attachments: item.attachments
-                ? [...item.attachments, ...documents.map((f) => ({ name: f.name, _tmp: true }))]
-                : documents.map((f) => ({ name: f.name, _tmp: true })),
+              attachments: item.attachments ? [...item.attachments, ...documents.map((f) => ({ name: f.name, _tmp: true }))] : documents.map((f) => ({ name: f.name, _tmp: true })),
             }
           : item
       )
     );
-  
+
     const formData = new FormData();
     // Backend may expect "attachments" repeated or "attachments[]". Check your API.
     documents.forEach((doc) => formData.append("attachments", doc));
-  
+
     try {
       const response = await updateActivityDetails(rowId, formData);
-  
-      // If backend returns updated activity / attachments, prefer that to keep UI consistent
+
       if (response?.data?.status === "success") {
         const serverAttachments = response?.data?.data?.attachments;
         if (Array.isArray(serverAttachments)) {
-          setTableData((prev) =>
-            prev.map((item) => (item.id === rowId ? { ...item, attachments: serverAttachments } : item))
-          );
+          setTableData((prev) => prev.map((item) => (item.id === rowId ? { ...item, attachments: serverAttachments } : item)));
         } else {
           await getAllActivity(journalId);
         }
@@ -864,7 +916,7 @@ const ReportingForm = () => {
       toast.error("Upload failed. Please check your internet or file format.");
     }
   };
-  
+
   const handleRemoveDocument = async (activityId, documentId) => {
     if (!activityId) {
       toast.error("Invalid activity ID");
@@ -921,7 +973,6 @@ const ReportingForm = () => {
     setCurrentRowForDocuments(row);
     setDocumentUploadDialogOpen(true);
   };
-  
 
   const getAllActivity = async (id) => {
     try {
@@ -1009,21 +1060,29 @@ const ReportingForm = () => {
             </Box>
 
             {selectedShip.id && (
-              <Box mt={2}>
+              <Box
+                mt={2}
+                width="100%" // Make container full-width
+                display="block" // Force block-level layout
+              >
+                {/* ✅ Checkbox takes full width */}
+                <FormControlLabel control={<Checkbox checked={specialPermission} onChange={handleSpecialPermission} color="primary" />} label="Show Archived Reports" sx={{ mb: 2, display: "block" }} />
+
+                {/* ✅ Dropdown takes full width */}
                 <FormControl fullWidth sx={{ maxWidth: 300 }}>
-                  <Typography variant="body1" mb={1}>
+                  <Typography variant="body1" mb={1} display="block">
                     Select Report Number
                   </Typography>
-                  <Select value={selectedReportNumber.journalTypeId || ""} onChange={handleReportNumber} displayEmpty>
-                    {journals.length > 0 ? (
+                  <Select value={selectedReportNumber.journalTypeId || ""} onChange={handleReportNumber} displayEmpty fullWidth>
+                    {filteredJournals?.length > 0 ? (
                       <MenuItem value="" disabled>
                         Select Report
                       </MenuItem>
                     ) : (
-                      <MenuItem disabled>No Journals found for this Client</MenuItem>
+                      <MenuItem disabled>{specialPermission ? "No Archived Journals found" : "No Unarchived Journals found"}</MenuItem>
                     )}
-                    {journals.map((report, index) => (
-                      <MenuItem key={index} value={report.journalTypeId}>
+                    {filteredJournals?.map((report) => (
+                      <MenuItem key={report.id} value={report.journalTypeId}>
                         {report.journalTypeId}
                       </MenuItem>
                     ))}
@@ -1031,10 +1090,8 @@ const ReportingForm = () => {
                 </FormControl>
               </Box>
             )}
-
             {selectedShip.id && selectedReportNumber.journalTypeId && <CommonButton onClick={handleShowTable} sx={{ marginTop: 3 }} text="Continue" />}
-            {selectedShip.id && selectedReportNumber.journalTypeId && <CommonButton onClick={handleContinue} disabled={!areAllActivitiesCompleted()} sx={{ marginTop: 3, marginLeft: 2 }} text="Completed" />}
- 
+            {selectedShip.id && selectedReportNumber.journalTypeId && <CommonButton onClick={handleContinue} disabled={!areAllActivitiesCompleted()} sx={{ marginTop: 3, marginLeft: 2 }} text={specialPermission && journals?.archived?.length > 0 ? "Open To Archive" : "Completed"} />}
           </Box>
         )}
       </CommonCard>

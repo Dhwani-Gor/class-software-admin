@@ -12,7 +12,7 @@ import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import { DataGrid } from "@mui/x-data-grid";
 import CommonInput from "@/components/CommonInput";
-import { deleteJournal, getAllJournals } from "@/api";
+import { deleteJournal, getAllJournals, getJournalsList } from "@/api";
 import { Button, Dialog, DialogActions, DialogTitle, IconButton, Pagination, Tooltip } from "@mui/material";
 import moment from "moment";
 import { toast } from "react-toastify";
@@ -38,7 +38,7 @@ const Reports = () => {
       sortable: false,
       renderCell: (params) => {
         return params.value;
-      }
+      },
     },
     {
       field: "client",
@@ -54,8 +54,8 @@ const Reports = () => {
       headerName: "Report Date",
       flex: 1,
       renderCell: (params) => {
-        return moment(params.row.createdAt).format('DD/MM/YYYY hh:mm A');
-      }
+        return moment(params.row.createdAt).format("DD/MM/YYYY hh:mm A");
+      },
     },
     {
       field: "actions",
@@ -64,18 +64,12 @@ const Reports = () => {
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
           <Tooltip title="Edit Journal">
-            <IconButton
-              color="primary"
-              onClick={() => router.push(`/journal/${params?.id}`)}
-            >
+            <IconButton color="primary" onClick={() => router.push(`/journal/${params?.id}`)}>
               <EditIcon />
             </IconButton>
           </Tooltip>
           <Tooltip title="Delete Journal">
-            <IconButton
-              color="error"
-              onClick={() => handleDeleteClick(params?.id)}
-            >
+            <IconButton color="error" onClick={() => handleDeleteClick(params?.id)}>
               <DeleteIcon />
             </IconButton>
           </Tooltip>
@@ -101,7 +95,7 @@ const Reports = () => {
   const fetchAllJournals = async (search, page, limit) => {
     try {
       setLoading(true);
-      const result = await getAllJournals({
+      const result = await getJournalsList({
         search,
         page,
         limit,
@@ -110,10 +104,10 @@ const Reports = () => {
       if (result?.status === 200) {
         const journalsWithSerialNumbers = (result.data.data || []).map((journal, index) => ({
           ...journal,
-          serialNumber: (page - 1)  * limit + index + 1
+          serialNumber: (page - 1) * limit + index + 1,
         }));
 
-        setJournals(journalsWithSerialNumbers); 
+        setJournals(journalsWithSerialNumbers);
         setTotalRows(result.data.total || result.data.results || 0);
       } else {
         toast.error("Something went wrong! Please try again after some time");
@@ -160,61 +154,26 @@ const Reports = () => {
   return (
     <Layout>
       <CommonCard sx={{ mt: 0 }}>
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-        >
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Typography variant="h4" fontWeight={700}>
             Journal
           </Typography>
-          <CommonButton
-            sx={{ textTransform: "capitalize" }}
-            text="Add Journal"
-            variant="contained"
-            onClick={() => router.push("/journal/journal-entry")}
-          />
+          <CommonButton sx={{ textTransform: "capitalize" }} text="Add Journal" variant="contained" onClick={() => router.push("/journal/journal-entry")} />
         </Stack>
       </CommonCard>
 
       <CommonCard>
-        <CommonInput
-          placeholder="Search Journal"
-          fullWidth
-          value={search}
-          onChange={handleSearchChange}
-          sx={{ marginBottom: 2 }}
-        />
+        <CommonInput placeholder="Search Journal" fullWidth value={search} onChange={handleSearchChange} sx={{ marginBottom: 2 }} />
 
         <Box sx={{ width: "100%", mt: 4 }}>
           {loading ? (
-            <Box
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              height="300px"
-            >
+            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
               <CircularProgress />
             </Box>
           ) : journals.length > 0 ? (
-            <DataGrid
-              rows={journals}
-              columns={columns}
-              pagination={false}
-              disableColumnFilter
-              disableColumnMenu
-              disableColumnSelector
-              disableDensitySelector
-              disableRowSelectionOnClick
-              hideFooter
-              sx={{ backgroundColor: "#fff", border: "none" }}
-            />
+            <DataGrid rows={journals} columns={columns} pagination={false} disableColumnFilter disableColumnMenu disableColumnSelector disableDensitySelector disableRowSelectionOnClick hideFooter sx={{ backgroundColor: "#fff", border: "none" }} />
           ) : (
-            <Typography
-              variant="h6"
-              align="center"
-              sx={{ color: "gray", padding: 3 }}
-            >
+            <Typography variant="h6" align="center" sx={{ color: "gray", padding: 3 }}>
               No Data Found
             </Typography>
           )}
@@ -223,15 +182,7 @@ const Reports = () => {
         {/* Only show pagination if there are journals and totalRows > 0 */}
         {journals.length > 0 && totalRows > 0 && (
           <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-            <Pagination
-              count={Math.ceil(totalRows / limit)}
-              page={page}
-              onChange={handlePageChange}
-              color="primary"
-              variant="outlined"
-              shape="rounded"
-              sx={{ marginTop: "10px" }}
-            />
+            <Pagination count={Math.ceil(totalRows / limit)} page={page} onChange={handlePageChange} color="primary" variant="outlined" shape="rounded" sx={{ marginTop: "10px" }} />
           </Box>
         )}
       </CommonCard>
@@ -253,7 +204,6 @@ const Reports = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
     </Layout>
   );
 };

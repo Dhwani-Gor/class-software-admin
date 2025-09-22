@@ -2,7 +2,9 @@ import { Editor } from "@tinymce/tinymce-react";
 import { useEffect, useState, useCallback } from "react";
 import { getAllClassificationSurveys, getAllListClassificationSurveys, getAllSystemVariables, getSpecificClient, getSurveyReportData, uploadSurveyReport } from "../api";
 import { toast } from "react-toastify";
-import { PDFDocument } from "pdf-lib";
+// import { PDFDocument } from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+
 import html2canvas from "html2canvas";
 import moment from "moment";
 import CommonButton from "@/components/CommonButton";
@@ -48,6 +50,405 @@ const TextEditor = ({ id }) => {
     }
   };
 
+  // ---------------------------------------- final version (using) ----------------------------------------
+  // const downloadEditorContentAsPdf = async () => {
+  //   const iframe = document.querySelector("iframe.tox-edit-area__iframe");
+  //   const contentDocument = iframe?.contentDocument;
+  //   const contentBody = contentDocument?.body;
+
+  //   if (!contentBody) {
+  //     console.error("Could not find editor content");
+  //     return;
+  //   }
+
+  //   const originalOverflow = contentBody.style.overflow;
+  //   const originalHeight = contentBody.style.height;
+  //   const originalMaxHeight = contentBody.style.maxHeight;
+
+  //   try {
+  //     const style = contentDocument.createElement("style");
+  //     style.innerHTML = `
+  //           * {
+  //               font-family: Arial, sans-serif !important;
+  //               font-size: 11px !important;
+  //               line-height: 20px !important;
+  //               word-spacing: 0.05em !important;
+  //               box-sizing: border-box;
+  //               white-space: normal !important;
+  //           }
+
+  //           html, body {
+  //               margin: 0 !important;
+  //               padding: 0 !important;
+  //               background: white !important;
+  //               width: 100% !important;
+  //               height: auto !important;
+  //           }
+
+  //           table {
+  //               border-collapse: collapse !important;
+  //               page-break-inside: auto !important;
+  //           }
+
+  //           table tr, table td, table th {
+  //               page-break-inside: avoid !important;
+  //               break-inside: avoid !important;
+  //               vertical-align: top !important;
+  //               padding: 4px !important;
+  //           }
+
+  //           table thead {
+  //               display: table-header-group !important;
+  //           }
+
+  //           table tbody {
+  //               display: table-row-group !important;
+  //           }
+
+  //           .no-break {
+  //               page-break-inside: avoid !important;
+  //               break-inside: avoid !important;
+  //           }
+  //               .no-break-block,
+  //               .no-break-block *,
+  //               .hull-row {
+  //               page-break-inside: avoid !important;
+  //               break-inside: avoid !important;
+  //               border:none;
+  //       }
+  //       `;
+  //     contentDocument.head.appendChild(style);
+  //     const tableRows = contentDocument.querySelectorAll("table tr");
+  //     tableRows.forEach((row) => {
+  //       row.classList.add("no-break");
+  //       row.style.pageBreakInside = "avoid";
+  //       row.style.breakInside = "avoid";
+  //     });
+
+  //     contentBody.style.overflow = "visible";
+  //     contentBody.style.height = "auto";
+  //     contentBody.style.maxHeight = "none";
+
+  //     await document.fonts.ready;
+  //     await new Promise((resolve) => setTimeout(resolve, 300));
+
+  //     const pageWidth = 595.28;
+  //     const pageHeight = 841.89;
+  //     const dpiRatio = 1.3333;
+  //     const canvasWidth = pageWidth * dpiRatio;
+  //     const canvasHeight = contentBody.scrollHeight;
+
+  //     const canvas = await html2canvas(contentBody, {
+  //       scale: 2,
+  //       useCORS: true,
+  //       allowTaint: true,
+  //       scrollX: 0,
+  //       scrollY: 0,
+  //       backgroundColor: "#ffffff",
+  //       width: canvasWidth,
+  //       height: canvasHeight,
+  //       windowWidth: canvasWidth,
+  //       windowHeight: canvasHeight,
+  //     });
+
+  //     const imgWidth = canvas.width;
+  //     const imgHeight = canvas.height;
+
+  //     const pdfDoc = await PDFDocument.create();
+
+  //     // ================= PAGE LAYOUT CONFIGURATION =================
+  //     const margin = 20;                    // Page margins (left, right, top, bottom spacing)
+  //     const headerHeight = 60;              // Fixed header height - ADJUST THIS to make header bigger/smaller
+  //     const footerHeight = 25;              // Fixed footer height - ADJUST THIS to make footer bigger/smaller
+  //     const usableWidth = pageWidth - 2 * margin;
+  //     const usableHeight = pageHeight - 2 * margin - headerHeight - footerHeight;
+  //     const scaleFactor = usableWidth / imgWidth;
+
+  //     const baseSliceHeight = Math.floor(usableHeight / scaleFactor);
+
+  //     const getTableRowPositions = () => {
+  //       const rows = contentDocument.querySelectorAll("table tr");
+  //       const positions = [];
+
+  //       rows.forEach((row) => {
+  //         const rect = row.getBoundingClientRect();
+  //         const bodyRect = contentBody.getBoundingClientRect();
+  //         const relativeTop = rect.top - bodyRect.top + contentBody.scrollTop;
+  //         const relativeBottom = relativeTop + rect.height;
+
+  //         positions.push({
+  //           top: Math.floor(relativeTop * 2),
+  //           bottom: Math.floor(relativeBottom * 2),
+  //           height: Math.floor(rect.height * 2),
+  //         });
+  //       });
+
+  //       return positions;
+  //     };
+
+  //     const rowPositions = getTableRowPositions();
+
+  //     const getOptimalSliceHeight = (startY, maxSliceHeight) => {
+  //       let optimalHeight = maxSliceHeight;
+  //       const sliceEndY = startY + maxSliceHeight;
+
+  //       for (const row of rowPositions) {
+  //         if (row.top < sliceEndY && row.bottom > sliceEndY) {
+  //           if (row.top > startY + 100) {
+  //             optimalHeight = row.top - startY;
+  //           } else if (row.bottom < startY + maxSliceHeight + row.height) {
+  //             optimalHeight = row.bottom - startY;
+  //           }
+  //           break;
+  //         }
+  //       }
+
+  //       return Math.max(optimalHeight, 100);
+  //     };
+
+  //     let currentY = 0;
+  //     let pageIndex = 0;
+
+  //     while (currentY < imgHeight) {
+  //       const maxSliceHeight = Math.min(baseSliceHeight, imgHeight - currentY);
+  //       const sliceHeight = getOptimalSliceHeight(currentY, maxSliceHeight);
+
+  //       const sliceCanvas = document.createElement("canvas");
+  //       sliceCanvas.width = imgWidth;
+  //       sliceCanvas.height = sliceHeight;
+
+  //       const ctx = sliceCanvas.getContext("2d");
+  //       ctx.drawImage(canvas, 0, currentY, imgWidth, sliceHeight, 0, 0, imgWidth, sliceHeight);
+
+  //       const pngUrl = sliceCanvas.toDataURL("image/png");
+  //       const pngImage = await pdfDoc.embedPng(pngUrl);
+  //       const scaledHeight = sliceHeight * scaleFactor;
+
+  //       const page = pdfDoc.addPage([pageWidth, pageHeight]);
+
+  //       // ================= HEADER SECTION =================
+  //       // Header positioning from top of page
+  //       const headerStartY = pageHeight - 8;         // Distance from top of page - DECREASE to move header up, INCREASE to move down
+
+  //       // Font setup
+  //       const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  //       const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  //       // Header border/background rectangle
+  //       const headerRectHeight = 55;                 // Header rectangle height - ADJUST to make header box bigger/smaller
+  //       page.drawRectangle({
+  //         x: margin,
+  //         y: headerStartY - headerRectHeight,
+  //         width: usableWidth,
+  //         height: headerRectHeight,
+  //         borderColor: rgb(0.7, 0.7, 0.7),
+  //         filColor: rgb(1, 0, 0),    // light gray background
+  //         borderWidth: 1,
+  //       });
+
+  //       // Company Logo section (currently commented out)
+  //       if (companyLogo && companyLogo !== "-") {
+  //         try {
+  //           // Logo positioning and sizing
+  //           const logoSize = 30;                     // Logo width and height - ADJUST logo size
+  //           const logoX = margin + 8;                // Logo X position from left
+  //           const logoY = headerStartY - 45;         // Logo Y position from top
+
+  //           // Uncomment below lines to enable logo
+  //           // const logoImage = await pdfDoc.embedPng(companyLogo);
+  //           // page.drawImage(logoImage, {
+  //           //   x: logoX,
+  //           //   y: logoY,
+  //           //   width: logoSize,
+  //           //   height: logoSize,
+  //           // });
+  //         } catch (error) {
+  //           console.log("Logo embedding failed:", error);
+  //         }
+  //       }
+
+  //       // Main Title "Survey Status Report"
+  //       const titleFontSize = 12;                    // Title font size - ADJUST to make title bigger/smaller
+  //       const titleY = headerStartY - 18;            // Title Y position - ADJUST to move title up/down
+  //       page.drawText("Survey Status Report", {
+  //         x: pageWidth / 2 - 70,                     // Title X position (centered) - ADJUST for horizontal positioning
+  //         y: titleY,
+  //         size: titleFontSize,
+  //         color: rgb(0, 0, 1),                       // Blue color for title
+  //         font,
+  //       });
+
+  //       // LEFT COLUMN - Name and Status
+  //       const leftColumnX = margin + 8;              // Left column X position - ADJUST to move left content left/right
+  //       const labelFontSize = 9;                     // Font size for labels - ADJUST to make labels bigger/smaller
+  //       const valueFontSize = 9;                     // Font size for values - ADJUST to make values bigger/smaller
+  //       const colonX = margin + 45;                  // Colon X position - ADJUST to align colons
+  //       const valueX = margin + 55;                  // Value X position - ADJUST to align values
+
+  //       // Name row
+  //       const nameY = headerStartY - 35;             // Name row Y position - ADJUST to move name row up/down
+  //       page.drawText("Name", {
+  //         x: leftColumnX,
+  //         y: nameY,
+  //         size: labelFontSize,
+  //         font: regularFont,
+  //       });
+  //       page.drawText(":", {
+  //         x: colonX,
+  //         y: nameY,
+  //         size: labelFontSize,
+  //         font: regularFont,
+  //       });
+  //       page.drawText(`${clientData?.shipName || "N/A"}`, {
+  //         x: valueX,
+  //         y: nameY,
+  //         size: valueFontSize,
+  //         font,
+  //       });
+
+  //       // Status row
+  //       const statusY = headerStartY - 47;           // Status row Y position - ADJUST to move status row up/down
+  //       page.drawText("Status", {
+  //         x: leftColumnX,
+  //         y: statusY,
+  //         size: labelFontSize,
+  //         font: regularFont,
+  //       });
+  //       page.drawText(":", {
+  //         x: colonX,
+  //         y: statusY,
+  //         size: labelFontSize,
+  //         font: regularFont,
+  //       });
+  //       page.drawText("In Operation, Class Valid", {
+  //         x: valueX,
+  //         y: statusY,
+  //         size: valueFontSize,
+  //         font: regularFont,
+  //       });
+
+  //       // RIGHT COLUMN - IR Number and IMO Number
+  //       const rightLabelX = pageWidth - margin - 120; // Right column label X position - ADJUST to move right labels left/right
+  //       const rightColonX = pageWidth - margin - 65;   // Right column colon X position - ADJUST to align right colons
+  //       const rightValueX = pageWidth - margin - 55;   // Right column value X position - ADJUST to align right values
+
+  //       // IR Number row
+  //       page.drawText("IR Number", {
+  //         x: rightLabelX,
+  //         y: nameY,                                   // Same Y as name row
+  //         size: labelFontSize,
+  //         font: regularFont,
+  //       });
+  //       page.drawText(":", {
+  //         x: rightColonX,
+  //         y: nameY,
+  //         size: labelFontSize,
+  //         font: regularFont,
+  //       });
+  //       page.drawText(`${clientData?.irNumber || "N/A"}`, {
+  //         x: rightValueX,
+  //         y: nameY,
+  //         size: valueFontSize,
+  //         font,
+  //       });
+
+  //       // IMO Number row
+  //       page.drawText("IMO Number", {
+  //         x: rightLabelX,
+  //         y: statusY,                                 // Same Y as status row
+  //         size: labelFontSize,
+  //         font: regularFont,
+  //       });
+  //       page.drawText(":", {
+  //         x: rightColonX,
+  //         y: statusY,
+  //         size: labelFontSize,
+  //         font: regularFont,
+  //       });
+  //       page.drawText(`${clientData?.imoNumber || "N/A"}`, {
+  //         x: rightValueX,
+  //         y: statusY,
+  //         size: valueFontSize,
+  //         font,
+  //       });
+
+  //       // ================= MAIN CONTENT SECTION =================
+  //       // Content positioning between header and footer
+  //       const contentStartY = pageHeight - headerHeight - margin - 5; // Content start Y position - ADJUST to add/reduce space between header and content
+
+  //       page.drawImage(pngImage, {
+  //         x: margin,                                  // Content X position (left margin)
+  //         y: contentStartY - scaledHeight,           // Content Y position
+  //         width: usableWidth,                        // Content width (page width minus margins)
+  //         height: scaledHeight,                      // Content height (scaled to fit)
+  //       });
+
+  //       // ================= FOOTER SECTION =================
+  //       // Footer positioning from bottom of page
+  //       const footerStartY = footerHeight - 5;       // Footer Y position from bottom - INCREASE to move footer up, DECREASE to move down
+  //       const footerFontSize = 8;                    // Footer font size - ADJUST to make footer text bigger/smaller
+
+  //       // Footer content
+  //       const generatedText = `Generated on: ${moment().format("DD MMM YYYY")}`;
+  //       const totalPages = Math.ceil(imgHeight / baseSliceHeight);
+  //       const pageText = `Page ${pageIndex + 1} of ${totalPages}`;
+
+  //       // Footer separator line
+  //       const footerLineY = footerStartY + 12;       // Footer line Y position - ADJUST to move separator line up/down
+  //       page.drawLine({
+  //         start: { x: margin, y: footerLineY },
+  //         end: { x: pageWidth - margin, y: footerLineY },
+  //         thickness: 0.5,                            // Footer line thickness - ADJUST to make line thicker/thinner
+  //       });
+
+  //       // Footer text positioning
+  //       page.drawText(generatedText, {
+  //         x: margin,                                 // Generated date X position (left aligned)
+  //         y: footerStartY,
+  //         size: footerFontSize,
+  //       });
+
+  //       const pageTextWidth = pageText.length * 4.5; // Approximate page text width for right alignment
+  //       page.drawText(pageText, {
+  //         x: pageWidth - margin - pageTextWidth,     // Page number X position (right aligned) - ADJUST multiplier to fine-tune alignment
+  //         y: footerStartY,
+  //         size: footerFontSize,
+  //       });
+
+  //       currentY += sliceHeight;
+  //       pageIndex++;
+  //     }
+
+  //     const pdfBytes = await pdfDoc.save();
+  //     const blob = new Blob([pdfBytes], { type: "application/pdf" });
+
+  //     const file = new File([blob], "survey-status-report.pdf", {
+  //       type: "application/pdf",
+  //     });
+  //     const formData = new FormData();
+  //     formData.append("clientId", id);
+  //     formData.append("generatedDoc", file);
+
+  //     const res = await uploadSurveyReport(formData);
+  //     if (res) {
+  //       toast.success("Survey Status Report Downloaded Successfully");
+  //     }
+
+  //     const url = URL.createObjectURL(blob);
+  //     const link = document.createElement("a");
+  //     link.href = url;
+  //     link.download = `MCB Survey Status Report - ${clientData?.imoNumber}-${clientData?.shipName}-${moment(currentDate).format("DD-MM-YYYY")}.pdf`;
+  //     document.body.appendChild(link);
+  //     link.click();
+  //     document.body.removeChild(link);
+  //     URL.revokeObjectURL(url);
+  //   } finally {
+  //     contentBody.style.overflow = originalOverflow;
+  //     contentBody.style.height = originalHeight;
+  //     contentBody.style.maxHeight = originalMaxHeight;
+  //   }
+  // };
+
   const downloadEditorContentAsPdf = async () => {
     const iframe = document.querySelector("iframe.tox-edit-area__iframe");
     const contentDocument = iframe?.contentDocument;
@@ -65,56 +466,51 @@ const TextEditor = ({ id }) => {
     try {
       const style = contentDocument.createElement("style");
       style.innerHTML = `
-            * {
-                font-family: Arial, sans-serif !important;
-                font-size: 11px !important;
-                line-height: 20px !important;
-                word-spacing: 0.05em !important;
-                box-sizing: border-box;
-                white-space: normal !important;
-            }
-
-            html, body {
-                margin: 0 !important;
-                padding: 0 !important;
-                background: white !important;
-                width: 100% !important;
-                height: auto !important;
-            }
-
-            table {
-                border-collapse: collapse !important;
-                page-break-inside: auto !important;
-            }
-
-            table tr, table td, table th {
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-                vertical-align: top !important;
-                padding: 4px !important;
-            }
-
-            table thead {
-                display: table-header-group !important;
-            }
-
-            table tbody {
-                display: table-row-group !important;
-            }
-
-            .no-break {
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
-                .no-break-block, 
-                .no-break-block *, 
-                .hull-row {
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-                border:none;
-}
-        `;
+      * {
+          font-family: Arial, sans-serif !important;
+          font-size: 11px !important;
+          line-height: 20px !important;
+          word-spacing: 0.05em !important;
+          box-sizing: border-box;
+          white-space: normal !important;
+      }
+      html, body {
+          margin: 0 !important;
+          padding: 0 !important;
+          background: white !important;
+          width: 100% !important;
+          height: auto !important;
+      }
+      table {
+          border-collapse: collapse !important;
+          page-break-inside: auto !important;
+      }
+      table tr, table td, table th {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          vertical-align: top !important;
+          padding: 4px !important;
+      }
+      table thead {
+          display: table-header-group !important;
+      }
+      table tbody {
+          display: table-row-group !important;
+      }
+      .no-break {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+      }
+      .no-break-block, 
+      .no-break-block *, 
+      .hull-row {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          border:none;
+      }
+    `;
       contentDocument.head.appendChild(style);
+
       const tableRows = contentDocument.querySelectorAll("table tr");
       tableRows.forEach((row) => {
         row.classList.add("no-break");
@@ -152,30 +548,30 @@ const TextEditor = ({ id }) => {
       const imgHeight = canvas.height;
 
       const pdfDoc = await PDFDocument.create();
-      const margin = 40;
-      const usableWidth = pageWidth - 2 * margin;
-      const usableHeight = pageHeight - 2 * margin;
-      const scaleFactor = usableWidth / imgWidth;
 
-      const baseSliceHeight = Math.floor((usableHeight - 20) / scaleFactor);
+      // ========== PAGE CONFIG ==========
+      const margin = 20;
+      const headerHeight = 60;
+      const footerHeight = 25;
+      const usableWidth = pageWidth - 2 * margin;
+      const usableHeight = pageHeight - 2 * margin - headerHeight - footerHeight;
+      const scaleFactor = usableWidth / imgWidth;
+      const baseSliceHeight = Math.floor(usableHeight / scaleFactor);
 
       const getTableRowPositions = () => {
         const rows = contentDocument.querySelectorAll("table tr");
         const positions = [];
-
         rows.forEach((row) => {
           const rect = row.getBoundingClientRect();
           const bodyRect = contentBody.getBoundingClientRect();
           const relativeTop = rect.top - bodyRect.top + contentBody.scrollTop;
           const relativeBottom = relativeTop + rect.height;
-
           positions.push({
             top: Math.floor(relativeTop * 2),
             bottom: Math.floor(relativeBottom * 2),
             height: Math.floor(rect.height * 2),
           });
         });
-
         return positions;
       };
 
@@ -184,7 +580,6 @@ const TextEditor = ({ id }) => {
       const getOptimalSliceHeight = (startY, maxSliceHeight) => {
         let optimalHeight = maxSliceHeight;
         const sliceEndY = startY + maxSliceHeight;
-
         for (const row of rowPositions) {
           if (row.top < sliceEndY && row.bottom > sliceEndY) {
             if (row.top > startY + 100) {
@@ -195,12 +590,15 @@ const TextEditor = ({ id }) => {
             break;
           }
         }
-
         return Math.max(optimalHeight, 100);
       };
 
       let currentY = 0;
       let pageIndex = 0;
+
+      // Embed fonts once
+      const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
       while (currentY < imgHeight) {
         const maxSliceHeight = Math.min(baseSliceHeight, imgHeight - currentY);
@@ -218,30 +616,114 @@ const TextEditor = ({ id }) => {
         const scaledHeight = sliceHeight * scaleFactor;
 
         const page = pdfDoc.addPage([pageWidth, pageHeight]);
+        if (pageIndex > 0) {
+          // <-- skip on first page
+          // ========== HEADER ==========
+          const headerStartY = pageHeight - 8;
+          const headerRectHeight = 55;
+          page.drawRectangle({
+            x: margin,
+            y: headerStartY - headerRectHeight,
+            width: usableWidth,
+            height: headerRectHeight,
+            color: rgb(0.12, 0.35, 0.6), // dark blue
+          });
+
+          // Title
+          page.drawText("Survey Status Report", {
+            x: pageWidth / 2 - 70,
+            y: headerStartY - 20,
+            size: 13,
+            color: rgb(1, 1, 1), // white
+            font: fontBold,
+          });
+
+          // Left column
+          const leftColumnX = margin + 8;
+          const colonX = margin + 45;
+          const valueX = margin + 55;
+          const nameY = headerStartY - 35;
+          const statusY = headerStartY - 47;
+
+          page.drawText("Name", { x: leftColumnX, y: nameY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
+          page.drawText(":", { x: colonX, y: nameY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
+          page.drawText(`${clientData?.shipName || "N/A"}`, {
+            x: valueX,
+            y: nameY,
+            size: 9,
+            color: rgb(0.9, 0.9, 0.9),
+            font: fontBold,
+          });
+
+          page.drawText("Status", { x: leftColumnX, y: statusY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
+          page.drawText(":", { x: colonX, y: statusY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
+          page.drawText("In Operation, Class Valid", {
+            x: valueX,
+            y: statusY,
+            size: 9,
+            color: rgb(0.9, 0.9, 0.9),
+            font: fontRegular,
+          });
+
+          // Right column
+          const rightLabelX = pageWidth - margin - 120;
+          const rightColonX = pageWidth - margin - 65;
+          const rightValueX = pageWidth - margin - 55;
+
+          page.drawText(":", { x: rightColonX, y: nameY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
+
+          page.drawText("IMO Number", { x: rightLabelX, y: statusY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
+          page.drawText(":", { x: rightColonX, y: statusY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
+          page.drawText(`${clientData?.imoNumber || "N/A"}`, {
+            x: rightValueX,
+            y: statusY,
+            size: 9,
+            color: rgb(0.9, 0.9, 0.9),
+            font: fontBold,
+          });
+        }
+        // ========== CONTENT ==========
+        const contentStartY = pageHeight - headerHeight - margin - 5;
         page.drawImage(pngImage, {
           x: margin,
-          y: pageHeight - margin - scaledHeight,
+          y: contentStartY - scaledHeight,
           width: usableWidth,
           height: scaledHeight,
         });
 
-        // Footer
-        const footerY = margin / 2;
-        const generatedText = `Generated on: ${moment().format("DD MMM YYYY")}`;
-        const totalPages = Math.ceil(imgHeight / baseSliceHeight);
-        const pageText = `Page ${pageIndex + 1} of ${totalPages}`;
+        // ========== FOOTER ==========
+        if (pageIndex > 0) {
+          // <-- skip on first page
+          page.drawRectangle({
+            x: margin,
+            y: 0,
+            width: usableWidth,
+            height: footerHeight + 8,
+            color: rgb(0.9, 0.9, 0.9), // light gray background
+          });
 
-        page.drawText(generatedText, {
-          x: margin,
-          y: footerY,
-          size: 8,
-        });
-        page.drawText(pageText, {
-          x: pageWidth - margin - pageText.length * 5.5,
-          y: footerY,
-          size: 8,
-        });
+          const footerStartY = footerHeight - 5;
+          const generatedText = ` Generated on: ${moment().format("DD MMM YYYY")}`;
+          const totalPages = Math.ceil(imgHeight / baseSliceHeight);
+          const pageText = `Page ${pageIndex + 1} of ${totalPages}`;
 
+          page.drawText(generatedText, {
+            x: margin + 7,
+            y: footerStartY,
+            size: 8,
+            color: rgb(0.2, 0.2, 0.2),
+            font: fontRegular,
+          });
+
+          const pageTextWidth = pageText.length * 4.5;
+          page.drawText(pageText, {
+            x: pageWidth - margin - pageTextWidth,
+            y: footerStartY,
+            size: 8,
+            color: rgb(0.2, 0.2, 0.2),
+            font: fontRegular,
+          });
+        }
         currentY += sliceHeight;
         pageIndex++;
       }
@@ -275,6 +757,7 @@ const TextEditor = ({ id }) => {
       contentBody.style.maxHeight = originalMaxHeight;
     }
   };
+
   const getClassName = (dueDate, today) => {
     if (!dueDate) return "";
 
@@ -742,7 +1225,7 @@ const TextEditor = ({ id }) => {
         </div>
         </div>
 
-       <div style="text-align: center; align-items: center;" class="page">
+       <div style="text-align: center; align-items: center;" class="page ">
        <h2>Table of Contents</h2>
         <div class="option option3">
          <table style="width: 99%;">
@@ -996,7 +1479,7 @@ const TextEditor = ({ id }) => {
         onEditorChange={handleEditorChange}
         init={{
           disabled: false,
-          height: 600,
+          height: 800,
           menubar: true,
           visual: false,
           plugins: ["advlist", "autolink", "lists", "link", "image", "charmap", "print", "preview", "searchreplace", "wordcount", "code", "fullscreen"],

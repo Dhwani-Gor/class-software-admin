@@ -10,7 +10,7 @@ axiosInstance.interceptors.request.use(
   function (config) {
     try {
       config.headers["Content-Type"] = "application/json";
-      const token = localStorage.getItem("token")
+      const token = localStorage.getItem("token");
 
       if (token) {
         config.headers["authorization"] = `Bearer ${token}`;
@@ -65,7 +65,7 @@ export const adminLogin = async (payload) => {
 export const getVisitDetails = async (filterKey, filterValue) => {
   let result;
   try {
-    result = await axiosInstance.get(`/visitDetails?filterKey=${filterKey}&filterValue=${filterValue}`)
+    result = await axiosInstance.get(`/visitDetails?filterKey=${filterKey}&filterValue=${filterValue}`);
   } catch (error) {
     result = error;
   }
@@ -184,13 +184,7 @@ export const updateInspectorDetail = async (id, payload) => {
   return result;
 };
 
-export const getAllJournals = async ({
-  filterKey = '',
-  filterValue = '',
-  search = '',
-  page,
-  limit,
-} = {}) => {
+export const getAllJournals = async ({ filterKey = "", filterValue = "", search = "", page, limit } = {}) => {
   let result;
 
   const params = {};
@@ -210,8 +204,25 @@ export const getAllJournals = async ({
   return result;
 };
 
+export const getJournalsList = async ({ filterKey = "", filterValue = "", search = "", page, limit } = {}) => {
+  let result;
 
+  const params = {};
+  params.filterKey = filterKey;
+  params.filterValue = filterValue;
 
+  if (search) params.search = String(search);
+  if (page) params.page = page;
+  if (limit) params.limit = limit;
+
+  try {
+    result = await axiosInstance.get("/journals/list", { params });
+  } catch (error) {
+    result = error;
+  }
+
+  return result;
+};
 
 export const getJournal = async (journalId) => {
   let result;
@@ -424,7 +435,6 @@ export const deleteActivity = async (activityId) => {
   return result;
 };
 
-
 export const getAllActivities = async (filterKey, filterValue) => {
   let result;
   try {
@@ -442,7 +452,6 @@ export const getAllActivities = async (filterKey, filterValue) => {
   }
   return result;
 };
-
 
 export const createVisitDetails = async (payload) => {
   let result;
@@ -474,7 +483,6 @@ export const deleteVisitDetails = async (activityId) => {
   return result;
 };
 
-
 export const getAllVisitDetails = async (filterKey, filterValue) => {
   let result;
   try {
@@ -493,7 +501,7 @@ export const getAllVisitDetails = async (filterKey, filterValue) => {
   return result;
 };
 
-export const getSurveyTypes = async (search = '', page = '', limit = '') => {
+export const getSurveyTypes = async (search = "", page = "", limit = "") => {
   let result;
   try {
     result = await axiosInstance.get(`/surveyTypes?search=${search}&page=${page}&limit=${limit}`);
@@ -524,7 +532,6 @@ export const updateSurveyType = async (id, payload) => {
   }
   return result;
 };
-
 
 export const deleteSurveyType = async (payload) => {
   let result;
@@ -610,10 +617,10 @@ export const deleteDocument = async (id) => {
 export const searchUnloCodes = async (query) => {
   let result;
   try {
-    result = await axiosInstance.get('/unloCodes/search', {
+    result = await axiosInstance.get("/unloCodes/search", {
       params: {
-        query: query
-      }
+        query: query,
+      },
     });
   } catch (error) {
     result = error;
@@ -687,7 +694,6 @@ export const getEndorsedIssuedBy = async (filterKey, filterValue) => {
   return result;
 };
 
-
 export const getAllIssuedDocuments = async (filterKeys = [], filterValues = [], searchQuery, page, limit, startDate, endDate, markAsArchive) => {
   try {
     const params = {};
@@ -702,7 +708,7 @@ export const getAllIssuedDocuments = async (filterKeys = [], filterValues = [], 
     if (limit) params.limit = limit;
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
-    if(markAsArchive) params.markAsArchive = markAsArchive;
+    if (markAsArchive) params.markAsArchive = markAsArchive;
 
     const result = await axiosInstance.get("/reportDetails", { params });
     return result;
@@ -719,7 +725,7 @@ export const deleteAttachment = async (activityId, attachmentId) => {
     result = error;
   }
   return result;
-}
+};
 // API functions for System Variables CRUD operations
 
 export const createSystemVariable = async (payload) => {
@@ -730,7 +736,7 @@ export const createSystemVariable = async (payload) => {
     // If payload is FormData (for image upload), set appropriate headers
     if (payload instanceof FormData) {
       config.headers = {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       };
     }
 
@@ -785,7 +791,7 @@ export const updateSystemVariable = async (id, payload) => {
     // If payload is FormData (for image upload), set appropriate headers
     if (payload instanceof FormData) {
       config.headers = {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       };
     }
 
@@ -836,7 +842,7 @@ export const updateClassificationSurvey = async (id, payload) => {
   return result;
 };
 
-export const getAllClassificationSurveys = async ({clientId, page, limit}) => {
+export const getAllClassificationSurveys = async ({ clientId, page, limit }) => {
   let result;
   try {
     result = await axiosInstance.get(`/classificationSurveys?filterKey=clientId&filterValue=${clientId}&page=${page}&limit=${limit}`);
@@ -845,7 +851,7 @@ export const getAllClassificationSurveys = async ({clientId, page, limit}) => {
   }
   return result;
 };
-export const getAllListClassificationSurveys = async ({clientId}) => {
+export const getAllListClassificationSurveys = async ({ clientId }) => {
   let result;
   try {
     result = await axiosInstance.get(`/classificationSurveys?filterKey=clientId&filterValue=${clientId}`);
@@ -874,7 +880,7 @@ export const uploadSurveyReport = async (payload) => {
   return result;
 };
 
-export const getAllSurveyStatusReport = async ({params}) => {
+export const getAllSurveyStatusReport = async ({ params }) => {
   let result;
   try {
     result = await axiosInstance.get(`/surveyStatusReports`, { params });
@@ -912,4 +918,24 @@ export const addArchiveDocument = async (clientId) => {
     console.error("Error archiving document:", e);
     return e;
   }
+};
+
+export const addUnArchiveDocument = async (clientId) => {
+  try {
+    const result = await axiosInstance.post("/reportDetails/markAsUnArchived", { clientId });
+    return result;
+  } catch (e) {
+    console.error("Error archiving document:", e);
+    return e;
+  }
+};
+
+export const getAllModules = async () => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/modules`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
 };
