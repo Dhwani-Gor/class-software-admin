@@ -30,7 +30,19 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
 import { useRouter } from "next/navigation";
-import { createReportDetail, deleteAttachment, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument, addUnArchiveDocument } from "@/api";
+import {
+  createReportDetail,
+  deleteAttachment,
+  generateFullReport,
+  getAllClients,
+  getAllJournals,
+  getEndorsedIssuedBy,
+  getSelectedActivityReportDetails,
+  getSelectedReportDetails,
+  updateReportDetail,
+  addArchiveDocument,
+  addUnArchiveDocument,
+} from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { updateActivityDetails } from "@/api";
@@ -48,6 +60,7 @@ import AntiFoulingCertificateForm from "../documents/AntiFoulingCertificateForm"
 import IAPPForm from "../documents/RecordOfConstructioCertificate";
 import EndorsementDialog from "../documents/EndorsementDialog";
 import { hiddenReports } from "@/utils/DocumentList";
+import { useAuth } from "@/hooks/useAuth";
 
 // Updated schema with correct field names
 const reportSchema = yup.object().shape({
@@ -62,17 +75,36 @@ const reportSchema = yup.object().shape({
   newValidityDate: yup.string().optional(),
 });
 
-const DocumentUploadDialog = ({ open, onClose, onUpload, selectedDocuments, onRemoveDocument, onPreviewDocument }) => {
+const DocumentUploadDialog = ({
+  open,
+  onClose,
+  onUpload,
+  selectedDocuments,
+  onRemoveDocument,
+  onPreviewDocument,
+}) => {
   const [documents, setDocuments] = useState([]);
 
   const areAllActivitiesCompleted = () => {
-    return tableData.length > 0 && tableData.every((activity) => activity.status === "Completed");
+    return (
+      tableData.length > 0 &&
+      tableData.every((activity) => activity.status === "Completed")
+    );
   };
 
   const handleFileChange = (event) => {
     if (event.target.files) {
       const newFiles = Array.from(event.target.files);
-      const validFiles = newFiles.filter((file) => ["image/jpeg", "image/png", "image/gif", "application/pdf", "video/mp4", "video/mpeg"].includes(file.type));
+      const validFiles = newFiles.filter((file) =>
+        [
+          "image/jpeg",
+          "image/png",
+          "image/gif",
+          "application/pdf",
+          "video/mp4",
+          "video/mpeg",
+        ].includes(file.type)
+      );
 
       if (validFiles.length !== newFiles.length) {
         toast.warning("Some files were skipped due to invalid file type");
@@ -160,17 +192,33 @@ const DocumentUploadDialog = ({ open, onClose, onUpload, selectedDocuments, onRe
       <DialogTitle>Upload Documents</DialogTitle>
       <DialogContent sx={{ minWidth: "50vw" }}>
         <Box>
-          <input type="file" multiple accept="image/jpeg,image/png,image/gif,application/pdf,video/mp4,video/mpeg" onChange={handleFileChange} style={{ margin: "16px 0" }} />
+          <input
+            type="file"
+            multiple
+            accept="image/jpeg,image/png,image/gif,application/pdf,video/mp4,video/mpeg"
+            onChange={handleFileChange}
+            style={{ margin: "16px 0" }}
+          />
 
           {documents.length > 0 && (
             <Box mt={2}>
               <Typography variant="subtitle1">New Documents:</Typography>
               {documents.map((file, index) => (
-                <Box key={index} display="flex" alignItems="center" justifyContent="space-between" mb={1}>
+                <Box
+                  key={index}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  mb={1}
+                >
                   <Typography>
                     {renderFileIcon(file)} {getFileName(file)}
                   </Typography>
-                  <IconButton size="small" onClick={() => handleRemoveNewDocument(index)} color="error">
+                  <IconButton
+                    size="small"
+                    onClick={() => handleRemoveNewDocument(index)}
+                    color="error"
+                  >
                     <DeleteIcon fontSize="small" />
                   </IconButton>
                 </Box>
@@ -182,15 +230,32 @@ const DocumentUploadDialog = ({ open, onClose, onUpload, selectedDocuments, onRe
             <Box mt={2}>
               <Typography variant="subtitle1">Existing Documents:</Typography>
               {selectedDocuments.map((doc) => (
-                <Box key={doc.id} display="flex" alignItems="center" justifyContent="space-between" mb={1}>
+                <Box
+                  key={doc.id}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  mb={1}
+                >
                   <Typography>
                     {renderFileIcon(doc)} {getFileName(doc)}
                   </Typography>
                   <Box>
-                    <IconButton size="small" onClick={() => handleSafePreviewDocument(doc)} color="primary" title="Preview Document">
+                    <IconButton
+                      size="small"
+                      onClick={() => handleSafePreviewDocument(doc)}
+                      color="primary"
+                      title="Preview Document"
+                    >
                       <VisibilityIcon fontSize="small" />
                     </IconButton>
-                    <IconButton size="small" onClick={() => handleSafeRemoveDocument(doc.id)} color="error" title="Delete Document" disabled={!doc.id}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleSafeRemoveDocument(doc.id)}
+                      color="error"
+                      title="Delete Document"
+                      disabled={!doc.id}
+                    >
                       <DeleteIcon fontSize="small" />
                     </IconButton>
                   </Box>
@@ -242,7 +307,15 @@ const DocumentPreviewModal = ({ open, onClose, document, loading }) => {
         />
       );
     } else if (fileType === "application/pdf") {
-      return <iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`} style={{ width: "100%", height: "70vh", border: "none" }} title="PDF Preview" />;
+      return (
+        <iframe
+          src={`https://docs.google.com/gview?url=${encodeURIComponent(
+            fileUrl
+          )}&embedded=true`}
+          style={{ width: "100%", height: "70vh", border: "none" }}
+          title="PDF Preview"
+        />
+      );
     } else if (fileType?.startsWith("video/")) {
       return (
         <video controls style={{ maxWidth: "100%", maxHeight: "70vh" }}>
@@ -256,7 +329,12 @@ const DocumentPreviewModal = ({ open, onClose, document, loading }) => {
           <Typography variant="h6" gutterBottom>
             Preview not available for this file type
           </Typography>
-          <Button variant="contained" href={fileUrl} target="_blank" rel="noopener noreferrer">
+          <Button
+            variant="contained"
+            href={fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Download File
           </Button>
         </Box>
@@ -276,12 +354,22 @@ const DocumentPreviewModal = ({ open, onClose, document, loading }) => {
     >
       <DialogTitle>
         Document Preview
-        {document?.filePath && <Box onClick={handleDownload} style={{ float: "right", textDecoration: "none" }}></Box>}
+        {document?.filePath && (
+          <Box
+            onClick={handleDownload}
+            style={{ float: "right", textDecoration: "none" }}
+          ></Box>
+        )}
       </DialogTitle>
 
       <DialogContent>
         {loading ? (
-          <Box display="flex" justifyContent="center" alignItems="center" height="400px">
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            height="400px"
+          >
             <CircularProgress />
           </Box>
         ) : (
@@ -299,10 +387,13 @@ const DocumentPreviewModal = ({ open, onClose, document, loading }) => {
 
 const ReportingForm = () => {
   const router = useRouter();
+  const { data } = useAuth();
+  console.log("==>391", data);
   const [loading, setLoading] = useState(false);
   const [clientsList, setClientsList] = useState([]);
   const [journals, setJournals] = useState([]);
-  const [fullScreenRemarksVisible, setFullScreenRemarksVisible] = useState(null);
+  const [fullScreenRemarksVisible, setFullScreenRemarksVisible] =
+    useState(null);
   const [selectedShip, setSelectedShip] = useState({ id: "", shipName: "" });
   const [specialPermission, setSpecialPermission] = useState(false);
   const [filteredJournals, setFilteredJournals] = useState([]);
@@ -317,7 +408,8 @@ const ReportingForm = () => {
   const [tableData, setTableData] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);
   const [journalId, setjournalId] = useState(null);
-  const [documentUploadDialogOpen, setDocumentUploadDialogOpen] = useState(false);
+  const [documentUploadDialogOpen, setDocumentUploadDialogOpen] =
+    useState(false);
   const [currentRowForDocuments, setCurrentRowForDocuments] = useState(null);
   const [endorsedIssuedBy, setEndorsedIssuedBy] = useState([]);
   const [selectSurveyor, setSelectSurveyor] = useState("");
@@ -329,7 +421,8 @@ const ReportingForm = () => {
   const [underscoreFields, setUnderscoreFields] = useState([]);
   const [reportName, setReportName] = useState("");
   const [showEndorsementField, setShowEndorsementField] = useState(false);
-  const [showExtraEndorsementField, setShowExtraEndorsementField] = useState(false);
+  const [showExtraEndorsementField, setShowExtraEndorsementField] =
+    useState(false);
   const [endorsementTitle, setEndorsementTitle] = useState([]);
   const [openEndrosemet, setOpenEndrosemet] = useState(false);
   const [endorsementValues, setEndorsementValues] = useState({});
@@ -340,7 +433,10 @@ const ReportingForm = () => {
     if (selectCertificate === "full_term") {
       setShowEndorsementField(true);
       setShowExtraEndorsementField(false);
-    } else if (selectCertificate === "short_term" || selectCertificate === "interim") {
+    } else if (
+      selectCertificate === "short_term" ||
+      selectCertificate === "interim"
+    ) {
       setShowEndorsementField(false);
       setShowExtraEndorsementField(false);
     } else if (selectCertificate === "extended") {
@@ -462,12 +558,17 @@ const ReportingForm = () => {
   ];
 
   const areAllActivitiesCompleted = () => {
-    return tableData.length > 0 && tableData.every((activity) => activity.status === "Completed");
+    return (
+      tableData.length > 0 &&
+      tableData.every((activity) => activity.status === "Completed")
+    );
   };
 
   const handleClientChange = (event) => {
     const selectedId = event.target.value;
-    const selectedClient = clientsList.find((client) => client.id === selectedId);
+    const selectedClient = clientsList.find(
+      (client) => client.id === selectedId
+    );
     setSelectedShip({
       id: selectedId,
       shipName: selectedClient ? selectedClient.shipName : "",
@@ -477,14 +578,16 @@ const ReportingForm = () => {
   const handleReportNumber = (event) => {
     setShowTable(false);
     const selectedJournalTypeId = event.target.value;
-    const selectedIndex = filteredJournals.findIndex((j) => j.journalTypeId === selectedJournalTypeId);
+    const selectedIndex = filteredJournals.findIndex(
+      (j) => j.journalTypeId === selectedJournalTypeId
+    );
     // setJournalId(selectedJournalTypeId);
     setSelectedReportNumber({
       journalTypeId: selectedJournalTypeId,
       index: selectedIndex !== -1 ? selectedIndex : null,
     });
     setTableData(filteredJournals[selectedIndex]?.activities || []);
-    setShowTable(true);
+    // setShowTable(true);
   };
 
   const handleCertificate = (event) => {
@@ -518,6 +621,7 @@ const ReportingForm = () => {
   };
 
   const handleContinue = async () => {
+    setShowTable(true);
     if (!selectedShip.id) {
       toast.error("Client ID not found");
       return;
@@ -568,17 +672,28 @@ const ReportingForm = () => {
       activityId: selectedRow?.id,
       typeOfSurvey: values.typesOfSurvey || null,
       typeOfCertificate: values.typeOfCertificate || null,
-      issuanceDate: values.issuancedate ? formatDate(values.issuancedate) : null,
+      issuanceDate: values.issuancedate
+        ? formatDate(values.issuancedate)
+        : null,
       surveyDate: values.surveydate ? formatDate(values.surveydate) : null,
       issuedBy: Number(values.issuedBy) || null,
       place: values.place || "",
-      validityDate: hiddenReports?.includes(reportName) ? "" : values.validitydate ? formatDate(values.validitydate) : "",
+      validityDate: hiddenReports?.includes(reportName)
+        ? ""
+        : values.validitydate
+        ? formatDate(values.validitydate)
+        : "",
 
-      ...((selectCertificate === "full_term" || selectCertificate === "extended") && {
-        endorsementDate: values.endorsementdate ? formatDate(values.endorsementdate) : "",
+      ...((selectCertificate === "full_term" ||
+        selectCertificate === "extended") && {
+        endorsementDate: values.endorsementdate
+          ? formatDate(values.endorsementdate)
+          : "",
       }),
       ...(selectCertificate === "extended" && {
-        newValidityDate: values.newValidityDate ? formatDate(values.newValidityDate) : "",
+        newValidityDate: values.newValidityDate
+          ? formatDate(values.newValidityDate)
+          : "",
       }),
     };
 
@@ -717,7 +832,11 @@ const ReportingForm = () => {
 
   const handleStatusChange = async (id, value) => {
     setShowForm(false);
-    setTableData((prevData) => prevData.map((item) => (item.id === id ? { ...item, status: value } : item)));
+    setTableData((prevData) =>
+      prevData.map((item) =>
+        item.id === id ? { ...item, status: value } : item
+      )
+    );
     try {
       const response = await updateActivityDetails(id, { status: value });
       if (response?.data?.status === "success") {
@@ -736,7 +855,11 @@ const ReportingForm = () => {
       return;
     }
 
-    setTableData((prevData) => prevData.map((item) => (item.id === id ? { ...item, remarks: value } : item)));
+    setTableData((prevData) =>
+      prevData.map((item) =>
+        item.id === id ? { ...item, remarks: value } : item
+      )
+    );
     try {
       const response = await updateActivityDetails(id, { remarks: value });
       if (response?.data?.status === "success") {
@@ -745,7 +868,10 @@ const ReportingForm = () => {
         toast.error("Something went wrong ! Please try again after some time");
       }
     } catch (error) {
-      toast.error("Something went wrong ! Please try again after some time", error);
+      toast.error(
+        "Something went wrong ! Please try again after some time",
+        error
+      );
     }
   };
 
@@ -754,7 +880,8 @@ const ReportingForm = () => {
       setLoading(true);
       const result = await getSelectedActivityReportDetails(row?.id);
       setReportName(row?.surveyTypes?.report?.name);
-      const endorsements = row?.surveyTypes?.report?.fields?.[0]?.endorsements || [];
+      const endorsements =
+        row?.surveyTypes?.report?.fields?.[0]?.endorsements || [];
 
       if (endorsements?.length > 0) {
         setEndorsementTitle(endorsements);
@@ -775,10 +902,30 @@ const ReportingForm = () => {
         setSurveyorName(getSurveyTitle(row.surveyTypes));
         setValue("typeOfCertificate", reportData?.typeOfCertificate || "");
         setSelectCertificate(reportData?.typeOfCertificate || "");
-        setValue("issuancedate", reportData?.issuanceDate ? moment(reportData?.issuanceDate).format("YYYY-MM-DD") : "");
-        setValue("validitydate", reportData?.validityDate ? moment(reportData?.validityDate).format("YYYY-MM-DD") : "");
-        setValue("surveydate", reportData?.surveyDate ? moment(reportData?.surveyDate).format("YYYY-MM-DD") : "");
-        setValue("endorsementdate", reportData?.endorsementDate ? moment(reportData?.endorsementDate).format("YYYY-MM-DD") : "");
+        setValue(
+          "issuancedate",
+          reportData?.issuanceDate
+            ? moment(reportData?.issuanceDate).format("YYYY-MM-DD")
+            : ""
+        );
+        setValue(
+          "validitydate",
+          reportData?.validityDate
+            ? moment(reportData?.validityDate).format("YYYY-MM-DD")
+            : ""
+        );
+        setValue(
+          "surveydate",
+          reportData?.surveyDate
+            ? moment(reportData?.surveyDate).format("YYYY-MM-DD")
+            : ""
+        );
+        setValue(
+          "endorsementdate",
+          reportData?.endorsementDate
+            ? moment(reportData?.endorsementDate).format("YYYY-MM-DD")
+            : ""
+        );
         setValue("issuedBy", reportData?.issuedBy?.toString() || "");
         setSelectSurveyor(reportData?.issuedBy?.toString() || "");
         setValue("place", reportData?.place || "");
@@ -845,7 +992,12 @@ const ReportingForm = () => {
 
       console.log("👉 Raw response:", response);
 
-      const payload = response?.data; // this is your inner "data"
+      if(response?.response?.data?.status === "error"){
+         toast.error(response?.response?.data?.message);
+         return;
+      }
+
+      const payload = response?.data;
       if (payload?.status === "success") {
         console.log("👉 unarchived:", payload.unarchived);
         console.log("👉 marksAsArchive:", payload.marksAsArchive);
@@ -885,7 +1037,12 @@ const ReportingForm = () => {
         item.id === rowId
           ? {
               ...item,
-              attachments: item.attachments ? [...item.attachments, ...documents.map((f) => ({ name: f.name, _tmp: true }))] : documents.map((f) => ({ name: f.name, _tmp: true })),
+              attachments: item.attachments
+                ? [
+                    ...item.attachments,
+                    ...documents.map((f) => ({ name: f.name, _tmp: true })),
+                  ]
+                : documents.map((f) => ({ name: f.name, _tmp: true })),
             }
           : item
       )
@@ -901,16 +1058,27 @@ const ReportingForm = () => {
       if (response?.data?.status === "success") {
         const serverAttachments = response?.data?.data?.attachments;
         if (Array.isArray(serverAttachments)) {
-          setTableData((prev) => prev.map((item) => (item.id === rowId ? { ...item, attachments: serverAttachments } : item)));
-        } else {
-          await getAllActivity(journalId);
-        }
+          setTableData((prev) =>
+            prev.map((item) =>
+              item.id === rowId
+                ? { ...item, attachments: serverAttachments }
+                : item
+            )
+          );
+        } 
+        console.log("welcome")
+        await getAllActivity(journalId);
         toast.success("Documents uploaded successfully.");
       } else {
+        console.log("log2");
         await getAllActivity(journalId);
-        toast.error(response?.data?.message || "Something went wrong! Please try again after some time");
+        toast.error(
+          response?.data?.message ||
+            "Something went wrong! Please try again after some time"
+        );
       }
     } catch (err) {
+      console.log("log3");
       console.error("Upload error:", err);
       await getAllActivity(journalId);
       toast.error("Upload failed. Please check your internet or file format.");
@@ -928,7 +1096,9 @@ const ReportingForm = () => {
       return;
     }
 
-    const confirmDelete = window.confirm("Are you sure you want to delete this document?");
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this document?"
+    );
     if (!confirmDelete) {
       return;
     }
@@ -943,7 +1113,9 @@ const ReportingForm = () => {
             item.id === activityId
               ? {
                   ...item,
-                  attachments: item.attachments ? item.attachments.filter((doc) => doc.id !== documentId) : [],
+                  attachments: item.attachments
+                    ? item.attachments.filter((doc) => doc.id !== documentId)
+                    : [],
                 }
               : item
           )
@@ -1029,6 +1201,9 @@ const ReportingForm = () => {
     label: surveyor.name,
     value: surveyor.id,
   }));
+
+  console.log("tableData", tableData);
+
   return (
     <Box mt={2}>
       <CommonCard sx={{ mt: 2 }}>
@@ -1036,7 +1211,12 @@ const ReportingForm = () => {
           Preliminary Report
         </Typography>
         {loading ? (
-          <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            height="100vh"
+          >
             <CircularProgress />
           </Box>
         ) : (
@@ -1046,7 +1226,11 @@ const ReportingForm = () => {
                 <Typography variant="body1" mb={1}>
                   Select the Ship / Work
                 </Typography>
-                <Select value={selectedShip.id || ""} onChange={handleClientChange} displayEmpty>
+                <Select
+                  value={selectedShip.id || ""}
+                  onChange={handleClientChange}
+                  displayEmpty
+                >
                   <MenuItem value="" disabled>
                     Select the Ship / Work
                   </MenuItem>
@@ -1059,27 +1243,48 @@ const ReportingForm = () => {
               </FormControl>
             </Box>
 
-            {selectedShip.id && (
+            {selectedShip?.id && (
               <Box
                 mt={2}
                 width="100%" // Make container full-width
                 display="block" // Force block-level layout
               >
                 {/* ✅ Checkbox takes full width */}
-                <FormControlLabel control={<Checkbox checked={specialPermission} onChange={handleSpecialPermission} color="primary" />} label="Show Archived Reports" sx={{ mb: 2, display: "block" }} />
+                {data?.specialPermission?.includes("Archiving") && (
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={specialPermission}
+                        onChange={handleSpecialPermission}
+                        color="primary"
+                      />
+                    }
+                    label="Show Archived Reports"
+                    sx={{ mb: 2, display: "block" }}
+                  />
+                )}
 
                 {/* ✅ Dropdown takes full width */}
                 <FormControl fullWidth sx={{ maxWidth: 300 }}>
                   <Typography variant="body1" mb={1} display="block">
                     Select Report Number
                   </Typography>
-                  <Select value={selectedReportNumber.journalTypeId || ""} onChange={handleReportNumber} displayEmpty fullWidth>
+                  <Select
+                    value={selectedReportNumber.journalTypeId || ""}
+                    onChange={handleReportNumber}
+                    displayEmpty
+                    fullWidth
+                  >
                     {filteredJournals?.length > 0 ? (
                       <MenuItem value="" disabled>
                         Select Report
                       </MenuItem>
                     ) : (
-                      <MenuItem disabled>{specialPermission ? "No Archived Journals found" : "No Unarchived Journals found"}</MenuItem>
+                      <MenuItem disabled>
+                        {specialPermission
+                          ? "No Archived Journals found"
+                          : "No Unarchived Journals found"}
+                      </MenuItem>
                     )}
                     {filteredJournals?.map((report) => (
                       <MenuItem key={report.id} value={report.journalTypeId}>
@@ -1090,8 +1295,25 @@ const ReportingForm = () => {
                 </FormControl>
               </Box>
             )}
-            {selectedShip.id && selectedReportNumber.journalTypeId && <CommonButton onClick={handleShowTable} sx={{ marginTop: 3 }} text="Continue" />}
-            {selectedShip.id && selectedReportNumber.journalTypeId && <CommonButton onClick={handleContinue} disabled={!areAllActivitiesCompleted()} sx={{ marginTop: 3, marginLeft: 2 }} text={specialPermission && journals?.archived?.length > 0 ? "Open To Archive" : "Completed"} />}
+            {selectedShip.id && selectedReportNumber.journalTypeId && (
+              <CommonButton
+                onClick={handleShowTable}
+                sx={{ marginTop: 3 }}
+                text="Continue"
+              />
+            )}
+            {selectedShip.id && selectedReportNumber.journalTypeId && (
+              <CommonButton
+                onClick={handleContinue}
+                disabled={!areAllActivitiesCompleted()}
+                sx={{ marginTop: 3, marginLeft: 2 }}
+                text={
+                  specialPermission && journals?.archived?.length > 0
+                    ? "Open To Archive"
+                    : "Completed"
+                }
+              />
+            )}
           </Box>
         )}
       </CommonCard>
@@ -1104,23 +1326,40 @@ const ReportingForm = () => {
                 <TableHead>
                   <TableRow>
                     <TableCell sx={{ fontWeight: "bold" }}>ID</TableCell>
-                    <TableCell sx={{ fontWeight: "bold" }}>Activity Name</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>
+                      Activity Name
+                    </TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Remarks</TableCell>
-                    <TableCell sx={{ fontWeight: "bold" }}>Attachments</TableCell>
-                    <TableCell sx={{ fontWeight: "bold" }}>Activity Details</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>
+                      Attachments
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>
+                      Activity Details
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {tableData.map((row, index) => (
-                    <TableRow key={row.id} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
+                    <TableRow
+                      key={row.id}
+                      sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                    >
                       <TableCell component="th" scope="row">
                         {index + 1}
                       </TableCell>
-                      <TableCell>{getSurveyTitle(row?.surveyTypes?.name || row?.name)}</TableCell>
+                      <TableCell>
+                        {getSurveyTitle(row?.surveyTypes?.name || row?.name)}
+                      </TableCell>
                       <TableCell>
                         <FormControl fullWidth size="small">
-                          <Select value={row.status} onChange={(e) => handleStatusChange(row.id, e.target.value)} displayEmpty>
+                          <Select
+                            value={row.status}
+                            onChange={(e) =>
+                              handleStatusChange(row.id, e.target.value)
+                            }
+                            displayEmpty
+                          >
                             <MenuItem value="" disabled>
                               Select Status
                             </MenuItem>
@@ -1167,17 +1406,31 @@ const ReportingForm = () => {
                         />
                       </TableCell>
                       <TableCell align="center">
-                        <IconButton color="primary" onClick={() => openDocumentUpload(row)} size="small" aria-label="upload attachments">
+                        <IconButton
+                          color="primary"
+                          onClick={() => openDocumentUpload(row)}
+                          size="small"
+                          aria-label="upload attachments"
+                        >
                           <AttachmentIcon />
-                          {row.attachments && row.attachments.length > 0 && (
-                            <Typography variant="caption" color="primary" sx={{ marginLeft: 1 }}>
-                              {row.attachments.length}
+                          {row?.attachments && row?.attachments?.length > 0 && (
+                            <Typography
+                              variant="caption"
+                              color="primary"
+                              sx={{ marginLeft: 1 }}
+                            >
+                              {row?.attachments?.length}
                             </Typography>
                           )}
                         </IconButton>
                       </TableCell>
                       <TableCell align="center">
-                        <IconButton color="primary" onClick={() => handleReportClick(row)} size="small" aria-label="view report">
+                        <IconButton
+                          color="primary"
+                          onClick={() => handleReportClick(row)}
+                          size="small"
+                          aria-label="view report"
+                        >
                           <DescriptionIcon />
                         </IconButton>
                       </TableCell>
@@ -1215,7 +1468,11 @@ const ReportingForm = () => {
                   )}
                 />
                 {errors.typesOfSurvey && (
-                  <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                  <Typography
+                    variant="caption"
+                    color="error"
+                    sx={{ mt: 1, ml: 1.75 }}
+                  >
                     {errors.typesOfSurvey.message}
                   </Typography>
                 )}
@@ -1225,7 +1482,12 @@ const ReportingForm = () => {
                   <Typography variant="body1" fontWeight={"500"} mb={1.5}>
                     Type Of Certificate <span style={{ color: "red" }}>*</span>
                   </Typography>
-                  <Select value={selectCertificate} onChange={handleCertificate} displayEmpty error={!!errors.typeOfCertificate}>
+                  <Select
+                    value={selectCertificate}
+                    onChange={handleCertificate}
+                    displayEmpty
+                    error={!!errors.typeOfCertificate}
+                  >
                     <MenuItem value="" disabled>
                       Select Certificate
                     </MenuItem>
@@ -1236,7 +1498,11 @@ const ReportingForm = () => {
                     ))}
                   </Select>
                   {errors.typeOfCertificate && (
-                    <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                    <Typography
+                      variant="caption"
+                      color="error"
+                      sx={{ mt: 1, ml: 1.75 }}
+                    >
                       {errors.typeOfCertificate.message}
                     </Typography>
                   )}
@@ -1263,7 +1529,11 @@ const ReportingForm = () => {
                   )}
                 />
                 {errors.issuancedate && (
-                  <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                  <Typography
+                    variant="caption"
+                    color="error"
+                    sx={{ mt: 1, ml: 1.75 }}
+                  >
                     {errors.issuancedate.message}
                   </Typography>
                 )}
@@ -1280,7 +1550,8 @@ const ReportingForm = () => {
                           type="date"
                           label={
                             <>
-                              Validity Date <span style={{ color: "red" }}>*</span>
+                              Validity Date{" "}
+                              <span style={{ color: "red" }}>*</span>
                             </>
                           }
                           error={!!errors.validitydate}
@@ -1293,7 +1564,11 @@ const ReportingForm = () => {
                       )}
                     />
                     {errors.validitydate && (
-                      <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                      <Typography
+                        variant="caption"
+                        color="error"
+                        sx={{ mt: 1, ml: 1.75 }}
+                      >
                         {errors.validitydate.message}
                       </Typography>
                     )}
@@ -1321,7 +1596,11 @@ const ReportingForm = () => {
                   )}
                 />
                 {errors.surveydate && (
-                  <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                  <Typography
+                    variant="caption"
+                    color="error"
+                    sx={{ mt: 1, ml: 1.75 }}
+                  >
                     {errors.surveydate.message}
                   </Typography>
                 )}
@@ -1345,7 +1624,8 @@ const ReportingForm = () => {
                   />
                 </Grid2>
               )}
-              {(showExtraEndorsementField || reportDetails?.typeOfCertificate === "extended") && (
+              {(showExtraEndorsementField ||
+                reportDetails?.typeOfCertificate === "extended") && (
                 <Grid2 size={{ md: 3 }}>
                   <Controller
                     name="newValidityDate"
@@ -1356,7 +1636,8 @@ const ReportingForm = () => {
                         type="date"
                         label={
                           <>
-                            New Validity Date <span style={{ color: "red" }}>*</span>
+                            New Validity Date{" "}
+                            <span style={{ color: "red" }}>*</span>
                           </>
                         }
                         onChange={(e) => {
@@ -1367,7 +1648,11 @@ const ReportingForm = () => {
                     )}
                   />
                   {errors.newValidityDate && (
-                    <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                    <Typography
+                      variant="caption"
+                      color="error"
+                      sx={{ mt: 1, ml: 1.75 }}
+                    >
                       {errors.newValidityDate.message}
                     </Typography>
                   )}
@@ -1378,7 +1663,13 @@ const ReportingForm = () => {
                   <Typography variant="body1" mb={1.5} fontWeight={500}>
                     Endorsed / Issued By <span style={{ color: "red" }}>*</span>
                   </Typography>
-                  <Select value={selectSurveyor} onChange={handleSurveyor} displayEmpty name="issuedBy" error={!!errors.issuedBy}>
+                  <Select
+                    value={selectSurveyor}
+                    onChange={handleSurveyor}
+                    displayEmpty
+                    name="issuedBy"
+                    error={!!errors.issuedBy}
+                  >
                     <MenuItem value="" disabled>
                       Select Endorsed / Issued By
                     </MenuItem>
@@ -1404,7 +1695,8 @@ const ReportingForm = () => {
                       {...field}
                       label={
                         <>
-                          Place Of Issuance <span style={{ color: "red" }}>*</span>
+                          Place Of Issuance{" "}
+                          <span style={{ color: "red" }}>*</span>
                         </>
                       }
                       placeholder="Enter place name"
@@ -1416,15 +1708,32 @@ const ReportingForm = () => {
                   )}
                 />
                 {errors.place && (
-                  <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                  <Typography
+                    variant="caption"
+                    color="error"
+                    sx={{ mt: 1, ml: 1.75 }}
+                  >
                     {errors.place.message}
                   </Typography>
                 )}
               </Grid2>
             </Grid2>
             <Stack direction="row" gap={"20px"}>
-              <CommonButton onClick={handleGenerateReport} sx={{ marginTop: 3 }} text="Save" isLoading={loading} />
-              {selectedRow?.status === "Completed" && <CommonButton onClick={handleFullReportGeneration} sx={{ marginTop: 3 }} text="Generate Certificate" isLoading={loading} disabled={!reportDetails} />}
+              <CommonButton
+                onClick={handleGenerateReport}
+                sx={{ marginTop: 3 }}
+                text="Save"
+                isLoading={loading}
+              />
+              {selectedRow?.status === "Completed" && (
+                <CommonButton
+                  onClick={handleFullReportGeneration}
+                  sx={{ marginTop: 3 }}
+                  text="Generate Certificate"
+                  isLoading={loading}
+                  disabled={!reportDetails}
+                />
+              )}
             </Stack>
           </CommonCard>
         </Box>
@@ -1449,22 +1758,46 @@ const ReportingForm = () => {
           handlePreviewDocument(document);
         }}
       />
-      <DocumentPreviewModal open={openPreviewModal} onClose={() => setOpenPreviewModal(false)} document={previewDocument} loading={loadingPreview} />
+      <DocumentPreviewModal
+        open={openPreviewModal}
+        onClose={() => setOpenPreviewModal(false)}
+        document={previewDocument}
+        loading={loadingPreview}
+      />
 
       <FullScreenRemarksDialog
         open={fullScreenRemarksVisible}
         onCancel={() => setFullScreenRemarksVisible(null)}
         onConfirm={(value) => {
-          if (fullScreenRemarksVisible && typeof fullScreenRemarksVisible === "object") {
+          if (
+            fullScreenRemarksVisible &&
+            typeof fullScreenRemarksVisible === "object"
+          ) {
             handleRemarksChange(fullScreenRemarksVisible.id, value);
           }
           setFullScreenRemarksVisible(null);
         }}
-        title={fullScreenRemarksVisible && typeof fullScreenRemarksVisible === "object" ? `Remarks for ${fullScreenRemarksVisible.surveyTypes?.name}` : "Remarks"}
+        title={
+          fullScreenRemarksVisible &&
+          typeof fullScreenRemarksVisible === "object"
+            ? `Remarks for ${fullScreenRemarksVisible.surveyTypes?.name}`
+            : "Remarks"
+        }
       />
       {renderReportForm()}
       {loadingReport && (
-        <Box position="fixed" top={0} left={0} width="100vw" height="100vh" display="flex" justifyContent="center" alignItems="center" bgcolor="rgba(255,255,255,0.6)" zIndex={9999}>
+        <Box
+          position="fixed"
+          top={0}
+          left={0}
+          width="100vw"
+          height="100vh"
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          bgcolor="rgba(255,255,255,0.6)"
+          zIndex={9999}
+        >
           <CircularProgress />
         </Box>
       )}
