@@ -21,28 +21,83 @@ const Sidebar = styled(Drawer)(({ theme }) => ({
 }));
 
 const SidebarComponent = ({ isSidebarOpen }) => {
-  const { roleId, data } = useAuth(); // Get roleId from context
+  const { roleId, permissions } = useAuth(); // Get permissions from context
   const pathName = usePathname();
   const [activeTab, setActiveTab] = useState(pathName);
-  const rights = localStorage.getItem("data");
+  
+  // Get user data from localStorage
+  const userData = JSON.parse(localStorage.getItem("data") || "{}");
+
+  // Module to menu item mapping
+  const moduleMenuMapping = {
+    "Clients": "Clients",
+    "Staff/Inspector": "Staff / Inspectors", 
+    "Journals": "Journal",
+    "Reporting": "Reporting",
+    "IssuedDocument": "Issued Documents",
+    "SurveyType": "Survey Types",
+    "Documents": "Documents",
+    "SystemVariable": "System Variables",
+    "Classification": "Classification",
+  };
 
   const getFilteredMenuItems = () => {
-    if (roleId === "1") {
-      return sidemenu_items;
-    } else if (roleId === "3") {
-      return sidemenu_items.filter((item) =>
-        ["Reporting", "Issued Documents", "System Variables"].includes(item.label)
-      );
-    } else if (roleId === "2") {
-      return sidemenu_items.filter((item) => {
-        if (item.label === "Clients") {
-          return JSON.parse(rights)?.dataEntryRights === true;
+    let allowedMenuItems = [];
+
+    // Filter based on permission modules ONLY
+    permissions.forEach(module => {
+      const menuLabel = moduleMenuMapping[module];
+      if (menuLabel) {
+        const menuItem = sidemenu_items.find(item => item.label === menuLabel);
+        if (menuItem) {
+          allowedMenuItems.push(menuItem);
         }
-        return ["Journal", "Reporting", "Issued Documents", "Survey Types", "Documents", "System Variables", "Classification"].includes(item.label);
-      });
+      }
+    });
+
+    // // Special case: Only show Clients if user has both "Clients" permission AND dataEntryRights
+    // if (permissions.includes("Clients") && userData?.dataEntryRights === true) {
+    //   const clientsItem = sidemenu_items.find(item => item.label === "Clients");
+    //   if (clientsItem && !allowedMenuItems.find(item => item.label === "Clients")) {
+    //     allowedMenuItems.push(clientsItem);
+    //   }
+    // } else {
+    //   // Remove Clients if user doesn't have proper permissions
+    //   allowedMenuItems = allowedMenuItems.filter(item => item.label !== "Clients");
+    // }
+
+    // Fallback to role-based filtering if no permissions are set
+    if (permissions.length === 0) {
+      if (roleId === "1") {
+        return sidemenu_items;
+      } else if (roleId === "3") {
+        return sidemenu_items.filter((item) =>
+          ["Reporting", "Issued Documents", "System Variables"].includes(item.label)
+        );
+      } else if (roleId === "2") {
+        return sidemenu_items.filter((item) => {
+          if (item.label === "Clients") {
+            return userData?.dataEntryRights === true;
+          }
+          return ["Journal", "Reporting", "Issued Documents", "Survey Types", "Documents", "System Variables", "Classification"].includes(item.label);
+        });
+      }
     }
-    return [];
+
+    // Remove duplicates and maintain original order
+    const uniqueItems = [];
+    const seenLabels = new Set();
+    
+    sidemenu_items.forEach(item => {
+      if (allowedMenuItems.find(allowed => allowed.label === item.label) && !seenLabels.has(item.label)) {
+        uniqueItems.push(item);
+        seenLabels.add(item.label);
+      }
+    });
+
+    return uniqueItems;
   };
+
   return (
     <Sidebar variant="persistent" open={isSidebarOpen}>
       <Box

@@ -3,6 +3,7 @@ import Box from "@mui/material/Box";
 import {
   addInspectors,
   createInspector,
+  getAllModules,
   getInspectorsDetails,
   updateInspectorDetail,
 } from "@/api";
@@ -19,6 +20,9 @@ import {
   Snackbar,
   Stack,
   Typography,
+  Select,
+  MenuItem,
+  InputLabel,
 } from "@mui/material";
 // import SuccessModal from "./SuccessModal";
 import { useDispatch, useSelector } from "react-redux";
@@ -32,6 +36,18 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { useRouter } from "next/navigation";
 import { CheckBox } from "@mui/icons-material";
 import { toast } from "react-toastify";
+
+const roles = [
+  {
+    label: "Clients",
+    value: "clients",
+  },
+  {
+    label: "Staff",
+    value: "staff",
+  },
+
+];
 
 const schema = yup.object().shape({
   name: yup.string().required("Name is required"),
@@ -49,36 +65,47 @@ const schema = yup.object().shape({
         .oneOf([yup.ref("password")], "Passwords must match"),
     otherwise: (schema) => schema.notRequired(),
   }),
+  role: yup.string().required("Role is required"),
 });
 
 const AddInspectorForm = ({
   mode = "create",
   userId = null,
   defaultValues = {},
+  permissionData = [],
+  specialPermissionData = [],
 }) => {
+  console.log("permissionData", permissionData);
+  console.log("specialPermissionData", specialPermissionData);
+
   const [formData, setFormData] = useState({});
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
   const [isDataLoading, setIsDataLoading] = useState(false);
   const dispatch = useDispatch();
   const router = useRouter();
   const isUpdate = !!userId;
+
   const {
     control,
     handleSubmit,
     formState: { errors },
     setValue,
     getValues,
-    reset
+    reset,
   } = useForm({
     resolver: yupResolver(schema, { context: { isUpdate } }),
-    defaultValues: defaultValues || {
+    defaultValues: {
       name: "",
       username: "",
       password: "",
       confirmPassword: "",
+      role: "",
       reportingRights: false,
       dataEntryRights: false,
-      journalUnlockRights: false
+      journalUnlockRights: false,
+      permissionModule: [],
+      specialPermission: [],
+      ...defaultValues,
     },
   });
 
@@ -106,16 +133,16 @@ const AddInspectorForm = ({
 
   const cancelBtn = () => {
     router.push("/staff");
-  }
+  };
 
   const onSubmit = async (data) => {
     try {
+      console.log(data);
       if (userId) {
         const res = await updateInspectorDetail(userId, data);
-
         if (res?.data?.status === "success") {
           toast.success("Inspector updated successfully");
-          router.push('/staff')
+          router.push("/staff");
         } else {
           toast.error(res?.response?.data?.message);
         }
@@ -123,7 +150,7 @@ const AddInspectorForm = ({
         const res = await createInspector({ ...data, roleId: 2 });
         if (res?.data?.status === "success") {
           toast.success("Inspector created successfully");
-          router.push('/staff')
+          router.push("/staff");
         } else {
           toast.error(res?.response?.data?.message);
         }
@@ -162,8 +189,7 @@ const AddInspectorForm = ({
                             variant="standard"
                             label={
                               <span>
-                                Name{" "}
-                                <span style={{ color: "red" }}>*</span>
+                                Name <span style={{ color: "red" }}>*</span>
                               </span>
                             }
                             placeholder="Enter name"
@@ -172,7 +198,8 @@ const AddInspectorForm = ({
                             InputProps={{
                               style: { color: "black" },
                             }}
-                            autoComplete="Enter Name"                          />
+                            autoComplete="Enter Name"
+                          />
                         );
                       }}
                     />
@@ -190,7 +217,8 @@ const AddInspectorForm = ({
                             variant="standard"
                             label={
                               <span>
-                                User Name <span style={{ color: "red" }}>*</span>
+                                User Name{" "}
+                                <span style={{ color: "red" }}>*</span>
                               </span>
                             }
                             placeholder="Enter User Name"
@@ -206,64 +234,105 @@ const AddInspectorForm = ({
                     />
                   </Grid2>
 
-                  {!userId && <>
-                    <Grid2 size={{ xs: 12 }}>
-                      <Controller
-                        name="password"
-                        control={control}
-                        render={({ field }) => (
-                          <CommonInput
-                            {...field}
-                            fullWidth
-                            variant="standard"
-                            autoComplete="off"
-                            label={
-                              <span>
-                                Password <span style={{ color: "red" }}>*</span>
-                              </span>
-                            }
-                            placeholder="Enter password"
-                            error={Boolean(errors.password)}
-                            helperText={errors.password?.message}
-                            type="password"
-                            InputProps={{
-                              style: { color: "black" },
-                            }}
-                          />
-                        )}
-                      />
-                    </Grid2>
+                  {!userId && (
+                    <>
+                      <Grid2 size={{ xs: 12 }}>
+                        <Controller
+                          name="password"
+                          control={control}
+                          render={({ field }) => (
+                            <CommonInput
+                              {...field}
+                              fullWidth
+                              variant="standard"
+                              autoComplete="off"
+                              label={
+                                <span>
+                                  Password{" "}
+                                  <span style={{ color: "red" }}>*</span>
+                                </span>
+                              }
+                              placeholder="Enter password"
+                              error={Boolean(errors.password)}
+                              helperText={errors.password?.message}
+                              type="password"
+                              InputProps={{
+                                style: { color: "black" },
+                              }}
+                            />
+                          )}
+                        />
+                      </Grid2>
 
-                    <Grid2 size={{ xs: 12 }}>
-                      <Controller
-                        name="confirmPassword"
-                        control={control}
-                        render={({ field }) => (
-                          <CommonInput
+                      <Grid2 size={{ xs: 12 }}>
+                        <Controller
+                          name="confirmPassword"
+                          control={control}
+                          render={({ field }) => (
+                            <CommonInput
+                              {...field}
+                              fullWidth
+                              variant="standard"
+                              label={
+                                <span>
+                                  Confirm Password{" "}
+                                  <span style={{ color: "red" }}>*</span>
+                                </span>
+                              }
+                              placeholder="Enter confirm password"
+                              error={Boolean(errors.confirmPassword)}
+                              helperText={errors.confirmPassword?.message}
+                              type="password"
+                              InputProps={{
+                                style: { color: "black" },
+                              }}
+                            />
+                          )}
+                        />
+                      </Grid2>
+                    </>
+                  )}
+
+                  {/* Role Selection */}
+                  <Grid2 size={{ xs: 12 }}>
+                    <Controller
+                      name="role"
+                      control={control}
+                      render={({ field }) => (
+                        <FormControl
+                          fullWidth
+                          variant="standard"
+                          error={Boolean(errors.role)}
+                        >
+                          <InputLabel>
+                            Select Role <span style={{ color: "red" }}>*</span>
+                          </InputLabel>
+                          <Select
                             {...field}
-                            fullWidth
-                            variant="standard"
-                            label={
-                              <span>
-                                Confirm Password <span style={{ color: "red" }}>*</span>
-                              </span>
-                            }
-                            placeholder="Enter confirm password"
-                            error={Boolean(errors.confirmPassword)}
-                            helperText={errors.confirmPassword?.message}
-                            type="password"
-                            InputProps={{
-                              style: { color: "black" },
-                            }}
-                          />
-                        )}
-                      />
-                    </Grid2>
-                  </>}
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                          >
+                            {roles.map((role) => (
+                              <MenuItem key={role.value} value={role.value}>
+                                {role.label}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                          {errors.role && (
+                            <FormHelperText>
+                              {errors.role?.message}
+                            </FormHelperText>
+                          )}
+                        </FormControl>
+                      )}
+                    />
+                  </Grid2>
 
                   <Grid2 xs={12}>
-                    <Stack >
-                      <Typography variant="p" component="p">Rights</Typography>
+                    <Stack>
+                      <Typography variant="p" component="p">
+                        Rights
+                      </Typography>
                     </Stack>
 
                     <Grid2 item xs={12}>
@@ -276,7 +345,9 @@ const AddInspectorForm = ({
                               <Checkbox
                                 {...field}
                                 checked={field.value === true}
-                                onChange={(e) => field.onChange(e.target.checked)}
+                                onChange={(e) =>
+                                  field.onChange(e.target.checked)
+                                }
                               />
                             }
                             label="Reporting Rights"
@@ -292,7 +363,9 @@ const AddInspectorForm = ({
                               <Checkbox
                                 {...field}
                                 checked={field.value === true}
-                                onChange={(e) => field.onChange(e.target.checked)}
+                                onChange={(e) =>
+                                  field.onChange(e.target.checked)
+                                }
                               />
                             }
                             label="Data Entry Rights"
@@ -308,7 +381,9 @@ const AddInspectorForm = ({
                               <Checkbox
                                 {...field}
                                 checked={field.value === true}
-                                onChange={(e) => field.onChange(e.target.checked)}
+                                onChange={(e) =>
+                                  field.onChange(e.target.checked)
+                                }
                               />
                             }
                             label="Journal Unlocking Rights"
@@ -317,9 +392,108 @@ const AddInspectorForm = ({
                       />
                     </Grid2>
                   </Grid2>
-
-
                 </Grid2>
+
+                <Box>
+                  {/* Dynamic Permissions */}
+                  <Box sx={{ mt: 2 }}>
+                    <Stack>
+                      <Typography fontWeight={500}>Permission</Typography>
+                    </Stack>
+                    <Grid2 container>
+                      {permissionData.map((permissionItem, index) => (
+                        <Grid2 key={index} item xs={12} sx={{ mt: 1 }}>
+                          <Controller
+                            name="permissionModule"
+                            control={control}
+                            render={({ field }) => {
+                              const { value, onChange } = field;
+                              const checked = value?.includes(
+                                permissionItem.value
+                              );
+
+                              return (
+                                <FormControlLabel
+                                  control={
+                                    <Checkbox
+                                      checked={checked}
+                                      onChange={(e) => {
+                                        if (e.target.checked) {
+                                          onChange([
+                                            ...(value || []),
+                                            permissionItem.value,
+                                          ]);
+                                        } else {
+                                          onChange(
+                                            (value || []).filter(
+                                              (item) =>
+                                                item !== permissionItem.value
+                                            )
+                                          );
+                                        }
+                                      }}
+                                    />
+                                  }
+                                  label={permissionItem.label}
+                                />
+                              );
+                            }}
+                          />
+                        </Grid2>
+                      ))}
+                    </Grid2>
+                  </Box>
+
+                  <Box sx={{ mt: 2 }}>
+                    <Stack>
+                      <Typography fontWeight={500}>
+                        Special Permission
+                      </Typography>
+                    </Stack>
+                    <Grid2 container>
+                      {specialPermissionData.map((sPermission, index) => (
+                        <Grid2 key={index} item xs={12} sx={{ mt: 1 }}>
+                          <Controller
+                            name="specialPermission"
+                            control={control}
+                            render={({ field }) => {
+                              const { value, onChange } = field;
+                              const checked = value?.includes(
+                                sPermission.value
+                              );
+
+                              return (
+                                <FormControlLabel
+                                  control={
+                                    <Checkbox
+                                      checked={checked}
+                                      onChange={(e) => {
+                                        if (e.target.checked) {
+                                          onChange([
+                                            ...(value || []),
+                                            sPermission.value,
+                                          ]);
+                                        } else {
+                                          onChange(
+                                            (value || []).filter(
+                                              (item) =>
+                                                item !== sPermission.value
+                                            )
+                                          );
+                                        }
+                                      }}
+                                    />
+                                  }
+                                  label={sPermission.label}
+                                />
+                              );
+                            }}
+                          />
+                        </Grid2>
+                      ))}
+                    </Grid2>
+                  </Box>
+                </Box>
 
                 <Stack
                   mt={4}
@@ -327,11 +501,7 @@ const AddInspectorForm = ({
                   direction="row"
                   justifyContent="flex-start"
                 >
-                  <CommonButton
-                    type="submit"
-                    variant="contained"
-                    text="Save"
-                  />
+                  <CommonButton type="submit" variant="contained" text="Save" />
                   <CommonButton
                     onClick={cancelBtn}
                     variant="contained"
