@@ -716,13 +716,13 @@ const TextEditor = ({ id }) => {
           const rightColonX = pageWidth - margin - 65;
           const rightValueX = pageWidth - margin - 55;
 
-          page.drawText(":", {
-            x: rightColonX,
-            y: nameY,
-            size: 9,
-            color: rgb(1, 1, 1),
-            font: fontRegular,
-          });
+          // page.drawText(":", {
+          //   x: rightColonX,
+          //   y: nameY,
+          //   size: 9,
+          //   color: rgb(1, 1, 1),
+          //   font: fontRegular,
+          // });
 
           page.drawText("IMO Number", {
             x: rightLabelX,
@@ -1297,7 +1297,7 @@ const TextEditor = ({ id }) => {
       .join("");
 
     const certificatesTableHtml = `
-        <h4 style="margin-top: -50px;">Certificates</h4>
+        <h4 style="margin-top: -50px;color:black;background-color:#B9CC81" >Certificates</h4>
         <table>
             <thead>
             <tr>
@@ -1360,7 +1360,7 @@ const TextEditor = ({ id }) => {
             This may not indicate certificates issued, surveys carried out or conditions of class / recommendations issued but not yet reported to MCB Head Office.
         </p>
 
-        <h4>Classification</h4>
+        <h4 style="color:black;background-color:#B9CC81">Classification</h4>
         <p><i>Status: Active</i></p>
         </div>
         `;
@@ -1394,10 +1394,10 @@ const TextEditor = ({ id }) => {
         </div>
 
        <div style="text-align: center; align-items: center;" class="page ">
-       <h2>Table of Contents</h2>
+       <h2 style="color:black;">Table of Contents</h2>
         <div class="option option3">
          <table style="width: 99%;">
-        <tr>
+        <tr style="color:black;background-color:#B9CC81;">
             <td><strong>1. Ship Particulars</strong></td>
         </tr>
         <tr>
@@ -1409,7 +1409,7 @@ const TextEditor = ({ id }) => {
         <tr>
             <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Hull</td>
         </tr>
-        <tr>
+        <tr style="color:black;background-color:#B9CC81;">
             <td><strong>2. Owner/Manager Information</strong></td>
         </tr>
         <tr>
@@ -1421,7 +1421,7 @@ const TextEditor = ({ id }) => {
         <tr>
             <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Certificates</td>
         </tr>
-        <tr>
+        <tr style="color:black;background-color:#B9CC81;">
             <td><strong>3. Conditions of Class / Statutory status</strong></td>
         </tr>
         <tr>
@@ -1438,7 +1438,7 @@ const TextEditor = ({ id }) => {
          <div class="page">
                 <h2>Ship Particulars</h2>
                 <div class="section">
-                <h4>Identification</h4>
+                <h4 style="color:black;background-color:#B9CC81;">Identification</h4>
                 <div class="identification-row">
                     <div class="left"><em><strong>Ship Type:</strong></em> ${
                       clientData?.typeOfShip || "-"
@@ -1469,7 +1469,7 @@ const TextEditor = ({ id }) => {
   <thead>
     <tr>
       <th style="text-align: left; padding: 8px;" colspan="2">
-        <h4>Classification</h4>
+        <h4 style="color:black;background-color:#B9CC81;">Classification</h4>
       </th>
     </tr>
   </thead>
@@ -1497,7 +1497,7 @@ const TextEditor = ({ id }) => {
             <table class="hull-section-table" style="width: 100%; border-collapse: collapse; border:none;">
   <thead>
     <tr>
-      <th colspan="2" style="text-align: left; padding: 8px; border:none;"><h4>Hull</h4></th>
+      <th colspan="2" style="text-align: left; padding: 8px; border:none;"><h4 style="color:black;background-color:#B9CC81">Hull</h4></th>
     </tr>
   </thead>
   <tbody>
@@ -1570,7 +1570,7 @@ const TextEditor = ({ id }) => {
             <div class="owner-section page">
                 <h2 style="margin-top: -45px;">Owner / Manager Information</h2>
                 
-                <h4>Registered Owner</h4>
+                <h4 style="color:black;background-color:#B9CC81">Registered Owner</h4>
                 <div class="owner-info">
                     <div><em><strong>Company Name:</strong></em> ${
                       clientData?.ownerDetails?.companyName || "-"
@@ -1583,7 +1583,7 @@ const TextEditor = ({ id }) => {
                     }</div>
                 </div>
                 
-                <h4>Manager</h4>
+                <h4 style="color:black;background-color:#B9CC81">Manager</h4>
                 <div class="owner-info">
                     <div><em><strong>Company Name:</strong></em> ${
                       clientData?.managerDetails?.companyName || "-"
@@ -1600,7 +1600,7 @@ const TextEditor = ({ id }) => {
             ${htmlString}
         
             <div class="page">
-                <h4 style="margin-top: -50px;">Surveys / Audits / Inspections</h4>
+                <h4 style="margin-top: -50px;color:black;background-color:#B9CC81">Surveys / Audits / Inspections</h4>
                 
                 ${classificationSurveyTableHtml}
                 
@@ -1784,7 +1784,7 @@ const TextEditor = ({ id }) => {
                     }
 
                     h2 {
-                        color: #4884eb;
+                        color: black;
                         text-align: center;
                         font-size: 18px;
                         margin: 0 0 30px 0;
@@ -1796,7 +1796,7 @@ const TextEditor = ({ id }) => {
                         font-size: 14px;
                         margin: 20px 0 5px 0;
                         padding-bottom: 2px;
-                        border-bottom: 1px solid #4884eb;
+                        border-bottom: 1px solid #B9CC81;
                         font-weight: bold;
                     }
 
@@ -1854,7 +1854,7 @@ const TextEditor = ({ id }) => {
                     }
 
                     .owner-section h2 {
-                        color: #4884eb;
+                        color: black;
                         font-size: 18px;
                         margin-bottom: 20px;
                     }
@@ -1864,7 +1864,7 @@ const TextEditor = ({ id }) => {
                         font-size: 14px;
                         margin: 15px 0 5px 0;
                         padding-bottom: 2px;
-                        border-bottom: 1px solid #4884eb;
+                        
                     }
 
                     .owner-info {
