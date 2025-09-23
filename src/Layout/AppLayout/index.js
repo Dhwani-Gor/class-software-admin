@@ -5,7 +5,6 @@ import { PersistGate } from "redux-persist/integration/react";
 import ThemeProvider from "@/theme";
 import { persistor, store } from "@/redux/store";
 // import AuthWrapper from "@/components/AuthWrapper";
-import { ToastContainer, } from 'react-toastify';
 import AuthProvider from "@/context/AuthContext";
 
 const AppLayout = ({ children }) => {
@@ -14,7 +13,6 @@ const AppLayout = ({ children }) => {
       <PersistGate loading={null} persistor={persistor}>
         <ThemeProvider>
           <AuthProvider>{children}</AuthProvider>
-          <ToastContainer />
         </ThemeProvider>
       </PersistGate>
     </Provider>

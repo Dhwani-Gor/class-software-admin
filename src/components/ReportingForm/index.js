@@ -481,7 +481,7 @@ const ReportingForm = () => {
     setShowTable(false);
     const selectedJournalTypeId = event.target.value;
     const selectedIndex = filteredJournals.findIndex((j) => j.journalTypeId === selectedJournalTypeId);
-    // setJournalId(selectedJournalTypeId);
+        setjournalId(filteredJournals[selectedIndex]?.id);
     setSelectedReportNumber({
       journalTypeId: selectedJournalTypeId,
       index: selectedIndex !== -1 ? selectedIndex : null,
@@ -678,7 +678,7 @@ const ReportingForm = () => {
   };
 
   const handleSubmitReport = async (extraFields) => {
-    setLoading(true);
+    // setLoading(true);
     setLoadingReport(true);
 
     try {
