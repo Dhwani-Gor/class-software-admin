@@ -99,7 +99,6 @@ const SurveyReport = ({ id }) => {
           `;
       contentDocument.head.appendChild(style);
 
-      // Add no-break class to all table rows programmatically
       const tableRows = contentDocument.querySelectorAll("table tr");
       tableRows.forEach((row) => {
         row.classList.add("no-break");
@@ -393,16 +392,14 @@ const SurveyReport = ({ id }) => {
 `;
   }, [clientData, reportDetails, systemVariables, journalId, firstVisit, lastVisit, numOfVisit]);
 
-  // Single useEffect to load all data when id changes
   useEffect(() => {
     if (!id) return;
 
     const loadAllData = async () => {
       try {
         setLoading(true);
-        setEditorContent(""); // Reset content
+        setEditorContent("");
 
-        // Load client data and report details in parallel
         const [clientResult, reportResult] = await Promise.all([getSpecificClient(id), getSurveyReportData(id)]);
 
         if (clientResult?.status === 200) {
@@ -416,14 +413,12 @@ const SurveyReport = ({ id }) => {
           const reportData = reportResult.data.data;
           setReportDetails(reportData);
 
-          // Extract unique journal ID
           const journalIds = reportData.map((item) => item?.activity?.journal?.id).filter(Boolean);
           const uniqueJournalId = [...new Set(journalIds)][0];
 
           if (uniqueJournalId) {
             setJournalId(uniqueJournalId);
 
-            // Load visit details
             const visitResponse = await getVisitDetails("journalId", uniqueJournalId);
             const visits = visitResponse?.data?.data;
 
@@ -447,7 +442,6 @@ const SurveyReport = ({ id }) => {
     loadAllData();
   }, [id]);
 
-  // Update editor content when data is ready
   useEffect(() => {
     const isDataReady = clientData && reportDetails && systemVariables && !loading;
 
@@ -462,7 +456,6 @@ const SurveyReport = ({ id }) => {
     console.log("Editor content changed:", content);
   };
 
-  // Show loading state
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -479,7 +472,7 @@ const SurveyReport = ({ id }) => {
         onEditorChange={handleEditorChange}
         init={{
           disabled: false,
-          height: 600,
+          height: 800,
           menubar: true,
           visual: false,
           content_css: false,
