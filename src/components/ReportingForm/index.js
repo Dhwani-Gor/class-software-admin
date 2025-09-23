@@ -481,7 +481,8 @@ const ReportingForm = () => {
     setShowTable(false);
     const selectedJournalTypeId = event.target.value;
     const selectedIndex = filteredJournals.findIndex((j) => j.journalTypeId === selectedJournalTypeId);
-        setjournalId(filteredJournals[selectedIndex]?.id);
+    setjournalId(filteredJournals[selectedIndex]?.id);
+
     setSelectedReportNumber({
       journalTypeId: selectedJournalTypeId,
       index: selectedIndex !== -1 ? selectedIndex : null,
@@ -531,16 +532,16 @@ const ReportingForm = () => {
       // setContinueBtnLoading(true);
       if (journals?.archived?.length > 0) {
         const result = await addUnArchiveDocument(selectedShip.id);
-        console.log(result, "result");
         if (result.data.status == "success") {
+          window.location.reload();
           toast.success(result.data.message);
         } else {
           toast.error("Failed to continue process");
         }
       } else {
         const result = await addArchiveDocument(selectedShip.id);
-        console.log(result, "result");
         if (result.data.status == "success") {
+          window.location.reload();
           toast.success(result.data.message);
         } else {
           toast.error("Failed to continue process");
@@ -1003,6 +1004,7 @@ const ReportingForm = () => {
 
   useEffect(() => {
     if (journalId) {
+      console.log(journalId, "journalId");
       getAllActivity(journalId);
       getEndorsedIssuedByList(journalId);
     }
@@ -1126,77 +1128,87 @@ const ReportingForm = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {tableData.map((row, index) => (
-                    <TableRow key={row.id} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
-                      <TableCell component="th" scope="row">
-                        {index + 1}
-                      </TableCell>
-                      <TableCell>{getSurveyTitle(row?.surveyTypes?.name || row?.name)}</TableCell>
-                      <TableCell>
-                        <FormControl fullWidth size="small">
-                          <Select value={row.status} onChange={(e) => handleStatusChange(row.id, e.target.value)} displayEmpty>
-                            <MenuItem value="" disabled>
-                              Select Status
-                            </MenuItem>
-                            {statusOptions.map((option) => (
-                              <MenuItem key={option.value} value={option.value}>
-                                {option.label}
+                  {tableData.map((row, index) => {
+                    const isArchived = row?.reportDetail?.markAsArchive === true;
+                    return (
+                      <TableRow
+                        key={row.id}
+                        sx={{
+                          "&:last-child td, &:last-child th": { border: 0 },
+                          opacity: isArchived ? 0.5 : 1,
+                          pointerEvents: isArchived ? "none" : "auto",
+                        }}
+                      >
+                        <TableCell component="th" scope="row">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell>{getSurveyTitle(row?.surveyTypes?.name || row?.name)}</TableCell>
+                        <TableCell>
+                          <FormControl fullWidth size="small">
+                            <Select value={row.status} onChange={(e) => handleStatusChange(row.id, e.target.value)} displayEmpty>
+                              <MenuItem value="" disabled>
+                                Select Status
                               </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      </TableCell>
-                      <TableCell>
-                        <Controller
-                          name={`remarks-${row.id}`}
-                          control={control}
-                          defaultValue={row.remarks}
-                          render={({ field }) => (
-                            <>
-                              <TextareaAutosize
-                                {...field}
-                                value={row.remarks}
-                                minRows={2}
-                                placeholder="Enter Remarks"
-                                style={{
-                                  width: "100%",
-                                  padding: "8px",
-                                  fontFamily: "inherit",
-                                  fontSize: "inherit",
-                                  border: "1px solid #ccc",
-                                  borderRadius: "4px",
-                                }}
-                                onFocus={(event) => {
-                                  event.target.blur();
-                                  setFullScreenRemarksVisible(row);
-                                }}
-                                maxLength={row.maxLength || undefined}
-                                onChange={(e) => {
-                                  field.onChange(e);
-                                  handleRemarksChange(row.id, e.target.value);
-                                }}
-                              />
-                            </>
-                          )}
-                        />
-                      </TableCell>
-                      <TableCell align="center">
-                        <IconButton color="primary" onClick={() => openDocumentUpload(row)} size="small" aria-label="upload attachments">
-                          <AttachmentIcon />
-                          {row?.attachments && row?.attachments?.length > 0 && (
-                            <Typography variant="caption" color="primary" sx={{ marginLeft: 1 }}>
-                              {row?.attachments?.length}
-                            </Typography>
-                          )}
-                        </IconButton>
-                      </TableCell>
-                      <TableCell align="center">
-                        <IconButton color="primary" onClick={() => handleReportClick(row)} size="small" aria-label="view report">
-                          <DescriptionIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                              {statusOptions.map((option) => (
+                                <MenuItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </TableCell>
+                        <TableCell>
+                          <Controller
+                            name={`remarks-${row.id}`}
+                            control={control}
+                            defaultValue={row.remarks}
+                            render={({ field }) => (
+                              <>
+                                <TextareaAutosize
+                                  {...field}
+                                  value={row.remarks}
+                                  minRows={2}
+                                  placeholder="Enter Remarks"
+                                  style={{
+                                    width: "100%",
+                                    padding: "8px",
+                                    fontFamily: "inherit",
+                                    fontSize: "inherit",
+                                    border: "1px solid #ccc",
+                                    borderRadius: "4px",
+                                  }}
+                                  onFocus={(event) => {
+                                    event.target.blur();
+                                    setFullScreenRemarksVisible(row);
+                                  }}
+                                  maxLength={row.maxLength || undefined}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    handleRemarksChange(row.id, e.target.value);
+                                  }}
+                                />
+                              </>
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell align="center">
+                          <IconButton color="primary" onClick={() => openDocumentUpload(row)} size="small" aria-label="upload attachments">
+                            <AttachmentIcon />
+                            {row.attachments && row.attachments.length > 0 && (
+                              <Typography variant="caption" color="primary" sx={{ marginLeft: 1 }}>
+                                {row.attachments.length}
+                              </Typography>
+                            )}
+                          </IconButton>
+                        </TableCell>
+                        <TableCell align="center">
+                          <IconButton color="primary" onClick={() => handleReportClick(row)} size="small" aria-label="view report">
+                            <DescriptionIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TableContainer>

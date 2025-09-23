@@ -243,7 +243,7 @@ const JournalEntryForm = ({ journalId = null }) => {
         setVisitList(
           visitList.map((visit) =>
             visit.id === editVisit.id
-              ? {...visit, ...visitData, id: editVisit.id} : visit
+              ? { ...visit, ...visitData, id: editVisit.id } : visit
           )
         );
       } else {
@@ -732,7 +732,7 @@ const JournalEntryForm = ({ journalId = null }) => {
 
 
               {journalData && (
-                <Box>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
                   <Typography>Report Number</Typography>
                   <Typography
                     fontSize={"20px"}
