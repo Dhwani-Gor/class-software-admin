@@ -22,9 +22,12 @@ import CommonButton from "@/components/CommonButton";
 import CommonInput from "@/components/CommonInput";
 import { deleteClient, getAllClients } from "@/api";
 import { toast } from "react-toastify";
+import { useAuth } from "@/hooks/useAuth";
 
 const Clients = () => {
   const router = useRouter();
+  const {data} = useAuth()
+  console.log("==>data",data)
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState(""); // Debounced search state
@@ -159,14 +162,14 @@ const Clients = () => {
           <Typography variant="h4" fontWeight={700}>
             Clients
           </Typography>
-          <CommonButton
+          {data?.specialPermission?.includes("DataEntryRights(Clients)") && <CommonButton
             sx={{ textTransform: "capitalize" }}
             text="Add client"
             variant="contained"
             onClick={() => {
               router.push("/clients/create");
             }}
-          />
+          />}
         </Stack>
       </CommonCard>
 
