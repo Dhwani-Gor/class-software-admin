@@ -15,7 +15,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
   const [selectedImage, setSelectedImage] = useState(null);
   const [saveData, setSaveData] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
-  const { formData, setFormData } = useFormInitialization(fields, reportDetails, open);  
+  const { formData, setFormData } = useFormInitialization(fields, reportDetails, open);
   const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, saveData);
 
   const timberImages = systemVariables?.data?.filter((item) => item.name.startsWith("timber_image")) || [];
@@ -30,15 +30,15 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
 
   const handleConfirm = () => {
     setOpenDialog(false);
-    handleSubmit({ 
-      ...formData, 
-      image: selectedImage 
-    });  };
+    handleSubmit({
+      ...formData,
+      image: selectedImage,
+    });
+  };
 
   const handleGenerateClick = () => {
     setOpenDialog(true);
   };
-
 
   const getSystemVariables = async () => {
     try {
@@ -58,7 +58,6 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
     }
   };
 
-  
   useEffect(() => {
     if (open) {
       getSystemVariables();
@@ -70,22 +69,29 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
     setFormData({});
   };
 
-  
-
   const handleInputChange = (fieldName, value) => {
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
   };
 
   useEffect(() => {
+    if (open && reportDetails?.image) {
+      setSelectedImage(reportDetails.image);
+    }
+  }, [open, reportDetails]);
+
+  useEffect(() => {
     if (saveData) {
-      handleSubmit({ 
-        ...formData, 
-        image: selectedImage
-      }, false);
+      handleSubmit(
+        {
+          ...formData,
+          image: selectedImage,
+        },
+        false
+      );
       setSaveData(false);
     }
   }, [formData, saveData, selectedImage]);
-  
+
   const categorizeFields = (fields) => {
     const categories = {
       freeboard: [],
