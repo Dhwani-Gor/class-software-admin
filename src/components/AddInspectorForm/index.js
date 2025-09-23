@@ -327,7 +327,7 @@ const AddInspectorForm = ({
                     />
                   </Grid2>
 
-                  <Grid2 xs={12}>
+                  {/* <Grid2 xs={12}>
                     <Stack>
                       <Typography variant="p" component="p">
                         Rights
@@ -390,7 +390,7 @@ const AddInspectorForm = ({
                         )}
                       />
                     </Grid2>
-                  </Grid2>
+                  </Grid2> */}
                 </Grid2>
 
                 <Box>

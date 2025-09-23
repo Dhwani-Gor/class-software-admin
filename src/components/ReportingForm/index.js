@@ -678,7 +678,7 @@ const ReportingForm = () => {
   };
 
   const handleSubmitReport = async (extraFields) => {
-    setLoading(true);
+    // setLoading(true);
     setLoadingReport(true);
 
     try {

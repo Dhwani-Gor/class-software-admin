@@ -1,6 +1,13 @@
 import { Editor } from "@tinymce/tinymce-react";
 import { useEffect, useState, useCallback } from "react";
-import { getAllClassificationSurveys, getAllListClassificationSurveys, getAllSystemVariables, getSpecificClient, getSurveyReportData, uploadSurveyReport } from "../api";
+import {
+  getAllClassificationSurveys,
+  getAllListClassificationSurveys,
+  getAllSystemVariables,
+  getSpecificClient,
+  getSurveyReportData,
+  uploadSurveyReport,
+} from "../api";
 import { toast } from "react-toastify";
 // import { PDFDocument } from "pdf-lib";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
@@ -24,8 +31,12 @@ const TextEditor = ({ id }) => {
   const [statutoryData, setStatutoryData] = useState([]);
   const [systemVariables, setSystemVariables] = useState();
   const today = moment();
-  const companyName = systemVariables?.data?.find((item) => item.name === "company_name")?.information || "-";
-  const companyLogo = systemVariables?.data?.find((item) => item.name === "company_logo")?.information || "-";
+  const companyName =
+    systemVariables?.data?.find((item) => item.name === "company_name")
+      ?.information || "-";
+  const companyLogo =
+    systemVariables?.data?.find((item) => item.name === "company_logo")
+      ?.information || "-";
 
   useEffect(() => {
     getSystemVariables();
@@ -554,7 +565,8 @@ const TextEditor = ({ id }) => {
       const headerHeight = 60;
       const footerHeight = 25;
       const usableWidth = pageWidth - 2 * margin;
-      const usableHeight = pageHeight - 2 * margin - headerHeight - footerHeight;
+      const usableHeight =
+        pageHeight - 2 * margin - headerHeight - footerHeight;
       const scaleFactor = usableWidth / imgWidth;
       const baseSliceHeight = Math.floor(usableHeight / scaleFactor);
 
@@ -609,7 +621,17 @@ const TextEditor = ({ id }) => {
         sliceCanvas.height = sliceHeight;
 
         const ctx = sliceCanvas.getContext("2d");
-        ctx.drawImage(canvas, 0, currentY, imgWidth, sliceHeight, 0, 0, imgWidth, sliceHeight);
+        ctx.drawImage(
+          canvas,
+          0,
+          currentY,
+          imgWidth,
+          sliceHeight,
+          0,
+          0,
+          imgWidth,
+          sliceHeight
+        );
 
         const pngUrl = sliceCanvas.toDataURL("image/png");
         const pngImage = await pdfDoc.embedPng(pngUrl);
@@ -645,8 +667,20 @@ const TextEditor = ({ id }) => {
           const nameY = headerStartY - 35;
           const statusY = headerStartY - 47;
 
-          page.drawText("Name", { x: leftColumnX, y: nameY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
-          page.drawText(":", { x: colonX, y: nameY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
+          page.drawText("Name", {
+            x: leftColumnX,
+            y: nameY,
+            size: 9,
+            color: rgb(1, 1, 1),
+            font: fontRegular,
+          });
+          page.drawText(":", {
+            x: colonX,
+            y: nameY,
+            size: 9,
+            color: rgb(1, 1, 1),
+            font: fontRegular,
+          });
           page.drawText(`${clientData?.shipName || "N/A"}`, {
             x: valueX,
             y: nameY,
@@ -655,8 +689,20 @@ const TextEditor = ({ id }) => {
             font: fontBold,
           });
 
-          page.drawText("Status", { x: leftColumnX, y: statusY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
-          page.drawText(":", { x: colonX, y: statusY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
+          page.drawText("Status", {
+            x: leftColumnX,
+            y: statusY,
+            size: 9,
+            color: rgb(1, 1, 1),
+            font: fontRegular,
+          });
+          page.drawText(":", {
+            x: colonX,
+            y: statusY,
+            size: 9,
+            color: rgb(1, 1, 1),
+            font: fontRegular,
+          });
           page.drawText("In Operation, Class Valid", {
             x: valueX,
             y: statusY,
@@ -670,10 +716,28 @@ const TextEditor = ({ id }) => {
           const rightColonX = pageWidth - margin - 65;
           const rightValueX = pageWidth - margin - 55;
 
-          page.drawText(":", { x: rightColonX, y: nameY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
+          page.drawText(":", {
+            x: rightColonX,
+            y: nameY,
+            size: 9,
+            color: rgb(1, 1, 1),
+            font: fontRegular,
+          });
 
-          page.drawText("IMO Number", { x: rightLabelX, y: statusY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
-          page.drawText(":", { x: rightColonX, y: statusY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
+          page.drawText("IMO Number", {
+            x: rightLabelX,
+            y: statusY,
+            size: 9,
+            color: rgb(1, 1, 1),
+            font: fontRegular,
+          });
+          page.drawText(":", {
+            x: rightColonX,
+            y: statusY,
+            size: 9,
+            color: rgb(1, 1, 1),
+            font: fontRegular,
+          });
           page.drawText(`${clientData?.imoNumber || "N/A"}`, {
             x: rightValueX,
             y: statusY,
@@ -703,7 +767,9 @@ const TextEditor = ({ id }) => {
           });
 
           const footerStartY = footerHeight - 5;
-          const generatedText = ` Generated on: ${moment().format("DD MMM YYYY")}`;
+          const generatedText = ` Generated on: ${moment().format(
+            "DD MMM YYYY"
+          )}`;
           const totalPages = Math.ceil(imgHeight / baseSliceHeight);
           const pageText = `Page ${pageIndex + 1} of ${totalPages}`;
 
@@ -746,7 +812,9 @@ const TextEditor = ({ id }) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `MCB Survey Status Report - ${clientData?.imoNumber}-${clientData?.shipName}-${moment(currentDate).format("DD-MM-YYYY")}.pdf`;
+      link.download = `MCB Survey Status Report - ${clientData?.imoNumber}-${
+        clientData?.shipName
+      }-${moment(currentDate).format("DD-MM-YYYY")}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -901,15 +969,23 @@ const TextEditor = ({ id }) => {
 
     return uniqueSurveys?.map((survey) => {
       const surveyName = survey.activity?.surveyTypes?.report?.name || "";
-      const surveyDate = survey.surveyDate ? format(new Date(survey.surveyDate), "yyyy-MM-dd") : "";
-      const issuanceDate = survey.issuanceDate ? format(new Date(survey.issuanceDate), "yyyy-MM-dd") : "";
+      const surveyDate = survey.surveyDate
+        ? format(new Date(survey.surveyDate), "yyyy-MM-dd")
+        : "";
+      const issuanceDate = survey.issuanceDate
+        ? format(new Date(survey.issuanceDate), "yyyy-MM-dd")
+        : "";
 
       let dueDate = "";
       let rangeFrom = "";
       let rangeTo = "";
 
       if (issuanceDate) {
-        const { dueDate: d, rangeFrom: r, rangeTo: t } = calculateDates(issuanceDate);
+        const {
+          dueDate: d,
+          rangeFrom: r,
+          rangeTo: t,
+        } = calculateDates(issuanceDate);
         dueDate = d;
         rangeFrom = r;
         rangeTo = t;
@@ -1062,23 +1138,52 @@ const TextEditor = ({ id }) => {
         const issuanceDate = row.issuanceDate;
         const surveyDate = row.surveyDate;
         const dueDate = row.dueDate;
-        const rangeTo = row.rangeTo ? moment(row.rangeTo).format("YYYY-MM-DD") : null;
-        const rangeFrom = row.rangeFrom ? moment(row.rangeFrom).format("YYYY-MM-DD") : null;
+        const rangeTo = row.rangeTo
+          ? moment(row.rangeTo).format("YYYY-MM-DD")
+          : null;
+        const rangeFrom = row.rangeFrom
+          ? moment(row.rangeFrom).format("YYYY-MM-DD")
+          : null;
         const postponedDate = row.postponed;
         const currentDate = new Date().toISOString().split("T")[0];
 
         return `
                 <tr>
                     <td>${surveyName}</td>
-                    <td>${getClassRangeIcon(currentDate, rangeFrom, rangeTo) ? `<span class="${getClassRangeIcon(currentDate, rangeFrom, rangeTo)}">S</span>` : ""}</td>              
-                    <td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
-                    <td>${issuanceDate ? moment(issuanceDate).format("DD/MM/YYYY") : ""}</td>
+                    <td>${
+                      getClassRangeIcon(currentDate, rangeFrom, rangeTo)
+                        ? `<span class="${getClassRangeIcon(
+                            currentDate,
+                            rangeFrom,
+                            rangeTo
+                          )}">S</span>`
+                        : ""
+                    }</td>              
+                    <td>${
+                      surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""
+                    }</td>
+                    <td>${
+                      issuanceDate
+                        ? moment(issuanceDate).format("DD/MM/YYYY")
+                        : ""
+                    }</td>
                     <td>${dueDate ? moment(dueDate).format("DD/MM/YYYY") : ""}
                     <td>
-                        ${moment(rangeFrom, moment.ISO_8601, true).isValid() && moment(rangeTo, moment.ISO_8601, true).isValid() ? `${moment(rangeFrom).format("DD/MM/YYYY")} - ${moment(rangeTo).format("DD/MM/YYYY")}` : "-"}
+                        ${
+                          moment(rangeFrom, moment.ISO_8601, true).isValid() &&
+                          moment(rangeTo, moment.ISO_8601, true).isValid()
+                            ? `${moment(rangeFrom).format(
+                                "DD/MM/YYYY"
+                              )} - ${moment(rangeTo).format("DD/MM/YYYY")}`
+                            : "-"
+                        }
                     </td>
 
-                    <td>${postponedDate ? moment(postponedDate).format("DD/MM/YYYY") : ""}</td>
+                    <td>${
+                      postponedDate
+                        ? moment(postponedDate).format("DD/MM/YYYY")
+                        : ""
+                    }</td>
                 </tr>
             `;
       }) || []
@@ -1098,27 +1203,64 @@ const TextEditor = ({ id }) => {
         return `
                 <tr>
                 <td>${surveyName}</td>
-                <td>${getClassRangeIcon(currentDate, rangeFrom, rangeTo) ? `<span class="${getClassRangeIcon(currentDate, rangeFrom, rangeTo)}">C</span>` : ""}</td>              <td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
+                <td>${
+                  getClassRangeIcon(currentDate, rangeFrom, rangeTo)
+                    ? `<span class="${getClassRangeIcon(
+                        currentDate,
+                        rangeFrom,
+                        rangeTo
+                      )}">C</span>`
+                    : ""
+                }</td>              <td>${
+          surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""
+        }</td>
                 <td></td>
-                <td>${reportDetails.typeOfCertificate == "full_term" ? `${moment(rangeFrom).format("DD/MM/YYYY")} - ${moment(rangeTo).format("DD/MM/YYYY")}` : ""}</td>
+                <td>${
+                  reportDetails.typeOfCertificate == "full_term"
+                    ? `${moment(rangeFrom).format("DD/MM/YYYY")} - ${moment(
+                        rangeTo
+                      ).format("DD/MM/YYYY")}`
+                    : ""
+                }</td>
                 <td>${postponedDate}</td>
                 </tr>
             `;
       })
       .join("");
 
-    const certificateOfClassRow = reportDetails?.find((cert) => cert?.activity?.surveyTypes?.report?.name?.toLowerCase() === "certificate of class");
+    const certificateOfClassRow = reportDetails?.find(
+      (cert) =>
+        cert?.activity?.surveyTypes?.report?.name?.toLowerCase() ===
+        "certificate of class"
+    );
 
-    const otherCertificates = reportDetails?.filter((cert) => cert?.activity?.surveyTypes?.report?.name?.toLowerCase() !== "certificate of class");
+    const otherCertificates = reportDetails?.filter(
+      (cert) =>
+        cert?.activity?.surveyTypes?.report?.name?.toLowerCase() !==
+        "certificate of class"
+    );
 
     const formatCertificateRow = (cert) => {
       const name = cert?.activity?.surveyTypes?.report?.name || "-";
-      const issued = cert.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : "";
+      const issued = cert.issuanceDate
+        ? moment(cert.issuanceDate).format("DD/MM/YYYY")
+        : "";
       const expiry = cert.validityDate;
       const extendedDate = cert.extendedDate;
-      const expiryFormatted = expiry ? moment(expiry).format("YYYY-MM-DD") : null;
+      const expiryFormatted = expiry
+        ? moment(expiry).format("YYYY-MM-DD")
+        : null;
 
-      const type = cert?.typeOfCertificate === "short_term" ? "ST" : cert?.typeOfCertificate === "full_term" ? "FT" : cert?.typeOfCertificate === "intrim" ? "IT" : cert?.typeOfCertificate === "extended" ? "ET" : cert?.typeOfCertificate || "-";
+      const type =
+        cert?.typeOfCertificate === "short_term"
+          ? "ST"
+          : cert?.typeOfCertificate === "full_term"
+          ? "FT"
+          : cert?.typeOfCertificate === "intrim"
+          ? "IT"
+          : cert?.typeOfCertificate === "extended"
+          ? "ET"
+          : cert?.typeOfCertificate || "-";
 
       const status = "";
       const currentDate = new Date().toISOString().split("T")[0];
@@ -1126,9 +1268,18 @@ const TextEditor = ({ id }) => {
       return `
                     <tr>
                         <td>${name}</td>
-                        <td>${getClassName(expiryFormatted, currentDate) ? `<span class="${getClassName(expiryFormatted, currentDate)}">C</span>` : ""}</td>
+                        <td>${
+                          getClassName(expiryFormatted, currentDate)
+                            ? `<span class="${getClassName(
+                                expiryFormatted,
+                                currentDate
+                              )}">C</span>`
+                            : ""
+                        }</td>
                         <td>${issued}</td>
-                        <td>${expiry ? moment(expiry).format("DD/MM/YYYY") : ""}</td>
+                        <td>${
+                          expiry ? moment(expiry).format("DD/MM/YYYY") : ""
+                        }</td>
                         <td></td>
                         <td>${type}</td>
                         <td>${status}</td>
@@ -1136,7 +1287,14 @@ const TextEditor = ({ id }) => {
                 `;
     };
 
-    const certificateRows = [certificateOfClassRow ? formatCertificateRow(certificateOfClassRow) : null, ...(otherCertificates?.map(formatCertificateRow) || [])].filter(Boolean).join("");
+    const certificateRows = [
+      certificateOfClassRow
+        ? formatCertificateRow(certificateOfClassRow)
+        : null,
+      ...(otherCertificates?.map(formatCertificateRow) || []),
+    ]
+      .filter(Boolean)
+      .join("");
 
     const certificatesTableHtml = `
         <h4 style="margin-top: -50px;">Certificates</h4>
@@ -1217,11 +1375,21 @@ const TextEditor = ({ id }) => {
         <p>${clientData?.shipName || "-"}</p>
 
         <div style="text-align: left; display: inline-block;">
-            <p><strong>Reg. Owner:</strong> ${clientData?.ownerDetails?.companyName || "-"}</p>
+            <p><strong>Reg. Owner:</strong> ${
+              clientData?.ownerDetails?.companyName || "-"
+            }</p>
             <p><strong>IMO Number:</strong> ${clientData?.imoNumber || "-"}</p>
-            <p><strong>Vessel Type:</strong> ${clientData?.typeOfShip || "-"}</p>
-            <p><strong>Gross Tonnage:</strong> ${clientData?.grossTonnage || "-"}</p>
-            <p><strong>Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : "-"}</p>
+            <p><strong>Vessel Type:</strong> ${
+              clientData?.typeOfShip || "-"
+            }</p>
+            <p><strong>Gross Tonnage:</strong> ${
+              clientData?.grossTonnage || "-"
+            }</p>
+            <p><strong>Date of build:</strong> ${
+              clientData?.dateOfBuild
+                ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY")
+                : "-"
+            }</p>
         </div>
         </div>
 
@@ -1272,16 +1440,28 @@ const TextEditor = ({ id }) => {
                 <div class="section">
                 <h4>Identification</h4>
                 <div class="identification-row">
-                    <div class="left"><em><strong>Ship Type:</strong></em> ${clientData?.typeOfShip || "-"}</div>
-                    <div class="right"><em><strong>Flag:</strong></em> ${clientData?.flag || "-"}</div>
+                    <div class="left"><em><strong>Ship Type:</strong></em> ${
+                      clientData?.typeOfShip || "-"
+                    }</div>
+                    <div class="right"><em><strong>Flag:</strong></em> ${
+                      clientData?.flag || "-"
+                    }</div>
                 </div>
                 <div class="identification-row">
-                    <div class="left"><em><strong>IMO Number:</strong></em> ${clientData?.imoNumber || "-"}</div>
-                    <div class="right"><em><strong>Port of Registry:</strong></em> ${clientData?.portOfRegistry || "-"}</div>
+                    <div class="left"><em><strong>IMO Number:</strong></em> ${
+                      clientData?.imoNumber || "-"
+                    }</div>
+                    <div class="right"><em><strong>Port of Registry:</strong></em> ${
+                      clientData?.portOfRegistry || "-"
+                    }</div>
                 </div>
                 <div class="identification-row">
-                    <div class="left"><em><strong>Call Sign:</strong></em> ${clientData?.callSign || "-"}</div>
-                    <div class="right"><em><strong>Official Number:</strong></em> ${clientData?.officialNumber || "-"}</div>
+                    <div class="left"><em><strong>Call Sign:</strong></em> ${
+                      clientData?.callSign || "-"
+                    }</div>
+                    <div class="right"><em><strong>Official Number:</strong></em> ${
+                      clientData?.officialNumber || "-"
+                    }</div>
                 </div>
             </div>
             
@@ -1322,31 +1502,65 @@ const TextEditor = ({ id }) => {
   </thead>
   <tbody>
     <tr>
-      <td><em><strong>Gross Tonnage:</strong></em> ${clientData?.grossTonnage || "-"}</td>
+      <td><em><strong>Gross Tonnage:</strong></em> ${
+        clientData?.grossTonnage || "-"
+      }</td>
       <td><strong>Ship Builder:</strong> ${clientData?.shipBuilder || "-"}</td>
     </tr>
     <tr>
-      <td><em><strong>Net Tonnage:</strong></em> ${clientData?.netTonnage || "-"}</td>
-      <td><strong>Country of build:</strong> ${clientData?.countryOfBuild || "-"}</td>
+      <td><em><strong>Net Tonnage:</strong></em> ${
+        clientData?.netTonnage || "-"
+      }</td>
+      <td><strong>Country of build:</strong> ${
+        clientData?.countryOfBuild || "-"
+      }</td>
     </tr>
     <tr>
-      <td><em><strong>Deadweight:</strong></em> ${clientData?.deadweight || "-"}</td>
-      <td><strong>Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : "-"}</td>
+      <td><em><strong>Deadweight:</strong></em> ${
+        clientData?.deadweight || "-"
+      }</td>
+      <td><strong>Date of build:</strong> ${
+        clientData?.dateOfBuild
+          ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY")
+          : "-"
+      }</td>
     </tr>
     <tr>
-      <td><strong>Keel Laid Date:</strong> ${clientData?.keelLaidDate ? moment(clientData?.keelLaidDate).format("DD/MM/YYYY") : "-"}</td>
-      <td><strong>Date of building contract:</strong> ${clientData?.dateOfBuildingContract ? moment(clientData?.dateOfBuildingContract).format("DD/MM/YYYY") : "-"}</td>
+      <td><strong>Keel Laid Date:</strong> ${
+        clientData?.keelLaidDate
+          ? moment(clientData?.keelLaidDate).format("DD/MM/YYYY")
+          : "-"
+      }</td>
+      <td><strong>Date of building contract:</strong> ${
+        clientData?.dateOfBuildingContract
+          ? moment(clientData?.dateOfBuildingContract).format("DD/MM/YYYY")
+          : "-"
+      }</td>
     </tr>
     <tr>
-      <td><em><strong>Length of ship:</strong></em> ${clientData?.lengthOfShip || "-"}</td>
-      <td><strong>Area of operation:</strong> ${clientData?.areaOfOperation || "-"}</td>
+      <td><em><strong>Length of ship:</strong></em> ${
+        clientData?.lengthOfShip || "-"
+      }</td>
+      <td><strong>Area of operation:</strong> ${
+        clientData?.areaOfOperation || "-"
+      }</td>
     </tr>
     <tr>
-      <td><em><strong>Date of delivery:</strong></em> ${clientData?.dateOfDelivery ? moment(clientData?.dateOfDelivery).format("DD/MM/YYYY") : "-"}</td>
-      <td><em><strong>Date of modification:</strong></em> ${clientData?.dateOfModification ? moment(clientData?.dateOfModification).format("DD/MM/YYYY") : "-"}</td>
+      <td><em><strong>Date of delivery:</strong></em> ${
+        clientData?.dateOfDelivery
+          ? moment(clientData?.dateOfDelivery).format("DD/MM/YYYY")
+          : "-"
+      }</td>
+      <td><em><strong>Date of modification:</strong></em> ${
+        clientData?.dateOfModification
+          ? moment(clientData?.dateOfModification).format("DD/MM/YYYY")
+          : "-"
+      }</td>
     </tr>
     <tr>
-      <td colspan="2"><em><strong>Carrying capacity:</strong></em> ${clientData?.carryingCapacity || "-"}</td>
+      <td colspan="2"><em><strong>Carrying capacity:</strong></em> ${
+        clientData?.carryingCapacity || "-"
+      }</td>
     </tr>
   </tbody>
 </table>
@@ -1358,16 +1572,28 @@ const TextEditor = ({ id }) => {
                 
                 <h4>Registered Owner</h4>
                 <div class="owner-info">
-                    <div><em><strong>Company Name:</strong></em> ${clientData?.ownerDetails?.companyName || "-"}</div>
-                    <div><em><strong>IMO Number:</strong></em> ${clientData?.ownerDetails?.imoNumber || "-"}</div>
-                    <div><em><strong>Address:</strong></em> ${clientData?.ownerDetails?.companyAddress || "-"}</div>
+                    <div><em><strong>Company Name:</strong></em> ${
+                      clientData?.ownerDetails?.companyName || "-"
+                    }</div>
+                    <div><em><strong>IMO Number:</strong></em> ${
+                      clientData?.ownerDetails?.imoNumber || "-"
+                    }</div>
+                    <div><em><strong>Address:</strong></em> ${
+                      clientData?.ownerDetails?.companyAddress || "-"
+                    }</div>
                 </div>
                 
                 <h4>Manager</h4>
                 <div class="owner-info">
-                    <div><em><strong>Company Name:</strong></em> ${clientData?.managerDetails?.companyName || "-"}</div>
-                    <div><em><strong>IMO Number:</strong></em> ${clientData?.managerDetails?.imoNumber || "-"}</div>
-                    <div><em><strong>Address:</strong></em> ${clientData?.managerDetails?.companyAddress || "-"}</div>
+                    <div><em><strong>Company Name:</strong></em> ${
+                      clientData?.managerDetails?.companyName || "-"
+                    }</div>
+                    <div><em><strong>IMO Number:</strong></em> ${
+                      clientData?.managerDetails?.imoNumber || "-"
+                    }</div>
+                    <div><em><strong>Address:</strong></em> ${
+                      clientData?.managerDetails?.companyAddress || "-"
+                    }</div>
                 </div>
             </div>
             
@@ -1413,7 +1639,13 @@ const TextEditor = ({ id }) => {
       const newContent = generateHtmlContent();
       setEditorContent(newContent);
     }
-  }, [clientData, reportDetails, classificationData, statutoryData, generateHtmlContent]);
+  }, [
+    clientData,
+    reportDetails,
+    classificationData,
+    statutoryData,
+    generateHtmlContent,
+  ]);
 
   const handleEditorChange = (content) => {
     setEditorContent(content);
@@ -1482,8 +1714,22 @@ const TextEditor = ({ id }) => {
           height: 800,
           menubar: true,
           visual: false,
-          plugins: ["advlist", "autolink", "lists", "link", "image", "charmap", "print", "preview", "searchreplace", "wordcount", "code", "fullscreen"],
-          toolbar: "undo redo | formatselect | bold italic | alignleft aligncenter alignright | outdent indent | link image | code fullscreen",
+          plugins: [
+            "advlist",
+            "autolink",
+            "lists",
+            "link",
+            "image",
+            "charmap",
+            "print",
+            "preview",
+            "searchreplace",
+            "wordcount",
+            "code",
+            "fullscreen",
+          ],
+          toolbar:
+            "undo redo | formatselect | bold italic | alignleft aligncenter alignright | outdent indent | link image | code fullscreen",
           readonly: false,
 
           setup: (editor) => {
@@ -1830,8 +2076,14 @@ const TextEditor = ({ id }) => {
         }}
       />
       <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-        <CommonButton onClick={() => router.push(`/clients/${id}`)} text="Back" />
-        <CommonButton onClick={downloadEditorContentAsPdf} text="Download PDF" />
+        <CommonButton
+          onClick={() => router.push(`/clients/${id}`)}
+          text="Back"
+        />
+        <CommonButton
+          onClick={downloadEditorContentAsPdf}
+          text="Download PDF"
+        />
       </Box>
     </>
   );
