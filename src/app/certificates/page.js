@@ -3,9 +3,9 @@ import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
 import CircularProgress from "@mui/material/CircularProgress";
-import Pagination from '@mui/material/Pagination';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
+import Pagination from "@mui/material/Pagination";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
 import Snackbar from "@mui/material/Snackbar";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
@@ -19,7 +19,6 @@ import CommonInput from "@/components/CommonInput";
 import { getAllIssuedDocuments, getAllJournals, getJournalsList } from "@/api";
 import { Chip, MenuItem, Select, TextField } from "@mui/material";
 import CommonButton from "@/components/CommonButton";
-
 
 const Certificates = () => {
   const dispatch = useDispatch();
@@ -40,7 +39,7 @@ const Certificates = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("certificates");
-
+  const [count, setTotalCount] = useState(0);
 
   // Client-side search functionality
 
@@ -48,15 +47,12 @@ const Certificates = () => {
     if (!search.trim()) return true;
 
     const searchTerm = search.toLowerCase();
-    const shipName = certificate.activity?.journal?.client?.shipName?.toLowerCase() || '';
-    const journalTypeId = certificate.activity?.journal?.journalTypeId?.toLowerCase() || '';
-    const certificateType = certificate.typeOfCertificate?.toLowerCase() || '';
-    const place = certificate.place?.toLowerCase() || '';
+    const shipName = certificate.activity?.journal?.client?.shipName?.toLowerCase() || "";
+    const journalTypeId = certificate.activity?.journal?.journalTypeId?.toLowerCase() || "";
+    const certificateType = certificate.typeOfCertificate?.toLowerCase() || "";
+    const place = certificate.place?.toLowerCase() || "";
 
-    return shipName.includes(searchTerm) ||
-      journalTypeId.includes(searchTerm) ||
-      certificateType.includes(searchTerm) ||
-      place.includes(searchTerm);
+    return shipName.includes(searchTerm) || journalTypeId.includes(searchTerm) || certificateType.includes(searchTerm) || place.includes(searchTerm);
   });
 
   // Remove unused functions and effects
@@ -109,22 +105,14 @@ const Certificates = () => {
       const searchQuery = debouncedSearch.trim();
       const markAsArchive = selectedFilter == "Archive Documents";
 
-      const res = await getAllIssuedDocuments(
-        filterKeys,
-        filterValues,
-        searchQuery,
-        page,
-        limit,
-        startDate,
-        endDate,
-        markAsArchive
-      );
+      const res = await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, page, limit, startDate, endDate, markAsArchive);
 
       const data = res?.data;
 
       if (data?.status === "success" && Array.isArray(data?.data)) {
         setCertificatesList(data.data);
         setTotalRows(data.total || data.results || data.data.length);
+        setTotalCount(data?.results);
       } else {
         setCertificatesList([]);
         setTotalRows(0);
@@ -140,7 +128,7 @@ const Certificates = () => {
 
   useEffect(() => {
     fetchCertificatesData();
-  }, [selectedFilter,selectedReportNumber, placeFilter, statusFilter, debouncedSearch, page, limit, startDate, endDate]);
+  }, [selectedFilter, selectedReportNumber, placeFilter, statusFilter, debouncedSearch, page, limit, startDate, endDate]);
 
   const handleSearchChange = (event) => {
     setSearch(event.target.value);
@@ -153,13 +141,13 @@ const Certificates = () => {
 
   const handleViewDocument = (documentUrl) => {
     if (documentUrl) {
-      window.open(documentUrl, '_blank');
+      window.open(documentUrl, "_blank");
     }
   };
 
   const handleDownloadDocument = (documentUrl, certificateId) => {
     if (documentUrl) {
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = documentUrl;
       link.download = `certificate_${certificateId}.pdf`;
       document.body.appendChild(link);
@@ -169,11 +157,11 @@ const Certificates = () => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: '2-digit'
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
     });
   };
 
@@ -190,55 +178,46 @@ const Certificates = () => {
       field: "journalTypeId",
       headerName: "Report No",
       flex: 1,
-      renderCell: (params) => (
-        <Typography fontSize="14px">
-          {params.row.activity?.journal?.journalTypeId || 'N/A'}
-        </Typography>
-      )
+      renderCell: (params) => <Typography fontSize="14px">{params.row.activity?.journal?.journalTypeId || "N/A"}</Typography>,
     },
     {
       field: "shipName",
       headerName: "Ship Name",
       flex: 1,
-      renderCell: (params) => (
-        <Typography fontSize="14px">
-          {params.row.activity?.journal?.client?.shipName || 'N/A'}
-        </Typography>
-      )
+      renderCell: (params) => <Typography fontSize="14px">{params.row.activity?.journal?.client?.shipName || "N/A"}</Typography>,
     },
     {
       field: "typeOfCertificate",
       headerName: "Certificate Type",
       flex: 1,
       renderCell: (params) => (
-        <Typography fontSize="14px" sx={{ textTransform: 'capitalize' }}>
-          {params.value?.replace('_', ' ') || 'N/A'}
+        <Typography fontSize="14px" sx={{ textTransform: "capitalize" }}>
+          {params.value?.replace("_", " ") || "N/A"}
         </Typography>
-      )
+      ),
     },
     {
       field: "surveyType",
       headerName: "Survey Type",
       flex: 1,
       renderCell: (params) => (
-        <Typography fontSize="14px"
+        <Typography
+          fontSize="14px"
           sx={{
-            whiteSpace: 'normal',
-            wordBreak: 'break-word',
-            width: '120px',
+            whiteSpace: "normal",
+            wordBreak: "break-word",
+            width: "120px",
           }}
         >
-          {params.row.activity?.surveyTypes?.name || 'N/A'}
+          {params.row.activity?.surveyTypes?.name || "N/A"}
         </Typography>
-      )
+      ),
     },
     {
       field: "surveyDate",
       headerName: "Survey Date",
       flex: 1,
-      renderCell: (params) => (
-        <Typography fontSize="14px">{formatDate(params.value)}</Typography>
-      )
+      renderCell: (params) => <Typography fontSize="14px">{formatDate(params.value)}</Typography>,
     },
     {
       field: "actions",
@@ -247,20 +226,12 @@ const Certificates = () => {
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
           <Tooltip title="View Document">
-            <IconButton
-              color="info"
-              onClick={() => handleViewDocument(params.row.generatedDoc)}
-              disabled={!params.row.generatedDoc}
-            >
+            <IconButton color="info" onClick={() => handleViewDocument(params.row.generatedDoc)} disabled={!params.row.generatedDoc}>
               <VisibilityIcon />
             </IconButton>
           </Tooltip>
           <Tooltip title="Download Document">
-            <IconButton
-              color="success"
-              onClick={() => handleDownloadDocument(params.row.generatedDoc, params.row.id)}
-              disabled={!params.row.generatedDoc}
-            >
+            <IconButton color="success" onClick={() => handleDownloadDocument(params.row.generatedDoc, params.row.id)} disabled={!params.row.generatedDoc}>
               <GetAppIcon />
             </IconButton>
           </Tooltip>
@@ -294,7 +265,6 @@ const Certificates = () => {
     setPage(1);
   };
 
-
   return (
     <Layout>
       <CommonCard sx={{ mt: 0 }}>
@@ -306,30 +276,20 @@ const Certificates = () => {
       </CommonCard>
 
       <CommonCard>
-      <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+        <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
           {["certificates", "Archive Documents"].map((type) => (
-            <Chip
-              key={type}
-              label={type.charAt(0).toUpperCase() + type.slice(1)}
-              color={selectedFilter === type ? "primary" : "default"}
-              onClick={() => handleFilterChange(type)}
-              clickable
-              sx={{ fontWeight: selectedFilter === type ? 600 : 400, px: 2 }}
-            />
+            <Chip key={type} label={type.charAt(0).toUpperCase() + type.slice(1)} color={selectedFilter === type ? "primary" : "default"} onClick={() => handleFilterChange(type)} clickable sx={{ fontWeight: selectedFilter === type ? 600 : 400, px: 2 }} />
           ))}
         </Stack>
-        <CommonInput
-          placeholder="Search Certificate By Place or Type"
-          fullWidth
-          value={search}
-          onChange={handleSearchChange}
-          sx={{ marginBottom: 2 }}
-        />
+        <CommonInput placeholder="Search Certificate By Place or Type" fullWidth value={search} onChange={handleSearchChange} sx={{ marginBottom: 2 }} />
 
         <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2, mt: 2 }}>
           <Select
             value={selectedReportNumber}
-            onChange={(e) => { setSelectedReportNumber(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setSelectedReportNumber(e.target.value);
+              setPage(1);
+            }}
             displayEmpty
             sx={{ minWidth: 180 }}
           >
@@ -355,7 +315,6 @@ const Certificates = () => {
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
           /> */}
 
-          
           <TextField
             label="Survey Date From"
             type="date"
@@ -393,7 +352,6 @@ const Certificates = () => {
           )}
         </Stack>
 
-
         <Box sx={{ width: "100%", mt: 4 }}>
           {loading ? (
             <Box display="flex" justifyContent="center" alignItems="center" height="300px">
@@ -415,34 +373,25 @@ const Certificates = () => {
               sx={{
                 backgroundColor: "#fff",
                 border: "none",
-                '& .MuiDataGrid-cell': {
-                  display: 'flex',
-                  alignItems: 'center',
+                "& .MuiDataGrid-cell": {
+                  display: "flex",
+                  alignItems: "center",
                 },
               }}
             />
           ) : (
-            <Typography
-              variant="h6"
-              align="center"
-              sx={{ color: "gray", padding: 3 }}
-            >
+            <Typography variant="h6" align="center" sx={{ color: "gray", padding: 3 }}>
               No Certificates Found
             </Typography>
           )}
         </Box>
 
         {totalRows > limit && (
-          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-            <Pagination
-              count={Math.ceil(totalRows / limit)}
-              page={page}
-              onChange={handlePageChange}
-              color="primary"
-              variant="outlined"
-              shape="rounded"
-              sx={{ marginTop: "10px" }}
-            />
+          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+            <Typography variant="body1" fontWeight={600} fontSize="16px" mt={2} color="text.primary">
+              Total Count: {count}
+            </Typography>
+            <Pagination count={Math.ceil(totalRows / limit)} page={page} onChange={handlePageChange} color="primary" variant="outlined" shape="rounded" sx={{ marginTop: "10px" }} />
           </Box>
         )}
       </CommonCard>
