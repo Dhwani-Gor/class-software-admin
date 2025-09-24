@@ -4,7 +4,7 @@ export const sidemenu_items = [
     to: "/clients",
   },
   {
-    label: "Staff / Inspectors",
+    label: "Users",
     to: "/staff",
   },
   {
