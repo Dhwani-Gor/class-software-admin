@@ -385,9 +385,9 @@ const ReportingForm = () => {
 
     // Set only the id if data exists
     if (data && data.length > 0) {
-      setjournalId(data[0].id);
+      // setjournalId(data[0].id);
     } else {
-      setjournalId(null);
+      // setjournalId(null);
     }
   }, [specialPermission, journals]);
 
@@ -471,6 +471,8 @@ const ReportingForm = () => {
   const handleClientChange = (event) => {
     const selectedId = event.target.value;
     const selectedClient = clientsList.find((client) => client.id === selectedId);
+    console.log(selectedClient, "selectedClient");
+    console.log(selectedId, "selectedId");
     setSelectedShip({
       id: selectedId,
       shipName: selectedClient ? selectedClient.shipName : "",
@@ -482,7 +484,6 @@ const ReportingForm = () => {
     const selectedJournalTypeId = event.target.value;
     const selectedIndex = filteredJournals.findIndex((j) => j.journalTypeId === selectedJournalTypeId);
     setjournalId(filteredJournals[selectedIndex]?.id);
-
     setSelectedReportNumber({
       journalTypeId: selectedJournalTypeId,
       index: selectedIndex !== -1 ? selectedIndex : null,
@@ -531,7 +532,7 @@ const ReportingForm = () => {
     try {
       // setContinueBtnLoading(true);
       if (journals?.archived?.length > 0) {
-        const result = await addUnArchiveDocument(selectedShip.id);
+        const result = await addUnArchiveDocument({ clientId: selectedShip.id, journalId });
         if (result.data.status == "success") {
           window.location.reload();
           toast.success(result.data.message);
@@ -539,7 +540,7 @@ const ReportingForm = () => {
           toast.error("Failed to continue process");
         }
       } else {
-        const result = await addArchiveDocument(selectedShip.id);
+        const result = await addArchiveDocument({ clientId: selectedShip.id, journalId });
         if (result.data.status == "success") {
           window.location.reload();
           toast.success(result.data.message);

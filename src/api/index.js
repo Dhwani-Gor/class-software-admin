@@ -910,9 +910,9 @@ export const getAllClassificationSurveyType = async () => {
   return result;
 };
 
-export const addArchiveDocument = async (clientId) => {
+export const addArchiveDocument = async (payload) => {
   try {
-    const result = await axiosInstance.post("/reportDetails/markAsArchived", { clientId });
+    const result = await axiosInstance.post("/reportDetails/markAsArchived", payload);
     return result;
   } catch (e) {
     console.error("Error archiving document:", e);
@@ -920,9 +920,9 @@ export const addArchiveDocument = async (clientId) => {
   }
 };
 
-export const addUnArchiveDocument = async (clientId) => {
+export const addUnArchiveDocument = async (payload) => {
   try {
-    const result = await axiosInstance.post("/reportDetails/markAsUnArchived", { clientId });
+    const result = await axiosInstance.post("/reportDetails/markAsUnArchived", payload);
     return result;
   } catch (e) {
     console.error("Error archiving document:", e);
