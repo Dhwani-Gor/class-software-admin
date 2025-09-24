@@ -32,7 +32,7 @@ const SidebarComponent = ({ isSidebarOpen }) => {
   // Module to menu item mapping
   const moduleMenuMapping = {
     "Clients": "Clients",
-    "Staff/Inspector": "Staff / Inspectors", 
+    "Staff/Inspector": "Users", 
     "Journals": "Journal",
     "Reporting": "Reporting",
     "IssuedDocument": "Issued Documents",

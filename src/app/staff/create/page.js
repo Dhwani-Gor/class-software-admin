@@ -59,7 +59,7 @@ const AddStaff = () => {
             <ArrowBack />
           </IconButton>
           <Typography variant="h6" fontWeight={"700"}>
-            Staff / Inspectors
+            Users
           </Typography>
         </Stack>
       </CommonCard>

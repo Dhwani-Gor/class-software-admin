@@ -533,7 +533,7 @@ const ReportingForm = () => {
       if (journals?.archived?.length > 0) {
         const result = await addUnArchiveDocument(selectedShip.id);
         if (result.data.status == "success") {
-          window.location.reload();
+          // window.location.reload();
           toast.success(result.data.message);
         } else {
           toast.error("Failed to continue process");
@@ -541,7 +541,7 @@ const ReportingForm = () => {
       } else {
         const result = await addArchiveDocument(selectedShip.id);
         if (result.data.status == "success") {
-          window.location.reload();
+          // window.location.reload();
           toast.success(result.data.message);
         } else {
           toast.error("Failed to continue process");
@@ -1107,7 +1107,7 @@ const ReportingForm = () => {
               </Box>
             )}
             {selectedShip.id && selectedReportNumber.journalTypeId && <CommonButton onClick={handleShowTable} sx={{ marginTop: 3 }} text="Continue" />}
-            {selectedShip.id && selectedReportNumber.journalTypeId && <CommonButton onClick={handleContinue} disabled={!areAllActivitiesCompleted()} sx={{ marginTop: 3, marginLeft: 2 }} text={specialPermission && journals?.archived?.length > 0 ? "Open To Archive" : "Completed"} />}
+            {selectedShip.id && selectedReportNumber.journalTypeId && <CommonButton onClick={handleContinue} disabled={!areAllActivitiesCompleted()} sx={{ marginTop: 3, marginLeft: 2 }} text={specialPermission && journals?.archived?.length > 0 ? "Unarchive" : "Archive"} />}
           </Box>
         )}
       </CommonCard>

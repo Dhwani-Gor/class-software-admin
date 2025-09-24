@@ -56,7 +56,7 @@ const AuthProvider = ({ children }) => {
     }
 
     // Always allow settings
-    allowedRoutes.push("/settings");
+    // allowedRoutes.push("/settings");
 
     // Remove duplicates
     return [...new Set(allowedRoutes)];

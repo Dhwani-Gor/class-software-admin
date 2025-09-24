@@ -172,11 +172,11 @@ const Countries = () => {
           justifyContent="space-between"
         >
           <Typography variant="h4" fontWeight={700}>
-            Staff / Inspectors
+            Users
           </Typography>
           <CommonButton
             sx={{ textTransform: "capitalize" }}
-            text="Add Staff / Inspector"
+            text="Add Users"
             variant="contained"
             onClick={() => {
               router.push("/staff/create");
