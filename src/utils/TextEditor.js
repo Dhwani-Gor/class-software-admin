@@ -1199,7 +1199,8 @@ const TextEditor = ({ id }) => {
         let rangeFrom = row.rangeFrom;
         const postponedDate = "";
         const currentDate = new Date().toISOString().split("T")[0];
-
+        console.log("statutoryData",statutoryData)
+        console.log("reportDetails",reportDetails)
         return `
                 <tr>
                 <td>${surveyName}</td>
@@ -1214,7 +1215,7 @@ const TextEditor = ({ id }) => {
                 }</td>              <td>${
           surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""
         }</td>
-                <td></td>
+                <td>10/09/2000</td>
                 <td>${
                   reportDetails.typeOfCertificate == "full_term"
                     ? `${moment(rangeFrom).format("DD/MM/YYYY")} - ${moment(
@@ -1343,6 +1344,7 @@ const TextEditor = ({ id }) => {
                         <th>Survey Name</th>
                         <th></th>
                         <th>Survey Date</th>
+                        <th>Due Date</th>
                         <th>Range (from, to)</th>
                         <th>Postponed</th>
                     </tr>
