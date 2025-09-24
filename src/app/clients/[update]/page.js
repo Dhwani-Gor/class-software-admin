@@ -6,7 +6,7 @@ import Layout from "@/Layout";
 import Stack from "@mui/material/Stack";
 import CommonCard from "@/components/CommonCard";
 import AddClientForm from "@/components/AddClientForm";
-import { IconButton } from "@mui/material";
+import { Box, IconButton } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import CommonButton from "@/components/CommonButton";
@@ -15,15 +15,18 @@ import EditHistoryDialog from "@/components/Dialogs/EditHistoryDialog";
 import { getClientHistory, getSpecificClient } from "@/api";
 import { toast } from "react-toastify";
 import { transformData } from "@/utils/helper";
+import { useAuth } from "@/hooks/useAuth";
 
 const UpdateClient = ({ params }) => {
-  const { update }= use(params);
+  const { update } = use(params);
   const router = useRouter();
+  const { data } = useAuth();
+  console.log("welcome",data)
   const [editHistoryDialog, setEditHistoryDialog] = useState(false);
   const [isEditDialogVisible, setIsEditDialogVisible] = useState(false);
   const [editingAllowed, setEditingAllowed] = useState(false);
   const [changeHistory, setChangeHistory] = useState([]);
-  const [editReason, setEditReason] = useState('');
+  const [editReason, setEditReason] = useState("");
   const [reportDetails, setReportDetails] = useState();
 
   const fetchClientsHistory = async () => {
@@ -61,52 +64,70 @@ const UpdateClient = ({ params }) => {
   }, []);
 
   const handleSurveyStatsReport = () => {
-    router.push(`/survey-report/${update}`)
-  }
+    router.push(`/survey-report/${update}`);
+  };
 
   const handleClick = () => {
-    router.push(`/survey-status-report/${update}`)
+    router.push(`/survey-status-report/${update}`);
   };
 
   return (
     <Layout>
       <CommonCard sx={{ mt: 0, pl: 2 }}>
-        <Stack direction="row" alignItems="center" gap={2} justifyContent="space-between">
+        <Stack
+          direction="row"
+          alignItems="center"
+          gap={2}
+          justifyContent={"space-between"}
+        >
           <Stack direction="row" alignItems="center" gap={2}>
-          <IconButton size="small" onClick={() => router.push("/clients")}>
-            <ArrowBack />
-          </IconButton>
-          <Typography variant="h6" fontWeight={"700"}>
-            Clients
-          </Typography>
+            <IconButton size="small" onClick={() => router.push("/clients")}>
+              <ArrowBack />
+            </IconButton>
+            <Typography variant="h6" fontWeight={"700"}>
+              Clients
+            </Typography>
           </Stack>
-          
 
           {reportDetails && (
-            <>
-              <CommonButton
-                sx={{ ml: "auto" }}
-                variant="outlined"
-                text="Edit History"
-                onClick={() => setEditHistoryDialog(true)}
-              />
-              <CommonButton
-                text="Edit"
-                variant="outlined"
-                color="secondary"
-                onClick={() => setIsEditDialogVisible(true)}
-              />
+            <Stack spacing={2} direction={"row"}>
+              {data?.specialPermission?.includes(
+                "DataEntryRights(Clients)"
+              ) && (
+                <CommonButton
+                  sx={{ ml: "auto" }}
+                  variant="outlined"
+                  text="Edit History"
+                  onClick={() => setEditHistoryDialog(true)}
+                />
+              )}
+              {data?.specialPermission?.includes(
+                "DataEntryRights(Clients)"
+              ) && (
+                <CommonButton
+                  text="Edit"
+                  variant="outlined"
+                  color="secondary"
+                  onClick={() => setIsEditDialogVisible(true)}
+                />
+              )}
               {reportDetails && (
-                <CommonButton variant="contained" fontWeight={"700"} 
-                onClick={handleClick}
-                text="GENERATE SURVEY STATUS"/>
+                <CommonButton
+                  variant="contained"
+                  fontWeight={"700"}
+                  onClick={handleClick}
+                  text="GENERATE SURVEY STATUS"
+                />
               )}
-               {reportDetails && (
-                <CommonButton variant="contained" fontWeight={"700"} 
-                onClick={handleSurveyStatsReport}
-                text="GENERATE SURVEY REPORT"/>
+              {reportDetails && (
+                <CommonButton
+                  variant="contained"
+                  fontWeight={"700"}
+                  onClick={handleSurveyStatsReport}
+                  text="GENERATE SURVEY REPORT"
+                />
               )}
-            </>
+            </Stack>
           )}
         </Stack>
       </CommonCard>

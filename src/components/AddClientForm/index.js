@@ -1096,8 +1096,8 @@ const AddSurveyType = ({
             }}
             onChange={(e) => {
               if (!editingAllowed) return;
-              const onlyDigits = e.target.value.replace(/\D/g, "").slice(0, 10);
-              field.onChange(onlyDigits);
+              // const onlyDigits = e.target.value.replace(/\D/g, "").slice(0, 10);
+              field.onChange(e.target.value);
               createManualEditHandler(sectionKey)();
             }}
           />
