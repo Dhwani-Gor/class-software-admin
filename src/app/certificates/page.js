@@ -145,16 +145,28 @@ const Certificates = () => {
     }
   };
 
-  const handleDownloadDocument = (documentUrl, certificateId) => {
-    if (documentUrl) {
-      const link = document.createElement("a");
-      link.href = documentUrl;
-      link.download = `certificate_${certificateId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  };
+ const handleDownloadDocument = async (documentUrl, certificateId) => {
+  if (!documentUrl) {
+    console.error("Document URL is missing");
+    return;
+  }
+  try {
+    const response = await fetch(documentUrl);
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `certificate_${certificateId}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Download failed:", error);
+    window.open(documentUrl, "_blank");
+  }
+};
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
