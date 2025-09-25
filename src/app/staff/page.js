@@ -1,21 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Box,
-  Typography,
-  Tooltip,
-  IconButton,
-  Stack,
-  Snackbar,
-  Pagination,
-  CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-} from "@mui/material";
+import { Box, Typography, Tooltip, IconButton, Stack, Snackbar, Pagination, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Button } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -59,10 +45,8 @@ const Countries = () => {
     await getAllUsers(page, limit, searchQuery)
       .then((res) => {
         if (res?.data?.data?.length > 0) {
-          const flattenedData = res?.data?.data?.filter((item) => item?.roleId === "2")
-          const sortedData = flattenedData?.sort((a, b) => a?.id - b?.id);
-          setInspectorLists(sortedData);
-          setTotalRows(sortedData.length);
+          setInspectorLists(res?.data?.data);
+          setTotalRows(res?.data?.results);
         } else {
           setInspectorLists([]);
           setTotalRows(0);
@@ -78,11 +62,7 @@ const Countries = () => {
 
   useEffect(() => {
     if (page > 0 && limit > 0) {
-      fetchUserListData(
-        page,
-        limit,
-        debouncedSearch.trim() ? debouncedSearch : null
-      );
+      fetchUserListData(page, limit, debouncedSearch.trim() ? debouncedSearch : null);
     }
   }, [page, limit, debouncedSearch]);
 
@@ -128,8 +108,8 @@ const Countries = () => {
       sortable: false,
       renderCell: (params) => {
         return (page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1;
-      }
-    },    
+      },
+    },
     { field: "name", headerName: "Staff / Inspector Name", flex: 1.5 },
     {
       field: "username",
@@ -143,18 +123,12 @@ const Countries = () => {
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
           <Tooltip title="Edit Inspector">
-            <IconButton
-              color="primary"
-              onClick={() => router.push(`/staff/${params?.id}`)}
-            >
+            <IconButton color="primary" onClick={() => router.push(`/staff/${params?.id}`)}>
               <EditIcon />
             </IconButton>
           </Tooltip>
           <Tooltip title="Delete Inspector">
-            <IconButton
-              color="error"
-              onClick={() => handleDeleteClick(params?.id)}
-            >
+            <IconButton color="error" onClick={() => handleDeleteClick(params?.id)}>
               <DeleteIcon />
             </IconButton>
           </Tooltip>
@@ -166,11 +140,7 @@ const Countries = () => {
   return (
     <Layout>
       <CommonCard sx={{ mt: 0 }}>
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-        >
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Typography variant="h4" fontWeight={700}>
             Users
           </Typography>
@@ -187,21 +157,10 @@ const Countries = () => {
       </CommonCard>
 
       <CommonCard>
-        <CommonInput
-          placeholder="Search Staff / Inspector by name"
-          fullWidth
-          value={search}
-          onChange={handleSearchChange}
-          sx={{ marginBottom: 2 }}
-        />
+        <CommonInput placeholder="Search Staff / Inspector by name" fullWidth value={search} onChange={handleSearchChange} sx={{ marginBottom: 2 }} />
         <Box sx={{ width: "100%", mt: 4 }}>
           {loading ? (
-            <Box
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              height="300px"
-            >
+            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
               <CircularProgress />
             </Box>
           ) : inspectorsList.length > 0 ? (
@@ -222,25 +181,13 @@ const Countries = () => {
               }}
             />
           ) : (
-            <Typography
-              variant="h6"
-              align="center"
-              sx={{ color: "gray", padding: 3 }}
-            >
+            <Typography variant="h6" align="center" sx={{ color: "gray", padding: 3 }}>
               No Data Found
             </Typography>
           )}
         </Box>
         <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-          <Pagination
-            count={Math.ceil(totalRows / limit)}
-            page={page}
-            onChange={handlePageChange}
-            color="primary"
-            variant="outlined"
-            shape="rounded"
-            sx={{ marginTop: "10px" }}
-          />
+          <Pagination count={Math.ceil(totalRows / limit)} page={page} onChange={handlePageChange} color="primary" variant="outlined" shape="rounded" sx={{ marginTop: "10px" }} />
         </Box>
       </CommonCard>
 
