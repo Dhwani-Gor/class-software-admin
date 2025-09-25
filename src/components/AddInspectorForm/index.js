@@ -39,8 +39,12 @@ import { toast } from "react-toastify";
 
 const roles = [
   {
-    label: "Clients",
-    value: "clients",
+    label: "Agent",
+    value: "agent",
+  },
+  {
+    label: "Inspector",
+    value: "inspector",
   },
   {
     label: "Staff",
@@ -140,7 +144,7 @@ const AddInspectorForm = ({
       if (userId) {
         const res = await updateInspectorDetail(userId, data);
         if (res?.data?.status === "success") {
-          toast.success("Inspector updated successfully");
+          toast.success("User updated successfully");
           router.push("/staff");
         } else {
           toast.error(res?.response?.data?.message);
@@ -148,7 +152,7 @@ const AddInspectorForm = ({
       } else {
         const res = await createInspector({ ...data, roleId: 2 });
         if (res?.data?.status === "success") {
-          toast.success("Inspector created successfully");
+          toast.success("User created successfully");
           router.push("/staff");
         } else {
           toast.error(res?.response?.data?.message);
