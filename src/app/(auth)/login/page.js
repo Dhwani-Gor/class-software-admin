@@ -146,7 +146,7 @@ const Login = () => {
         </form>
       </StyledCard>
 
-      <Snackbar
+      {/* <Snackbar
         open={snackBar.open}
         autoHideDuration={2000}
         message={snackBar.message}
@@ -157,7 +157,7 @@ const Login = () => {
         onClose={snackbarClose}
         className="snackBarColor"
         key="snackbar"
-      />
+      /> */}
     </MainWrapper>
   );
 };
