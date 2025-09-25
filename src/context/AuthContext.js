@@ -18,16 +18,16 @@ const AuthProvider = ({ children }) => {
 
   // Module to route mapping
   const moduleRouteMapping = {
-    "Clients": ["/clients"],
-    "Staff/Inspector": ["/staff"],
-    "Journals": ["/journal"],
-    "Reporting": ["/reporting", "/survey-report", "/survey-status-report"],
-    "IssuedDocument": ["/certificates"],
-    "SurveyType": ["/survey-types"],
-    "Documents": ["/documents"],
-    "SystemVariable": ["/system-variables"],
-    "Classification": ["/classification"],
-    "Settings": ["/settings"]
+    Clients: ["/clients"],
+    Users: ["/staff"],
+    Journals: ["/journal"],
+    Reporting: ["/reporting", "/survey-report", "/survey-status-report"],
+    IssuedDocument: ["/certificates"],
+    SurveyType: ["/survey-types"],
+    Documents: ["/documents"],
+    SystemVariable: ["/system-variables"],
+    Classification: ["/classification"],
+    Settings: ["/settings"],
   };
 
   // Base role routes (fallback)
@@ -42,7 +42,7 @@ const AuthProvider = ({ children }) => {
     let allowedRoutes = [];
 
     // Add routes based on permission modules ONLY
-    userPermissions.forEach(module => {
+    userPermissions.forEach((module) => {
       if (moduleRouteMapping[module]) {
         allowedRoutes = [...allowedRoutes, ...moduleRouteMapping[module]];
       }
@@ -64,27 +64,24 @@ const AuthProvider = ({ children }) => {
 
   const getDefaultRouteForUser = (userPermissions, userData) => {
     const allowedRoutes = getAllowedRoutes(userPermissions, userData);
-    
+
     // Priority order for default route
     const routePriority = ["/clients", "/journal", "/reporting", "/certificates", "/settings"];
-    
+
     for (const route of routePriority) {
       if (allowedRoutes.includes(route)) {
         return route;
       }
     }
-    
+
     // If no priority route found, return first allowed route
     return allowedRoutes[0] || "/login";
   };
 
   useEffect(() => {
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    const storedRoleId =
-      typeof window !== "undefined" ? localStorage.getItem("roleId") : null;
-    const storedData =
-      typeof window !== "undefined" ? localStorage.getItem("data") : null;
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const storedRoleId = typeof window !== "undefined" ? localStorage.getItem("roleId") : null;
+    const storedData = typeof window !== "undefined" ? localStorage.getItem("data") : null;
 
     if (token && storedData) {
       try {
@@ -99,7 +96,7 @@ const AuthProvider = ({ children }) => {
           setIsAuthenticated(true);
           setRoleId(storedRoleId);
           setPermissions(userData.permissionModule || []);
-          
+
           setTimeout(() => {
             toast.error("Session expired! Please log in again.");
             logout();
@@ -116,7 +113,7 @@ const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check if current route is public
-    const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+    const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
     if (!isAuthenticated && !isLoading && !isPublicRoute) {
       router.replace("/login");
@@ -125,16 +122,14 @@ const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check if current route is public
-    const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+    const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
     // Only apply permission-based routing for authenticated users on non-public routes
     if (isAuthenticated && permissions.length > 0 && !isPublicRoute) {
       const userData = JSON.parse(localStorage.getItem("data") || "{}");
       const allowedRoutes = getAllowedRoutes(permissions, userData);
-      
-      const isAllowedRoute = allowedRoutes.some(route => 
-        pathname.startsWith(route) || pathname.includes(route)
-      );
+
+      const isAllowedRoute = allowedRoutes.some((route) => pathname.startsWith(route) || pathname.includes(route));
 
       if (!isAllowedRoute) {
         const defaultRoute = getDefaultRouteForUser(permissions, userData);
@@ -167,18 +162,20 @@ const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      isAuthenticated, 
-      roleId, 
-      permissions, 
-      isLoading, 
-      login, 
-      logout,
-      getAllowedRoutes: () => {
-        const userData = JSON.parse(localStorage.getItem("data") || "{}");
-        return getAllowedRoutes(permissions, userData);
-      }
-    }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        roleId,
+        permissions,
+        isLoading,
+        login,
+        logout,
+        getAllowedRoutes: () => {
+          const userData = JSON.parse(localStorage.getItem("data") || "{}");
+          return getAllowedRoutes(permissions, userData);
+        },
+      }}
+    >
       <ToastContainer position="top-right" autoClose={3000} />
       {isLoading ? (
         <Box

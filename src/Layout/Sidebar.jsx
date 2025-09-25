@@ -22,17 +22,17 @@ const Sidebar = styled(Drawer)(({ theme }) => ({
 
 const SidebarComponent = ({ isSidebarOpen }) => {
   const { roleId, permissions } = useAuth(); // Get permissions from context
-  console.log("=>permissions",permissions)
+  console.log("=>permissions", permissions)
   const pathName = usePathname();
   const [activeTab, setActiveTab] = useState(pathName);
-  
+
   // Get user data from localStorage
   const userData = JSON.parse(localStorage.getItem("data") || "{}");
 
   // Module to menu item mapping
   const moduleMenuMapping = {
     "Clients": "Clients",
-    "Staff/Inspector": "Users", 
+    "Users": "Users",
     "Journals": "Journal",
     "Reporting": "Reporting",
     "IssuedDocument": "Issued Documents",
@@ -88,7 +88,7 @@ const SidebarComponent = ({ isSidebarOpen }) => {
     // Remove duplicates and maintain original order
     const uniqueItems = [];
     const seenLabels = new Set();
-    
+
     sidemenu_items.forEach(item => {
       if (allowedMenuItems.find(allowed => allowed.label === item.label) && !seenLabels.has(item.label)) {
         uniqueItems.push(item);
@@ -126,14 +126,14 @@ const SidebarComponent = ({ isSidebarOpen }) => {
                   mt: 2,
                   background:
                     activeTab === pathName.startsWith(item.to) ||
-                    pathName.includes(item.to) ||
-                    (item.to === pathName && pathName.startsWith(pathName))
+                      pathName.includes(item.to) ||
+                      (item.to === pathName && pathName.startsWith(pathName))
                       ? "linear-gradient(to right, #4a90e2, #9013fe)"
                       : "transparent",
                   color:
                     activeTab === pathName.startsWith(item.to) ||
-                    pathName.includes(item.to) ||
-                    (item.to === pathName && pathName.startsWith(pathName))
+                      pathName.includes(item.to) ||
+                      (item.to === pathName && pathName.startsWith(pathName))
                       ? "primary.contrastText"
                       : "text.primary",
                   borderRadius: "8px",
@@ -152,8 +152,8 @@ const SidebarComponent = ({ isSidebarOpen }) => {
                   primaryTypographyProps={{
                     fontWeight:
                       activeTab === pathName.startsWith(item.to) ||
-                      pathName.includes(item.to) ||
-                      (item.to === pathName && pathName.startsWith(pathName))
+                        pathName.includes(item.to) ||
+                        (item.to === pathName && pathName.startsWith(pathName))
                         ? "bold"
                         : "normal",
                   }}
