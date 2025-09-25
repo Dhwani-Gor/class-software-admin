@@ -3,35 +3,10 @@ import React, { useEffect, useState } from "react";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import CommonCard from "@/components/CommonCard";
-import {
-  Container,
-  IconButton,
-  Box,
-  Paper,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Alert,
-} from "@mui/material";
-import {
-  CheckCircle,
-  Download,
-  PictureAsPdf,
-  Close,
-  Error as ErrorIcon,
-  Warning,
-  OpenInNew,
-} from "@mui/icons-material";
+import { Container, IconButton, Box, Paper, Dialog, DialogTitle, DialogContent, DialogActions, Button, Alert } from "@mui/material";
+import { CheckCircle, Download, PictureAsPdf, Close, Error as ErrorIcon, Warning, OpenInNew } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
-import {
-  getActivity,
-  getAllActivityReportDetails,
-  getAllSystemVariables,
-  getSelectedReportDetails,
-  getSpecificClient,
-} from "@/api";
+import { getActivity, getAllActivityReportDetails, getAllSystemVariables, getSelectedReportDetails, getSpecificClient } from "@/api";
 import { toast } from "react-toastify";
 
 const DigitalDocument = ({ params }) => {
@@ -44,17 +19,14 @@ const DigitalDocument = ({ params }) => {
   const [isIOS, setIsIOS] = useState(false);
   const [companyName, setCompanyName] = useState("");
   const [companyLogo, setCompanyLogo] = useState("");
+  console.log(companyLogo, "companyLogo");
 
   // Detect mobile and iOS
   useEffect(() => {
     const checkDevice = () => {
       const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-      const isMobileDevice =
-        /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
-          userAgent.toLowerCase()
-        );
-      const isIOSDevice =
-        /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+      const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+      const isIOSDevice = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
 
       setIsMobile(isMobileDevice);
       setIsIOS(isIOSDevice);
@@ -67,9 +39,9 @@ const DigitalDocument = ({ params }) => {
   const getCertificateStatus = (validityDate) => {
     if (!validityDate) {
       return {
-        status: "INVALID",
-        color: "#f44336",
-        icon: ErrorIcon,
+        status: "Valid",
+        color: "#4caf50",
+        icon: CheckCircle,
         message: "No validity date found",
       };
     }
@@ -112,11 +84,7 @@ const DigitalDocument = ({ params }) => {
 
       const result = await getAllActivityReportDetails("id", params?.reportId);
       console.log("==>", result?.data?.data[0]);
-      if (
-        result?.status === 200 &&
-        result?.data?.data &&
-        result.data.data.length > 0
-      ) {
+      if (result?.status === 200 && result?.data?.data && result.data.data.length > 0) {
         const reportData = result.data.data[0];
         setReportDetails(reportData);
       } else {
@@ -124,10 +92,7 @@ const DigitalDocument = ({ params }) => {
       }
     } catch (error) {
       console.error("Error fetching report details:", error);
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to load certificate";
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to load certificate";
       setError(errorMessage);
       toast.error(`${errorMessage}. Please try again later.`);
     } finally {
@@ -178,10 +143,7 @@ const DigitalDocument = ({ params }) => {
       let isValidUrl = false;
       try {
         const testUrl = reportDetails.generatedDoc;
-        if (
-          typeof testUrl === "string" &&
-          (testUrl.startsWith("http://") || testUrl.startsWith("https://"))
-        ) {
+        if (typeof testUrl === "string" && (testUrl.startsWith("http://") || testUrl.startsWith("https://"))) {
           isValidUrl = true;
         }
       } catch (e) {
@@ -200,8 +162,7 @@ const DigitalDocument = ({ params }) => {
       } else {
         const a = document.createElement("a");
         a.href = reportDetails.generatedDoc;
-        a.download =
-          reportDetails.generatedDoc.split("/").pop() || "certificate.pdf";
+        a.download = reportDetails.generatedDoc.split("/").pop() || "certificate.pdf";
         a.target = "_blank";
 
         document.body.appendChild(a);
@@ -225,10 +186,7 @@ const DigitalDocument = ({ params }) => {
     try {
       // Validate URL - mobile-safe approach
       const testUrl = reportDetails.generatedDoc;
-      if (
-        typeof testUrl === "string" &&
-        (testUrl.startsWith("http://") || testUrl.startsWith("https://"))
-      ) {
+      if (typeof testUrl === "string" && (testUrl.startsWith("http://") || testUrl.startsWith("https://"))) {
         // For iOS, directly open in new tab instead of modal
         if (isIOS) {
           window.open(reportDetails.generatedDoc, "_blank");
@@ -299,16 +257,10 @@ const DigitalDocument = ({ params }) => {
         </CommonCard>
         <Box mt={4}>
           <Alert severity="error" sx={{ mb: 2 }}>
-            <Typography variant="body1">
-              {error || "Certificate not found"}
-            </Typography>
+            <Typography variant="body1">{error || "Certificate not found"}</Typography>
           </Alert>
           <Box display="flex" justifyContent="center">
-            <Button
-              variant="contained"
-              onClick={fetchReportDetails}
-              disabled={loading}
-            >
+            <Button variant="contained" onClick={fetchReportDetails} disabled={loading}>
               Retry
             </Button>
           </Box>
@@ -324,10 +276,7 @@ const DigitalDocument = ({ params }) => {
     <Container maxWidth="sm">
       {/* Document Content */}
       <Box>
-        <Paper
-          elevation={2}
-          sx={{ p: 3, borderRadius: 2, backgroundColor: "#f8f9fa" }}
-        >
+        <Paper elevation={2} sx={{ p: 3, borderRadius: 2, backgroundColor: "#f8f9fa" }}>
           {/* Header */}
           <Stack direction="row" alignItems="center" spacing={2} mb={3}>
             <Typography variant="h6" fontWeight="bold">
@@ -344,30 +293,14 @@ const DigitalDocument = ({ params }) => {
               borderRadius: 1,
             }}
           >
-            <Stack
-              direction="row"
-              alignItems="center"
-              justifyContent="center"
-              spacing={1}
-            >
-              <StatusIcon
-                sx={{ color: certificateStatus.color, fontSize: 20 }}
-              />
-              <Typography
-                variant="body1"
-                color={certificateStatus.color}
-                fontWeight="600"
-              >
+            <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
+              <StatusIcon sx={{ color: certificateStatus.color, fontSize: 20 }} />
+              <Typography variant="body1" color={certificateStatus.color} fontWeight="600">
                 {certificateStatus.status}
               </Typography>
             </Stack>
             {certificateStatus.message && (
-              <Typography
-                fontWeight={600}
-                display="block"
-                textAlign="center"
-                mt={0.5}
-              >
+              <Typography fontWeight={600} display="block" textAlign="center" mt={0.5}>
                 {certificateStatus.message}
               </Typography>
             )}
@@ -377,7 +310,7 @@ const DigitalDocument = ({ params }) => {
           <Box display="flex" justifyContent="center" mb={3}>
             <Box
               component="img"
-              src="/assets/company_logo.jfif"
+              src={companyLogo}
               alt="Marine Assure Logo"
               sx={{
                 width: "auto",
@@ -407,7 +340,7 @@ const DigitalDocument = ({ params }) => {
               The following details are confirmed by:
             </Typography>
             <Typography variant="body2" color="primary" fontWeight="bold">
-            MCBG CLASS
+              {companyName}
             </Typography>
           </Box>
 
@@ -427,15 +360,7 @@ const DigitalDocument = ({ params }) => {
                 <Typography variant="body2" color="text.secondary">
                   Valid Till
                 </Typography>
-                <Typography
-                  variant="body2"
-                  fontWeight="500"
-                  color={
-                    certificateStatus.status === "EXPIRED"
-                      ? "error.main"
-                      : "text.primary"
-                  }
-                >
+                <Typography variant="body2" fontWeight="500" color={certificateStatus.status === "EXPIRED" ? "error.main" : "text.primary"}>
                   {formatDate(reportDetails.validityDate)}
                 </Typography>
               </Stack>
@@ -449,38 +374,18 @@ const DigitalDocument = ({ params }) => {
 
               {reportDetails.generatedDoc && (
                 <>
-                  <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                  >
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ flex: 1 }}
-                    >
-                      {reportDetails.generatedDoc.split("/").pop() ||
-                        "certificate.pdf"}
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+                      {reportDetails.generatedDoc.split("/").pop() || "certificate.pdf"}
                     </Typography>
                     <Stack direction="row" spacing={1}>
                       {/* Open in new tab button for mobile */}
                       {isMobile && (
-                        <IconButton
-                          size="small"
-                          color="secondary"
-                          onClick={handleOpenInNewTab}
-                          title="Open in new tab"
-                        >
+                        <IconButton size="small" color="secondary" onClick={handleOpenInNewTab} title="Open in new tab">
                           <OpenInNew />
                         </IconButton>
                       )}
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={handleDownload}
-                        disabled={!reportDetails.generatedDoc}
-                        title={isMobile ? "Open PDF" : "Download PDF"}
-                      >
+                      <IconButton size="small" color="primary" onClick={handleDownload} disabled={!reportDetails.generatedDoc} title={isMobile ? "Open PDF" : "Download PDF"}>
                         <Download />
                       </IconButton>
                     </Stack>
@@ -522,9 +427,7 @@ const DigitalDocument = ({ params }) => {
                           Certificate Preview
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {isIOS
-                            ? "Tap to open in Safari"
-                            : "Click to view full document"}
+                          {isIOS ? "Tap to open in Safari" : "Click to view full document"}
                         </Typography>
                       </Box>
                     </Stack>
@@ -537,37 +440,22 @@ const DigitalDocument = ({ params }) => {
           {/* Footer */}
           <Box sx={{ mt: 3, textAlign: "center" }}>
             <Typography variant="body2" color="text.secondary">
-              Previewing:{" "}
-              {reportDetails.generatedDoc?.split("/").pop() || "Document"}
+              Previewing: {reportDetails.generatedDoc?.split("/").pop() || "Document"}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-            MCBG CLASS            
+              {companyName}
             </Typography>
           </Box>
         </Paper>
 
         {/* Preview Dialog - Only show for non-iOS devices */}
         {!isIOS && (
-          <Dialog
-            open={previewOpen}
-            onClose={() => setPreviewOpen(false)}
-            maxWidth="md"
-            fullWidth
-            fullScreen={isMobile}
-          >
+          <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth fullScreen={isMobile}>
             <DialogTitle>
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-              >
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Typography variant="h6">Certificate Preview</Typography>
                 <Stack direction="row" spacing={1}>
-                  <IconButton
-                    onClick={handleOpenInNewTab}
-                    title="Open in new tab"
-                    size="small"
-                  >
+                  <IconButton onClick={handleOpenInNewTab} title="Open in new tab" size="small">
                     <OpenInNew />
                   </IconButton>
                   <IconButton onClick={() => setPreviewOpen(false)}>
@@ -578,14 +466,10 @@ const DigitalDocument = ({ params }) => {
             </DialogTitle>
             <DialogContent sx={{ p: 0 }}>
               {reportDetails?.generatedDoc ? (
-                <Box
-                  sx={{ height: isMobile ? "100vh" : "80vh", width: "100%" }}
-                >
+                <Box sx={{ height: isMobile ? "100vh" : "80vh", width: "100%" }}>
                   {/* For Android and desktop, use enhanced iframe */}
                   <iframe
-                    src={`${reportDetails.generatedDoc}${
-                      reportDetails.generatedDoc.includes("?") ? "&" : "#"
-                    }toolbar=1&navpanes=1&scrollbar=1&page=1&zoom=page-fit&view=FitH`}
+                    src={`${reportDetails.generatedDoc}${reportDetails.generatedDoc.includes("?") ? "&" : "#"}toolbar=1&navpanes=1&scrollbar=1&page=1&zoom=page-fit&view=FitH`}
                     width="100%"
                     height="100%"
                     style={{
@@ -598,9 +482,7 @@ const DigitalDocument = ({ params }) => {
                     loading="lazy"
                     onError={(e) => {
                       console.error("iframe failed to load:", e);
-                      toast.error(
-                        "Failed to load document preview. Try opening in new tab."
-                      );
+                      toast.error("Failed to load document preview. Try opening in new tab.");
                     }}
                     onLoad={(e) => {
                       // Try to focus the iframe to enable keyboard navigation
@@ -623,27 +505,16 @@ const DigitalDocument = ({ params }) => {
                     borderRadius: 1,
                   }}
                 >
-                  <Typography color="text.secondary">
-                    No document available for preview
-                  </Typography>
+                  <Typography color="text.secondary">No document available for preview</Typography>
                 </Box>
               )}
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setPreviewOpen(false)}>Close</Button>
-              <Button
-                variant="outlined"
-                startIcon={<OpenInNew />}
-                onClick={handleOpenInNewTab}
-              >
+              <Button variant="outlined" startIcon={<OpenInNew />} onClick={handleOpenInNewTab}>
                 Open in New Tab
               </Button>
-              <Button
-                variant="contained"
-                startIcon={<Download />}
-                onClick={handleDownload}
-                disabled={!reportDetails?.generatedDoc}
-              >
+              <Button variant="contained" startIcon={<Download />} onClick={handleDownload} disabled={!reportDetails?.generatedDoc}>
                 {isMobile ? "Open PDF" : "Download"}
               </Button>
             </DialogActions>
