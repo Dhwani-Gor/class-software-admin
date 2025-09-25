@@ -3,6 +3,7 @@ import Box from "@mui/material/Box";
 import {
   addInspectors,
   createInspector,
+  getAllClients,
   getAllModules,
   getInspectorsDetails,
   updateInspectorDetail,
@@ -23,6 +24,8 @@ import {
   Select,
   MenuItem,
   InputLabel,
+  Autocomplete,
+  TextField,
 } from "@mui/material";
 // import SuccessModal from "./SuccessModal";
 import { useDispatch, useSelector } from "react-redux";
@@ -80,6 +83,7 @@ const AddInspectorForm = ({
 }) => {
   console.log("permissionData", permissionData);
   console.log("specialPermissionData", specialPermissionData);
+  const [clientsList, setClientsList] = useState([]);
 
   const [formData, setFormData] = useState({});
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
@@ -108,9 +112,29 @@ const AddInspectorForm = ({
       journalUnlockRights: false,
       permissionModule: [],
       specialPermission: [],
+      clientIds: [],
       ...defaultValues,
     },
   });
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
+
+  const fetchClients = async () => {
+    try {
+      const result = await getAllClients();
+      if (result?.status === 200) {
+        setClientsList(result.data.data);
+      } else {
+        toast.error(result?.message);
+      }
+    } catch (error) {
+      toast.error(error?.message || "Failed to fetch clients");
+    }
+  };
+
+  console.log(clientsList);
 
   const fetchUserDetails = async () => {
     try {
@@ -119,9 +143,12 @@ const AddInspectorForm = ({
 
       if (!data) return;
 
-      reset(res?.data.data);
+      reset({
+        ...data,
+        clientIds: data.clients?.map((c) => c.id) || [],
+      });
     } catch (error) {
-      console.error("Error fetching visa details:", error);
+      console.error("Error fetching inspector details:", error);
     }
   };
 
@@ -298,6 +325,9 @@ const AddInspectorForm = ({
 
                   {/* Role Selection */}
                   <Grid2 size={{ xs: 12 }}>
+                    <Typography>
+                      Select Role <span style={{ color: "red" }}>*</span>
+                    </Typography>
                     <Controller
                       name="role"
                       control={control}
@@ -307,9 +337,6 @@ const AddInspectorForm = ({
                           variant="standard"
                           error={Boolean(errors.role)}
                         >
-                          <InputLabel>
-                            Select Role <span style={{ color: "red" }}>*</span>
-                          </InputLabel>
                           <Select
                             {...field}
                             value={field.value || ""}
@@ -327,6 +354,39 @@ const AddInspectorForm = ({
                             </FormHelperText>
                           )}
                         </FormControl>
+                      )}
+                    />
+                  </Grid2>
+
+                  <Grid2 size={{ xs: 12 }}>
+                    <Typography>Select the Ship</Typography>
+                    <Controller
+                      name="clientIds"
+                      control={control}
+                      render={({ field }) => (
+                        <Autocomplete
+                          {...field}
+                          multiple
+                          options={clientsList}
+                          getOptionLabel={(option) => option.shipName || ""}
+                          value={
+                            clientsList.filter((item) =>
+                              field.value?.includes(item.id)
+                            ) || []
+                          }
+                          onChange={(_, newValue) => {
+                            field.onChange(newValue.map((item) => item.id));
+                          }}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              variant="standard"
+                              error={Boolean(errors.clientIds)}
+                              helperText={errors.clientIds?.message}
+                              fullWidth
+                            />
+                          )}
+                        />
                       )}
                     />
                   </Grid2>
