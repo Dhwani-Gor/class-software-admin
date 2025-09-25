@@ -55,14 +55,18 @@ const Login = () => {
   const onSubmit = async (data) => {
     try {
       const res = await adminLogin(data);
-      console.log(res)
+      console.log(res?.data?.data)
+      if(res?.data?.data?.permissionModule?.length === 0){
+        return toast.error("You don't have access of any module")
+      }
+
       if(res?.response?.data?.status ==="error"){
         return toast.error(res?.response?.data?.message)
       }
 
-      if (!res?.data?.data?.status) {
-        setSnackBar({ open: true, message: res?.response?.data?.message });
-      }
+      // if (!res?.data?.data?.status) {
+      //   setSnackBar({ open: true, message: res?.response?.data?.message });
+      // }
       dispatch(saveUserInfo(res?.data?.data))
       login(res?.data?.data);
       toast.success("login successfully")
@@ -142,7 +146,7 @@ const Login = () => {
         </form>
       </StyledCard>
 
-      <Snackbar
+      {/* <Snackbar
         open={snackBar.open}
         autoHideDuration={2000}
         message={snackBar.message}
@@ -153,7 +157,7 @@ const Login = () => {
         onClose={snackbarClose}
         className="snackBarColor"
         key="snackbar"
-      />
+      /> */}
     </MainWrapper>
   );
 };
