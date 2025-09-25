@@ -39,9 +39,9 @@ const DigitalDocument = ({ params }) => {
   const getCertificateStatus = (validityDate) => {
     if (!validityDate) {
       return {
-        status: "",
-        color: "#f44336",
-        icon: ErrorIcon,
+        status: "Valid",
+        color: "#4caf50",
+        icon: CheckCircle,
         message: "No validity date found",
       };
     }
