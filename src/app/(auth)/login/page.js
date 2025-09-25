@@ -57,7 +57,7 @@ const Login = () => {
       const res = await adminLogin(data);
       console.log(res?.data?.data)
       if(res?.data?.data?.permissionModule?.length === 0){
-        return toast.error("You don't have access of any module")
+        return toast.error("You don't have access to any module")
       }
 
       if(res?.response?.data?.status ==="error"){
@@ -69,7 +69,7 @@ const Login = () => {
       // }
       dispatch(saveUserInfo(res?.data?.data))
       login(res?.data?.data);
-      toast.success("login successfully")
+      toast.success("login successfull")
     } catch (err) {
       console.log("error", err);
       toast.error(err?.response?.data?.message)
