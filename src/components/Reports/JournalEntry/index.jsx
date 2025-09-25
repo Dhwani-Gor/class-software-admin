@@ -55,6 +55,7 @@ import moment from "moment";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 const schema = yup.object().shape({
   shipWork: yup.string().required("Ship name is required"),
@@ -100,6 +101,7 @@ const JournalEntryForm = ({ journalId = null }) => {
   const [surveyTypes, setSurveyTypes] = useState([]);
   const [surveyors, setSurveyors] = useState([]);
   const [selectedJournalType, setSelectedJournalType] = useState(null);
+  const { data } = useAuth()
 
   const {
     control,
@@ -510,7 +512,11 @@ const JournalEntryForm = ({ journalId = null }) => {
       if (result?.status === 200) {
         const journalData = result.data.data;
         setJournalData(journalData);
-        setIsJournalLocked(userInfo?.journalUnlockRights || userInfo?.roleId === '1' ? false : journalData.isLocked);
+        setIsJournalLocked(
+          data?.specialPermission?.includes("JournalUnlockingRights")
+            ? false
+            : journalData.isLocked
+        );
         setValue("shipWork", journalData.client.shipName);
         setValue("imoNumber", journalData.client.imoNumber);
         setValue("classId", journalData.client.classId);
