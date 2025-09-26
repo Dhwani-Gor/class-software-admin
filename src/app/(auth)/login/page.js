@@ -55,27 +55,26 @@ const Login = () => {
   const onSubmit = async (data) => {
     try {
       const res = await adminLogin(data);
-      console.log(res?.data?.data)
-      if(res?.data?.data?.permissionModule?.length === 0){
-        return toast.error("You don't have access to any module")
+      console.log(res?.data?.data);
+      if (res?.data?.data?.permissionModule?.length === 0) {
+        return toast.error("You don't have access to any module");
       }
 
-      if(res?.response?.data?.status ==="error"){
-        return toast.error(res?.response?.data?.message)
+      if (res?.response?.data?.status === "error") {
+        return toast.error(res?.response?.data?.message);
       }
 
       // if (!res?.data?.data?.status) {
       //   setSnackBar({ open: true, message: res?.response?.data?.message });
       // }
-      dispatch(saveUserInfo(res?.data?.data))
+      dispatch(saveUserInfo(res?.data?.data));
       login(res?.data?.data);
-      toast.success("login successfull")
+      toast.success("login successful");
     } catch (err) {
       console.log("error", err);
-      toast.error(err?.response?.data?.message)
+      toast.error(err?.response?.data?.message);
     }
   };
- 
 
   return (
     <MainWrapper>
@@ -92,56 +91,16 @@ const Login = () => {
           Class Software Admin
         </Typography>
 
-        <Typography
-          textAlign="center"
-          variant="body2"
-          color="textSecondary"
-          mb={3}
-        >
+        <Typography textAlign="center" variant="body2" color="textSecondary" mb={3}>
           Please enter your login credentials to continue.
         </Typography>
         <form onSubmit={handleSubmit(onSubmit)}>
           <Stack spacing={3} mt={4}>
-            <Controller
-              name="username"
-              control={control}
-              render={({ field }) => (
-                <CommonInput
-                  {...field}
-                  fullWidth
-                  label="Username"
-                  placeholder="Enter your username"
-                  error={Boolean(errors.username)}
-                  helperText={errors.username?.message}
-                />
-              )}
-            />
-            <Controller
-              name="password"
-              control={control}
-              render={({ field }) => (
-                <CommonInput
-                  {...field}
-                  fullWidth
-                  label="Password"
-                  type="password"
-                  autoComplete="off"
-                  placeholder="Enter your password"
-                  error={Boolean(errors.password)}
-                  helperText={errors.password?.message}
-                />
-              )}
-            />
+            <Controller name="username" control={control} render={({ field }) => <CommonInput {...field} fullWidth label="Username" placeholder="Enter your username" error={Boolean(errors.username)} helperText={errors.username?.message} />} />
+            <Controller name="password" control={control} render={({ field }) => <CommonInput {...field} fullWidth label="Password" type="password" autoComplete="off" placeholder="Enter your password" error={Boolean(errors.password)} helperText={errors.password?.message} />} />
           </Stack>
           <Box mt={4}>
-            <CommonButton
-              sx={{ textTransform: "uppercase" }}
-              text="login"
-              isLoading={isSubmitting}
-              variant="contained"
-              fullWidth
-              type="submit"
-            />
+            <CommonButton sx={{ textTransform: "uppercase" }} text="login" isLoading={isSubmitting} variant="contained" fullWidth type="submit" />
           </Box>
         </form>
       </StyledCard>
