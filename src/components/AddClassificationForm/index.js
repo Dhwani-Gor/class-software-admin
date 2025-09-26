@@ -1,7 +1,7 @@
 "use client";
 
 import { addClassificationSurvey, deleteClassificationSurvey, getAllClassificationSurveys, getAllClassificationSurveyType, getAllClients, getSingleClassificationSurveyDetails, getSurveyReportData, updateClassificationSurvey } from "@/api";
-import { Box, DialogActions, FormControl, Grid, Grid2, IconButton, InputLabel, MenuItem, Paper, Select, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { Box, DialogActions, FormControl, Grid, Grid2, IconButton, InputLabel, MenuItem, Paper, Select, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography, Alert } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { addYears, subMonths, format } from "date-fns";
 import { useEffect, useState } from "react";
@@ -20,7 +20,21 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [existingSurveys, setExistingSurveys] = useState([]);
+  const [showSSHWarning, setShowSSHWarning] = useState({
+    show: false,
+    surveyType: "",
+    requiredSurvey: "",
+  });
   console.log(existingSurveys, "existingSurveys");
+
+  // Survey types that require SSH
+  const surveyTypesRequiringSSH = ["annual survey", "docking survey", "main boiler survey", "auxiliary boiler survey", "thermal oil heating systems survey", "exhaust gas steam generators and economisers survey", "tailshaft condition monitoring annual survey", "intermediate survey"];
+
+  const surveyDependencies = {
+    "annual survey (ums)": "special survey (ums)",
+    "annual survey (fi-fi)": "special survey (fi-fi)",
+    "annual survey ig system": "special survey ig system",
+  };
 
   const createEmptyRow = () => ({
     surveyName: "",
@@ -31,6 +45,43 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
     rangeTo: "",
     postponed: "",
   });
+
+  const checkAndShowSSHWarning = (surveyName) => {
+    if (!surveyName) return;
+
+    const surveyNameLower = surveyName.toLowerCase();
+
+    // Check if survey requires Special Survey Hull
+    const requiresSSH = surveyTypesRequiringSSH.includes(surveyNameLower);
+    if (requiresSSH) {
+      const hasSSH = existingSurveys.some((survey) => survey.surveyName?.trim().toLowerCase() === "special survey hull");
+
+      if (!hasSSH) {
+        setShowSSHWarning({
+          show: true,
+          surveyType: surveyName,
+          requiredSurvey: "Special Survey Hull",
+        });
+        setTimeout(() => setShowSSHWarning({ show: false, surveyType: "", requiredSurvey: "" }), 5000);
+        return;
+      }
+    }
+
+    // Check if survey requires its specific special survey
+    const requiredSpecialSurvey = surveyDependencies[surveyNameLower];
+    if (requiredSpecialSurvey) {
+      const hasRequiredSurvey = existingSurveys.some((survey) => survey.surveyName?.trim().toLowerCase() === requiredSpecialSurvey);
+
+      if (!hasRequiredSurvey) {
+        setShowSSHWarning({
+          show: true,
+          surveyType: surveyName,
+          requiredSurvey: requiredSpecialSurvey,
+        });
+        setTimeout(() => setShowSSHWarning({ show: false, surveyType: "", requiredSurvey: "" }), 5000);
+      }
+    }
+  };
 
   const getAllClassification = async () => {
     try {
@@ -87,19 +138,58 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
     let dueDate, rangeFrom, rangeTo;
 
     const addYears = (date, years) => {
-      const result = new Date(date);
-      result.setFullYear(result.getFullYear() + years);
-      return result;
+      if (!date) return null;
+      try {
+        const result = new Date(date);
+        if (isNaN(result.getTime())) return null;
+        result.setFullYear(result.getFullYear() + years);
+        return result;
+      } catch (error) {
+        console.error("Error adding years:", error);
+        return null;
+      }
     };
 
     const addMonths = (date, months) => {
-      const result = new Date(date);
-      result.setMonth(result.getMonth() + months);
-      return result;
+      if (!date) return null;
+      try {
+        const result = new Date(date);
+        if (isNaN(result.getTime())) return null;
+        result.setMonth(result.getMonth() + months);
+        return result;
+      } catch (error) {
+        console.error("Error adding months:", error);
+        return null;
+      }
     };
 
     const formatDate = (date) => {
-      return date.toISOString().split("T")[0];
+      if (!date) return "";
+
+      try {
+        // Handle different types of date inputs
+        let dateObj;
+
+        if (date instanceof Date) {
+          dateObj = date;
+        } else if (typeof date === "string") {
+          dateObj = new Date(date);
+        } else if (typeof date === "number") {
+          dateObj = new Date(date);
+        } else {
+          return "";
+        }
+
+        // Check if the date is valid
+        if (isNaN(dateObj.getTime())) {
+          return "";
+        }
+
+        return dateObj.toISOString().split("T")[0];
+      } catch (error) {
+        console.error("Error formatting date:", error, "Input:", date);
+        return "";
+      }
     };
 
     const findSpecialSurveyHull = () => existingSurveys.find((survey) => survey.surveyName?.trim().toLowerCase() === "special survey hull" && survey.surveyDate);
@@ -118,96 +208,195 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
         rangeTo = addMonths(dueDate, 3);
         break;
 
-      case "Annual Survey": {
-        // Find the last annual survey (latest dueDate)
-        const lastAnnualSurvey = existingSurveys.filter((s) => s.surveyName?.trim().toLowerCase() === "annual survey" && s.dueDate).sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate))[0]; // sort descending // take latest
+      // case "Annual Survey": {
+      //   // Find the last annual survey (latest dueDate)
+      //   console.log("existingSurveys", existingSurveys);
+      //   const lastAnnualSurvey = existingSurveys.filter((s) => s.surveyName?.includes("annual survey") && s.dueDate).sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate))[0];
+      //   console.log("lastAnnualSurvey", lastAnnualSurvey);
+      //   if (lastAnnualSurvey) {
+      //     // Base next due date on last Annual Survey
+      //     console.log("lastAnnualSurvey", lastAnnualSurvey);
+      //     const lastDue = new Date(lastAnnualSurvey.dueDate);
+      //     dueDate = addYears(lastDue, 1);
+      //   } else {
+      //     // Check if Special Survey Hull
+      //     console.log("issuanceDateObj in else part", issuanceDateObj);
+      //     const specialSurveyHull = findSpecialSurveyHull();
+      //     if (specialSurveyHull?.surveyDate) {
+      //       const sshDate = new Date(specialSurveyHull.surveyDate);
+      //       console.log("sshDate", sshDate);
+      //       dueDate = addYears(sshDate, 1);
+      //     } else {
+      //       // If no SSH, calculate 1 year from assignment date
+      //       dueDate = addYears(issuanceDateObj, 1);
+      //     }
+      //   }
+
+      //   if (dueDate) {
+      //     rangeFrom = addMonths(dueDate, -3);
+      //     rangeTo = addMonths(dueDate, 3);
+      //   }
+      //   break;
+      // }
+
+      // case "Annual Survey (UMS)": {
+      //   const specialSurveyUMS = existingSurveys.find((s) => s.surveyName?.includes("special survey (ums)") && s.surveyDate);
+
+      //   if (specialSurveyUMS && specialSurveyUMS.surveyDate) {
+      //     const sshDate = new Date(specialSurveyUMS.surveyDate);
+      //     const currentYear = new Date().getFullYear();
+
+      //     let nextAnniversary = new Date(currentYear, sshDate.getMonth(), sshDate.getDate());
+
+      //     if (new Date() > nextAnniversary) {
+      //       nextAnniversary.setFullYear(currentYear + 1);
+      //     }
+
+      //     dueDate = nextAnniversary;
+      //   } else {
+      //     // If no Special Survey UMS, calculate 1 year from assignment date
+      //     dueDate = addYears(issuanceDateObj, 1);
+      //   }
+
+      //   if (dueDate) {
+      //     rangeFrom = addMonths(dueDate, -3);
+      //     rangeTo = addMonths(dueDate, 3);
+      //   }
+      //   break;
+      // }
+
+      // case "Annual Survey IG System": {
+      //   const specialSurveyIG = existingSurveys.find((s) => s.surveyName?.includes("special survey ig system") && s.surveyDate);
+
+      //   if (specialSurveyIG && specialSurveyIG.surveyDate) {
+      //     const sshDate = new Date(specialSurveyIG.surveyDate);
+      //     const currentYear = new Date().getFullYear();
+
+      //     let nextAnniversary = new Date(currentYear, sshDate.getMonth(), sshDate.getDate());
+
+      //     if (new Date() > nextAnniversary) {
+      //       nextAnniversary.setFullYear(currentYear + 1);
+      //     }
+
+      //     dueDate = nextAnniversary;
+      //   } else {
+      //     // If no Special Survey IG System, calculate 1 year from assignment date
+      //     dueDate = addYears(issuanceDateObj, 1);
+      //   }
+
+      //   rangeFrom = addMonths(dueDate, -3);
+      //   rangeTo = addMonths(dueDate, 3);
+      //   break;
+      // }
+
+      // case "Annual Survey (Fi-Fi)": {
+      //   const specialSurveyFiFi = existingSurveys.find((s) => s.surveyName?.includes("special survey (fi-fi)") && s.surveyDate);
+
+      //   if (specialSurveyFiFi && specialSurveyFiFi.surveyDate) {
+      //     const sshDate = new Date(specialSurveyFiFi.surveyDate);
+      //     const currentYear = new Date().getFullYear();
+
+      //     let nextAnniversary = new Date(currentYear, sshDate.getMonth(), sshDate.getDate());
+
+      //     if (new Date() > nextAnniversary) {
+      //       nextAnniversary.setFullYear(currentYear + 1);
+      //     }
+
+      //     dueDate = nextAnniversary;
+      //   } else {
+      //     // If no Special Survey Fi-Fi, calculate 1 year from assignment date
+      //     dueDate = addYears(issuanceDateObj, 1);
+      //   }
+
+      //   rangeFrom = addMonths(dueDate, -3);
+      //   rangeTo = addMonths(dueDate, 3);
+      //   break;
+      // }
+
+      case "Annual Survey":
+      case "Annual Survey IG System":
+      case "Annual Survey (FIFI)":
+      case "Annual Survey (UMS)": {
+        const surveyNameLower = surveyName.toLowerCase();
+
+        const lastAnnualSurvey = existingSurveys.filter((s) => s.surveyName?.toLowerCase().includes("annual survey") && s.surveyName?.toLowerCase() === surveyNameLower && s.dueDate).sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate))[0];
 
         if (lastAnnualSurvey) {
-          // Base next due date on last Annual Survey
           const lastDue = new Date(lastAnnualSurvey.dueDate);
           dueDate = addYears(lastDue, 1);
         } else {
-          // If no previous annual survey, fall back to SSH or issuance date
-          const specialSurveyHull = findSpecialSurveyHull();
-          if (specialSurveyHull?.surveyDate) {
-            const sshDate = new Date(specialSurveyHull.surveyDate);
-            dueDate = addYears(sshDate, 1);
+          let relatedSpecialSurveyName = "";
+
+          if (surveyNameLower.includes("ig system")) {
+            relatedSpecialSurveyName = "special survey ig system";
+          } else if (surveyNameLower.includes("fifi")) {
+            relatedSpecialSurveyName = "special survey fifi";
+          } else if (surveyNameLower.includes("ums")) {
+            relatedSpecialSurveyName = "special survey ums";
+          } else {
+            relatedSpecialSurveyName = "special survey hull";
+          }
+
+          const relatedSpecialSurvey = existingSurveys.find((s) => s.surveyName?.trim().toLowerCase() === relatedSpecialSurveyName);
+
+          if (relatedSpecialSurvey?.surveyDate) {
+            const baseDate = new Date(relatedSpecialSurvey.surveyDate);
+            dueDate = addYears(baseDate, 1);
           } else {
             dueDate = addYears(issuanceDateObj, 1);
           }
         }
 
-        rangeFrom = addMonths(dueDate, -3);
-        rangeTo = addMonths(dueDate, 3);
+        if (dueDate) {
+          rangeFrom = addMonths(dueDate, -3);
+          rangeTo = addMonths(dueDate, 3);
+        }
         break;
       }
 
-      case "Annual Survey (UMS)": {
-        const specialSurveyUMS = existingSurveys.find((s) => s.surveyName?.trim().toLowerCase() === "special survey (ums)" && s.surveyDate);
+      case "Main Boiler Survey":
+      case "Auxiliary Boiler Survey":
+      case "Thermal Oil Heating Systems Survey":
+      case "Exhaust Gas steam generators and economisers survey": {
+        const specialSurveyHull = findSpecialSurveyHull();
+        const currentSurveyType = surveyName.toLowerCase();
+        const existingCurrentSurveys = existingSurveys.filter((s) => s.surveyName?.trim().toLowerCase() === currentSurveyType && s.dueDate).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
-        if (specialSurveyUMS && specialSurveyUMS.surveyDate) {
-          const sshDate = new Date(specialSurveyUMS.surveyDate);
-          const currentYear = new Date().getFullYear();
+        if (specialSurveyHull && specialSurveyHull.surveyDate) {
+          const sshDate = new Date(specialSurveyHull.surveyDate);
+          const sshDueDate = addYears(sshDate, 5);
 
-          let nextAnniversary = new Date(currentYear, sshDate.getMonth(), sshDate.getDate());
+          if (existingCurrentSurveys.length === 0) {
+            dueDate = addYears(sshDate, 3);
+          } else if (existingCurrentSurveys.length === 1) {
+            const firstSurveyDue = new Date(existingCurrentSurveys[0].dueDate);
+            let secondSurveyDue = addYears(firstSurveyDue, 2);
 
-          if (new Date() > nextAnniversary) {
-            nextAnniversary.setFullYear(currentYear + 1);
+            if (secondSurveyDue >= sshDueDate) {
+              secondSurveyDue = addYears(firstSurveyDue, 1);
+            }
+            if (secondSurveyDue >= sshDueDate) {
+              secondSurveyDue = addYears(firstSurveyDue, 1);
+            }
+
+            if (secondSurveyDue >= sshDueDate) {
+              secondSurveyDue = addMonths(sshDueDate, -6);
+            }
+
+            dueDate = secondSurveyDue;
+          } else {
+            dueDate = addYears(issuanceDateObj, 2);
           }
 
-          dueDate = nextAnniversary;
+          if (dueDate >= sshDueDate) {
+            dueDate = addMonths(sshDueDate, -3);
+          }
         } else {
           dueDate = addYears(issuanceDateObj, 1);
         }
 
-        rangeFrom = addMonths(dueDate, -3);
-        rangeTo = addMonths(dueDate, 3);
-        break;
-      }
-
-      case "Annual Survey IG System": {
-        const specialSurveyIG = existingSurveys.find((s) => s.surveyName?.trim().toLowerCase() === "special survey ig system" && s.surveyDate);
-
-        if (specialSurveyIG && specialSurveyIG.surveyDate) {
-          const sshDate = new Date(specialSurveyIG.surveyDate);
-          const currentYear = new Date().getFullYear();
-
-          let nextAnniversary = new Date(currentYear, sshDate.getMonth(), sshDate.getDate());
-
-          if (new Date() > nextAnniversary) {
-            nextAnniversary.setFullYear(currentYear + 1);
-          }
-
-          dueDate = nextAnniversary;
-        } else {
-          dueDate = addYears(issuanceDateObj, 1);
-        }
-
-        rangeFrom = addMonths(dueDate, -3);
-        rangeTo = addMonths(dueDate, 3);
-        break;
-      }
-
-      case "Annual Survey (Fi-Fi)": {
-        const specialSurveyFiFi = existingSurveys.find((s) => s.surveyName?.trim().toLowerCase() === "special survey (fi-fi)" && s.surveyDate);
-
-        if (specialSurveyFiFi && specialSurveyFiFi.surveyDate) {
-          const sshDate = new Date(specialSurveyFiFi.surveyDate);
-          const currentYear = new Date().getFullYear();
-
-          let nextAnniversary = new Date(currentYear, sshDate.getMonth(), sshDate.getDate());
-
-          if (new Date() > nextAnniversary) {
-            nextAnniversary.setFullYear(currentYear + 1);
-          }
-
-          dueDate = nextAnniversary;
-        } else {
-          dueDate = addYears(issuanceDateObj, 1);
-        }
-
-        rangeFrom = addMonths(dueDate, -3);
-        rangeTo = addMonths(dueDate, 3);
+        rangeFrom = dueDate;
+        rangeTo = dueDate;
         break;
       }
 
@@ -223,8 +412,11 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
             dueDate = addYears(sshDate, 3);
           } else if (existingDockingSurveys.length === 1) {
             const firstDockingDue = new Date(existingDockingSurveys[0].dueDate);
+            let secondDockingDue = addYears(firstDockingDue, 2);
 
-            let secondDockingDue = addMonths(firstDockingDue, 30);
+            if (secondDockingDue >= sshDueDate) {
+              secondDockingDue = addYears(firstDockingDue, 1);
+            }
 
             if (secondDockingDue >= sshDueDate) {
               secondDockingDue = addMonths(sshDueDate, -6);
@@ -239,7 +431,7 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
             dueDate = addMonths(sshDueDate, -3);
           }
         } else {
-          dueDate = addYears(issuanceDateObj, 3);
+          dueDate = addYears(issuanceDateObj, 1);
         }
 
         rangeFrom = dueDate;
@@ -273,14 +465,18 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
           const diff3 = Math.abs(intermediate3Years - targetDate);
 
           dueDate = diff2 < diff3 ? intermediate2Years : intermediate3Years;
+
+          rangeFrom = addMonths(dueDate, -3);
+          rangeTo = addMonths(dueDate, 3);
         } else {
-          dueDate = "";
-          rangeFrom = "";
-          rangeTo = "";
+          dueDate = addYears(issuanceDateObj, 1);
+          rangeFrom = addMonths(dueDate, -3);
+          rangeTo = addMonths(dueDate, 3);
         }
         break;
       }
-      case "Telshaft condition monitoring annual survey": {
+
+      case "Tailshaft condition monitoring annual survey": {
         const specialSurveyHull = findSpecialSurveyHull();
         if (specialSurveyHull && specialSurveyHull.surveyDate) {
           const sshDate = new Date(specialSurveyHull.surveyDate);
@@ -289,67 +485,47 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
           rangeFrom = addMonths(dueDate, -3);
           rangeTo = addMonths(dueDate, 3);
         } else {
-          dueDate = "";
-          rangeFrom = "";
-          rangeTo = "";
+          dueDate = addYears(issuanceDateObj, 1);
+          rangeFrom = addMonths(dueDate, -3);
+          rangeTo = addMonths(dueDate, 3);
         }
         break;
       }
+
       case "Tailshaft initial survey":
-      case "Telshaft periodical survey":
-        dueDate = addYears(issuanceDateObj, 5);
+      case "Tailshaft periodical survey":
+      case "Tailshaft renewal survey":
+        if (issuanceDate) {
+          dueDate = addYears(issuanceDateObj, 5);
+        } else {
+          const currentDate = new Date();
+          dueDate = addYears(currentDate, 5);
+        }
         rangeFrom = "";
         rangeTo = "";
         break;
 
       default:
-        dueDate = "";
-        rangeFrom = "";
-        rangeTo = "";
-        break;
+        return { dueDate: "", rangeFrom: "", rangeTo: "" };
     }
 
     return {
-      dueDate: formatDate(dueDate),
+      dueDate: dueDate ? formatDate(dueDate) : "",
       rangeFrom: rangeFrom ? formatDate(rangeFrom) : "",
       rangeTo: rangeTo ? formatDate(rangeTo) : "",
     };
-  };
-
-  const calculateDockingSurveySequence = (firstDockingDate, sshData) => {
-    const firstDate = new Date(firstDockingDate);
-    const surveys = [];
-
-    // Calculate for 5 years span (2 docking surveys in 5 years)
-    for (let i = 1; i <= 2; i++) {
-      const nextSurveyDate = new Date(firstDate);
-      nextSurveyDate.setFullYear(firstDate.getFullYear() + i * 2.5); // Every 2.5 years approximately
-
-      // Ensure it falls within SSH range if available
-      if (sshData && sshData.dueDate) {
-        const sshDueDate = new Date(sshData.dueDate);
-        if (nextSurveyDate > sshDueDate) {
-          nextSurveyDate.setTime(sshDueDate.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days before SSH due
-        }
-      }
-
-      surveys.push({
-        surveyNumber: i + 1,
-        dueDate: nextSurveyDate.toISOString().split("T")[0],
-        description: `Docking Survey ${i + 1}`,
-      });
-    }
-
-    return surveys;
   };
 
   const handleChange = (section, index, field, value) => {
     const updatedRows = [...classificationRows];
     updatedRows[index][field] = value;
 
+    if (field === "surveyName") {
+      checkAndShowSSHWarning(value);
+    }
+
     if (field === "surveyName" || field === "issuanceDate") {
-      const issuance = updatedRows[index].issuanceDate || new Date().toISOString().split("T")[0];
-      const { dueDate, rangeFrom, rangeTo } = calculateDates(issuance, updatedRows[index].surveyName, existingSurveys);
+      const { dueDate, rangeFrom, rangeTo } = calculateDates(updatedRows[index].issuanceDate || new Date().toISOString().split("T")[0], updatedRows[index].surveyName, existingSurveys);
       updatedRows[index].dueDate = dueDate;
       updatedRows[index].rangeFrom = rangeFrom;
       updatedRows[index].rangeTo = rangeTo;
@@ -470,6 +646,8 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
       if (response?.data?.status == "success") {
         toast.success("Classification added successfully");
         onSuccess?.();
+        // Refresh the surveys list to update available surveys for calculations
+        getAllClassification();
       }
       if (response?.response?.data?.status == "error") {
         toast.error(response?.response?.data?.message);
@@ -545,6 +723,15 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
         {selectedShip?.id && (
           <Box sx={{ m: 0, p: 0 }}>
             <Typography variant="h6">Classification Surveys</Typography>
+
+            {/* SSH Warning - Only shows for specific survey types */}
+            {showSSHWarning.show && (
+              <Alert severity="warning" sx={{ mt: 2, mb: 2 }}>
+                <Typography variant="body2">
+                  <strong>Warning:</strong> {showSSHWarning.surveyType} requires <strong>{showSSHWarning.requiredSurvey}</strong>. Please add {showSSHWarning.requiredSurvey} first for accurate date calculations.
+                </Typography>
+              </Alert>
+            )}
 
             {classificationRows?.map((row, index) => (
               <Box
