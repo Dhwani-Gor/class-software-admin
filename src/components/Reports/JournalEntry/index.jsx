@@ -513,7 +513,7 @@ const JournalEntryForm = ({ journalId = null }) => {
         const journalData = result.data.data;
         setJournalData(journalData);
         setIsJournalLocked(
-          data?.specialPermission?.includes("JournalUnlockingRights")
+          data?.specialPermission?.includes("JournalUnlockRights")
             ? false
             : journalData.isLocked
         );
