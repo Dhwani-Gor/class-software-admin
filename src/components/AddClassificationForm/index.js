@@ -119,14 +119,22 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
         break;
 
       case "Annual Survey": {
-        const specialSurveyHull = findSpecialSurveyHull();
+        // Find the last annual survey (latest dueDate)
+        const lastAnnualSurvey = existingSurveys.filter((s) => s.surveyName?.trim().toLowerCase() === "annual survey" && s.dueDate).sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate))[0]; // sort descending // take latest
 
-        if (specialSurveyHull && specialSurveyHull.surveyDate) {
-          const sshDate = new Date(specialSurveyHull.surveyDate);
-
-          dueDate = addYears(sshDate, 1);
+        if (lastAnnualSurvey) {
+          // Base next due date on last Annual Survey
+          const lastDue = new Date(lastAnnualSurvey.dueDate);
+          dueDate = addYears(lastDue, 1);
         } else {
-          dueDate = addYears(issuanceDateObj, 1);
+          // If no previous annual survey, fall back to SSH or issuance date
+          const specialSurveyHull = findSpecialSurveyHull();
+          if (specialSurveyHull?.surveyDate) {
+            const sshDate = new Date(specialSurveyHull.surveyDate);
+            dueDate = addYears(sshDate, 1);
+          } else {
+            dueDate = addYears(issuanceDateObj, 1);
+          }
         }
 
         rangeFrom = addMonths(dueDate, -3);
@@ -207,7 +215,6 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
         const specialSurveyHull = findSpecialSurveyHull();
         const existingDockingSurveys = existingSurveys.filter((s) => s.surveyName?.trim().toLowerCase() === "docking survey" && s.dueDate).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
-        calculateDockingSurveySequence(existingDockingSurveys);
         if (specialSurveyHull && specialSurveyHull.surveyDate) {
           const sshDate = new Date(specialSurveyHull.surveyDate);
           const sshDueDate = addYears(sshDate, 5);
