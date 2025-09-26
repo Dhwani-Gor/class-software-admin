@@ -1,32 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
-import {
-  addInspectors,
-  createInspector,
-  getAllClients,
-  getAllModules,
-  getInspectorsDetails,
-  updateInspectorDetail,
-} from "@/api";
-import {
-  CircularProgress,
-  FormControl,
-  FormControlLabel,
-  FormHelperText,
-  FormLabel,
-  Grid2,
-  Paper,
-  Radio,
-  RadioGroup,
-  Snackbar,
-  Stack,
-  Typography,
-  Select,
-  MenuItem,
-  InputLabel,
-  Autocomplete,
-  TextField,
-} from "@mui/material";
+import { addInspectors, createInspector, getAllClients, getAllModules, getInspectorsDetails, updateInspectorDetail } from "@/api";
+import { CircularProgress, FormControl, FormControlLabel, FormHelperText, FormLabel, Grid2, Paper, Radio, RadioGroup, Snackbar, Stack, Typography, Select, MenuItem, InputLabel, Autocomplete, TextField } from "@mui/material";
 // import SuccessModal from "./SuccessModal";
 import { useDispatch, useSelector } from "react-redux";
 import Checkbox from "@mui/material/Checkbox";
@@ -44,14 +19,17 @@ const roles = [
   {
     label: "Agent",
     value: "agent",
+    roleId: 3,
   },
   {
     label: "Inspector",
     value: "inspector",
+    roleId: 4,
   },
   {
     label: "Staff",
     value: "staff",
+    roleId: 2,
   },
 ];
 
@@ -65,22 +43,13 @@ const schema = yup.object().shape({
   }),
   confirmPassword: yup.string().when("$isUpdate", {
     is: false,
-    then: (schema) =>
-      schema
-        .required("Confirm Password is required")
-        .oneOf([yup.ref("password")], "Passwords must match"),
+    then: (schema) => schema.required("Confirm Password is required").oneOf([yup.ref("password")], "Passwords must match"),
     otherwise: (schema) => schema.notRequired(),
   }),
   role: yup.string().required("Role is required"),
 });
 
-const AddInspectorForm = ({
-  mode = "create",
-  userId = null,
-  defaultValues = {},
-  permissionData = [],
-  specialPermissionData = [],
-}) => {
+const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, permissionData = [], specialPermissionData = [] }) => {
   console.log("permissionData", permissionData);
   console.log("specialPermissionData", specialPermissionData);
   const [clientsList, setClientsList] = useState([]);
@@ -167,9 +136,12 @@ const AddInspectorForm = ({
 
   const onSubmit = async (data) => {
     try {
-      console.log(data);
+      // Find the role object based on selected role value
+      const selectedRole = roles.find((r) => r.value === data.role);
+      const roleId = selectedRole?.roleId;
+
       if (userId) {
-        const res = await updateInspectorDetail(userId, data);
+        const res = await updateInspectorDetail(userId, { ...data, roleId });
         if (res?.data?.status === "success") {
           toast.success("User updated successfully");
           router.push("/staff");
@@ -177,7 +149,7 @@ const AddInspectorForm = ({
           toast.error(res?.response?.data?.message);
         }
       } else {
-        const res = await createInspector({ ...data, roleId: 2 });
+        const res = await createInspector({ ...data, roleId });
         if (res?.data?.status === "success") {
           toast.success("User created successfully");
           router.push("/staff");
@@ -193,12 +165,7 @@ const AddInspectorForm = ({
   return (
     <Box>
       {isDataLoading ? (
-        <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          sx={{ height: 300 }}
-        >
+        <Box display="flex" justifyContent="center" alignItems="center" sx={{ height: 300 }}>
           <CircularProgress />
         </Box>
       ) : (
@@ -247,8 +214,7 @@ const AddInspectorForm = ({
                             variant="standard"
                             label={
                               <span>
-                                User Name{" "}
-                                <span style={{ color: "red" }}>*</span>
+                                User Name <span style={{ color: "red" }}>*</span>
                               </span>
                             }
                             placeholder="Enter User Name"
@@ -278,8 +244,7 @@ const AddInspectorForm = ({
                               autoComplete="off"
                               label={
                                 <span>
-                                  Password{" "}
-                                  <span style={{ color: "red" }}>*</span>
+                                  Password <span style={{ color: "red" }}>*</span>
                                 </span>
                               }
                               placeholder="Enter password"
@@ -305,8 +270,7 @@ const AddInspectorForm = ({
                               variant="standard"
                               label={
                                 <span>
-                                  Confirm Password{" "}
-                                  <span style={{ color: "red" }}>*</span>
+                                  Confirm Password <span style={{ color: "red" }}>*</span>
                                 </span>
                               }
                               placeholder="Enter confirm password"
@@ -332,27 +296,15 @@ const AddInspectorForm = ({
                       name="role"
                       control={control}
                       render={({ field }) => (
-                        <FormControl
-                          fullWidth
-                          variant="standard"
-                          error={Boolean(errors.role)}
-                        >
-                          <Select
-                            {...field}
-                            value={field.value || ""}
-                            onChange={field.onChange}
-                          >
+                        <FormControl fullWidth variant="standard" error={Boolean(errors.role)}>
+                          <Select {...field} value={field.value || ""} onChange={field.onChange}>
                             {roles.map((role) => (
                               <MenuItem key={role.value} value={role.value}>
                                 {role.label}
                               </MenuItem>
                             ))}
                           </Select>
-                          {errors.role && (
-                            <FormHelperText>
-                              {errors.role?.message}
-                            </FormHelperText>
-                          )}
+                          {errors.role && <FormHelperText>{errors.role?.message}</FormHelperText>}
                         </FormControl>
                       )}
                     />
@@ -369,23 +321,11 @@ const AddInspectorForm = ({
                           multiple
                           options={clientsList}
                           getOptionLabel={(option) => option.shipName || ""}
-                          value={
-                            clientsList.filter((item) =>
-                              field.value?.includes(item.id)
-                            ) || []
-                          }
+                          value={clientsList.filter((item) => field.value?.includes(item.id)) || []}
                           onChange={(_, newValue) => {
                             field.onChange(newValue.map((item) => item.id));
                           }}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              variant="standard"
-                              error={Boolean(errors.clientIds)}
-                              helperText={errors.clientIds?.message}
-                              fullWidth
-                            />
-                          )}
+                          renderInput={(params) => <TextField {...params} variant="standard" error={Boolean(errors.clientIds)} helperText={errors.clientIds?.message} fullWidth />}
                         />
                       )}
                     />
@@ -472,9 +412,7 @@ const AddInspectorForm = ({
                               control={control}
                               render={({ field }) => {
                                 const { value, onChange } = field;
-                                const checked = value?.includes(
-                                  permissionItem.value
-                                );
+                                const checked = value?.includes(permissionItem.value);
 
                                 return (
                                   <FormControlLabel
@@ -483,17 +421,9 @@ const AddInspectorForm = ({
                                         checked={checked}
                                         onChange={(e) => {
                                           if (e.target.checked) {
-                                            onChange([
-                                              ...(value || []),
-                                              permissionItem.value,
-                                            ]);
+                                            onChange([...(value || []), permissionItem.value]);
                                           } else {
-                                            onChange(
-                                              (value || []).filter(
-                                                (item) =>
-                                                  item !== permissionItem.value
-                                              )
-                                            );
+                                            onChange((value || []).filter((item) => item !== permissionItem.value));
                                           }
                                         }}
                                       />
@@ -512,9 +442,7 @@ const AddInspectorForm = ({
                   {specialPermissionData?.length > 0 && (
                     <Box sx={{ mt: 2 }}>
                       <Stack>
-                        <Typography fontWeight={500}>
-                          Special Permission
-                        </Typography>
+                        <Typography fontWeight={500}>Special Permission</Typography>
                       </Stack>
                       <Grid2 container>
                         {specialPermissionData.map((sPermission, index) => (
@@ -524,9 +452,7 @@ const AddInspectorForm = ({
                               control={control}
                               render={({ field }) => {
                                 const { value, onChange } = field;
-                                const checked = value?.includes(
-                                  sPermission.value
-                                );
+                                const checked = value?.includes(sPermission.value);
 
                                 return (
                                   <FormControlLabel
@@ -535,17 +461,9 @@ const AddInspectorForm = ({
                                         checked={checked}
                                         onChange={(e) => {
                                           if (e.target.checked) {
-                                            onChange([
-                                              ...(value || []),
-                                              sPermission.value,
-                                            ]);
+                                            onChange([...(value || []), sPermission.value]);
                                           } else {
-                                            onChange(
-                                              (value || []).filter(
-                                                (item) =>
-                                                  item !== sPermission.value
-                                              )
-                                            );
+                                            onChange((value || []).filter((item) => item !== sPermission.value));
                                           }
                                         }}
                                       />
@@ -562,18 +480,9 @@ const AddInspectorForm = ({
                   )}
                 </Box>
 
-                <Stack
-                  mt={4}
-                  spacing={2}
-                  direction="row"
-                  justifyContent="flex-start"
-                >
+                <Stack mt={4} spacing={2} direction="row" justifyContent="flex-start">
                   <CommonButton type="submit" variant="contained" text="Save" />
-                  <CommonButton
-                    onClick={cancelBtn}
-                    variant="contained"
-                    text="Cancel"
-                  />
+                  <CommonButton onClick={cancelBtn} variant="contained" text="Cancel" />
                 </Stack>
               </form>
 
