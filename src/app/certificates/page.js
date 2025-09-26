@@ -47,19 +47,12 @@ const Certificates = () => {
     if (!search.trim()) return true;
 
     const searchTerm = search.toLowerCase();
-    const shipName =
-      certificate.activity?.journal?.client?.shipName?.toLowerCase() || "";
-    const journalTypeId =
-      certificate.activity?.journal?.journalTypeId?.toLowerCase() || "";
+    const shipName = certificate.activity?.journal?.client?.shipName?.toLowerCase() || "";
+    const journalTypeId = certificate.activity?.journal?.journalTypeId?.toLowerCase() || "";
     const certificateType = certificate.typeOfCertificate?.toLowerCase() || "";
     const place = certificate.place?.toLowerCase() || "";
 
-    return (
-      shipName.includes(searchTerm) ||
-      journalTypeId.includes(searchTerm) ||
-      certificateType.includes(searchTerm) ||
-      place.includes(searchTerm)
-    );
+    return shipName.includes(searchTerm) || journalTypeId.includes(searchTerm) || certificateType.includes(searchTerm) || place.includes(searchTerm);
   });
 
   // Remove unused functions and effects
@@ -112,16 +105,7 @@ const Certificates = () => {
       const searchQuery = debouncedSearch.trim();
       const markAsArchive = selectedFilter == "Archive Documents";
 
-      const res = await getAllIssuedDocuments(
-        filterKeys,
-        filterValues,
-        searchQuery,
-        page,
-        limit,
-        startDate,
-        endDate,
-        markAsArchive
-      );
+      const res = await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, page, limit, startDate, endDate, markAsArchive);
 
       const data = res?.data;
 
@@ -144,17 +128,7 @@ const Certificates = () => {
 
   useEffect(() => {
     fetchCertificatesData();
-  }, [
-    selectedFilter,
-    selectedReportNumber,
-    placeFilter,
-    statusFilter,
-    debouncedSearch,
-    page,
-    limit,
-    startDate,
-    endDate,
-  ]);
+  }, [selectedFilter, selectedReportNumber, placeFilter, statusFilter, debouncedSearch, page, limit, startDate, endDate]);
 
   const handleSearchChange = (event) => {
     setSearch(event.target.value);
@@ -183,7 +157,7 @@ const Certificates = () => {
 
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${documentUrl?.split("/").pop()}.pdf`;
+      link.download = `${documentUrl?.split("/").pop()}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -209,34 +183,20 @@ const Certificates = () => {
       headerName: "No.",
       width: 80,
       renderCell: (params) => {
-        return (
-          <Typography fontSize="14px">
-            {(page - 1) * limit +
-              params.api.getAllRowIds().indexOf(params.id) +
-              1}
-          </Typography>
-        );
+        return <Typography fontSize="14px">{(page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1}</Typography>;
       },
     },
     {
       field: "journalTypeId",
       headerName: "Report No",
       flex: 1,
-      renderCell: (params) => (
-        <Typography fontSize="14px">
-          {params.row.activity?.journal?.journalTypeId || "N/A"}
-        </Typography>
-      ),
+      renderCell: (params) => <Typography fontSize="14px">{params.row.activity?.journal?.journalTypeId || "N/A"}</Typography>,
     },
     {
       field: "shipName",
       headerName: "Ship Name",
       flex: 1,
-      renderCell: (params) => (
-        <Typography fontSize="14px">
-          {params.row.activity?.journal?.client?.shipName || "N/A"}
-        </Typography>
-      ),
+      renderCell: (params) => <Typography fontSize="14px">{params.row.activity?.journal?.client?.shipName || "N/A"}</Typography>,
     },
     {
       field: "typeOfCertificate",
@@ -269,9 +229,7 @@ const Certificates = () => {
       field: "surveyDate",
       headerName: "Survey Date",
       flex: 1,
-      renderCell: (params) => (
-        <Typography fontSize="14px">{formatDate(params.value)}</Typography>
-      ),
+      renderCell: (params) => <Typography fontSize="14px">{formatDate(params.value)}</Typography>,
     },
     {
       field: "actions",
@@ -280,22 +238,12 @@ const Certificates = () => {
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
           <Tooltip title="View Document">
-            <IconButton
-              color="info"
-              onClick={() => handleViewDocument(params.row.generatedDoc)}
-              disabled={!params.row.generatedDoc}
-            >
+            <IconButton color="info" onClick={() => handleViewDocument(params.row.generatedDoc)} disabled={!params.row.generatedDoc}>
               <VisibilityIcon />
             </IconButton>
           </Tooltip>
           <Tooltip title="Download Document">
-            <IconButton
-              color="success"
-              onClick={() =>
-                handleDownloadDocument(params.row.generatedDoc, params.row.id)
-              }
-              disabled={!params.row.generatedDoc}
-            >
+            <IconButton color="success" onClick={() => handleDownloadDocument(params.row.generatedDoc, params.row.id)} disabled={!params.row.generatedDoc}>
               <GetAppIcon />
             </IconButton>
           </Tooltip>
@@ -332,11 +280,7 @@ const Certificates = () => {
   return (
     <Layout>
       <CommonCard sx={{ mt: 0 }}>
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-        >
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Typography variant="h4" fontWeight={700}>
             Issued Certificates
           </Typography>
@@ -346,30 +290,12 @@ const Certificates = () => {
       <CommonCard>
         <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
           {["certificates", "Archive Documents"].map((type) => (
-            <Chip
-              key={type}
-              label={type.charAt(0).toUpperCase() + type.slice(1)}
-              color={selectedFilter === type ? "primary" : "default"}
-              onClick={() => handleFilterChange(type)}
-              clickable
-              sx={{ fontWeight: selectedFilter === type ? 600 : 400, px: 2 }}
-            />
+            <Chip key={type} label={type.charAt(0).toUpperCase() + type.slice(1)} color={selectedFilter === type ? "primary" : "default"} onClick={() => handleFilterChange(type)} clickable sx={{ fontWeight: selectedFilter === type ? 600 : 400, px: 2 }} />
           ))}
         </Stack>
-        <CommonInput
-          placeholder="Search Certificate By Place or Type"
-          fullWidth
-          value={search}
-          onChange={handleSearchChange}
-          sx={{ marginBottom: 2 }}
-        />
+        <CommonInput placeholder="Search Certificate By Place or Type" fullWidth value={search} onChange={handleSearchChange} sx={{ marginBottom: 2 }} />
 
-        <Stack
-          direction="row"
-          spacing={2}
-          alignItems="center"
-          sx={{ mb: 2, mt: 2 }}
-        >
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2, mt: 2 }}>
           <Select
             value={selectedReportNumber}
             onChange={(e) => {
@@ -425,11 +351,7 @@ const Certificates = () => {
             }}
           />
 
-          {(selectedReportNumber ||
-            placeFilter ||
-            statusFilter ||
-            startDate ||
-            endDate) && (
+          {(selectedReportNumber || placeFilter || statusFilter || startDate || endDate) && (
             <CommonButton
               variant="contained"
               size="small"
@@ -448,12 +370,7 @@ const Certificates = () => {
 
         <Box sx={{ width: "100%", mt: 4 }}>
           {loading ? (
-            <Box
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              height="300px"
-            >
+            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
               <CircularProgress />
             </Box>
           ) : certificatesList.length > 0 ? (
@@ -479,11 +396,7 @@ const Certificates = () => {
               }}
             />
           ) : (
-            <Typography
-              variant="h6"
-              align="center"
-              sx={{ color: "gray", padding: 3 }}
-            >
+            <Typography variant="h6" align="center" sx={{ color: "gray", padding: 3 }}>
               No Certificates Found
             </Typography>
           )}
@@ -491,24 +404,10 @@ const Certificates = () => {
 
         {totalRows > limit && (
           <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-            <Typography
-              variant="body1"
-              fontWeight={600}
-              fontSize="16px"
-              mt={2}
-              color="text.primary"
-            >
+            <Typography variant="body1" fontWeight={600} fontSize="16px" mt={2} color="text.primary">
               Total Count: {count}
             </Typography>
-            <Pagination
-              count={Math.ceil(totalRows / limit)}
-              page={page}
-              onChange={handlePageChange}
-              color="primary"
-              variant="outlined"
-              shape="rounded"
-              sx={{ marginTop: "10px" }}
-            />
+            <Pagination count={Math.ceil(totalRows / limit)} page={page} onChange={handlePageChange} color="primary" variant="outlined" shape="rounded" sx={{ marginTop: "10px" }} />
           </Box>
         )}
       </CommonCard>
