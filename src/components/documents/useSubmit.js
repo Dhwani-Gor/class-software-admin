@@ -21,32 +21,20 @@ export const useFormInitialization = (fields, reportDetails, open) => {
       const attr = field.attribute;
 
       if (attr.startsWith("_checkbox")) {
-        initialValues[attr] =
-          reportDetails && reportDetails[attr] === "\u2611" ? true : false;
-
+        const val = reportDetails && reportDetails[attr];
+        initialValues[attr] = val === true || val === "\u2611" || val === "X" ? true : false;
       } else if (attr.startsWith("_st_")) {
-        const rawValue =
-          reportDetails && typeof reportDetails[attr] === "string"
-            ? reportDetails[attr]
-            : "";
+        const rawValue = reportDetails && typeof reportDetails[attr] === "string" ? reportDetails[attr] : "";
         if (rawValue) {
           const parts = rawValue.split(" / ").map((s) => s.trim());
           initialValues[attr] = parts.filter((p) => !isStrikethroughText(p));
         } else {
           initialValues[attr] = [];
         }
-
       } else {
         if (reportDetails && reportDetails[attr] !== undefined && reportDetails[attr] !== null) {
-          const val =
-            typeof reportDetails[attr] === "string" ||
-            typeof reportDetails[attr] === "number"
-              ? String(reportDetails[attr])
-              : "";
-          if (
-            attr.toLowerCase().includes("date") &&
-            (!val || val.toLowerCase().includes("undefined"))
-          ) {
+          const val = typeof reportDetails[attr] === "string" || typeof reportDetails[attr] === "number" ? String(reportDetails[attr]) : "";
+          if (attr.toLowerCase().includes("date") && (!val || val.toLowerCase().includes("undefined"))) {
             initialValues[attr] = "";
           } else {
             initialValues[attr] = val;
@@ -97,7 +85,7 @@ export const useCommonSubmit = (onSubmit, onClose, setFormData, onSave) => {
         const [, raw] = key.split("_st_");
         const optionsRaw = raw.split("_");
         const options = optionsRaw.map((opt) => opt.replace(/-/g, " "));
-      
+
         // ✅ Normalize selected values
         let selectedValues = [];
         if (Array.isArray(value)) {
@@ -105,23 +93,18 @@ export const useCommonSubmit = (onSubmit, onClose, setFormData, onSave) => {
         } else if (typeof value === "string" && value.trim() !== "") {
           selectedValues = [value.trim()];
         }
-      
+
         // ✅ Build the final string with strike-through for unselected options
-        acc[key] = options
-          .map((opt) => (selectedValues.includes(opt) ? opt : applyStrikethrough(opt)))
-          .join(" / ");
-      
-        return acc;
-      }
-      
+        acc[key] = options.map((opt) => (selectedValues.includes(opt) ? opt : applyStrikethrough(opt))).join(" / ");
 
-      // ☑ Booleans
-      if (typeof value === "boolean") {
-        acc[key] = value ? "\u2611" : "\u2612";
         return acc;
       }
 
-      // 📝 Strings and other values
+      if (typeof value === "boolean" || value === "\u2611" || value === "\u2612") {
+        acc[key] = value === true || value === "\u2611" ? "X" : "-";
+        return acc;
+      }
+
       if (typeof value === "string") {
         const trimmed = value.trim();
         acc[key] = isUndefinedValue(trimmed) ? "-" : trimmed || "-";
@@ -151,4 +134,3 @@ export const useCommonSubmit = (onSubmit, onClose, setFormData, onSave) => {
 
   return { handleSubmit };
 };
-
