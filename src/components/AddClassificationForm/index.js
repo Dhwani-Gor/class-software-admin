@@ -202,6 +202,7 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
       case "Continuous survey Hull":
       case "Continuous survey Machinery":
       case "Special Survey IG system":
+      case "Special Survey Machinery":
       case "Special Survey (Fi-Fi)":
         dueDate = addYears(issuanceDateObj, 5);
         rangeFrom = addMonths(dueDate, -3);
