@@ -8,6 +8,7 @@ import { CheckCircle, Download, PictureAsPdf, Close, Error as ErrorIcon, Warning
 import { useRouter } from "next/navigation";
 import { getActivity, getAllActivityReportDetails, getAllSystemVariables, getSelectedReportDetails, getSpecificClient } from "@/api";
 import { toast } from "react-toastify";
+import { hiddenReports } from "@/utils/DocumentList";
 
 const DigitalDocument = ({ params }) => {
   const [reportDetails, setReportDetails] = useState(null);
@@ -35,7 +36,11 @@ const DigitalDocument = ({ params }) => {
     checkDevice();
   }, []);
 
-  // Function to determine certificate status based on validity date
+  const isHiddenReport = (reportName) => {
+    if (!reportName) return false;
+    return hiddenReports?.some((hidden) => reportName.toLowerCase().includes(hidden.toLowerCase()));
+  };
+
   const getCertificateStatus = (validityDate) => {
     if (!validityDate) {
       return {
@@ -361,11 +366,10 @@ const DigitalDocument = ({ params }) => {
                   Valid Till
                 </Typography>
                 <Typography variant="body2" fontWeight="500" color={certificateStatus.status === "EXPIRED" ? "error.main" : "text.primary"}>
-                  {formatDate(reportDetails.validityDate)}
+                  {isHiddenReport(reportDetails?.activity?.surveyTypes?.report?.name) ? "N/A" : formatDate(reportDetails.validityDate)}{" "}
                 </Typography>
               </Stack>
 
-              {/* Show download error if any */}
               {downloadError && (
                 <Alert severity="error" size="small">
                   {downloadError}
