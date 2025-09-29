@@ -162,6 +162,30 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
     }
   };
 
+  useEffect(() => {
+    if (permissionData.length > 0) {
+      const current = getValues("permissionModule");
+      if (!current || current.length === 0) {
+        setValue(
+          "permissionModule",
+          permissionData.map((p) => p.value)
+        );
+      }
+    }
+  }, [permissionData, setValue, getValues]);
+
+  useEffect(() => {
+    if (specialPermissionData.length > 0) {
+      const current = getValues("specialPermission");
+      if (!current || current.length === 0) {
+        setValue(
+          "specialPermission",
+          specialPermissionData.map((p) => p.value)
+        );
+      }
+    }
+  }, [specialPermissionData, setValue, getValues]);
+
   return (
     <Box>
       {isDataLoading ? (
