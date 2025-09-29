@@ -531,7 +531,7 @@ const ReportingForm = () => {
   const manageArchive = async () => {
     try {
       setContinueBtnLoading(true);
-      if (journals?.archived?.length > 0 && specialPermission) {
+      if (journals?.archived?.length > 0 && data.specialPermission?.includes("Unarchive")) {
         const result = await addUnArchiveDocument({
           clientId: selectedShip.id,
           journalId,
@@ -1114,7 +1114,7 @@ const ReportingForm = () => {
                 display="block" // Force block-level layout
               >
                 {/* ✅ Checkbox takes full width */}
-                {data?.specialPermission?.includes("Archiving") && <FormControlLabel control={<Checkbox checked={specialPermission} onChange={handleSpecialPermission} color="primary" />} label="Show Archived Reports" sx={{ mb: 2, display: "block" }} />}
+                {data?.specialPermission?.includes("Unarchive") && <FormControlLabel control={<Checkbox checked={specialPermission} onChange={handleSpecialPermission} color="primary" />} label="Show Archived Reports" sx={{ mb: 2, display: "block" }} />}
 
                 {/* ✅ Dropdown takes full width */}
                 <FormControl fullWidth sx={{ maxWidth: 300 }}>
@@ -1139,11 +1139,7 @@ const ReportingForm = () => {
               </Box>
             )}
             {selectedShip.id && selectedReportNumber.journalTypeId && <CommonButton onClick={handleShowTable} sx={{ marginTop: 3 }} text="Continue" />}
-            {selectedShip.id &&
-              selectedReportNumber.journalTypeId &&
-              showButton && ( // 👉 condition added
-                <CommonButton onClick={handleContinue} disabled={!areAllActivitiesCompleted()} sx={{ marginTop: 3, marginLeft: 2 }} text={specialPermission && journals?.archived?.length > 0 ? "Unarchive" : "Archive"} />
-              )}
+            {selectedShip.id && selectedReportNumber.journalTypeId && showButton && <CommonButton onClick={handleContinue} disabled={!areAllActivitiesCompleted()} sx={{ marginTop: 3, marginLeft: 2 }} text={data.specialPermission?.includes("Unarchive") && specialPermission ? "Unarchive" : "Archive"} />}
           </Box>
         )}
       </CommonCard>
