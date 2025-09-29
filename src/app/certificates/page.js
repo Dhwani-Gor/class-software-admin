@@ -19,9 +19,11 @@ import CommonInput from "@/components/CommonInput";
 import { getAllIssuedDocuments, getAllJournals, getJournalsList } from "@/api";
 import { Chip, MenuItem, Select, TextField } from "@mui/material";
 import CommonButton from "@/components/CommonButton";
+import { useAuth } from "@/hooks/useAuth";
 
 const Certificates = () => {
   const dispatch = useDispatch();
+  const { data } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
@@ -59,6 +61,11 @@ const Certificates = () => {
   const handleFilterChange = (newFilter) => {
     setSelectedFilter(newFilter);
   };
+
+  const tabs = ["certificates"];
+  if (data?.specialPermission?.includes("Archiving")) {
+    tabs.push("Archive Documents");
+  }
 
   const snackbarClose = () => {
     setSnackBar({ open: false, message: "" });
@@ -289,7 +296,7 @@ const Certificates = () => {
 
       <CommonCard>
         <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-          {["certificates", "Archive Documents"].map((type) => (
+          {tabs.map((type) => (
             <Chip key={type} label={type.charAt(0).toUpperCase() + type.slice(1)} color={selectedFilter === type ? "primary" : "default"} onClick={() => handleFilterChange(type)} clickable sx={{ fontWeight: selectedFilter === type ? 600 : 400, px: 2 }} />
           ))}
         </Stack>
