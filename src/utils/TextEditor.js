@@ -1,10 +1,8 @@
 import { Editor } from "@tinymce/tinymce-react";
 import { useEffect, useState, useCallback } from "react";
-import { getAllClassificationSurveys, getAllListClassificationSurveys, getAllSystemVariables, getSpecificClient, getSurveyReportData, uploadSurveyReport } from "../api";
+import { getAllListClassificationSurveys, getAllSystemVariables, getSpecificClient, getSurveyReportData, uploadSurveyReport } from "../api";
 import { toast } from "react-toastify";
-// import { PDFDocument } from "pdf-lib";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
-
 import html2canvas from "html2canvas";
 import moment from "moment";
 import CommonButton from "@/components/CommonButton";
@@ -12,6 +10,7 @@ import { Box } from "@mui/material";
 import Loader from "@/components/Loader";
 import { addYears, subMonths, format } from "date-fns";
 import { useRouter } from "next/navigation";
+
 const currentDate = new Date();
 
 const TextEditor = ({ id }) => {
@@ -35,6 +34,7 @@ const TextEditor = ({ id }) => {
     const response = await getAllListClassificationSurveys({ clientId: id });
     setClassificationData(response?.data?.data);
   };
+
   useEffect(() => {
     getAllClassification();
   }, []);
@@ -49,405 +49,6 @@ const TextEditor = ({ id }) => {
       console.log(error);
     }
   };
-
-  // ---------------------------------------- final version (using) ----------------------------------------
-  // const downloadEditorContentAsPdf = async () => {
-  //   const iframe = document.querySelector("iframe.tox-edit-area__iframe");
-  //   const contentDocument = iframe?.contentDocument;
-  //   const contentBody = contentDocument?.body;
-
-  //   if (!contentBody) {
-  //     console.error("Could not find editor content");
-  //     return;
-  //   }
-
-  //   const originalOverflow = contentBody.style.overflow;
-  //   const originalHeight = contentBody.style.height;
-  //   const originalMaxHeight = contentBody.style.maxHeight;
-
-  //   try {
-  //     const style = contentDocument.createElement("style");
-  //     style.innerHTML = `
-  //           * {
-  //               font-family: Arial, sans-serif !important;
-  //               font-size: 11px !important;
-  //               line-height: 20px !important;
-  //               word-spacing: 0.05em !important;
-  //               box-sizing: border-box;
-  //               white-space: normal !important;
-  //           }
-
-  //           html, body {
-  //               margin: 0 !important;
-  //               padding: 0 !important;
-  //               background: white !important;
-  //               width: 100% !important;
-  //               height: auto !important;
-  //           }
-
-  //           table {
-  //               border-collapse: collapse !important;
-  //               page-break-inside: auto !important;
-  //           }
-
-  //           table tr, table td, table th {
-  //               page-break-inside: avoid !important;
-  //               break-inside: avoid !important;
-  //               vertical-align: top !important;
-  //               padding: 4px !important;
-  //           }
-
-  //           table thead {
-  //               display: table-header-group !important;
-  //           }
-
-  //           table tbody {
-  //               display: table-row-group !important;
-  //           }
-
-  //           .no-break {
-  //               page-break-inside: avoid !important;
-  //               break-inside: avoid !important;
-  //           }
-  //               .no-break-block,
-  //               .no-break-block *,
-  //               .hull-row {
-  //               page-break-inside: avoid !important;
-  //               break-inside: avoid !important;
-  //               border:none;
-  //       }
-  //       `;
-  //     contentDocument.head.appendChild(style);
-  //     const tableRows = contentDocument.querySelectorAll("table tr");
-  //     tableRows.forEach((row) => {
-  //       row.classList.add("no-break");
-  //       row.style.pageBreakInside = "avoid";
-  //       row.style.breakInside = "avoid";
-  //     });
-
-  //     contentBody.style.overflow = "visible";
-  //     contentBody.style.height = "auto";
-  //     contentBody.style.maxHeight = "none";
-
-  //     await document.fonts.ready;
-  //     await new Promise((resolve) => setTimeout(resolve, 300));
-
-  //     const pageWidth = 595.28;
-  //     const pageHeight = 841.89;
-  //     const dpiRatio = 1.3333;
-  //     const canvasWidth = pageWidth * dpiRatio;
-  //     const canvasHeight = contentBody.scrollHeight;
-
-  //     const canvas = await html2canvas(contentBody, {
-  //       scale: 2,
-  //       useCORS: true,
-  //       allowTaint: true,
-  //       scrollX: 0,
-  //       scrollY: 0,
-  //       backgroundColor: "#ffffff",
-  //       width: canvasWidth,
-  //       height: canvasHeight,
-  //       windowWidth: canvasWidth,
-  //       windowHeight: canvasHeight,
-  //     });
-
-  //     const imgWidth = canvas.width;
-  //     const imgHeight = canvas.height;
-
-  //     const pdfDoc = await PDFDocument.create();
-
-  //     // ================= PAGE LAYOUT CONFIGURATION =================
-  //     const margin = 20;                    // Page margins (left, right, top, bottom spacing)
-  //     const headerHeight = 60;              // Fixed header height - ADJUST THIS to make header bigger/smaller
-  //     const footerHeight = 25;              // Fixed footer height - ADJUST THIS to make footer bigger/smaller
-  //     const usableWidth = pageWidth - 2 * margin;
-  //     const usableHeight = pageHeight - 2 * margin - headerHeight - footerHeight;
-  //     const scaleFactor = usableWidth / imgWidth;
-
-  //     const baseSliceHeight = Math.floor(usableHeight / scaleFactor);
-
-  //     const getTableRowPositions = () => {
-  //       const rows = contentDocument.querySelectorAll("table tr");
-  //       const positions = [];
-
-  //       rows.forEach((row) => {
-  //         const rect = row.getBoundingClientRect();
-  //         const bodyRect = contentBody.getBoundingClientRect();
-  //         const relativeTop = rect.top - bodyRect.top + contentBody.scrollTop;
-  //         const relativeBottom = relativeTop + rect.height;
-
-  //         positions.push({
-  //           top: Math.floor(relativeTop * 2),
-  //           bottom: Math.floor(relativeBottom * 2),
-  //           height: Math.floor(rect.height * 2),
-  //         });
-  //       });
-
-  //       return positions;
-  //     };
-
-  //     const rowPositions = getTableRowPositions();
-
-  //     const getOptimalSliceHeight = (startY, maxSliceHeight) => {
-  //       let optimalHeight = maxSliceHeight;
-  //       const sliceEndY = startY + maxSliceHeight;
-
-  //       for (const row of rowPositions) {
-  //         if (row.top < sliceEndY && row.bottom > sliceEndY) {
-  //           if (row.top > startY + 100) {
-  //             optimalHeight = row.top - startY;
-  //           } else if (row.bottom < startY + maxSliceHeight + row.height) {
-  //             optimalHeight = row.bottom - startY;
-  //           }
-  //           break;
-  //         }
-  //       }
-
-  //       return Math.max(optimalHeight, 100);
-  //     };
-
-  //     let currentY = 0;
-  //     let pageIndex = 0;
-
-  //     while (currentY < imgHeight) {
-  //       const maxSliceHeight = Math.min(baseSliceHeight, imgHeight - currentY);
-  //       const sliceHeight = getOptimalSliceHeight(currentY, maxSliceHeight);
-
-  //       const sliceCanvas = document.createElement("canvas");
-  //       sliceCanvas.width = imgWidth;
-  //       sliceCanvas.height = sliceHeight;
-
-  //       const ctx = sliceCanvas.getContext("2d");
-  //       ctx.drawImage(canvas, 0, currentY, imgWidth, sliceHeight, 0, 0, imgWidth, sliceHeight);
-
-  //       const pngUrl = sliceCanvas.toDataURL("image/png");
-  //       const pngImage = await pdfDoc.embedPng(pngUrl);
-  //       const scaledHeight = sliceHeight * scaleFactor;
-
-  //       const page = pdfDoc.addPage([pageWidth, pageHeight]);
-
-  //       // ================= HEADER SECTION =================
-  //       // Header positioning from top of page
-  //       const headerStartY = pageHeight - 8;         // Distance from top of page - DECREASE to move header up, INCREASE to move down
-
-  //       // Font setup
-  //       const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  //       const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-  //       // Header border/background rectangle
-  //       const headerRectHeight = 55;                 // Header rectangle height - ADJUST to make header box bigger/smaller
-  //       page.drawRectangle({
-  //         x: margin,
-  //         y: headerStartY - headerRectHeight,
-  //         width: usableWidth,
-  //         height: headerRectHeight,
-  //         borderColor: rgb(0.7, 0.7, 0.7),
-  //         filColor: rgb(1, 0, 0),    // light gray background
-  //         borderWidth: 1,
-  //       });
-
-  //       // Company Logo section (currently commented out)
-  //       if (companyLogo && companyLogo !== "-") {
-  //         try {
-  //           // Logo positioning and sizing
-  //           const logoSize = 30;                     // Logo width and height - ADJUST logo size
-  //           const logoX = margin + 8;                // Logo X position from left
-  //           const logoY = headerStartY - 45;         // Logo Y position from top
-
-  //           // Uncomment below lines to enable logo
-  //           // const logoImage = await pdfDoc.embedPng(companyLogo);
-  //           // page.drawImage(logoImage, {
-  //           //   x: logoX,
-  //           //   y: logoY,
-  //           //   width: logoSize,
-  //           //   height: logoSize,
-  //           // });
-  //         } catch (error) {
-  //           console.log("Logo embedding failed:", error);
-  //         }
-  //       }
-
-  //       // Main Title "Survey Status Report"
-  //       const titleFontSize = 12;                    // Title font size - ADJUST to make title bigger/smaller
-  //       const titleY = headerStartY - 18;            // Title Y position - ADJUST to move title up/down
-  //       page.drawText("Survey Status Report", {
-  //         x: pageWidth / 2 - 70,                     // Title X position (centered) - ADJUST for horizontal positioning
-  //         y: titleY,
-  //         size: titleFontSize,
-  //         color: rgb(0, 0, 1),                       // Blue color for title
-  //         font,
-  //       });
-
-  //       // LEFT COLUMN - Name and Status
-  //       const leftColumnX = margin + 8;              // Left column X position - ADJUST to move left content left/right
-  //       const labelFontSize = 9;                     // Font size for labels - ADJUST to make labels bigger/smaller
-  //       const valueFontSize = 9;                     // Font size for values - ADJUST to make values bigger/smaller
-  //       const colonX = margin + 45;                  // Colon X position - ADJUST to align colons
-  //       const valueX = margin + 55;                  // Value X position - ADJUST to align values
-
-  //       // Name row
-  //       const nameY = headerStartY - 35;             // Name row Y position - ADJUST to move name row up/down
-  //       page.drawText("Name", {
-  //         x: leftColumnX,
-  //         y: nameY,
-  //         size: labelFontSize,
-  //         font: regularFont,
-  //       });
-  //       page.drawText(":", {
-  //         x: colonX,
-  //         y: nameY,
-  //         size: labelFontSize,
-  //         font: regularFont,
-  //       });
-  //       page.drawText(`${clientData?.shipName || "N/A"}`, {
-  //         x: valueX,
-  //         y: nameY,
-  //         size: valueFontSize,
-  //         font,
-  //       });
-
-  //       // Status row
-  //       const statusY = headerStartY - 47;           // Status row Y position - ADJUST to move status row up/down
-  //       page.drawText("Status", {
-  //         x: leftColumnX,
-  //         y: statusY,
-  //         size: labelFontSize,
-  //         font: regularFont,
-  //       });
-  //       page.drawText(":", {
-  //         x: colonX,
-  //         y: statusY,
-  //         size: labelFontSize,
-  //         font: regularFont,
-  //       });
-  //       page.drawText("In Operation, Class Valid", {
-  //         x: valueX,
-  //         y: statusY,
-  //         size: valueFontSize,
-  //         font: regularFont,
-  //       });
-
-  //       // RIGHT COLUMN - IR Number and IMO Number
-  //       const rightLabelX = pageWidth - margin - 120; // Right column label X position - ADJUST to move right labels left/right
-  //       const rightColonX = pageWidth - margin - 65;   // Right column colon X position - ADJUST to align right colons
-  //       const rightValueX = pageWidth - margin - 55;   // Right column value X position - ADJUST to align right values
-
-  //       // IR Number row
-  //       page.drawText("IR Number", {
-  //         x: rightLabelX,
-  //         y: nameY,                                   // Same Y as name row
-  //         size: labelFontSize,
-  //         font: regularFont,
-  //       });
-  //       page.drawText(":", {
-  //         x: rightColonX,
-  //         y: nameY,
-  //         size: labelFontSize,
-  //         font: regularFont,
-  //       });
-  //       page.drawText(`${clientData?.irNumber || "N/A"}`, {
-  //         x: rightValueX,
-  //         y: nameY,
-  //         size: valueFontSize,
-  //         font,
-  //       });
-
-  //       // IMO Number row
-  //       page.drawText("IMO Number", {
-  //         x: rightLabelX,
-  //         y: statusY,                                 // Same Y as status row
-  //         size: labelFontSize,
-  //         font: regularFont,
-  //       });
-  //       page.drawText(":", {
-  //         x: rightColonX,
-  //         y: statusY,
-  //         size: labelFontSize,
-  //         font: regularFont,
-  //       });
-  //       page.drawText(`${clientData?.imoNumber || "N/A"}`, {
-  //         x: rightValueX,
-  //         y: statusY,
-  //         size: valueFontSize,
-  //         font,
-  //       });
-
-  //       // ================= MAIN CONTENT SECTION =================
-  //       // Content positioning between header and footer
-  //       const contentStartY = pageHeight - headerHeight - margin - 5; // Content start Y position - ADJUST to add/reduce space between header and content
-
-  //       page.drawImage(pngImage, {
-  //         x: margin,                                  // Content X position (left margin)
-  //         y: contentStartY - scaledHeight,           // Content Y position
-  //         width: usableWidth,                        // Content width (page width minus margins)
-  //         height: scaledHeight,                      // Content height (scaled to fit)
-  //       });
-
-  //       // ================= FOOTER SECTION =================
-  //       // Footer positioning from bottom of page
-  //       const footerStartY = footerHeight - 5;       // Footer Y position from bottom - INCREASE to move footer up, DECREASE to move down
-  //       const footerFontSize = 8;                    // Footer font size - ADJUST to make footer text bigger/smaller
-
-  //       // Footer content
-  //       const generatedText = `Generated on: ${moment().format("DD MMM YYYY")}`;
-  //       const totalPages = Math.ceil(imgHeight / baseSliceHeight);
-  //       const pageText = `Page ${pageIndex + 1} of ${totalPages}`;
-
-  //       // Footer separator line
-  //       const footerLineY = footerStartY + 12;       // Footer line Y position - ADJUST to move separator line up/down
-  //       page.drawLine({
-  //         start: { x: margin, y: footerLineY },
-  //         end: { x: pageWidth - margin, y: footerLineY },
-  //         thickness: 0.5,                            // Footer line thickness - ADJUST to make line thicker/thinner
-  //       });
-
-  //       // Footer text positioning
-  //       page.drawText(generatedText, {
-  //         x: margin,                                 // Generated date X position (left aligned)
-  //         y: footerStartY,
-  //         size: footerFontSize,
-  //       });
-
-  //       const pageTextWidth = pageText.length * 4.5; // Approximate page text width for right alignment
-  //       page.drawText(pageText, {
-  //         x: pageWidth - margin - pageTextWidth,     // Page number X position (right aligned) - ADJUST multiplier to fine-tune alignment
-  //         y: footerStartY,
-  //         size: footerFontSize,
-  //       });
-
-  //       currentY += sliceHeight;
-  //       pageIndex++;
-  //     }
-
-  //     const pdfBytes = await pdfDoc.save();
-  //     const blob = new Blob([pdfBytes], { type: "application/pdf" });
-
-  //     const file = new File([blob], "survey-status-report.pdf", {
-  //       type: "application/pdf",
-  //     });
-  //     const formData = new FormData();
-  //     formData.append("clientId", id);
-  //     formData.append("generatedDoc", file);
-
-  //     const res = await uploadSurveyReport(formData);
-  //     if (res) {
-  //       toast.success("Survey Status Report Downloaded Successfully");
-  //     }
-
-  //     const url = URL.createObjectURL(blob);
-  //     const link = document.createElement("a");
-  //     link.href = url;
-  //     link.download = `MCB Survey Status Report - ${clientData?.imoNumber}-${clientData?.shipName}-${moment(currentDate).format("DD-MM-YYYY")}.pdf`;
-  //     document.body.appendChild(link);
-  //     link.click();
-  //     document.body.removeChild(link);
-  //     URL.revokeObjectURL(url);
-  //   } finally {
-  //     contentBody.style.overflow = originalOverflow;
-  //     contentBody.style.height = originalHeight;
-  //     contentBody.style.maxHeight = originalMaxHeight;
-  //   }
-  // };
 
   const downloadEditorContentAsPdf = async () => {
     const iframe = document.querySelector("iframe.tox-edit-area__iframe");
@@ -466,64 +67,198 @@ const TextEditor = ({ id }) => {
     try {
       const style = contentDocument.createElement("style");
       style.innerHTML = `
-      * {
-          font-family: Arial, sans-serif !important;
-          font-size: 11px !important;
-          line-height: 20px !important;
-          word-spacing: 0.05em !important;
-          box-sizing: border-box;
-          white-space: normal !important;
-      }
-      html, body {
-          margin: 0 !important;
-          padding: 0 !important;
-          background: white !important;
-          width: 100% !important;
-          height: auto !important;
-      }
-      table {
-          border-collapse: collapse !important;
-          page-break-inside: auto !important;
-      }
-      table tr, table td, table th {
-          page-break-inside: avoid !important;
-          break-inside: avoid !important;
-          vertical-align: top !important;
-          padding: 4px !important;
-      }
-      table thead {
-          display: table-header-group !important;
-      }
-      table tbody {
-          display: table-row-group !important;
-      }
-      .no-break {
-          page-break-inside: avoid !important;
-          break-inside: avoid !important;
-      }
-      .no-break-block, 
-      .no-break-block *, 
-      .hull-row {
-          page-break-inside: avoid !important;
-          break-inside: avoid !important;
-          border:none;
-      }
-      /* New page break classes */
-      .page-break-after {
-          page-break-after: always !important;
-          break-after: page !important;
-      }
-      .index-page {
-          page-break-after: always !important;
-          break-after: page !important;
-      }
-    `;
+  * {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+      box-sizing: border-box;
+      white-space: normal !important;
+  }
+  
+  html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background: white !important;
+      width: 100% !important;
+      height: auto !important;
+      font-size: 13px !important;
+      line-height: 1.6 !important;
+      color: #333 !important;
+  }
+  
+  h1 {
+      font-size: 28px !important;
+      font-weight: bold !important;
+      color: black !important;
+  }
+  
+  h2 {
+      font-size: 22px !important;
+      font-weight: 600 !important;
+      letter-spacing: 0.5px !important;
+  }
+  
+  h4 {
+      font-size: 15px !important;
+      font-weight: 600 !important;
+      letter-spacing: 0.3px !important;
+  }
+  
+  p, div, span {
+      font-size: 13px !important;
+      line-height: 1.6 !important;
+  }
+  
+  p.subtitle {
+      font-size: 13px !important;
+      line-height: 1.6 !important;
+  }
+  
+  table {
+      border-collapse: collapse !important;
+      page-break-inside: auto !important;
+      font-size: 12px !important;
+  }
+  
+  table th, table td {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      vertical-align: top !important;
+      padding: 6px 8px !important;
+      font-size: 12px !important;
+  }
+  
+  table th {
+      font-size: 12px !important;
+      font-weight: 600 !important;
+      letter-spacing: 0.5px !important;
+  }
+  
+  table thead {
+      display: table-header-group !important;
+  }
+  
+  table tbody {
+      display: table-row-group !important;
+  }
+  
+  .owner-info {
+      font-size: 13px !important;
+      line-height: 1.8 !important;
+  }
+  
+  .owner-info div {
+      font-size: 13px !important;
+  }
+  
+  .legend-item {
+      font-size: 13px !important;
+      font-weight: 500 !important;
+  }
+  
+  .section-title {
+      font-size: 16px !important;
+      font-weight: 600 !important;
+  }
+  
+  .toc-section td {
+      font-size: 15px !important;
+      font-weight: 600 !important;
+  }
+  
+  strong {
+      font-weight: 600 !important;
+  }
+  
+  .no-break {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+  }
+  
+  .no-break-block, 
+  .no-break-block *, 
+  .hull-row {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      border:none;
+  }
+  
+  .company-name {
+      font-size: 28px !important;
+      font-weight: bold !important;
+      color: black !important;
+      text-align: center !important;
+      margin: 0 10px 30px 0 !important;
+      letter-spacing: 0.5px !important;
+      text-transform: uppercase !important;
+      padding-bottom: 12px !important;
+  }
+  
+  
+  
+  span.expired {
+      color: white !important;
+      background-color: #FF0000 !important;
+      width: 18px !important;
+      height: 18px !important;
+      justify-content: center !important;
+      align-items: center !important;
+      font-size: 11px !important;
+      display: flex !important;
+      border-radius: 3px !important;
+      box-shadow: 0 2px 4px rgba(220,53,69,0.3) !important;
+  }
+
+      span.expiring1m::before {
+                 display: block !important;
+                 transform: rotate(-45deg) !important;
+                 position: absolute !important;
+                 top: 50% !important;
+                 left: 50% !important;
+                 transform: translate(-50%, -50%) rotate(-45deg) !important;
+             }
+
+              span.expiring1m {
+                 display: inline-block !important;
+                 width: 8px;
+                 height: 14px;
+                 margin-left: 8px !important;
+                 background-color: #ffc107 !important;
+                 color: white !important;
+                 font-size: 11px !important;
+                 font-weight: bold !important;
+                 transform: rotate(45deg) !important;
+                 align-items: center !important;
+                 display: flex !important;
+                 justify-content: center !important;
+             }
+
+      span.expiring1m * {
+                 transform: rotate(-45deg) !important;
+                 display: inline-block !important;
+             }
+
+  span.expiring3m {
+      color: white !important;
+      border-radius: 50% !important;
+      background-color: #28a745 !important;
+      width: 18px !important;
+      height: 18px !important;
+      display: inline-flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+      font-size: 11px !important;
+      box-shadow: 0 2px 4px rgba(40,167,69,0.3) !important;
+  }
+  
+  .page-break-new {
+      margin-top: 80px;
+  }
+`;
       contentDocument.head.appendChild(style);
 
-      // Apply page break class to index-page elements
-      const indexPages = contentDocument.querySelectorAll(".index-page");
-      indexPages.forEach((element) => {
-        element.classList.add("page-break-after");
+      const diamondIcons = contentDocument.querySelectorAll("span.expiring1m");
+      diamondIcons.forEach((icon) => {
+        const text = icon.textContent;
+        icon.innerHTML = `<span>${text}</span>`;
       });
 
       const tableRows = contentDocument.querySelectorAll("table tr");
@@ -558,13 +293,12 @@ const TextEditor = ({ id }) => {
         windowWidth: canvasWidth,
         windowHeight: canvasHeight,
       });
-
       const imgWidth = canvas.width;
+
       const imgHeight = canvas.height;
 
       const pdfDoc = await PDFDocument.create();
 
-      // ========== PAGE CONFIG ==========
       const margin = 20;
       const headerHeight = 60;
       const footerHeight = 25;
@@ -572,24 +306,6 @@ const TextEditor = ({ id }) => {
       const usableHeight = pageHeight - 2 * margin - headerHeight - footerHeight;
       const scaleFactor = usableWidth / imgWidth;
       const baseSliceHeight = Math.floor(usableHeight / scaleFactor);
-
-      // Get positions of elements that should end pages (force next content to new page)
-      const getPageBreakAfterElements = () => {
-        const elements = contentDocument.querySelectorAll(".index-page, .page-break-after");
-        const positions = [];
-        elements.forEach((element) => {
-          const rect = element.getBoundingClientRect();
-          const bodyRect = contentBody.getBoundingClientRect();
-          const relativeTop = rect.top - bodyRect.top + contentBody.scrollTop;
-          const relativeBottom = relativeTop + rect.height;
-          positions.push({
-            top: Math.floor(relativeTop * 2),
-            bottom: Math.floor(relativeBottom * 2),
-            element: element,
-          });
-        });
-        return positions.sort((a, b) => a.top - b.top);
-      };
 
       const getTableRowPositions = () => {
         const rows = contentDocument.querySelectorAll("table tr");
@@ -609,24 +325,10 @@ const TextEditor = ({ id }) => {
       };
 
       const rowPositions = getTableRowPositions();
-      const pageBreakAfterElements = getPageBreakAfterElements();
-
-      const shouldForcePageBreakAfter = (startY, endY) => {
-        return pageBreakAfterElements.some((pb) => pb.bottom >= startY && pb.bottom < endY);
-      };
 
       const getOptimalSliceHeight = (startY, maxSliceHeight) => {
         let optimalHeight = maxSliceHeight;
         const sliceEndY = startY + maxSliceHeight;
-
-        // Check if we should end the page after certain elements (like index-page)
-        for (const pageBreakAfter of pageBreakAfterElements) {
-          if (pageBreakAfter.bottom > startY && pageBreakAfter.bottom < sliceEndY) {
-            return pageBreakAfter.bottom - startY;
-          }
-        }
-
-        // Then check for table row breaks
         for (const row of rowPositions) {
           if (row.top < sliceEndY && row.bottom > sliceEndY) {
             if (row.top > startY + 100) {
@@ -643,7 +345,6 @@ const TextEditor = ({ id }) => {
       let currentY = 0;
       let pageIndex = 0;
 
-      // Embed fonts once
       const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
       const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
@@ -663,9 +364,8 @@ const TextEditor = ({ id }) => {
         const scaledHeight = sliceHeight * scaleFactor;
 
         const page = pdfDoc.addPage([pageWidth, pageHeight]);
+
         if (pageIndex > 0) {
-          // <-- skip on first page
-          // ========== HEADER ==========
           const headerStartY = pageHeight - 8;
           const headerRectHeight = 55;
           page.drawRectangle({
@@ -673,19 +373,17 @@ const TextEditor = ({ id }) => {
             y: headerStartY - headerRectHeight,
             width: usableWidth,
             height: headerRectHeight,
-            color: rgb(0.12, 0.35, 0.6), // dark blue
+            color: rgb(0.4, 0.35, 0.75),
           });
 
-          // Title
           page.drawText("Survey Status Report", {
             x: pageWidth / 2 - 70,
             y: headerStartY - 20,
             size: 13,
-            color: rgb(1, 1, 1), // white
+            color: rgb(1, 1, 1),
             font: fontBold,
           });
 
-          // Left column
           const leftColumnX = margin + 8;
           const colonX = margin + 45;
           const valueX = margin + 55;
@@ -736,7 +434,6 @@ const TextEditor = ({ id }) => {
             font: fontRegular,
           });
 
-          // Right column
           const rightLabelX = pageWidth - margin - 120;
           const rightColonX = pageWidth - margin - 65;
           const rightValueX = pageWidth - margin - 55;
@@ -763,7 +460,7 @@ const TextEditor = ({ id }) => {
             font: fontBold,
           });
         }
-        // ========== CONTENT ==========
+
         const contentStartY = pageHeight - headerHeight - margin - 5;
         page.drawImage(pngImage, {
           x: margin,
@@ -772,15 +469,13 @@ const TextEditor = ({ id }) => {
           height: scaledHeight,
         });
 
-        // ========== FOOTER ==========
         if (pageIndex > 0) {
-          // <-- skip on first page
           page.drawRectangle({
             x: margin,
             y: 0,
             width: usableWidth,
             height: footerHeight + 8,
-            color: rgb(0.9, 0.9, 0.9), // light gray background
+            color: rgb(0.9, 0.9, 0.9),
           });
 
           const footerStartY = footerHeight - 5;
@@ -892,60 +587,12 @@ const TextEditor = ({ id }) => {
     return "";
   };
 
-  // const getStatusText = (dueDate) => {
-  //     if (!dueDate) return 'No date set';
-
-  //     const due = moment(dueDate);
-
-  //     if (!due.isValid()) {
-  //         console.warn('Invalid date provided to getStatusText:', dueDate);
-  //         return 'Invalid date';
-  //     }
-
-  //     const daysDiff = due.diff(today, 'days');
-
-  //     console.log('Status calculation:', {
-  //         inputDate: dueDate,
-  //         momentDate: due.format('YYYY-MM-DD'),
-  //         today: today.format('YYYY-MM-DD'),
-  //         daysDiff: daysDiff
-  //     });
-
-  //     if (daysDiff < 0) {
-  //         return `Overdue by ${Math.abs(daysDiff)} days`;
-  //     }
-  //     if (daysDiff <= 30) {
-  //         return 'Limit date in less than 1m.';
-  //     }
-  //     if (daysDiff <= 90) {
-  //         return 'Within range';
-  //     }
-  //     return 'Active';
-  // };
-
-  // Function to handle dynamic updates in TinyMCE
-  // const calculateDates = (issuanceDate) => {
-  //     if (!issuanceDate) return { dueDate: "", rangeDate: "" };
-
-  //     const issuanceDateObj = new Date(issuanceDate);
-  //     const dueDateObj = addYears(issuanceDateObj, 5);
-  //     const rangeDateObj = reportDetails?.typeOfCertificate === "full_term" ? subMonths(dueDateObj, 6) : subMonths(dueDateObj, 3);
-
-  //     return {
-  //         dueDate: format(dueDateObj, "yyyy-MM-dd"),
-  //         rangeDate: format(rangeDateObj, "yyyy-MM-dd"),
-  //     };
-  // };
-
   const calculateDates = (issuanceDate) => {
     if (!issuanceDate) return { dueDate: "", rangeFrom: "", rangeTo: "" };
 
     const issuanceDateObj = new Date(issuanceDate);
     const dueDateObj = addYears(issuanceDateObj, 5);
     const rangeFromObj = subMonths(dueDateObj, 3);
-    const rangeToObj = addYears(issuanceDateObj, 5);
-    const rangeToPlus = addYears(issuanceDateObj, 5);
-    const rangeToFinal = addYears(issuanceDateObj, 5);
     const rangeToPlus3 = addYears(subMonths(issuanceDateObj, -3), 5);
 
     return {
@@ -1053,7 +700,6 @@ const TextEditor = ({ id }) => {
       return "status-icon expiring3m";
     };
 
-    // Function to get status text
     const getDynamicStatusText = (dateStr) => {
       const date = parseDate(dateStr);
       if (!date) return "";
@@ -1061,15 +707,12 @@ const TextEditor = ({ id }) => {
       const daysDiff = date.diff(currentToday, "days");
 
       if (daysDiff < 0) {
-        // return `Overdue by ${Math.abs(daysDiff)} days`;
         return "";
       }
       if (daysDiff <= 30) {
-        // return 'Limit date in less than 1m.';
         return "";
       }
       if (daysDiff <= 90) {
-        // return 'Within range';
         return "";
       }
       return "";
@@ -1117,7 +760,6 @@ const TextEditor = ({ id }) => {
             const newStatus = getDynamicStatusText(dueDateText);
 
             iconSpan.className = newClass;
-            iconSpan.className = newClass;
 
             if (statusCell) {
               statusCell.textContent = newStatus;
@@ -1137,56 +779,62 @@ const TextEditor = ({ id }) => {
   };
 
   const generateHtmlContent = useCallback(() => {
-    const classificationRows = (
-      classificationData?.map((row) => {
-        const surveyName = formatSurveyName(row.surveyName);
-        const issuanceDate = row.issuanceDate;
-        const surveyDate = row.surveyDate;
-        const dueDate = row.dueDate;
-        const rangeTo = row.rangeTo ? moment(row.rangeTo).format("YYYY-MM-DD") : null;
-        const rangeFrom = row.rangeFrom ? moment(row.rangeFrom).format("YYYY-MM-DD") : null;
-        const postponedDate = row.postponed;
-        const currentDate = new Date().toISOString().split("T")[0];
+    const classificationRows =
+      classificationData?.length > 0
+        ? (
+            classificationData?.map((row) => {
+              const surveyName = formatSurveyName(row.surveyName);
+              const issuanceDate = row.issuanceDate;
+              const surveyDate = row.surveyDate;
+              const dueDate = row.dueDate;
+              const rangeTo = row.rangeTo ? moment(row.rangeTo).format("YYYY-MM-DD") : null;
+              const rangeFrom = row.rangeFrom ? moment(row.rangeFrom).format("YYYY-MM-DD") : null;
+              const postponedDate = row.postponed;
+              const currentDate = new Date().toISOString().split("T")[0];
 
-        return `
-                <tr>
-                    <td>${surveyName}</td>
-                    <td>${getClassRangeIcon(currentDate, rangeFrom, rangeTo) ? `<span class="${getClassRangeIcon(currentDate, rangeFrom, rangeTo)}">S</span>` : ""}</td>              
-                    <td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
-                    <td>${issuanceDate ? moment(issuanceDate).format("DD/MM/YYYY") : ""}</td>
-                    <td>${dueDate ? moment(dueDate).format("DD/MM/YYYY") : ""}
-                    <td>
-                        ${moment(rangeFrom, moment.ISO_8601, true).isValid() && moment(rangeTo, moment.ISO_8601, true).isValid() ? `${moment(rangeFrom).format("DD/MM/YYYY")} - ${moment(rangeTo).format("DD/MM/YYYY")}` : "-"}
-                    </td>
+              return `
+<tr>
+<td>${surveyName}</td>
+<td>${getClassRangeIcon(currentDate, rangeFrom, rangeTo) ? `<span class="${getClassRangeIcon(currentDate, rangeFrom, rangeTo)}">S</span>` : ""}</td>
+<td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
+<td>${issuanceDate ? moment(issuanceDate).format("DD/MM/YYYY") : ""}</td>
+<td>${dueDate ? moment(dueDate).format("DD/MM/YYYY") : ""}
+<td>
+${moment(rangeFrom, moment.ISO_8601, true).isValid() && moment(rangeTo, moment.ISO_8601, true).isValid() ? `${moment(rangeFrom).format("DD/MM/YYYY")} - ${moment(rangeTo).format("DD/MM/YYYY")}` : "-"}
+</td>
 
-                    <td>${postponedDate ? moment(postponedDate).format("DD/MM/YYYY") : ""}</td>
-                </tr>
-            `;
-      }) || []
-    ).join("");
+<td>${postponedDate ? moment(postponedDate).format("DD/MM/YYYY") : ""}</td>
+</tr>
+`;
+            }) || []
+          ).join("")
+        : "";
 
-    const statutoryRows = statutoryData
-      ?.filter((row) => row.surveyName.toLowerCase() !== "certificate of class")
-      .map((row) => {
-        const surveyName = row.surveyName;
-        const surveyDate = row.surveyDate;
-        const issuanceDate = row.issuanceDate;
-        let rangeTo = row.rangeTo;
-        let rangeFrom = row.rangeFrom;
-        const postponedDate = "";
-        const currentDate = new Date().toISOString().split("T")[0];
+    const statutoryRows =
+      statutoryData?.length > 0
+        ? statutoryData
+            ?.filter((row) => row.surveyName.toLowerCase() !== "certificate of class")
+            .map((row) => {
+              const surveyName = row.surveyName;
+              const surveyDate = row.surveyDate;
+              const issuanceDate = row.issuanceDate;
+              let rangeTo = row.rangeTo;
+              let rangeFrom = row.rangeFrom;
+              const postponedDate = "";
+              const currentDate = new Date().toISOString().split("T")[0];
 
-        return `
-                <tr>
-                <td>${surveyName}</td>
-                <td>${getClassRangeIcon(currentDate, rangeFrom, rangeTo) ? `<span class="${getClassRangeIcon(currentDate, rangeFrom, rangeTo)}">C</span>` : ""}</td>              <td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
-                <td></td>
-                <td>${reportDetails.typeOfCertificate == "full_term" ? `${moment(rangeFrom).format("DD/MM/YYYY")} - ${moment(rangeTo).format("DD/MM/YYYY")}` : ""}</td>
-                <td>${postponedDate}</td>
-                </tr>
-            `;
-      })
-      .join("");
+              return `
+<tr>
+<td>${surveyName}</td>
+<td>${getClassRangeIcon(currentDate, rangeFrom, rangeTo) ? `<span class="${getClassRangeIcon(currentDate, rangeFrom, rangeTo)}">C</span>` : ""}</td> <td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
+<td></td>
+<td>${reportDetails.typeOfCertificate == "full_term" ? `${moment(rangeFrom).format("DD/MM/YYYY")} - ${moment(rangeTo).format("DD/MM/YYYY")}` : ""}</td>
+<td>${postponedDate}</td>
+</tr>
+`;
+            })
+            .join("")
+        : "";
 
     const certificateOfClassRow = reportDetails?.find((cert) => cert?.activity?.surveyTypes?.report?.name?.toLowerCase() === "certificate of class");
 
@@ -1196,7 +844,6 @@ const TextEditor = ({ id }) => {
       const name = cert?.activity?.surveyTypes?.report?.name || "-";
       const issued = cert.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : "";
       const expiry = cert.validityDate;
-      const extendedDate = cert.extendedDate;
       const expiryFormatted = expiry ? moment(expiry).format("YYYY-MM-DD") : null;
 
       const type = cert?.typeOfCertificate === "short_term" ? "ST" : cert?.typeOfCertificate === "full_term" ? "FT" : cert?.typeOfCertificate === "intrim" ? "IT" : cert?.typeOfCertificate === "extended" ? "ET" : cert?.typeOfCertificate || "-";
@@ -1205,261 +852,276 @@ const TextEditor = ({ id }) => {
       const currentDate = new Date().toISOString().split("T")[0];
 
       return `
-                    <tr>
-                        <td>${name}</td>
-                        <td>${getClassName(expiryFormatted, currentDate) ? `<span class="${getClassName(expiryFormatted, currentDate)}">C</span>` : ""}</td>
-                        <td>${issued}</td>
-                        <td>${expiry ? moment(expiry).format("DD/MM/YYYY") : ""}</td>
-                        <td></td>
-                        <td>${type}</td>
-                        <td>${status}</td>
-                    </tr>
-                `;
+<tr>
+<td>${name}</td>
+<td>${getClassName(expiryFormatted, currentDate) ? `<span class="${getClassName(expiryFormatted, currentDate)}">C</span>` : ""}</td>
+<td>${issued}</td>
+<td>${expiry ? moment(expiry).format("DD/MM/YYYY") : ""}</td>
+<td></td>
+<td>${type}</td>
+<td>${status}</td>
+</tr>
+`;
     };
 
     const certificateRows = [certificateOfClassRow ? formatCertificateRow(certificateOfClassRow) : null, ...(otherCertificates?.map(formatCertificateRow) || [])].filter(Boolean).join("");
 
     const certificatesTableHtml = `
-        <h2>Certificates</h2>
-        <table>
-            <thead>
-            <tr>
-                <th>Certificate Name</th>
-                <th></th>
-                <th>Issued</th>
-                <th>Expiry</th>
-                <th>Extended</th>
-                <th>Type</th>
-            </tr>
-            </thead>
-            <tbody>
-            ${certificateRows}
-            </tbody>
-        </table>
-        <div class="legend">
-        <span class="legend-item"><span class="status-icon expired">C</span>Expired</span>
-        <span class="legend-item"><span class="status-icon expiring1m">C</span>Expires in less than 1 month</span>
-        <span class="legend-item"><span class="status-icon expiring3m">C</span>Expires in less than 3 months</span>
-        </div>
-        `;
+<h4 style="margin-top: -90px;color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)" >Certificates</h4>
+<table>
+<thead>
+<tr>
+<th>Certificate Name</th>
+<th></th>
+<th>Issued</th>
+<th>Expiry</th>
+<th>Extended</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+${certificateRows}
+</tbody>
+</table>
+<div class="legend">
+<span class="legend-item"><span class="status-icon expired">C</span>Expired</span>
+<span class="legend-item"><span class="status-icon expiring1m">C</span>Expires in less than 1 month</span>
+<span class="legend-item"><span class="status-icon expiring3m">C</span>Expires in less than 3 months</span>
+</div>
+`;
 
     const classificationSurveyTableHtml = `
-                <div class="section-title">Classification Surveys</div>
-                <table class="">
-                    <tr>
-                        <th>Survey Name</th>
-                        <th></th>
-                        <th>Survey Date</th>
-                        <th>Assigned Date</th>
-                        <th>Due Date</th>
-                        <th>Range (from, to)</th>
-                        <th>Postponed</th>
-                    </tr>
-                    ${classificationRows}
-                </table>
-            `;
+<p class="section-title" style="font-size: 16px; font-weight: bold;">Classification Surveys</p>
+<table class="">
+<tr>
+<th>Survey Name</th>
+<th></th>
+<th>Survey Date</th>
+<th>Assigned Date</th>
+<th>Due Date</th>
+<th>Range (from, to)</th>
+<th>Postponed</th>
+</tr>
+${classificationRows}
+</table>
+`;
 
     const statutorySurveyTableHtml = `
-                <div class="section-title" style="margin-top: 20px;">Statutory Surveys</div>
-                <table>
-                    <tr>
-                        <th>Survey Name</th>
-                        <th></th>
-                        <th>Survey Date</th>
-                        <th>Range (from, to)</th>
-                        <th>Postponed</th>
-                    </tr>
-                    ${statutoryRows}
-                </table>
-            `;
+<div class="section-title" style="margin-top: 20px; font-size: 16px; font-weight: bold;">Statutory Surveys</div>
+<table>
+<tr>
+<th>Survey Name</th>
+<th></th>
+<th>Survey Date</th>
+<th>Range (from, to)</th>
+<th>Postponed</th>
+</tr>
+${statutoryRows}
+</table>
+`;
 
     const htmlString = `
-        <div class="page">
-        ${certificatesTableHtml}
-        
-        <h2 style="margin-top: 40px;">Conditions of Class / Statutory Status</h2>
-        <p class="subtitle">
-            The Conditions of Class / Statutory Status below shows the information available at the time the report is printed. 
-            This may not indicate certificates issued, surveys carried out or conditions of class / recommendations issued but not yet reported to MCB Head Office.
-        </p>
+<div class="page">
+${certificatesTableHtml}
 
-        <h2>Classification</h2>
-        <p><i>Status: Active</i></p>
-        </div>
-        `;
+<h2 style="margin-top: 40px; color:black">Conditions of Class / Statutory Status</h2>
+<p class="subtitle">
+The Conditions of Class / Statutory Status below shows the information available at the time the report is printed.
+This may not indicate certificates issued, surveys carried out or conditions of class / recommendations issued but not yet reported to MCB Head Office.
+</p>
+
+<h4 style="margin-top:-10px;color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)">Classification</h4>
+<p><i>Status: Active</i></p>
+</div>
+`;
 
     return `
-        <div class="page cover-page">
-<img src="${companyLogo}" alt="Company Logo" class="company-logo" />
-<h1 style="font-size: 28px; margin: 20px 0; color: black; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">${companyName}</h1>
-<div class="ship-name">${clientData?.shipName || "-"}</div>
-
-<div class="ship-details">
-<p><strong>Reg. Owner:</strong> ${clientData?.ownerDetails?.companyName || "-"}</p>
-<p><strong>IMO Number:</strong> ${clientData?.imoNumber || "-"}</p>
-<p><strong>Vessel Type:</strong> ${clientData?.typeOfShip || "-"}</p>
-<p><strong>Gross Tonnage:</strong> ${clientData?.grossTonnage || "-"}</p>
-<p><strong>Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : "-"}</p>
+<div style="text-align: center; background-color: white; color: black; padding: 60px;">
+<div style={{ textAlign: 'center', backgroundColor: 'white', color: 'black', padding: '60px' }}>
+<img src=${companyLogo}  alt="companyLogo" height="150" width="150" style="margin-bottom: 30px;"/>
+<h1 style="font-size: 28px; color: black; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);" class="company-name">${companyName} - ${clientData?.shipName || "-"}</h1>
 </div>
-       <div style="" class="index-page">
-       <h2 style="color:black;">Table of Contents</h2>
-        <div>
-         <table style="width: 99%;">
-        <tr style="color:black">
-            <td class=""><strong>1. Ship Particulars</strong></td>
-        </tr>
-        
-        <tr style="color:black;">
-            <td><strong>2. Owner/Manager Information</strong></td>
-        </tr>
-        <tr style="color:black">
-            <td><strong>3. Conditions of Class / Statutory status</strong></td>
-        </tr>
-    </table>
-    </div>
 
+
+<div style="text-align: left; display: inline-block; font-size: 16px;">
+<p><strong font-size="16px">Reg. Owner:</strong> ${clientData?.ownerDetails?.companyName || "-"}</p>
+<p><strong font-size="16px">IMO Number:</strong> ${clientData?.imoNumber || "-"}</p>
+<p><strong font-size="16px">Vessel Type:</strong> ${clientData?.typeOfShip || "-"}</p>
+<p><strong font-size="16px">Gross Tonnage:</strong> ${clientData?.grossTonnage || "-"}</p>
+<p><strong font-size="16px">Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : "-"}</p>
 </div>
 </div>
-        </div>
 
-         <div class="page">
-                <h2>Ship Particulars</h2>
-                <table class="classification-section-table" style="width: 100%;">
-                <tr>
-                  <h4 style="color:black">Identification</h4>
-                </tr>
-              <tbody>
-                <tr class="">
-                    <td class="left" style="font-size:14px;"><em><strong>Ship Type:</strong></em> ${clientData?.typeOfShip || "-"}</td>
-                    <td class="right" style="font-size:14px;"><em><strong>Flag:</strong></em> ${clientData?.flag || "-"}</td>
-                </tr>
-                <tr class="">
-                    <td class="left" style="font-size:14px;"><em><strong>IMO Number:</strong></em> ${clientData?.imoNumber || "-"}</td>
-                    <td class="right" style="font-size:14px;"><em><strong>Port of Registry:</strong></em> ${clientData?.portOfRegistry || "-"}</td>
-                </tr>
-                <tr class="">
-                    <td class="left" style="font-size:14px;"><em><strong>Call Sign:</strong></em> ${clientData?.callSign || "-"}</td>
-                    <td class="right" style="font-size:14px;"><em><strong>Official Number:</strong></em> ${clientData?.officialNumber || "-"}</td>
-                </tr>
-            </tbody>
-            </table>
-            
-            
-            <table class="classification-section-table" style="width: 100%;">
-    <tr>
-      <h4 style="color:black">Classification</h4>
-    </tr>
-  <tbody>
-    <tr>
-      <td class="right" style="font-size:14px;"><em><strong>Class Symbols:</strong></em></td>
-      <td class="right" style="font-size:14px;">-</td>
-    </tr>
-    <tr>
-      <td class="right" style="font-size:14px;"><em><strong>Hull Notation:</strong></em></td>
-      <td class="right" style="font-size:14px;">${clientData?.hullNotation || "-"}</td>
-    </tr>
-    <tr>
-      <td class="right" style="font-size:14px;"><em><strong>Machinery Notation:</strong></em></td>
-      <td class="right" style="font-size:14px;">${clientData?.machineryNotation || "-"}</td>
-    </tr>
-    <tr>
-      <td class="right" style="font-size:14px;"><em><strong>Descriptive Notations:</strong></em></td>
-      <td class="right" style="font-size:14px;">${clientData?.descriptiveNotation || "-"}</td>
-    </tr>
-  </tbody>
+<div style="text-align: center; align-items: center;" class="page">
+<h2 style="color:black; margin-top: 0;">Table of Contents</h2>
+<div class="toc-container index-page">
+<table style="width: 100%;">
+<tr class="toc-section">
+<td><strong>1. Ship Particulars</strong></td>
+</tr>
+<tr class="toc-section">
+<td><strong>2. Owner/Manager Information</strong></td>
+</tr>
+<tr class="toc-section">
+<td><strong>3. Conditions of Class / Statutory status</strong></td>
+</tr>
+</table>
+</div>
+</div>
+
+<div class="page page-break-new">
+<h2 style="color:black">Ship Particulars</h2>
+<table class="classification-section-table" style="width: 100%; border-collapse: collapse;">
+<thead>
+<tr>
+<th colspan="4" style="text-align: left;padding: 8px;">
+<h4 style="color:white;padding: 8px;margin-top:-10px;background: linear-gradient(to right, #9013fe, #4a90e2); width:100%; margin-bottom: 5px;">Identification</h4>
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em><strong>Ship Type:</strong></em></td>
+<td>${clientData?.typeOfShip || "-"}</td>
+<td><em><strong>Flag:</strong></em></td>
+<td>${clientData?.flag || "-"}</td>
+</tr>
+<tr>
+<td><em><strong>IMO Number:</strong></em></td>
+<td>${clientData?.imoNumber || "-"}</td>
+<td><em><strong>Port of Registry:</strong></em></td>
+<td>${clientData?.portOfRegistry || "-"}</td>
+</tr>
+<tr>
+<td><em><strong>Call Sign:</strong></em></td>
+<td>${clientData?.callSign || "-"}</td>
+<td><em><strong>Official Number:</strong></em></td>
+<td>${clientData?.officialNumber || "-"}</td>
+</tr>
+</tbody>
 </table>
 
-            
-            <table class="hull-section-table" style="width: 100%; border-collapse: collapse; border:none;">
-    <tr>
-      <h4 style="color:black">Hull</h4>
-    </tr>
-  <tbody>
-    <tr>
-      <td style="font-size:14px;"><em><strong>Gross Tonnage:</strong></em> ${clientData?.grossTonnage || "-"}</td>
-      <td style="font-size:14px;"><strong>Ship Builder:</strong> ${clientData?.shipBuilder || "-"}</td>
-    </tr>
-    <tr>
-      <td style="font-size:14px;"><em><strong>Net Tonnage:</strong></em> ${clientData?.netTonnage || "-"}</td>
-      <td style="font-size:14px;"><strong>Country of build:</strong> ${clientData?.countryOfBuild || "-"}</td>
-    </tr>
-    <tr>
-      <td style="font-size:14px;"><em><strong>Deadweight:</strong></em> ${clientData?.deadweight || "-"}</td>
-      <td style="font-size:14px;"><strong>Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : "-"}</td>
-    </tr>
-    <tr>
-      <td style="font-size:14px;"><strong>Keel Laid Date:</strong> ${clientData?.keelLaidDate ? moment(clientData?.keelLaidDate).format("DD/MM/YYYY") : "-"}</td>
-      <td style="font-size:14px;"><strong>Date of building contract:</strong> ${clientData?.dateOfBuildingContract ? moment(clientData?.dateOfBuildingContract).format("DD/MM/YYYY") : "-"}</td>
-    </tr>
-    <tr>
-      <td style="font-size:14px;"><em><strong>Length of ship:</strong></em> ${clientData?.lengthOfShip || "-"}</td>
-      <td style="font-size:14px;"><strong>Area of operation:</strong> ${clientData?.areaOfOperation || "-"}</td>
-    </tr>
-    <tr>
-      <td style="font-size:14px;"><em><strong>Date of delivery:</strong></em> ${clientData?.dateOfDelivery ? moment(clientData?.dateOfDelivery).format("DD/MM/YYYY") : "-"}</td>
-      <td style="font-size:14px;"><em><strong>Date of modification:</strong></em> ${clientData?.dateOfModification ? moment(clientData?.dateOfModification).format("DD/MM/YYYY") : "-"}</td>
-    </tr>
-    <tr>
-      <td style="font-size:14px;" colspan="2"><em><strong>Carrying capacity:</strong></em> ${clientData?.carryingCapacity || "-"}</td>
-    </tr>
-  </tbody>
+<table class="classification-section-table" style="width: 100%; border-collapse: collapse;">
+<thead>
+<tr>
+<th style="text-align: left; padding: 8px;" colspan="2">
+<h4 style="color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2);">Classification</h4>
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em><strong>Class Symbols:</strong></em></td>
+<td>-</td>
+</tr>
+<tr>
+<td><em><strong>Hull Notation:</strong></em></td>
+<td>${clientData?.hullNotation || "-"}</td>
+</tr>
+<tr>
+<td><em><strong>Machinery Notation:</strong></em></td>
+<td>${clientData?.machineryNotation || "-"}</td>
+</tr>
+<tr>
+<td><em><strong>Descriptive Notations:</strong></em></td>
+<td>${clientData?.descriptiveNotation || "-"}</td>
+</tr>
+</tbody>
 </table>
 
-            </div>
-            
-            <div class="page">
-                <h2>Owner / Manager Information</h2>
-                
-                <h4>Registered Owner</h4>
-                <div class="owner-info">
-                    <div><em><strong>Company Name:</strong></em> ${clientData?.ownerDetails?.companyName || "-"}</div>
-                    <div><em><strong>IMO Number:</strong></em> ${clientData?.ownerDetails?.imoNumber || "-"}</div>
-                    <div><em><strong>Address:</strong></em> ${clientData?.ownerDetails?.companyAddress || "-"}</div>
-                </div>
-                
-                <h4 style="color:black">Manager</h4>
-                <div class="owner-info">
-                    <div><em><strong>Company Name:</strong></em> ${clientData?.managerDetails?.companyName || "-"}</div>
-                    <div><em><strong>IMO Number:</strong></em> ${clientData?.managerDetails?.imoNumber || "-"}</div>
-                    <div><em><strong>Address:</strong></em> ${clientData?.managerDetails?.companyAddress || "-"}</div>
-                </div>
-            </div>
-            
-            ${htmlString}
-        
-            <div class="page">
-                <h4 style="color:black">Surveys / Audits / Inspections</h4>
-                
-                ${classificationSurveyTableHtml}
-                
-                ${statutorySurveyTableHtml}
 
-            <table class="survey-summary-table" style="width: 100%; border-collapse: collapse; margin-top: 16px; page-break-inside: avoid;">
-  <tbody>
-    <tr>
-      <td colspan="2">
-        <div class="legend" style="margin-top: 10px;">
-          <span class="legend-item">
-            <span class="status-icon expired">S</span> Overdue
-          </span>
-          <span class="legend-item">
-            <span class="status-icon expiring1m">S</span> Overdue in less than 1 month
-          </span>
-          <span class="legend-item">
-            <span class="status-icon expiring3m">S</span> Within the range
-          </span>
-        </div>
-        <div style="font-size: 16px; margin-top: 16px;">
-          <strong>Note:</strong> Format of date is DD/MM/YYYY
-        </div>
-      </td>
-    </tr>
-  </tbody>
+<table class="hull-section-table" style="width: 100%; border-collapse: collapse; border:none;">
+<thead>
+<tr>
+<th colspan="2" style="text-align: left; padding: 8px; border:none;"><h4 style="color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)">Hull</h4></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em><strong>Gross Tonnage:</strong></em> ${clientData?.grossTonnage || "-"}</td>
+<td><strong>Ship Builder:</strong> ${clientData?.shipBuilder || "-"}</td>
+</tr>
+<tr>
+<td><em><strong>Net Tonnage:</strong></em> ${clientData?.netTonnage || "-"}</td>
+<td><strong>Country of build:</strong> ${clientData?.countryOfBuild || "-"}</td>
+</tr>
+<tr>
+<td><em><strong>Deadweight:</strong></em> ${clientData?.deadweight || "-"}</td>
+<td><strong>Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : "-"}</td>
+</tr>
+<tr>
+<td><strong>Keel Laid Date:</strong> ${clientData?.keelLaidDate ? moment(clientData?.keelLaidDate).format("DD/MM/YYYY") : "-"}</td>
+<td><strong>Date of building contract:</strong> ${clientData?.dateOfBuildingContract ? moment(clientData?.dateOfBuildingContract).format("DD/MM/YYYY") : "-"}</td>
+</tr>
+<tr>
+<td><em><strong>Length of ship:</strong></em> ${clientData?.lengthOfShip || "-"}</td>
+<td><strong>Area of operation:</strong> ${clientData?.areaOfOperation || "-"}</td>
+</tr>
+<tr>
+<td><em><strong>Date of delivery:</strong></em> ${clientData?.dateOfDelivery ? moment(clientData?.dateOfDelivery).format("DD/MM/YYYY") : "-"}</td>
+<td><em><strong>Date of modification:</strong></em> ${clientData?.dateOfModification ? moment(clientData?.dateOfModification).format("DD/MM/YYYY") : "-"}</td>
+</tr>
+<tr>
+<td colspan="2"><em><strong>Carrying capacity:</strong></em> ${clientData?.carryingCapacity || "-"}</td>
+</tr>
+</tbody>
 </table>
 
-        </div>
+</div>
 
-    `;
+<div class="owner-section page">
+<h2 style="margin-top: -75px;">Owner / Manager Information</h2>
+
+<h4 style="color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)">Registered Owner</h4>
+<div class="owner-info">
+<div><em><strong>Company Name:</strong></em> ${clientData?.ownerDetails?.companyName || "-"}</div>
+<div><em><strong>IMO Number:</strong></em> ${clientData?.ownerDetails?.imoNumber || "-"}</div>
+<div><em><strong>Address:</strong></em> ${clientData?.ownerDetails?.companyAddress || "-"}</div>
+</div>
+
+<h4 style="color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)">Manager</h4>
+<div class="owner-info">
+<div><em><strong>Company Name:</strong></em> ${clientData?.managerDetails?.companyName || "-"}</div>
+<div><em><strong>IMO Number:</strong></em> ${clientData?.managerDetails?.imoNumber || "-"}</div>
+<div><em><strong>Address:</strong></em> ${clientData?.managerDetails?.companyAddress || "-"}</div>
+</div>
+</div>
+
+${htmlString}
+
+<div class="page">
+<h4 style="margin-top: -90px; color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)">Surveys / Audits / Inspections</h4>
+
+${classificationData?.length > 0 ? classificationSurveyTableHtml : '<p style="text-align: center; color: #666; font-style: italic; margin: 20px 0; font-size: 16px;">No classification survey data available</p>'}
+
+${statutoryData?.length > 0 ? statutorySurveyTableHtml : '<p style="text-align: center; color: #666; font-style: italic; margin: 20px 0; font-size: 14px;">No statutory survey data available</p>'}
+
+<table class="survey-summary-table" style="width: 100%; border-collapse: collapse; margin-top: 16px; page-break-inside: avoid;">
+<tbody>
+<tr>
+<td colspan="2">
+<div class="legend" style="margin-top: 10px;">
+<span class="legend-item">
+<span class="status-icon expired">S</span> Overdue
+</span>
+<span class="legend-item">
+<span class="status-icon expiring1m">S</span> Overdue in less than 1 month
+</span>
+<span class="legend-item">
+<span class="status-icon expiring3m">S</span> Within the range
+</span>
+</div>
+<div style="font-size: 16px; margin-top: 16px;">
+<strong>Note:</strong> Format of date is DD/MM/YYYY
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+`;
   }, [clientData, reportDetails, classificationData, statutoryData]);
 
   useEffect(() => {
@@ -1575,167 +1237,134 @@ const TextEditor = ({ id }) => {
           },
           content_css: false,
           content_style: `
-                   body {
+body {
 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 margin: 0;
-line-height: 1.5;
-font-size: 14px;
-background: #f8f9fa;
+line-height: 1.6;
+font-size: 13px;
+color: #333;
 }
-.cover-page {
-text-align: center !important;
-display: flex !important;
-flex-direction: column !important;
-justify-content: center !important;
-align-items: center !important;
-min-height: 200px !important;
-background:white;
-color: #667eea;
-padding: 60px !important;
-}
-.index-page {
-width: 8.5in;
-background-color: white;
-position: relative;
-height: 100%;
-}
+
 .page {
 width: 8.5in;
-min-height: 11in;
-margin: 20px auto;
+margin: 0 auto;
 padding: 40px;
 background-color: white;
 position: relative;
-box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-border-radius: 8px;
-}
-
-.cover-page {
-text-align: center;
-display: flex;
-flex-direction: column;
-justify-content: center;
-align-items: center;
-color: #667eea;
-}
-
-.company-logo {
-width: 140px;
-height: 140px;
-margin-bottom: 30px;
-}
-
-.ship-name {
-font-size: 32px;
-font-weight: bold;
-margin: 30px 0;
-color: black;
-}
-
-.ship-details {
-background: rgba(255,255,255,0.1);
-padding: 30px;
-border-radius: 15px;
-backdrop-filter: blur(10px);
-color: black;
-}
-
-.ship-details p {
-font-size: 16px;
-margin: 10px 0;
-color: black;
-}
-
-.toc-page {
-background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-}
-
-.toc-title {
-text-align: center;
-font-size: 28px;
-color: #2c3e50;
-margin-bottom: 50px;
-font-weight: bold;
-}
-
-.toc-table {
-background: white;
-border-radius: 10px;
-box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-overflow: hidden;
-}
-
-.toc-table td {
-padding: 15px 25px;
-border-bottom: 1px solid #ecf0f1;
-font-size: 14px;
-color: #2c3e50;
-}
-
-.content-page {
-background: white;
+margin-bottom: 20px;
+box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 h2 {
-color: #2980b9;
-font-size: 24px;
+color: white;
+text-align: center;
+font-size: 22px;
 margin: 0 0 30px 0;
-padding-bottom: 10px;
-border-bottom: 3px solid #3498db;
-font-weight: bold;
+font-weight: 600;
+letter-spacing: 0.5px;
+text-transform: uppercase;
+border-bottom: 3px solid #4a90e2;
+padding-bottom: 12px;
 }
 
 h4 {
-color: #34495e;
-font-size: 16px;
+color: white;
+background: linear-gradient(to right, #9013fe, #4a90e2);
+font-size: 15px;
 margin: 25px 0 15px 0;
-padding-bottom: 8px;
-border-bottom: 2px solid #bdc3c7;
+padding: 6px 8px;
 font-weight: 600;
+border-radius: 4px;
+letter-spacing: 0.3px;
 }
 
 .section {
-margin-bottom: 40px;
-padding: 25px;
-background: #f8f9fa;
-border-radius: 10px;
-border-left: 5px solid #3498db;
-}
-
-.identification-row, .hull-row {
-display: flex;
-margin-bottom: 12px;
-padding: 12px;
-background: white;
+margin-bottom: 30px;
+padding: 15px;
+background: #fafafa;
 border-radius: 6px;
-box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
-.identification-row .left, .hull-row .left {
-width: 300px;
-font-weight: 600;
-color: #2c3e50;
+.identification-row {
+display: flex;
+margin-bottom: 5px;
+font-size: 13px;
+padding: 8px 0;
+border-bottom: 1px solid #e0e0e0;
 }
 
-.identification-row .right, .hull-row .right {
+.identification-row .left {
+width: 250px;
+font-weight: 500;
+}
+
+.identification-row .right {
 flex: 1;
-color: #34495e;
-font-size: 14px;
+color: #555;
+}
+
+.classification-row {
+margin-bottom: 10px;
+font-size: 13px;
+padding: 6px 0;
+}
+
+.hull-section {
+margin-top: 25px;
+}
+
+
+.hull-row {
+display: flex;
+margin-bottom: 10px;
+font-size: 13px;
+padding: 8px 0;
+}
+
+.hull-row .left {
+width: 400px;
+flex-shrink: 0;
+font-weight: 500;
+}
+
+.hull-row .right {
+flex: 1;
+padding-left: 20px;
+color: #555;
+}
+
+.owner-section {
+margin-top: 40px;
+margin-bottom: 30px;
+}
+
+.owner-section h2 {
+color: #1a1a1a;
+font-size: 20px;
+margin-bottom: 25px;
+}
+
+.owner-section h4 {
+margin: 20px 0 10px 0;
+}
+
+.owner-info {
+font-size: 13px;
+line-height: 1.8;
+padding: 15px;
+background: #fafafa;
+border-radius: 6px;
+margin-bottom: 20px;
 }
 
 .owner-info div {
-margin-bottom: 10px;
-padding: 12px;
-font-size: 14px;
-background: white;
-border-radius: 6px;
-border-left: 4px solid #3498db;
-box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+margin-bottom: 8px;
+padding: 4px 0;
 }
 
 strong {
 font-weight: 600;
-
+color: #2c3e50;
 }
 
 em {
@@ -1746,93 +1375,154 @@ p.subtitle {
 font-size: 13px;
 text-align: center;
 margin: 10px 0 25px 0;
-color: #7f8c8d;
+color: #666;
+line-height: 1.6;
 font-style: italic;
 }
 
 table {
 width: 100%;
-margin: 20px 0;
-background: white;
-border-radius: 8px;
+margin-top: 15px;
+font-size: 13px;
+border-collapse: separate;
+border-spacing: 0;
+border: 1px solid #ddd;
+border-radius: 6px;
 overflow: hidden;
+}
 
-box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-border-collapse: collapse;
+table th, table td {
+padding: 10px 12px;
+text-align: left;
+vertical-align: top;
+border-bottom: 1px solid #e0e0e0;
 }
 
 table th {
-background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-color: white;
+color: #2f5597;
 font-weight: 600;
+border-bottom: 2px solid linear-gradient(to right, #9013fe, #4a90e2);
 text-transform: uppercase;
-letter-spacing: 0.5px;
 font-size: 12px;
-padding: 15px 12px;
+letter-spacing: 0.5px;
 }
 
-table td {
-padding: 12px;
-border-bottom: 1px solid #ecf0f1;
-color: #2c3e50;
-font-size: 11px;
+table tbody tr:hover {
+background-color: #f5f5f5;
 }
 
-table tr:nth-child(even) {
-background: #f8f9fa;
+table tbody tr:last-child td {
+border-bottom: none;
 }
 
-table tr:hover {
-background: #e3f2fd;
+table tr{
+page-break-inside: avoid !important;
+break-inside: avoid !important;
 }
 
 .status-icon {
-font-size: 12px;
+font-size: 13px;
+margin-right: 1px;
 font-weight: bold;
-border-radius: 50%;
-width: 20px;
-height: 20px;
-display: inline-flex;
-justify-content: center;
-align-items: center;
-color: white;
 }
 
 .expired {
-background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
+color:white;
+background-color: #dc3545;
+width: 18px;
+height: 18px;
+display: flex;
+justify-content: center;
+align-items: center;
+font-size: 11px;
+border-radius: 3px;
+box-shadow: 0 2px 4px rgba(220,53,69,0.3);
 }
 
-.expiring1m {
-background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
-box-shadow: 0 2px 8px rgba(243, 156, 18, 0.4);
-clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+span.expiring1m{
+color:white;
+clip-path: polygon(50% 2%, 98% 50%, 50% 98%, 2% 50%);
+background-color: #ffc107;
+width: 18px;
+height: 24px;
+display: flex;
+justify-content: center;
+align-items: center;
+font-size: 11px;
+filter: drop-shadow(0 2px 4px rgba(255,193,7,0.3));
 }
 
-.expiring3m {
-background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
-box-shadow: 0 2px 8px rgba(39, 174, 96, 0.4);
+span.expiring3m{
+color:white;
+border-radius: 50%;
+background-color: #28a745;
+width: 18px;
+height: 18px;
+display: flex;
+justify-content: center;
+align-items: center;
+font-size: 11px;
+box-shadow: 0 2px 4px rgba(40,167,69,0.3);
+}
+
+.main-heading {
+color: #0066cc;
+font-weight: bold;
+font-size: 14px;
+text-decoration: underline;
+margin-bottom: 20px;
 }
 
 .section-title {
 font-weight: 600;
 font-size: 16px;
 margin: 25px 0 10px 0;
-color: #2c3e50;
-padding-bottom: 5px;
-border-bottom: 2px solid #3498db;
+color: #1a1a1a;
+border-left: 4px solid linear-gradient(to right, #9013fe, #4a90e2);
+padding-left: 12px;
+}
+
+.legend-item {
+margin: 2px 0;
+color: #333;
+font-size: 13px;
+}
+
+.classification-section-table {
+width: 100%;
+border-collapse: collapse;
+margin-bottom: 20px;
+border: none;
+page-break-inside: avoid;
+}
+
+.classification-section-table td,
+.classification-section-table th {
+padding: 10px 12px;
+border: none;
+vertical-align: top;
+break-inside: avoid;
+}
+
+.classification-section-table tr {
+border-bottom: 1px solid #e0e0e0;
+}
+
+.classification-section-table tr:last-child {
+border-bottom: none;
 }
 
 .legend {
 display: flex;
-justify-content: center;
+justify-content: start;
 align-items: center;
-gap: 30px;
-margin: 25px 0;
-padding: 20px;
-background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-border-radius: 10px;
-border: 1px solid #dee2e6;
+gap: 25px;
+flex-wrap: wrap;
+margin-top: 20px;
+padding: 15px;
+background: #f8f9fa;
+border-radius: 6px;
+border-left: 4px solid linear-gradient(to right, #9013fe, #4a90e2);
 }
 
 .legend-item {
@@ -1841,9 +1531,41 @@ align-items: center;
 gap: 8px;
 font-size: 13px;
 font-weight: 500;
-color: #495057;
 }
-                `,
+
+.toc-container {
+max-width: 700px;
+margin: 40px auto;
+background: white;
+border-radius: 8px;
+box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+overflow: hidden;
+}
+
+.toc-container table {
+border: none;
+}
+
+.toc-section td {
+padding: 18px 25px;
+font-size: 15px;
+color: white;
+background-color: linear-gradient(to right, #9013fe, #4a90e2);
+border-bottom: 2px solid white;
+font-weight: 600;
+letter-spacing: 0.3px;
+}
+
+.toc-section:last-child td {
+border-bottom: none;
+}
+
+.page-break-new {
+page-break-before: always !important;
+break-before: always !important;
+}
+
+`,
         }}
         setup={(editor) => {
           updateStatusIcons(editor);

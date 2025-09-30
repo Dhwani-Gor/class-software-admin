@@ -379,10 +379,20 @@ const DigitalDocument = ({ params }) => {
               {reportDetails.generatedDoc && (
                 <>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{
+                        flex: 1,
+                        marginRight: "10px",
+                        wordBreak: "break-word",
+                        width: "10px",
+                      }}
+                    >
                       {reportDetails.generatedDoc.split("/").pop() || "certificate.pdf"}
                     </Typography>
-                    <Stack direction="row" spacing={1}>
+
+                    <Stack direction="row" width={"20%"}>
                       {/* Open in new tab button for mobile */}
                       {isMobile && (
                         <IconButton size="small" color="secondary" onClick={handleOpenInNewTab} title="Open in new tab">
