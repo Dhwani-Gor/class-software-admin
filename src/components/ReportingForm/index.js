@@ -832,7 +832,7 @@ const ReportingForm = () => {
   const getRemainingChars = (rowId) => {
     const row = tableData.find((item) => item.id === rowId);
     if (row && row.maxLength) {
-      return row.maxLength - (row.remarks ? row.remarks.length : 0);
+      return row.maxLength - (row.remarks ? row.remarks?.length : 0);
     }
     return null;
   };
@@ -1226,9 +1226,9 @@ const ReportingForm = () => {
                         <TableCell align="center">
                           <IconButton color="primary" onClick={() => openDocumentUpload(row)} size="small" aria-label="upload attachments">
                             <AttachmentIcon />
-                            {row.attachments && row.attachments.length > 0 && (
+                            {row.attachments && row.attachments?.length > 0 && (
                               <Typography variant="caption" color="primary" sx={{ marginLeft: 1 }}>
-                                {row.attachments.length}
+                                {row.attachments?.length}
                               </Typography>
                             )}
                           </IconButton>
