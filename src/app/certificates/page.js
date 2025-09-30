@@ -16,7 +16,7 @@ import GetAppIcon from "@mui/icons-material/GetApp";
 import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonInput from "@/components/CommonInput";
-import { getAllIssuedDocuments, getAllJournals, getJournalsList } from "@/api";
+import { getAllIssuedDocuments, getAllJournals, getAllReports, getJournalsList } from "@/api";
 import { Chip, MenuItem, Select, TextField } from "@mui/material";
 import CommonButton from "@/components/CommonButton";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,8 +42,87 @@ const Certificates = () => {
   const [endDate, setEndDate] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("certificates");
   const [count, setTotalCount] = useState(0);
+  const [reportsList, setReportsList] = useState([]);
 
   // Client-side search functionality
+  const fetchReportsData = async () => {
+    setLoading(true);
+    try {
+      const res = await getAllReports(page, limit);
+      const data = res?.data;
+      if (data?.status === "success" && Array.isArray(data?.data)) {
+        setReportsList(data.data);
+        setTotalRows(data.total || data.results || data.data.length);
+        setTotalCount(data?.results);
+      } else {
+        setReportsList([]);
+        setTotalRows(0);
+      }
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+      setReportsList([]);
+      setTotalRows(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedFilter === "Reports") {
+      fetchReportsData();
+    } else {
+      fetchCertificatesData();
+    }
+  }, [selectedFilter, selectedReportNumber, placeFilter, statusFilter, debouncedSearch, page, limit, startDate, endDate]);
+
+  const reportColumns = [
+    {
+      field: "id",
+      headerName: "No.",
+      width: 200,
+      renderCell: (params) => <Typography fontSize="14px">{(page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1}</Typography>,
+    },
+    {
+      field: "reportName",
+      headerName: "Ship Name",
+      flex: 1,
+      renderCell: (params) => <Typography fontSize="14px">{params.row.client.shipName || "N/A"}</Typography>,
+    },
+    {
+      field: "document",
+      headerName: "Document",
+      flex: 1,
+      renderCell: (params) => {
+        const fileName = params.row.generatedDoc?.split("/").pop(); // extract file name from URL
+        return fileName ? (
+          <Tooltip title={fileName}>
+            <Typography
+              fontSize="14px"
+              sx={{
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                cursor: "pointer",
+                color: "primary.main",
+                textDecoration: "underline",
+              }}
+              onClick={() => window.open(params.row.generatedDoc, "_blank")} // open in new tab
+            >
+              {fileName}
+            </Typography>
+          </Tooltip>
+        ) : (
+          <Typography fontSize="14px">N/A</Typography>
+        );
+      },
+    },
+    {
+      field: "createdAt",
+      headerName: "Created Date",
+      flex: 1,
+      renderCell: (params) => <Typography fontSize="14px">{formatDate(params.value)}</Typography>,
+    },
+  ];
 
   const filteredCertificates = certificatesList.filter((certificate) => {
     if (!search.trim()) return true;
@@ -66,6 +145,7 @@ const Certificates = () => {
   if (data?.specialPermission?.includes("Archiving")) {
     tabs.push("Archive Documents");
   }
+  tabs.push("Reports");
 
   const snackbarClose = () => {
     setSnackBar({ open: false, message: "" });
@@ -300,27 +380,27 @@ const Certificates = () => {
             <Chip key={type} label={type.charAt(0).toUpperCase() + type.slice(1)} color={selectedFilter === type ? "primary" : "default"} onClick={() => handleFilterChange(type)} clickable sx={{ fontWeight: selectedFilter === type ? 600 : 400, px: 2 }} />
           ))}
         </Stack>
-        <CommonInput placeholder="Search Certificate By Place or Type" fullWidth value={search} onChange={handleSearchChange} sx={{ marginBottom: 2 }} />
+        {selectedFilter !== "Reports" && <CommonInput placeholder="Search Certificate By Place or Type" fullWidth value={search} onChange={handleSearchChange} sx={{ marginBottom: 2 }} />}
+        {selectedFilter !== "Reports" && (
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2, mt: 2 }}>
+            <Select
+              value={selectedReportNumber}
+              onChange={(e) => {
+                setSelectedReportNumber(e.target.value);
+                setPage(1);
+              }}
+              displayEmpty
+              sx={{ minWidth: 180 }}
+            >
+              <MenuItem value="">All Reports</MenuItem>
+              {journals.map((report, index) => (
+                <MenuItem key={index} value={report.journalTypeId}>
+                  {report.journalTypeId}
+                </MenuItem>
+              ))}
+            </Select>
 
-        <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2, mt: 2 }}>
-          <Select
-            value={selectedReportNumber}
-            onChange={(e) => {
-              setSelectedReportNumber(e.target.value);
-              setPage(1);
-            }}
-            displayEmpty
-            sx={{ minWidth: 180 }}
-          >
-            <MenuItem value="">All Reports</MenuItem>
-            {journals.map((report, index) => (
-              <MenuItem key={index} value={report.journalTypeId}>
-                {report.journalTypeId}
-              </MenuItem>
-            ))}
-          </Select>
-
-          {/* <TextField
+            {/* <TextField
             label="Place"
             size="small"
             value={placeFilter}
@@ -334,57 +414,84 @@ const Certificates = () => {
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
           /> */}
 
-          <TextField
-            label="Survey Date From"
-            type="date"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={startDate}
-            onChange={(e) => {
-              setStartDate(e.target.value);
-              setPage(1);
-            }}
-          />
-
-          <TextField
-            label="Survey Date To"
-            type="date"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={endDate}
-            onChange={(e) => {
-              setEndDate(e.target.value);
-              setPage(1);
-            }}
-          />
-
-          {(selectedReportNumber || placeFilter || statusFilter || startDate || endDate) && (
-            <CommonButton
-              variant="contained"
+            <TextField
+              label="Survey Date From"
+              type="date"
               size="small"
-              sx={{
-                textTransform: "uppercase",
-                padding: "12px 10px",
-                fontSize: "14px",
-              }}
-              text="Clear Filters"
-              onClick={() => {
-                handleClearFilter();
+              InputLabelProps={{ shrink: true }}
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setPage(1);
               }}
             />
-          )}
-        </Stack>
+
+            <TextField
+              label="Survey Date To"
+              type="date"
+              size="small"
+              InputLabelProps={{ shrink: true }}
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setPage(1);
+              }}
+            />
+
+            {(selectedReportNumber || placeFilter || statusFilter || startDate || endDate) && (
+              <CommonButton
+                variant="contained"
+                size="small"
+                sx={{
+                  textTransform: "uppercase",
+                  padding: "12px 10px",
+                  fontSize: "14px",
+                }}
+                text="Clear Filters"
+                onClick={() => {
+                  handleClearFilter();
+                }}
+              />
+            )}
+          </Stack>
+        )}
 
         <Box sx={{ width: "100%", mt: 4 }}>
           {loading ? (
             <Box display="flex" justifyContent="center" alignItems="center" height="300px">
               <CircularProgress />
             </Box>
+          ) : selectedFilter === "Reports" ? (
+            reportsList.length > 0 ? (
+              <DataGrid
+                rows={reportsList}
+                columns={reportColumns}
+                pagination={false}
+                disableColumnFilter
+                disableColumnMenu
+                disableColumnSelector
+                disableDensitySelector
+                disableRowSelectionOnClick
+                hideFooter
+                getRowHeight={() => 70}
+                sx={{
+                  backgroundColor: "#fff",
+                  border: "none",
+                  "& .MuiDataGrid-cell": {
+                    display: "flex",
+                    alignItems: "center",
+                  },
+                }}
+              />
+            ) : (
+              <Typography variant="h6" align="center" sx={{ color: "gray", padding: 3 }}>
+                No Reports Found
+              </Typography>
+            )
           ) : certificatesList.length > 0 ? (
             <DataGrid
               rows={certificatesList}
               columns={columns}
-              loading={loading}
               pagination={false}
               disableColumnFilter
               disableColumnMenu

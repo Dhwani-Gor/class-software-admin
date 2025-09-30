@@ -726,6 +726,16 @@ export const deleteAttachment = async (activityId, attachmentId) => {
   }
   return result;
 };
+
+export const getAllReports = async (page, limit) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/surveyStatusReports?limit=${limit}&page=${page}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
 // API functions for System Variables CRUD operations
 
 export const createSystemVariable = async (payload) => {
