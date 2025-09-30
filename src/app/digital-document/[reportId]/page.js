@@ -392,7 +392,12 @@ const DigitalDocument = ({ params }) => {
                       {reportDetails.generatedDoc.split("/").pop() || "certificate.pdf"}
                     </Typography>
 
-                    <Stack direction="row" width={"20%"}>
+                    <Stack
+                      direction="row"
+                      sx={{
+                        width: isMobile ? "20%" : "auto",
+                      }}
+                    >
                       {/* Open in new tab button for mobile */}
                       {isMobile && (
                         <IconButton size="small" color="secondary" onClick={handleOpenInNewTab} title="Open in new tab">
