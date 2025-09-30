@@ -1560,10 +1560,6 @@ letter-spacing: 0.3px;
 border-bottom: none;
 }
 
-.toc-section:hover td {
-background-color: #a5b872;
-}
-
 .page-break-new {
 page-break-before: always !important;
 break-before: always !important;
