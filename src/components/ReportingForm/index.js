@@ -68,7 +68,7 @@ const DocumentUploadDialog = ({ open, onClose, onUpload, selectedDocuments, onRe
   const [documents, setDocuments] = useState([]);
 
   const areAllActivitiesCompleted = () => {
-    return tableData.length > 0 && tableData.every((activity) => activity.status === "Completed");
+    return tableData?.length > 0 && tableData.every((activity) => activity.status === "Completed");
   };
 
   const handleFileChange = (event) => {
@@ -390,7 +390,7 @@ const ReportingForm = () => {
     setFilteredJournals(data);
 
     // Set only the id if data exists
-    if (data && data.length > 0) {
+    if (data && data?.length > 0) {
       // setjournalId(data[0].id);
     } else {
       // setjournalId(null);
@@ -471,7 +471,7 @@ const ReportingForm = () => {
   ];
 
   const areAllActivitiesCompleted = () => {
-    return tableData.length > 0 && tableData.every((activity) => activity.status === "Completed");
+    return tableData?.length > 0 && tableData.every((activity) => activity.status === "Completed");
   };
 
   const handleClientChange = (event) => {
