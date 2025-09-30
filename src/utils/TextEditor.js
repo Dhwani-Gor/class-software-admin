@@ -507,9 +507,11 @@ const TextEditor = ({ id }) => {
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes], { type: "application/pdf" });
 
-      const file = new File([blob], "survey-status-report.pdf", {
+      const fileName = `MCB Survey Status Report - ${clientData?.imoNumber}-${clientData?.shipName}-${moment(currentDate).format("DD-MM-YYYY")}.pdf`;
+      const file = new File([blob], fileName, {
         type: "application/pdf",
       });
+
       const formData = new FormData();
       formData.append("clientId", id);
       formData.append("generatedDoc", file);
@@ -1092,9 +1094,9 @@ ${htmlString}
 <div class="page">
 <h4 style="margin-top: -90px; color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)">Surveys / Audits / Inspections</h4>
 
-${classificationData?.length > 0 ? classificationSurveyTableHtml : '<p style="text-align: center; color: #666; font-style: italic; margin: 20px 0; font-size: 16px;">No classification survey data available</p>'}
+${classificationSurveyTableHtml}
 
-${statutoryData?.length > 0 ? statutorySurveyTableHtml : '<p style="text-align: center; color: #666; font-style: italic; margin: 20px 0; font-size: 14px;">No statutory survey data available</p>'}
+${statutorySurveyTableHtml}
 
 <table class="survey-summary-table" style="width: 100%; border-collapse: collapse; margin-top: 16px; page-break-inside: avoid;">
 <tbody>
