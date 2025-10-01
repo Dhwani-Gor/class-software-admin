@@ -104,17 +104,32 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
   };
 
   console.log(clientsList);
-
   const fetchUserDetails = async () => {
     try {
       const res = await getInspectorsDetails(userId);
       const data = res?.data?.data;
-
       if (!data) return;
+
+      // map names from backend -> ids used in form
+      const mappedPermissions = data.permissionModule
+        ?.map((name) => {
+          const match = permissionData.find((m) => m.name === name || m.label === name);
+          return match?.value; // id
+        })
+        .filter(Boolean);
+
+      const mappedSpecial = data.specialPermission
+        ?.map((sp) => {
+          const match = specialPermissionData.find((s) => s.name === sp || s.label === sp);
+          return match?.value;
+        })
+        .filter(Boolean);
 
       reset({
         ...data,
         clientIds: data.clients?.map((c) => c.id) || [],
+        permissionModule: mappedPermissions || [],
+        specialPermission: mappedSpecial || [],
       });
     } catch (error) {
       console.error("Error fetching inspector details:", error);
@@ -134,31 +149,25 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
     router.push("/staff");
   };
 
+  if (isDataLoading) {
+    return <CircularProgress />;
+  }
   const onSubmit = async (data) => {
-    try {
-      // Find the role object based on selected role value
-      const selectedRole = roles.find((r) => r.value === data.role);
-      const roleId = selectedRole?.roleId;
+    const selectedRole = roles.find((r) => r.value === data.role);
+    const roleId = selectedRole?.roleId;
 
-      if (userId) {
-        const res = await updateInspectorDetail(userId, { ...data, roleId });
-        if (res?.data?.status === "success") {
-          toast.success("User updated successfully");
-          router.push("/staff");
-        } else {
-          toast.error(res?.response?.data?.message);
-        }
-      } else {
-        const res = await createInspector({ ...data, roleId });
-        if (res?.data?.status === "success") {
-          toast.success("User created successfully");
-          router.push("/staff");
-        } else {
-          toast.error(res?.response?.data?.message);
-        }
-      }
-    } catch (error) {
-      console.error("Error:", error);
+    const payload = {
+    ...data,
+      roleId,
+      // data.permissionModule already contains ids
+      // if backend expects names, map them back:
+      // permissionModule: data.permissionModule.map(id => permissionData.find(p => p.value === id)?.name)
+    };
+
+    if (userId) {
+      await updateInspectorDetail(userId, payload);
+    } else {
+      await createInspector(payload);
     }
   };
 
@@ -287,7 +296,6 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
                     </>
                   )}
 
-                  {/* Role Selection */}
                   <Grid2 size={{ xs: 12 }}>
                     <Typography>
                       Select Role <span style={{ color: "red" }}>*</span>

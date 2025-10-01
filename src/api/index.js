@@ -949,3 +949,13 @@ export const getAllModules = async () => {
   }
   return result;
 };
+
+export const deleteSurveyStatusReport = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.delete(`/surveyStatusReports/${id}`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};

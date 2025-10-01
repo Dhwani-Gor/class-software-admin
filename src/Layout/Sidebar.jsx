@@ -40,6 +40,7 @@ const SidebarComponent = ({ isSidebarOpen }) => {
     "Documents": "Documents",
     "SystemVariable": "System Variables",
     "Classification": "Classification",
+    "AdditionalFields": "Additional Fields"
   };
 
   const getFilteredMenuItems = () => {
@@ -73,14 +74,14 @@ const SidebarComponent = ({ isSidebarOpen }) => {
         return sidemenu_items;
       } else if (roleId === "3") {
         return sidemenu_items.filter((item) =>
-          ["Reporting", "Issued Documents", "System Variables"].includes(item.label)
+          ["Reporting", "Issued Documents", "System Variables", "AdditionalFields"].includes(item.label)
         );
       } else if (roleId === "2") {
         return sidemenu_items.filter((item) => {
           if (item.label === "Clients") {
             return userData?.dataEntryRights === true;
           }
-          return ["Journal", "Reporting", "Issued Documents", "Survey Types", "Documents", "System Variables", "Classification"].includes(item.label);
+          return ["Journal", "Reporting", "Issued Documents", "Survey Types", "Documents", "System Variables", "Classification", "AdditionalFields"].includes(item.label);
         });
       }
     }

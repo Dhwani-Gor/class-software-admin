@@ -28,6 +28,7 @@ const AuthProvider = ({ children }) => {
     SystemVariable: ["/system-variables"],
     Classification: ["/classification"],
     Settings: ["/settings"],
+    AdditionalFields: ["/additional-fields"],
   };
 
   // Base role routes (fallback)

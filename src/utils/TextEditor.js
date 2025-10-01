@@ -15,7 +15,7 @@ const currentDate = new Date();
 
 const TextEditor = ({ id }) => {
   const router = useRouter();
-  const [reportDetails, setReportDetails] = useState(null);
+  const [reportDetails, setReportDetails] = useState([]);
   const [clientData, setClientData] = useState();
   const [loading, setLoading] = useState(true);
   const [editorContent, setEditorContent] = useState("");
@@ -610,8 +610,7 @@ const TextEditor = ({ id }) => {
     const surveyMap = {};
 
     surveyDataList.forEach((survey) => {
-      const surveyName = survey.activity?.surveyTypes?.report?.name || "";
-
+      const surveyName = survey.activity?.surveyTypes?.name || "";
       if (!surveyName) return;
 
       if (!surveyMap[surveyName]) {
@@ -629,10 +628,30 @@ const TextEditor = ({ id }) => {
 
     const uniqueSurveys = Object.values(surveyMap);
 
-    return uniqueSurveys?.map((survey) => {
-      const surveyName = survey.activity?.surveyTypes?.report?.name || "";
+    return uniqueSurveys?.flatMap((survey) => {
+      const surveyName = survey.activity?.surveyTypes?.name || "";
       const surveyDate = survey.surveyDate ? format(new Date(survey.surveyDate), "yyyy-MM-dd") : "";
+      const validityDate = survey.validityDate ? format(new Date(survey.validityDate), "yyyy-MM-dd") : "";
       const issuanceDate = survey.issuanceDate ? format(new Date(survey.issuanceDate), "yyyy-MM-dd") : "";
+      const typeOfCertificate = survey.typeOfCertificate || "";
+      const certificateName = survey.activity?.surveyTypes?.report?.name || "";
+
+      // 👇 Check if this survey requires backend-calculated dates
+      const isCalculatedSurvey = surveyName.toLowerCase().includes("safcon change of flag") || surveyName.toLowerCase().includes("safcon initial") || surveyName.toLowerCase().includes("safcon renewal") || surveyName.toLowerCase().includes("safcon general examination");
+
+      if (isCalculatedSurvey && survey.data?.calculatedSurveys?.length > 0) {
+        return survey.data.calculatedSurveys.map((calc) => ({
+          surveyName: calc.statutorySurveyName,
+          surveyDate: calc.statutorySurveyDate ? format(new Date(calc.statutorySurveyDate), "yyyy-MM-dd") : "",
+          validityDate, // keep validity if available
+          dueDate: calc.statutoryDueDate ? format(new Date(calc.statutoryDueDate), "yyyy-MM-dd") : "",
+          rangeFrom: calc.statutoryRangeFrom ? format(new Date(calc.statutoryRangeFrom), "yyyy-MM-dd") : "",
+          rangeTo: calc.statutoryRangeTo ? format(new Date(calc.statutoryRangeTo), "yyyy-MM-dd") : "",
+          postponedDate: "",
+          typeOfCertificate,
+          certificateName,
+        }));
+      }
 
       let dueDate = "";
       let rangeFrom = "";
@@ -645,15 +664,18 @@ const TextEditor = ({ id }) => {
         rangeTo = t;
       }
 
-      return {
-        surveyName,
-        surveyDate,
-        issuanceDate,
-        dueDate,
-        rangeFrom,
-        rangeTo,
-        postponedDate: "",
-      };
+      return [
+        {
+          surveyName,
+          surveyDate,
+          validityDate,
+          dueDate,
+          rangeFrom,
+          rangeTo,
+          postponedDate: "",
+          typeOfCertificate, // ✅ add it here
+        },
+      ];
     });
   };
 
@@ -819,21 +841,21 @@ ${moment(rangeFrom, moment.ISO_8601, true).isValid() && moment(rangeTo, moment.I
             .map((row) => {
               const surveyName = row.surveyName;
               const surveyDate = row.surveyDate;
-              const issuanceDate = row.issuanceDate;
-              let rangeTo = row.rangeTo;
-              let rangeFrom = row.rangeFrom;
+              const dueDate = row.dueDate || row.validityDate;
+              let rangeFrom = row.rangeFrom || "";
+              let rangeTo = row.rangeTo || "";
               const postponedDate = "";
               const currentDate = new Date().toISOString().split("T")[0];
-
               return `
-<tr>
-<td>${surveyName}</td>
-<td>${getClassRangeIcon(currentDate, rangeFrom, rangeTo) ? `<span class="${getClassRangeIcon(currentDate, rangeFrom, rangeTo)}">C</span>` : ""}</td> <td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
-<td></td>
-<td>${reportDetails.typeOfCertificate == "full_term" ? `${moment(rangeFrom).format("DD/MM/YYYY")} - ${moment(rangeTo).format("DD/MM/YYYY")}` : ""}</td>
-<td>${postponedDate}</td>
-</tr>
-`;
+      <tr>
+      <td>${surveyName}</td>
+      <td>${getClassRangeIcon(currentDate, rangeFrom, rangeTo) ? `<span class="${getClassRangeIcon(currentDate, rangeFrom, rangeTo)}">C</span>` : ""}</td>
+      <td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
+      <td>${dueDate ? moment(dueDate).format("DD/MM/YYYY") : ""}</td>
+      <td>${row.typeOfCertificate == "full_term" ? `${rangeFrom ? moment(rangeFrom).format("DD/MM/YYYY") : ""} - ${rangeTo ? moment(rangeTo).format("DD/MM/YYYY") : ""}` : ""}</td>
+      <td>${postponedDate}</td>
+      </tr>
+      `;
             })
             .join("")
         : "";
@@ -915,6 +937,7 @@ ${classificationRows}
 <th>Survey Name</th>
 <th></th>
 <th>Survey Date</th>
+<th>Due Date</th>
 <th>Range (from, to)</th>
 <th>Postponed</th>
 </tr>

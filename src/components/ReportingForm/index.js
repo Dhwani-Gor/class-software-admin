@@ -67,10 +67,6 @@ const reportSchema = yup.object().shape({
 const DocumentUploadDialog = ({ open, onClose, onUpload, selectedDocuments, onRemoveDocument, onPreviewDocument }) => {
   const [documents, setDocuments] = useState([]);
 
-  const areAllActivitiesCompleted = () => {
-    return tableData?.length > 0 && tableData.every((activity) => activity.status === "Completed");
-  };
-
   const handleFileChange = (event) => {
     if (event.target.files) {
       const newFiles = Array.from(event.target.files);
@@ -79,7 +75,6 @@ const DocumentUploadDialog = ({ open, onClose, onUpload, selectedDocuments, onRe
       if (validFiles.length !== newFiles.length) {
         toast.warning("Some files were skipped due to invalid file type");
       }
-
       setDocuments((prev) => [...prev, ...validFiles]);
     }
   };
@@ -1336,11 +1331,7 @@ const ReportingForm = () => {
                         <CommonInput
                           {...field}
                           type="date"
-                          label={
-                            <>
-                              Validity Date <span style={{ color: "red" }}>*</span>
-                            </>
-                          }
+                          label={<>Validity Date</>}
                           error={!!errors.validitydate}
                           helperText={errors.validitydate?.message}
                           onChange={(e) => {
