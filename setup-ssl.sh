@@ -27,8 +27,8 @@ docker run --rm \
   -v $(pwd)/ssl-challenge:/var/www/certbot \
   certbot/certbot \
   certonly --webroot -w /var/www/certbot \
-  --email $EMAIL --agree-tos --no-eff-email \
-  -d $DOMAIN -d www.$DOMAIN
+  --email $EMAIL --agree-tos --no-eff-email --expand \
+  -d $DOMAIN -d www.$DOMAIN -d dev.$DOMAIN
 
 if [ $? -eq 0 ]; then
     echo "✅ SSL certificate generated successfully!"
