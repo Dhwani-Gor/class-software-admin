@@ -16,10 +16,14 @@ import GetAppIcon from "@mui/icons-material/GetApp";
 import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonInput from "@/components/CommonInput";
-import { getAllIssuedDocuments, getAllJournals, getAllReports, getJournalsList } from "@/api";
-import { Chip, MenuItem, Select, TextField } from "@mui/material";
+import { deleteDocument, deleteSurveyReport, deleteSurveyStatusReport, getAllIssuedDocuments, getAllJournals, getAllReports, getJournalsList } from "@/api";
+import { Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Select, TextField } from "@mui/material";
 import CommonButton from "@/components/CommonButton";
 import { useAuth } from "@/hooks/useAuth";
+import DeleteIcon from "@mui/icons-material/Delete";
+import PreviewIcon from "@mui/icons-material/Visibility";
+import CommonConfirmationDialog from "@/components/Dialogs/CommonConfirmationDialog";
+import { toast } from "react-toastify";
 
 const Certificates = () => {
   const dispatch = useDispatch();
@@ -43,6 +47,11 @@ const Certificates = () => {
   const [selectedFilter, setSelectedFilter] = useState("certificates");
   const [count, setTotalCount] = useState(0);
   const [reportsList, setReportsList] = useState([]);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState({});
+  const [previewFile, setPreviewFile] = useState(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [openPreviewModal, setOpenPreviewModal] = useState(false);
 
   // Client-side search functionality
   const fetchReportsData = async () => {
@@ -65,6 +74,30 @@ const Certificates = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleConfirmDelete = async () => {
+    setOpenDialog(false);
+    if (!selectedDocument) return;
+    try {
+      if (selectedDocument.type === "document") {
+        const res = await deleteSurveyStatusReport(selectedDocument.id);
+        toast.success("Document deleted successfully");
+        fetchReportsData();
+      } else if (selectedDocument.type === "report") {
+        await deleteSurveyReport(selectedDocument.id);
+        toast.success("Report deleted successfully");
+        fetchReportsData();
+      }
+    } catch (e) {
+      console.error("Error deleting:", e.response?.data || e.message);
+      toast.error("Failed to delete.");
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setSelectedDocument(null);
+    setOpenDialog(false);
   };
 
   useEffect(() => {
@@ -121,6 +154,38 @@ const Certificates = () => {
       headerName: "Created Date",
       flex: 1,
       renderCell: (params) => <Typography fontSize="14px">{formatDate(params.value)}</Typography>,
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 150,
+      renderCell: (params) => (
+        <Stack direction="row" spacing={1}>
+          <Tooltip title="Preview Report">
+            <IconButton
+              color="info"
+              onClick={() => {
+                setPreviewFile(params.row.generatedDoc);
+                setLoadingPreview(true);
+                setOpenPreviewModal(true);
+              }}
+            >
+              <PreviewIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete Report">
+            <IconButton
+              color="error"
+              onClick={() => {
+                setSelectedDocument({ id: params?.id, type: "report" });
+                setOpenDialog(true);
+              }}
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      ),
     },
   ];
 
@@ -212,10 +277,6 @@ const Certificates = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchCertificatesData();
-  }, [selectedFilter, selectedReportNumber, placeFilter, statusFilter, debouncedSearch, page, limit, startDate, endDate]);
 
   const handleSearchChange = (event) => {
     setSearch(event.target.value);
@@ -538,6 +599,47 @@ const Certificates = () => {
         className="snackBarColor"
         key="snackbar"
       />
+      <Dialog open={openPreviewModal} onClose={() => setOpenPreviewModal(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Document Preview</DialogTitle>
+        <DialogContent>
+          <div style={{ position: "relative", width: "100%", height: "80vh" }}>
+            {!loadingPreview ? (
+              <a
+                href={previewFile}
+                download
+                rel="noopener noreferrer"
+                style={{
+                  position: "absolute",
+                  top: "10px",
+                  right: "10px",
+                  backgroundColor: "#4CAF50",
+                  color: "white",
+                  padding: "8px 12px",
+                  borderRadius: "4px",
+                  textDecoration: "none",
+                  fontSize: "14px",
+                  zIndex: 1,
+                  border: "none",
+                }}
+              >
+                Download
+              </a>
+            ) : (
+              <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                <CircularProgress />
+              </Box>
+            )}
+            <iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile)}&embedded=true`} style={{ width: "100%", height: "100%", border: "none" }} title="File Preview" onLoad={() => setLoadingPreview(false)} />
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenPreviewModal(false)} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <CommonConfirmationDialog open={openDialog} onClose={handleCancelDelete} onConfirm={handleConfirmDelete} title="Are you sure you want to delete this survey status report?" description="This action cannot be undone." />
     </Layout>
   );
 };
