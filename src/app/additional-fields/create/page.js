@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Box, Typography, Select, MenuItem, Button, IconButton, TextField } from "@mui/material";
+import { Box, Typography, Select, MenuItem, Button, IconButton, TextField, FormControl } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import { getAllClients } from "@/api";
+import CommonButton from "@/components/CommonButton";
 
 const sections = [
   { key: "coc", label: "Condition of Class", options: ["Hull", "Machinery"] },
@@ -19,20 +21,95 @@ const actions = ["Recommended", "Deleted", "Amended", "Extended"];
 const demoData = {
   clientId: 1,
   sections: [
-    { sectionKey: "coc", data: [{ id: 1, type: "Hull", code: "H0001", referenceNo: "R001", description: "Main hull", remarks: "No damage", action: "Recommended", dueDate: "2025-12-01" }] },
-    { sectionKey: "statutory", data: [{ id: 1759311653689, type: "Machinery", code: "MS0001", referenceNo: "R002", description: "rerer", remarks: "rewwew", action: "Recommended", dueDate: "2025-10-28" }] },
-    { sectionKey: "memoranda", data: [{ id: 1759311672610, type: "Machinery", code: "MM0001", referenceNo: "R002", description: "545", remarks: "5455", action: "Deleted", dueDate: "" }] },
-    { sectionKey: "additional", data: [{ id: 1759311698386, type: "Machinery", code: "MA0001", referenceNo: "R002", description: "tr", remarks: "tt", action: "Recommended", dueDate: "2025-10-07" }] },
-    { sectionKey: "compliance", data: [{ id: 1759311685073, type: "Machinery", code: "Z0001", referenceNo: "R001", description: "gt", remarks: "ttt", action: "Recommended", dueDate: "2025-10-28" }] },
+    {
+      sectionKey: "coc",
+      data: [
+        {
+          id: 1,
+          type: "Hull",
+          code: "H0001",
+          referenceNo: "R001",
+          description: "Main hull",
+          remarks: "No damage",
+          action: "Recommended",
+          dueDate: "2025-12-01",
+        },
+      ],
+    },
+    {
+      sectionKey: "statutory",
+      data: [
+        {
+          id: 1759311653689,
+          type: "Machinery",
+          code: "MS0001",
+          referenceNo: "R002",
+          description: "rerer",
+          remarks: "rewwew",
+          action: "Recommended",
+          dueDate: "2025-10-28",
+        },
+      ],
+    },
+    {
+      sectionKey: "memoranda",
+      data: [
+        {
+          id: 1759311672610,
+          type: "Machinery",
+          code: "MM0001",
+          referenceNo: "R002",
+          description: "545",
+          remarks: "5455",
+          action: "Deleted",
+          dueDate: "",
+        },
+      ],
+    },
+    {
+      sectionKey: "additional",
+      data: [
+        {
+          id: 1759311698386,
+          type: "Machinery",
+          code: "MA0001",
+          referenceNo: "R002",
+          description: "tr",
+          remarks: "tt",
+          action: "Recommended",
+          dueDate: "2025-10-07",
+        },
+      ],
+    },
+    {
+      sectionKey: "compliance",
+      data: [
+        {
+          id: 1759311685073,
+          type: "Machinery",
+          code: "Z0001",
+          referenceNo: "R001",
+          description: "gt",
+          remarks: "ttt",
+          action: "Recommended",
+          dueDate: "2025-10-28",
+        },
+      ],
+    },
   ],
+};
+
+const codePrefixes = {
+  coc: { Hull: "H", Machinery: "M" },
+  statutory: { Hull: "HS", Machinery: "MS" },
+  memoranda: { Hull: "HM", Machinery: "MM" },
+  additional: { Hull: "HA", Machinery: "MA" },
+  compliance: { Hull: "Z", Machinery: "Z" },
 };
 
 const AdditionalFieldsList = () => {
   const [selectedClient, setSelectedClient] = useState(demoData.clientId);
-  const [clientsList] = useState([
-    { id: 1, shipName: "Ship A" },
-    { id: 2, shipName: "Ship B" },
-  ]);
+  const [clientsList, setClientsList] = useState([]);
 
   const [sectionsData, setSectionsData] = useState({
     coc: [],
@@ -43,6 +120,7 @@ const AdditionalFieldsList = () => {
   });
 
   const [payload, setPayload] = useState(null);
+  const [selectedSectionKey, setSelectedSectionKey] = useState("coc");
 
   const [editingRows, setEditingRows] = useState({
     coc: null,
@@ -52,36 +130,14 @@ const AdditionalFieldsList = () => {
     compliance: null,
   });
 
-  const codePrefixes = {
-    coc: { Hull: "H", Machinery: "M" },
-    statutory: { Hull: "HS", Machinery: "MS" },
-    memoranda: { Hull: "HM", Machinery: "MM" },
-    additional: { Hull: "HA", Machinery: "MA" },
-    compliance: { Hull: "Z", Machinery: "Z" },
-  };
-
-  // Helper to generate next code
   const generateCode = (sectionKey, type, existingRows, isEditing = false, currentCode = "") => {
     if (!type) return "";
     const prefix = codePrefixes[sectionKey][type];
+    if (isEditing && currentCode.startsWith(prefix)) return currentCode;
 
-    // If editing and type hasn't changed, keep the same code
-    if (isEditing && currentCode.startsWith(prefix)) {
-      return currentCode;
-    }
-
-    // Find all codes with the same prefix
     const filtered = existingRows.filter((r) => r.code && r.code.startsWith(prefix));
-
-    // Extract numbers and find the highest
-    const numbers = filtered.map((r) => {
-      const num = parseInt(r.code.replace(prefix, ""));
-      return isNaN(num) ? 0 : num;
-    });
-
-    const maxNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
-    const nextNumber = maxNumber + 1;
-
+    const numbers = filtered.map((r) => parseInt(r.code.replace(prefix, "")) || 0);
+    const nextNumber = Math.max(0, ...numbers) + 1;
     return `${prefix}${String(nextNumber).padStart(4, "0")}`;
   };
 
@@ -148,18 +204,35 @@ const AdditionalFieldsList = () => {
     }));
   };
 
+  const fetchClients = async () => {
+    try {
+      const result = await getAllClients();
+      if (result?.status === 200) {
+        setClientsList(result.data.data);
+      } else {
+        toast.error(result?.message);
+      }
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error?.message || "Failed to fetch clients");
+    }
+  };
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
+
   const handleAddOrUpdate = (sectionKey) => {
     const editingRow = editingRows[sectionKey];
     if (!editingRow) return;
 
     if (editingRow.id) {
-      // Update existing row
       setSectionsData((prev) => ({
         ...prev,
         [sectionKey]: prev[sectionKey].map((row) => (row.id === editingRow.id ? editingRow : row)),
       }));
     } else {
-      // Add new row
       setSectionsData((prev) => ({
         ...prev,
         [sectionKey]: [...prev[sectionKey], { ...editingRow, id: Date.now() }],
@@ -169,26 +242,47 @@ const AdditionalFieldsList = () => {
     handleCancelEdit(sectionKey);
   };
 
+  const handleClientChange = (event) => {
+    const selectedId = event.target.value;
+    const selectedClient = clientsList.find((client) => client.id === selectedId);
+    setSelectedClient(selectedId);
+  };
+
   return (
     <Box>
       <Box sx={{ p: 3, bgcolor: "white", borderRadius: 2, boxShadow: 1, mt: 2 }}>
+        <Box>
+          <FormControl fullWidth sx={{ maxWidth: 300 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, fontSize: 16 }}>
+              Select Ship
+            </Typography>
+
+            <Select value={selectedClient || ""} onChange={handleClientChange} displayEmpty>
+              {clientsList.map((client) => (
+                <MenuItem key={client.id} value={client.id}>
+                  {client.shipName}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+
         <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-            Select Ship
+          <Typography variant="subtitle2" sx={{ mt: 3, fontWeight: 600, fontSize: 16 }}>
+            Select Section
           </Typography>
-          <Select value={selectedClient} onChange={(e) => setSelectedClient(e.target.value)} displayEmpty fullWidth size="small">
-            <MenuItem value="" disabled>
-              Select Client
-            </MenuItem>
-            {clientsList.map((client) => (
-              <MenuItem key={client.id} value={client.id}>
-                {client.shipName}
+          <Select value={selectedSectionKey} onChange={(e) => setSelectedSectionKey(e.target.value)} fullWidth size="small">
+            {sections.map((section) => (
+              <MenuItem key={section.key} value={section.key}>
+                {section.label}
               </MenuItem>
             ))}
           </Select>
         </Box>
 
-        {sections.map((section) => {
+        {/* Single Section Form */}
+        {(() => {
+          const section = sections.find((s) => s.key === selectedSectionKey);
           const editingRow = editingRows[section.key];
 
           return (
@@ -197,12 +291,8 @@ const AdditionalFieldsList = () => {
                 {section.label}
               </Typography>
 
-              {/* Edit/Add Form */}
+              {/* Form */}
               <Box sx={{ mb: 3, p: 3, border: "1px solid #e0e0e0", borderRadius: 2, bgcolor: "#f9f9f9" }}>
-                <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
-                  {editingRow?.id ? "Edit Row" : "Add New Row"}
-                </Typography>
-
                 <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
                   <TextField label="Type" value={editingRow?.type || ""} onChange={(e) => handleTypeChange(section.key, e.target.value)} select fullWidth size="small">
                     {section.options.map((opt) => (
@@ -299,33 +389,21 @@ const AdditionalFieldsList = () => {
                   size="small"
                 />
 
-                <Box sx={{ mt: 2, display: "flex", gap: 1 }}>
-                  <Button variant="contained" onClick={() => handleAddOrUpdate(section.key)}>
-                    {editingRow?.id ? "Update Row" : "Add Row"}
-                  </Button>
-                  {editingRow && (
-                    <Button variant="outlined" onClick={() => handleCancelEdit(section.key)}>
-                      Cancel
-                    </Button>
-                  )}
+                <Box sx={{ mt: 2, display: "flex", gap: 1, alignItems: "end", justifyContent: "flex-end" }}>
+                  <CommonButton variant="contained" onClick={() => handleAddOrUpdate(section.key)} text={editingRow?.id ? "Update" : "Save"} />
+                  <CommonButton variant="outlined" onClick={() => handleCancelEdit(section.key)} text="Cancel" />
                 </Box>
               </Box>
             </Box>
           );
-        })}
+        })()}
 
-        <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
-          <Button variant="contained" color="primary" size="large" onClick={handleSave}>
-            Save All Changes
-          </Button>
-        </Box>
-
-        {/* Editable Saved Data */}
         {payload && (
           <Box sx={{ mt: 4, p: 3, bgcolor: "#f5f5f5", borderRadius: 2 }}>
             <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
               Saved Data (Editable)
             </Typography>
+
             {payload.sections.map((section) => (
               <Box key={section.sectionKey} sx={{ mb: 4 }}>
                 <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, color: "primary.main" }}>
