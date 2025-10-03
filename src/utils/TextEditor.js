@@ -673,7 +673,7 @@ const TextEditor = ({ id }) => {
           rangeFrom,
           rangeTo,
           postponedDate: "",
-          typeOfCertificate, // ✅ add it here
+          typeOfCertificate,
         },
       ];
     });
@@ -949,15 +949,12 @@ ${statutoryRows}
 <div class="page">
 ${certificatesTableHtml}
 
-<h2 style="margin-top: 40px; color:black">Conditions of Class / Statutory Status</h2>
+<h2 style="margin-top: 40px; color:black">Surveys/ Audits/ Inspections Staus</h2>
 <p class="subtitle">
 The Conditions of Class / Statutory Status below shows the information available at the time the report is printed.
-This may not indicate certificates issued, surveys carried out or conditions of class / recommendations issued but not yet reported to MCB Head Office.
+This may not indicate certificates issued, surveys carried out or conditions of class / recommendations issued but not yet reported to MCBG Head Office.
 </p>
 
-<h4 style="margin-top:-10px;color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)">Classification</h4>
-<p><i>Status: Active</i></p>
-</div>
 `;
 
     return `
@@ -1036,8 +1033,8 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 </thead>
 <tbody>
 <tr>
-<td><em><strong>Class Symbols:</strong></em></td>
-<td>-</td>
+<td><em><strong>Classification Status:</strong></em></td>
+<td>Active</td>
 </tr>
 <tr>
 <td><em><strong>Hull Notation:</strong></em></td>

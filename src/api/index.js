@@ -959,3 +959,23 @@ export const deleteSurveyStatusReport = async (id) => {
   }
   return result;
 };
+
+export const addAmdRemarks = async (payload) => {
+  try {
+    const result = await axiosInstance.post("/reportDetails/generateReport", payload);
+    return result;
+  } catch (e) {
+    console.error("Error archiving document:", e);
+    return e;
+  }
+};
+
+export const addAdditionalFields = async (payload) => {
+  try {
+    const result = await axiosInstance.post("/reportDetails/addAdditionalFields", payload);
+    return result;
+  } catch (e) {
+    console.error("Error archiving document:", e);
+    return e;
+  }
+};

@@ -5,7 +5,7 @@ import { Box, Typography, Select, MenuItem, Button, IconButton, TextField, FormC
 import { DataGrid } from "@mui/x-data-grid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import { getAllClients } from "@/api";
+import { addAdditionalFields, getAllClients } from "@/api";
 import CommonButton from "@/components/CommonButton";
 
 const sections = [
@@ -156,23 +156,36 @@ const AdditionalFieldsList = () => {
       [sectionKey]: prev[sectionKey].filter((row) => row.id !== rowId),
     }));
   };
-
-  const handleSave = () => {
+  const handleSave = async (sectionKey) => {
     if (!selectedClient) {
       alert("Please select a client");
       return;
     }
 
+    const sectionData = sectionsData[sectionKey];
+
+    if (!sectionData || sectionData.length === 0) {
+      alert("No data to save for this section");
+      return;
+    }
+
+    // Take only the first row (or the one being edited)
+    const rowToSave = sectionData[0]; // or editingRows[sectionKey] if you want only the current row
+
     const finalPayload = {
+      sectionKey: sectionKey,
       clientId: selectedClient,
-      sections: Object.keys(sectionsData).map((key) => ({
-        sectionKey: key,
-        data: sectionsData[key],
-      })),
+      data: rowToSave,
     };
 
-    setPayload(finalPayload);
-    alert("Data saved successfully!");
+    try {
+      const res = await addAdditionalFields(finalPayload);
+      console.log(res);
+      alert("Section data saved successfully!");
+    } catch (error) {
+      console.error(error);
+      alert("Failed to save section data");
+    }
   };
 
   const handleEditRow = (sectionKey, row) => {
@@ -212,9 +225,7 @@ const AdditionalFieldsList = () => {
       } else {
         toast.error(result?.message);
       }
-      setLoading(false);
     } catch (error) {
-      setLoading(false);
       toast.error(error?.message || "Failed to fetch clients");
     }
   };
@@ -390,7 +401,15 @@ const AdditionalFieldsList = () => {
                 />
 
                 <Box sx={{ mt: 2, display: "flex", gap: 1, alignItems: "end", justifyContent: "flex-end" }}>
-                  <CommonButton variant="contained" onClick={() => handleAddOrUpdate(section.key)} text={editingRow?.id ? "Update" : "Save"} />
+                  <CommonButton
+                    variant="contained"
+                    onClick={() => {
+                      handleAddOrUpdate(section.key);
+                      handleSave(section.key); // pass selected section
+                    }}
+                    text={editingRow?.id ? "Update" : "Save"}
+                  />
+
                   <CommonButton variant="outlined" onClick={() => handleCancelEdit(section.key)} text="Cancel" />
                 </Box>
               </Box>
