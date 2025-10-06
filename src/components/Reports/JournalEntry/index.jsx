@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import jsPDF from "jspdf";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -25,6 +24,7 @@ import VisitModal from "../VisitModal";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ActivitiesModal from "../ActivitiesModal";
+
 import {
   createActivity,
   deleteActivity,
@@ -101,6 +101,8 @@ const JournalEntryForm = ({ journalId = null }) => {
   const [surveyTypes, setSurveyTypes] = useState([]);
   const [surveyors, setSurveyors] = useState([]);
   const [selectedJournalType, setSelectedJournalType] = useState(null);
+  const generateId = () => Date.now() * 1000 + Math.floor(Math.random() * 1000);
+
   const { data } = useAuth()
 
   const {
@@ -275,8 +277,6 @@ const JournalEntryForm = ({ journalId = null }) => {
   const handleDelete = (id) => {
     if (isJournalLocked) return;
     deleteVisitData(id);
-    // console.log('delete visit details')
-    // setVisitList(visitList.filter((visit) => visit.id !== id));
   };
 
   const handleOpenActivityModal = () => {
@@ -415,7 +415,7 @@ const JournalEntryForm = ({ journalId = null }) => {
           setActivitiesList([
             ...activitiesList,
             {
-              id: Date.now(),
+              id: generateId(),
               name: activityData.name,
               surveyTypes: {
                 name: activityData.name,
@@ -428,7 +428,9 @@ const JournalEntryForm = ({ journalId = null }) => {
               const survey = surveyTypes.find((s) => Number(s.id) === Number(surveyId));
               if (!survey) return null;
               return {
-                surveyTypes: { name: survey.name },
+                id: generateId(),
+                typeOfSurvey: surveyId,
+                surveyTypes: { name: survey.name, id: survey.id },
                 initialOfSurveyors: activityData.initialOfSurveyors || [],
               };
             })
@@ -451,7 +453,6 @@ const JournalEntryForm = ({ journalId = null }) => {
   const handleActivityDelete = (activity) => {
     if (isJournalLocked) return;
     deleteActivities(activity)
-    // setActivitiesList(activitiesList.filter((activity) => activity.id !== id));
   };
 
   const handleClientChange = (event) => {
@@ -944,14 +945,9 @@ const JournalEntryForm = ({ journalId = null }) => {
                         <TableRow key={activity.id}>
                           <TableCell>{index + 1}</TableCell>
                           <TableCell>{activity.surveyTypes?.name || activity?.name}</TableCell>
-                          {/* <TableCell>{activity.initialOfSurveyors}</TableCell> */}
                           {!isJournalLocked && (
                             <TableCell align="right">
-                              {/* <IconButton
-                                onClick={() => handleEditActivity(activity)}
-                              >
-                                <EditIcon />
-                              </IconButton> */}
+
                               <IconButton
                                 onClick={() =>
                                   handleActivityDelete(activity)
