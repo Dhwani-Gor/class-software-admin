@@ -7,7 +7,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import { addAdditionalFields, getAllClients } from "@/api";
 import CommonButton from "@/components/CommonButton";
-
+import { TextareaAutosize } from "@mui/material";
 const sections = [
   { key: "coc", label: "Condition of Class", options: ["Hull", "Machinery"] },
   { key: "statutory", label: "Statutory Condition", options: ["Hull", "Machinery"] },
@@ -108,9 +108,12 @@ const codePrefixes = {
 };
 
 const AdditionalFieldsList = () => {
-  const [selectedClient, setSelectedClient] = useState(demoData.clientId);
+  const [selectedClient, setSelectedClient] = useState();
   const [clientsList, setClientsList] = useState([]);
-
+  const [errorMsg, setErrorMsg] = useState({
+    client: "",
+    section: "",
+  });
   const [sectionsData, setSectionsData] = useState({
     coc: [],
     statutory: [],
@@ -156,35 +159,40 @@ const AdditionalFieldsList = () => {
       [sectionKey]: prev[sectionKey].filter((row) => row.id !== rowId),
     }));
   };
+
   const handleSave = async (sectionKey) => {
     if (!selectedClient) {
-      alert("Please select a client");
+      setErrorMsg((prev) => ({ ...prev, client: "Please select a ship" }));
       return;
     }
 
-    const sectionData = sectionsData[sectionKey];
-
-    if (!sectionData || sectionData.length === 0) {
-      alert("No data to save for this section");
+    if (!sectionKey) {
+      setErrorMsg((prev) => ({ ...prev, section: "Please select a section" }));
       return;
     }
 
-    // Take only the first row (or the one being edited)
-    const rowToSave = sectionData[0]; // or editingRows[sectionKey] if you want only the current row
+    const editingRow = editingRows[sectionKey];
+
+    if (!editingRow || Object.values(editingRow).every((v) => !v)) {
+      setErrorMsg((prev) => ({ ...prev, section: "Please fill in all required fields before saving" }));
+      return;
+    }
 
     const finalPayload = {
       sectionKey: sectionKey,
       clientId: selectedClient,
-      data: rowToSave,
+      data: editingRow,
     };
 
     try {
       const res = await addAdditionalFields(finalPayload);
       console.log(res);
-      alert("Section data saved successfully!");
+      setErrorMsg({ client: "", section: "" });
+      // ✅ optionally show inline success message
+      setSuccessMsg(`Data saved successfully for ${sectionKey}`);
     } catch (error) {
       console.error(error);
-      alert("Failed to save section data");
+      setErrorMsg((prev) => ({ ...prev, section: "Failed to save section data" }));
     }
   };
 
@@ -235,6 +243,17 @@ const AdditionalFieldsList = () => {
   }, []);
 
   const handleAddOrUpdate = (sectionKey) => {
+    let hasError = false;
+    if (!selectedClient) {
+      setErrorMsg((prev) => ({ ...prev, client: "Please select a ship" }));
+      hasError = true;
+    }
+    if (!sectionKey) {
+      setErrorMsg((prev) => ({ ...prev, section: "Please select a section" }));
+      hasError = true;
+    }
+    if (hasError) return;
+
     const editingRow = editingRows[sectionKey];
     if (!editingRow) return;
 
@@ -255,8 +274,8 @@ const AdditionalFieldsList = () => {
 
   const handleClientChange = (event) => {
     const selectedId = event.target.value;
-    const selectedClient = clientsList.find((client) => client.id === selectedId);
     setSelectedClient(selectedId);
+    setErrorMsg((prev) => ({ ...prev, client: "" }));
   };
 
   return (
@@ -267,14 +286,21 @@ const AdditionalFieldsList = () => {
             <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, fontSize: 16 }}>
               Select Ship
             </Typography>
-
             <Select value={selectedClient || ""} onChange={handleClientChange} displayEmpty>
+              <MenuItem value="">
+                <em>Select Ship</em>
+              </MenuItem>
               {clientsList.map((client) => (
                 <MenuItem key={client.id} value={client.id}>
                   {client.shipName}
                 </MenuItem>
               ))}
             </Select>
+            {errorMsg.client && (
+              <Typography variant="caption" color="error">
+                {errorMsg.client}
+              </Typography>
+            )}
           </FormControl>
         </Box>
 
@@ -282,13 +308,26 @@ const AdditionalFieldsList = () => {
           <Typography variant="subtitle2" sx={{ mt: 3, fontWeight: 600, fontSize: 16 }}>
             Select Section
           </Typography>
-          <Select value={selectedSectionKey} onChange={(e) => setSelectedSectionKey(e.target.value)} fullWidth size="small">
+          <Select
+            value={selectedSectionKey || ""}
+            onChange={(e) => {
+              setSelectedSectionKey(e.target.value);
+              setErrorMsg((prev) => ({ ...prev, section: "" }));
+            }}
+            fullWidth
+            size="small"
+          >
             {sections.map((section) => (
               <MenuItem key={section.key} value={section.key}>
                 {section.label}
               </MenuItem>
             ))}
           </Select>
+          {errorMsg.section && (
+            <Typography variant="caption" color="error">
+              {errorMsg.section}
+            </Typography>
+          )}
         </Box>
 
         {/* Single Section Form */}
@@ -368,44 +407,64 @@ const AdditionalFieldsList = () => {
                   />
                 </Box>
 
-                <TextField
-                  label="Description"
-                  value={editingRow?.description || ""}
-                  onChange={(e) =>
-                    setEditingRows((prev) => ({
-                      ...prev,
-                      [section.key]: { ...prev[section.key], description: e.target.value },
-                    }))
-                  }
-                  fullWidth
-                  multiline
-                  rows={3}
-                  sx={{ mt: 2 }}
-                  size="small"
-                />
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
+                    Description
+                  </Typography>
+                  <TextareaAutosize
+                    minRows={3}
+                    value={editingRow?.description || ""}
+                    onChange={(e) =>
+                      setEditingRows((prev) => ({
+                        ...prev,
+                        [section.key]: { ...prev[section.key], description: e.target.value },
+                      }))
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "8px 12px",
+                      borderRadius: "8px",
+                      border: "1px solid #ccc",
+                      fontSize: "14px",
+                      fontFamily: "inherit",
+                      resize: "vertical",
+                    }}
+                  />
+                </Box>
 
-                <TextField
-                  label="Remarks"
-                  value={editingRow?.remarks || ""}
-                  onChange={(e) =>
-                    setEditingRows((prev) => ({
-                      ...prev,
-                      [section.key]: { ...prev[section.key], remarks: e.target.value },
-                    }))
-                  }
-                  fullWidth
-                  multiline
-                  rows={3}
-                  sx={{ mt: 2 }}
-                  size="small"
-                />
+                {/* Remarks */}
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
+                    Remarks
+                  </Typography>
+                  <TextareaAutosize
+                    minRows={3}
+                    value={editingRow?.remarks || ""}
+                    onChange={(e) =>
+                      setEditingRows((prev) => ({
+                        ...prev,
+                        [section.key]: { ...prev[section.key], remarks: e.target.value },
+                      }))
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "8px 12px",
+                      borderRadius: "8px",
+                      border: "1px solid #ccc",
+                      fontSize: "14px",
+                      fontFamily: "inherit",
+                      resize: "vertical",
+                    }}
+                  />
+                </Box>
 
                 <Box sx={{ mt: 2, display: "flex", gap: 1, alignItems: "end", justifyContent: "flex-end" }}>
                   <CommonButton
                     variant="contained"
+                    disabled={!selectedClient || !selectedSectionKey}
                     onClick={() => {
                       handleAddOrUpdate(section.key);
-                      handleSave(section.key); // pass selected section
+                      setTimeout(() => handleSave(section.key), 0);
                     }}
                     text={editingRow?.id ? "Update" : "Save"}
                   />
@@ -443,7 +502,7 @@ const AdditionalFieldsList = () => {
                       headerName: "Actions",
                       flex: 1,
                       renderCell: (params) => (
-                        <Box sx={{ display: "flex", gap: 1 }}>
+                        <Box sx={{ display: "flex", gap: 1, alignItems: "center", mt: 1 }}>
                           <IconButton color="primary" size="small" onClick={() => handleEditRow(section.sectionKey, params.row)}>
                             <EditIcon fontSize="small" />
                           </IconButton>

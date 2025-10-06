@@ -629,21 +629,20 @@ const TextEditor = ({ id }) => {
     const uniqueSurveys = Object.values(surveyMap);
 
     return uniqueSurveys?.flatMap((survey) => {
-      const surveyName = survey.activity?.surveyTypes?.name || "";
+      const surveyName = survey.activity?.surveyTypes?.report?.name || "";
       const surveyDate = survey.surveyDate ? format(new Date(survey.surveyDate), "yyyy-MM-dd") : "";
       const validityDate = survey.validityDate ? format(new Date(survey.validityDate), "yyyy-MM-dd") : "";
       const issuanceDate = survey.issuanceDate ? format(new Date(survey.issuanceDate), "yyyy-MM-dd") : "";
       const typeOfCertificate = survey.typeOfCertificate || "";
       const certificateName = survey.activity?.surveyTypes?.report?.name || "";
 
-      // 👇 Check if this survey requires backend-calculated dates
       const isCalculatedSurvey = surveyName.toLowerCase().includes("safcon change of flag") || surveyName.toLowerCase().includes("safcon initial") || surveyName.toLowerCase().includes("safcon renewal") || surveyName.toLowerCase().includes("safcon general examination");
 
       if (isCalculatedSurvey && survey.data?.calculatedSurveys?.length > 0) {
         return survey.data.calculatedSurveys.map((calc) => ({
           surveyName: calc.statutorySurveyName,
           surveyDate: calc.statutorySurveyDate ? format(new Date(calc.statutorySurveyDate), "yyyy-MM-dd") : "",
-          validityDate, // keep validity if available
+          validityDate,
           dueDate: calc.statutoryDueDate ? format(new Date(calc.statutoryDueDate), "yyyy-MM-dd") : "",
           rangeFrom: calc.statutoryRangeFrom ? format(new Date(calc.statutoryRangeFrom), "yyyy-MM-dd") : "",
           rangeTo: calc.statutoryRangeTo ? format(new Date(calc.statutoryRangeTo), "yyyy-MM-dd") : "",
@@ -974,8 +973,8 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 </div>
 </div>
 
-<div style="text-align: center; align-items: center;" class="page">
-<h2 style="color:black; margin-top: 0;">Table of Contents</h2>
+<div style="text-align: center; align-items: center;" class="page page-break-new">
+<h2 style="color:black">Table of Contents</h2>
 <div class="toc-container index-page">
 <table style="width: 100%;">
 <tr class="toc-section">
@@ -1112,7 +1111,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 ${htmlString}
 
 <div class="page">
-<h4 style="margin-top: -90px; color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)">Surveys / Audits / Inspections</h4>
+<h4 style="margin-top: -70px; color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)">Surveys / Audits / Inspections</h4>
 
 ${classificationSurveyTableHtml}
 
