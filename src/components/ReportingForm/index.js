@@ -465,7 +465,6 @@ const ReportingForm = () => {
         filterKey: "clientId",
         filterValue: selectedShip.id,
       });
-
       if (response?.response?.data?.status === "error") {
         toast.error(response?.response?.data?.message);
         return;
@@ -637,23 +636,22 @@ const ReportingForm = () => {
     setShowRemarksDialog(false);
   };
 
-  const handleAmendmentSubmit = async (amendmentReason) => {
-    setAmdRemarks(amendmentReason);
-    setShowAmendmentDialog(false);
-    setOpen(true);
-    console.log(reportDetails.data, "report details.data");
-    const payload = {
-      reportDetailId: reportDetails.id,
-      amdRemarks: amendmentReason,
-      data: {
-        ...reportDetails.data,
-        save: true,
-      },
-    };
+  // const handleAmendmentSubmit = async (amendmentReason) => {
+  //   setAmdRemarks(amendmentReason);
+  //   setShowAmendmentDialog(false);
+  //   setOpen(true);
+  //   const payload = {
+  //     reportDetailId: reportDetails.id,
+  //     amdRemarks: amendmentReason,
+  //     data: {
+  //       ...reportDetails.data,
+  //       save: true,
+  //     },
+  //   };
 
-    const result = await addAmdRemarks(payload);
-    console.log(result);
-  };
+  //   const result = await addAmdRemarks(payload);
+  //   console.log(result);
+  // };
 
   return (
     <Box mt={2}>
@@ -978,7 +976,7 @@ const ReportingForm = () => {
         }}
         title={fullScreenRemarksVisible && typeof fullScreenRemarksVisible === "object" ? `Remarks for ${fullScreenRemarksVisible.surveyTypes?.name}` : "Remarks"}
       />
-      <AmendmentRemarksDialog open={showAmendmentDialog} onClose={() => setShowAmendmentDialog(false)} onSubmit={handleAmendmentSubmit} isLoading={continueBtnLoading} />
+      {/* <AmendmentRemarksDialog open={showAmendmentDialog} onClose={() => setShowAmendmentDialog(false)} onSubmit={handleAmendmentSubmit} isLoading={continueBtnLoading} /> */}
     </Box>
   );
 };

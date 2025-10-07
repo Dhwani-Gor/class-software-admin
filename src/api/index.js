@@ -980,7 +980,7 @@ export const addAdditionalFields = async (payload) => {
   }
 };
 
-export const fetchAllJournals = async (clientId) => {
+export const fetchJournalList = async (clientId) => {
   let result;
   try {
     result = await axiosInstance.get(`/journals?filterKey=clientId&filterValue=${clientId}`);

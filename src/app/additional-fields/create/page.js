@@ -5,7 +5,7 @@ import { Box, Typography, Select, MenuItem, Button, IconButton, TextField, FormC
 import { DataGrid } from "@mui/x-data-grid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import { addAdditionalFields, getAllClients } from "@/api";
+import { addAdditionalFields, fetchJournalList, getAllClients } from "@/api";
 import CommonButton from "@/components/CommonButton";
 import { TextareaAutosize } from "@mui/material";
 const sections = [
@@ -133,9 +133,11 @@ const AdditionalFieldsList = () => {
     compliance: null,
   });
 
+  console.log(selectedClient, "selected client");
   const fetchAllJournals = async () => {
     try {
-      const response = await fetchAllJournals(selectedClient);
+      if (!selectedClient) return;
+      const response = await fetchJournalList(selectedClient);
       console.log("Fetched successfully:", response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
