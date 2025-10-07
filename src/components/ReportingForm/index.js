@@ -12,7 +12,7 @@ import CommonCard from "@/components/CommonCard";
 import Grid2 from "@mui/material/Grid2";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
 import { useRouter } from "next/navigation";
-import { createReportDetail, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument, addUnArchiveDocument, addAmdRemarks } from "@/api";
+import { createReportDetail, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument, addUnArchiveDocument, addAmdRemarks, updateActivityDetails } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { getAllActivities } from "@/api";
@@ -360,29 +360,30 @@ const ReportingForm = () => {
   const handleFullReportGeneration = async () => {
     fetchReportDetails(reportDetails?.id);
     try {
-      if (underscoreFields?.length > 0) {
+      if (reportDetails.lastUnarchivedAt !== null) {
         setShowAmendmentDialog(true);
-
-        // setOpen(true);
       } else {
-        setLoadingReport(true);
-        const payload = {
-          reportDetailId: reportDetails?.id,
-          data: {
-            image: 7,
-            stamp: 6,
-            companyText: 8,
-            ...(reportName?.toLocaleLowerCase() === "certificate of class" && {
-              logo: 7,
-            }),
-          },
-        };
+        setOpen(true);
+        return;
+      }
+      setLoadingReport(true);
 
-        const result = await generateFullReport(payload);
-        if (result.data.status === "success") {
-          toast.success("Report generated successfully.");
-          setOpen(false);
-        }
+      const payload = {
+        reportDetailId: reportDetails?.id,
+        data: {
+          image: 7,
+          stamp: 6,
+          companyText: 8,
+          ...(reportName?.toLocaleLowerCase() === "certificate of class" && {
+            logo: 7,
+          }),
+        },
+      };
+
+      const result = await generateFullReport(payload);
+      if (result.data.status === "success") {
+        toast.success("Report generated successfully.");
+        setOpen(false);
       }
     } catch (error) {
       console.error("Download error:", error);
@@ -446,8 +447,10 @@ const ReportingForm = () => {
   };
 
   const fetchReportDetails = async () => {
-    const response = await getSelectedReportDetails(reportDetails?.id);
-    setReportDetails(response?.data?.data);
+    if (reportDetails?.id) {
+      const response = await getSelectedReportDetails(reportDetails?.id);
+      setReportDetails(response?.data?.data);
+    }
   };
 
   useEffect(() => {
@@ -610,6 +613,25 @@ const ReportingForm = () => {
     }
   };
 
+  const handleRemarksChange = async (id, value) => {
+    const row = tableData.find((item) => item.id === id);
+    if (row && row.maxLength && value?.length > row.maxLength) {
+      return;
+    }
+
+    setTableData((prevData) => prevData.map((item) => (item.id === id ? { ...item, remarks: value } : item)));
+    try {
+      const response = await updateActivityDetails(id, { remarks: value });
+      if (response?.data?.status === "success") {
+        toast.success("Remarks updated successfully.");
+      } else {
+        toast.error("Something went wrong ! Please try again after some time");
+      }
+    } catch (error) {
+      toast.error("Something went wrong ! Please try again after some time", error);
+    }
+  };
+
   const handleArchiveRemarks = (remarks) => {
     setArchiveRemarks(remarks);
     manageArchive();
@@ -696,9 +718,7 @@ const ReportingForm = () => {
           </Box>
         )}
       </CommonCard>
-
       {showTable && <ActivityTable tableData={tableData} setTableData={setTableData} setShowForm={setShowForm} setFullScreenRemarksVisible={setFullScreenRemarksVisible} handleReportClick={handleReportClick} getSurveyTitle={getSurveyTitle} journalId={journalId} getAllActivity={getAllActivity} />}
-
       {showForm && (
         <Box id="reportDetails">
           <CommonCard sx={{ mt: 2 }}>
@@ -879,7 +899,7 @@ const ReportingForm = () => {
               <Grid2 item size={{ md: 3 }}>
                 <FormControl fullWidth>
                   <Typography variant="body1" mb={1.5} fontWeight={500}>
-                    Endorsed / Issued By <span style={{ color: "red" }}>*</span>
+                    Endorsed / Issued By
                   </Typography>
                   <Select value={selectSurveyor} onChange={handleSurveyor} displayEmpty name="issuedBy" error={!!errors.issuedBy}>
                     <MenuItem value="" disabled>
@@ -928,7 +948,6 @@ const ReportingForm = () => {
           </CommonCard>
         </Box>
       )}
-
       <FullScreenRemarksDialog
         open={fullScreenRemarksVisible}
         onCancel={() => setFullScreenRemarksVisible(null)}
@@ -947,7 +966,17 @@ const ReportingForm = () => {
         </Box>
       )}
       <ConfirmationPopup open={isOpenConfirmModal} onClose={onClose} onConfirm={onConfirm} isLoading={continueBtnLoading} text={specialPermission && journals?.archived?.length > 0 ? "unarchive" : "archive"} />
-      <FullScreenRemarksDialog open={isOpenArchiveModal} onCancel={() => setIsOpenArchiveModal(false)} onConfirm={(remarks) => handleArchiveRemarks(remarks)} title="Archive Remarks" />
+      <FullScreenRemarksDialog
+        open={fullScreenRemarksVisible}
+        onCancel={() => setFullScreenRemarksVisible(null)}
+        onConfirm={(value) => {
+          if (fullScreenRemarksVisible && typeof fullScreenRemarksVisible === "object") {
+            handleRemarksChange(fullScreenRemarksVisible.id, value);
+          }
+          setFullScreenRemarksVisible(null);
+        }}
+        title={fullScreenRemarksVisible && typeof fullScreenRemarksVisible === "object" ? `Remarks for ${fullScreenRemarksVisible.surveyTypes?.name}` : "Remarks"}
+      />
       <AmendmentRemarksDialog open={showAmendmentDialog} onClose={() => setShowAmendmentDialog(false)} onSubmit={handleAmendmentSubmit} isLoading={continueBtnLoading} />
     </Box>
   );

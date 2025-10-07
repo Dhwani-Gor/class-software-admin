@@ -972,10 +972,20 @@ export const addAmdRemarks = async (payload) => {
 
 export const addAdditionalFields = async (payload) => {
   try {
-    const result = await axiosInstance.post("/reportDetails/addAdditionalFields", payload);
+    const result = await axiosInstance.post("/additionalField", payload);
     return result;
   } catch (e) {
     console.error("Error archiving document:", e);
     return e;
   }
+};
+
+export const fetchAllJournals = async (clientId) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/journals?filterKey=clientId&filterValue=${clientId}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
 };

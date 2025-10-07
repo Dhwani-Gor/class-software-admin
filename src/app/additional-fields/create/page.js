@@ -133,6 +133,19 @@ const AdditionalFieldsList = () => {
     compliance: null,
   });
 
+  const fetchAllJournals = async () => {
+    try {
+      const response = await fetchAllJournals(selectedClient);
+      console.log("Fetched successfully:", response.data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllJournals();
+  }, [selectedClient]);
+
   const generateCode = (sectionKey, type, existingRows, isEditing = false, currentCode = "") => {
     if (!type) return "";
     const prefix = codePrefixes[sectionKey][type];
