@@ -2,11 +2,11 @@
 import React, { useEffect, useState } from "react";
 import { Box, Grid, TextField, Select, MenuItem, Button, IconButton, InputLabel, FormControl, Typography } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { addAdditionalFields } from "@/api";
 
 const sectionOptions = ["coc", "statutory", "memoranda", "additional", "compliance"];
 const actionsList = ["Recommended", "Deleted", "Amended", "Extended"];
 
-// Types available per section
 const sectionsConfig = {
   coc: ["Hull", "Machinery"],
   statutory: ["Hull", "Machinery"],
@@ -67,6 +67,30 @@ const AdditionalFieldsForm = ({ data = [], onDataChange }) => {
     onDataChange(updated);
   };
 
+  const fetchAllJournals = async (clientId) => {
+    try {
+      const response = await fetchAllJournals(clientId);
+      console.log("Fetched successfully:", response.data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllJournals(selectedShip.id);
+  }, [selectedShip.id]);
+  const handleSave = async () => {
+    try {
+      const payload = { fields: rows };
+      const response = await addAdditionalFields(payload);
+      console.log("Saved successfully:", response.data);
+      alert("Data saved successfully!");
+    } catch (error) {
+      console.error("Error saving data:", error);
+      alert("Failed to save data");
+    }
+  };
+
   return (
     <Box sx={{ mt: 2, mb: 2, border: "1px solid #eee", p: 2, borderRadius: 2 }}>
       <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "primary.main" }}>
@@ -75,7 +99,6 @@ const AdditionalFieldsForm = ({ data = [], onDataChange }) => {
 
       {rows.map((row, index) => (
         <Grid container spacing={2} key={row.id} alignItems="center" sx={{ mb: 1 }}>
-          {/* Section Dropdown */}
           <Grid item xs={2}>
             <FormControl fullWidth>
               <InputLabel>Section</InputLabel>
@@ -89,7 +112,6 @@ const AdditionalFieldsForm = ({ data = [], onDataChange }) => {
             </FormControl>
           </Grid>
 
-          {/* Type */}
           <Grid item xs={2}>
             <FormControl fullWidth>
               <InputLabel>Type</InputLabel>
@@ -103,12 +125,10 @@ const AdditionalFieldsForm = ({ data = [], onDataChange }) => {
             </FormControl>
           </Grid>
 
-          {/* Auto-generated Code */}
           <Grid item xs={2}>
             <TextField value={row.code} label="Code" fullWidth disabled />
           </Grid>
 
-          {/* Reference */}
           <Grid item xs={2}>
             <FormControl fullWidth>
               <InputLabel>Reference</InputLabel>
@@ -120,17 +140,14 @@ const AdditionalFieldsForm = ({ data = [], onDataChange }) => {
             </FormControl>
           </Grid>
 
-          {/* Description */}
           <Grid item xs={3}>
             <TextField value={row.description} label="Description" fullWidth multiline onChange={(e) => updateRow(index, "description", e.target.value)} />
           </Grid>
 
-          {/* Remarks */}
           <Grid item xs={3}>
             <TextField value={row.remarks} label="Remarks" fullWidth multiline onChange={(e) => updateRow(index, "remarks", e.target.value)} />
           </Grid>
 
-          {/* Action */}
           <Grid item xs={2}>
             <FormControl fullWidth>
               <InputLabel>Action</InputLabel>
@@ -145,12 +162,10 @@ const AdditionalFieldsForm = ({ data = [], onDataChange }) => {
             </FormControl>
           </Grid>
 
-          {/* Due Date */}
           <Grid item xs={2}>
             <TextField type="date" value={row.dueDate} label="Due Date" fullWidth InputLabelProps={{ shrink: true }} onChange={(e) => updateRow(index, "dueDate", e.target.value)} />
           </Grid>
 
-          {/* Delete */}
           <Grid item xs={0.5}>
             <IconButton color="error" onClick={() => deleteRow(index)}>
               <DeleteIcon />
@@ -159,9 +174,14 @@ const AdditionalFieldsForm = ({ data = [], onDataChange }) => {
         </Grid>
       ))}
 
-      <Button variant="outlined" onClick={addRow}>
-        Add Row
-      </Button>
+      <Box sx={{ mt: 2 }}>
+        <Button variant="outlined" onClick={addRow}>
+          Add Row
+        </Button>
+        <Button variant="contained" color="primary" sx={{ ml: 2 }} onClick={handleSave}>
+          Save
+        </Button>
+      </Box>
     </Box>
   );
 };

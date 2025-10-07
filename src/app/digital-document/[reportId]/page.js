@@ -5,8 +5,7 @@ import Stack from "@mui/material/Stack";
 import CommonCard from "@/components/CommonCard";
 import { Container, IconButton, Box, Paper, Dialog, DialogTitle, DialogContent, DialogActions, Button, Alert } from "@mui/material";
 import { CheckCircle, Download, PictureAsPdf, Close, Error as ErrorIcon, Warning, OpenInNew } from "@mui/icons-material";
-import { useRouter } from "next/navigation";
-import { getActivity, getAllActivityReportDetails, getAllSystemVariables, getSelectedReportDetails, getSpecificClient } from "@/api";
+import { getAllActivityReportDetails, getAllSystemVariables } from "@/api";
 import { toast } from "react-toastify";
 import { hiddenReports } from "@/utils/DocumentList";
 
