@@ -359,37 +359,36 @@ const ReportingForm = () => {
 
   const handleFullReportGeneration = async () => {
     fetchReportDetails(reportDetails?.id);
-    try {
-      if (reportDetails.lastUnarchivedAt !== null) {
-        setShowAmendmentDialog(true);
-      } else {
-        setOpen(true);
-        return;
-      }
-      setLoadingReport(true);
-
-      const payload = {
-        reportDetailId: reportDetails?.id,
-        data: {
-          image: 7,
-          stamp: 6,
-          companyText: 8,
-          ...(reportName?.toLocaleLowerCase() === "certificate of class" && {
-            logo: 7,
-          }),
-        },
-      };
-
-      const result = await generateFullReport(payload);
-      if (result.data.status === "success") {
-        toast.success("Report generated successfully.");
-        setOpen(false);
-      }
-    } catch (error) {
-      console.error("Download error:", error);
-    } finally {
-      setLoadingReport(false);
+    if (reportDetails.lastUnarchivedAt !== null) {
+      setShowAmendmentDialog(true);
+    } else {
+      setOpen(true);
+      return;
     }
+    // setLoadingReport(true);
+
+    //   const payload = {
+    //     reportDetailId: reportDetails?.id,
+    //     data: {
+    //       image: 7,
+    //       stamp: 6,
+    //       companyText: 8,
+    //       ...(reportName?.toLocaleLowerCase() === "certificate of class" && {
+    //         logo: 7,
+    //       }),
+    //     },
+    //   };
+
+    //   const result = await generateFullReport(payload);
+    //   if (result.data.status === "success") {
+    //     toast.success("Report generated successfully.");
+    //     setOpen(false);
+    //   }
+    // } catch (error) {
+    //   console.error("Download error:", error);
+    // } finally {
+    //   setLoadingReport(false);
+    // }
   };
 
   const handleSubmitReport = async (extraFields) => {
@@ -642,10 +641,12 @@ const ReportingForm = () => {
     setAmdRemarks(amendmentReason);
     setShowAmendmentDialog(false);
     setOpen(true);
+    console.log(reportDetails.data, "report details.data");
     const payload = {
       reportDetailId: reportDetails.id,
       amdRemarks: amendmentReason,
       data: {
+        ...reportDetails.data,
         save: true,
       },
     };
@@ -953,7 +954,7 @@ const ReportingForm = () => {
         onCancel={() => setFullScreenRemarksVisible(null)}
         onConfirm={(value) => {
           if (fullScreenRemarksVisible && typeof fullScreenRemarksVisible === "object") {
-            // This will be handled in ActivityTable component
+            handleRemarksChange(fullScreenRemarksVisible.id, value);
           }
           setFullScreenRemarksVisible(null);
         }}
