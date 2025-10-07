@@ -15,7 +15,7 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
   const [isLoadingVariable, setIsLoadingVariable] = useState(false);
 
   const { formData, setFormData } = useFormInitialization(fields, reportDetails, open);
-  const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, save);
+  const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, saveData);
 
   const isStrikethroughText = (text) => text?.split("").some((c) => c === "\u0336");
 
