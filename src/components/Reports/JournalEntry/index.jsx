@@ -39,8 +39,7 @@ import {
   updateVisitDetails,
   deleteVisitDetails,
   getAllVisitDetails,
-  getSurveyTypes,
-  addArchiveDocument
+  getSurveyTypes
 } from "@/api";
 import {
   CircularProgress,
@@ -560,20 +559,20 @@ const JournalEntryForm = ({ journalId = null }) => {
     setIsShowForm(true);
   };
 
-  const handleArchiveJournal = async () => {
-    let response = await addArchiveDocument(
-      journalId,
+  // const handleArchiveJournal = async () => {
+  //   let response = await addArchiveDocument(
+  //     journalId,
 
-    )
-    console.log(response, "response")
-    if (response?.data?.status === "success") {
-      toast.success("Journal archived successfully");
-      router.push('/journal')
-    } else {
-      toast.error("Something went wrong ! Please try again after some time");
-    }
+  //   )
+  //   console.log(response, "response")
+  //   if (response?.data?.status === "success") {
+  //     toast.success("Journal archived successfully");
+  //     router.push('/journal')
+  //   } else {
+  //     toast.error("Something went wrong ! Please try again after some time");
+  //   }
 
-  }
+  // }
 
   const handleSubmitJournal = async (data, lockJournal = false) => {
     if (isJournalLocked) return;
