@@ -133,7 +133,7 @@ const Reports = () => {
   }, [debouncedSearch, page, limit]);
 
   const handleCancelDelete = () => {
-    setSelectedClientId(null);
+    setSelectedJournalId(null);
     setOpenDialog(false);
   };
 
@@ -187,7 +187,7 @@ const Reports = () => {
         )}
       </CommonCard>
       <Dialog open={openDialog} onClose={handleCancelDelete}>
-        <DialogTitle>Are you sure you want to delete this Client?</DialogTitle>
+        <DialogTitle>Are you sure you want to delete this Journal?</DialogTitle>
         <DialogActions>
           <Button onClick={handleCancelDelete} color="primary">
             Cancel

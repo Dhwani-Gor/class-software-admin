@@ -387,6 +387,7 @@ const JournalEntryForm = ({ journalId = null }) => {
       } else {
         const payload = {
           journalId: journalId,
+          clientId: selectedClient.id,
           ...activityData,
         };
         addActivities(payload);
