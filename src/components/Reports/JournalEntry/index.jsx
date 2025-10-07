@@ -39,7 +39,8 @@ import {
   updateVisitDetails,
   deleteVisitDetails,
   getAllVisitDetails,
-  getSurveyTypes
+  getSurveyTypes,
+  addArchiveDocument
 } from "@/api";
 import {
   CircularProgress,
@@ -56,6 +57,7 @@ import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 
+
 const schema = yup.object().shape({
   shipWork: yup.string().required("Ship name is required"),
   imoNumber: yup.string().required("IMO Number is required"),
@@ -64,6 +66,7 @@ const schema = yup.object().shape({
   date: yup.date().required("Date is required").typeError("required"),
   type: yup.string().required("Type of survey must be selected"),
 });
+const generateId = () => Date.now() * 1000 + Math.floor(Math.random() * 1000);
 
 const journalTypeOptions = [
   { id: "new_entry", value: "new_entry", label: "New Entry" },
@@ -100,6 +103,7 @@ const JournalEntryForm = ({ journalId = null }) => {
   const [surveyTypes, setSurveyTypes] = useState([]);
   const [surveyors, setSurveyors] = useState([]);
   const [selectedJournalType, setSelectedJournalType] = useState(null);
+  const generateId = () => Date.now() * 1000 + Math.floor(Math.random() * 1000);
 
   const {
     control,
@@ -243,7 +247,7 @@ const JournalEntryForm = ({ journalId = null }) => {
         setVisitList(
           visitList.map((visit) =>
             visit.id === editVisit.id
-              ? {...visit, ...visitData, id: editVisit.id} : visit
+              ? { ...visit, ...visitData, id: editVisit.id } : visit
           )
         );
       } else {
@@ -385,7 +389,9 @@ const JournalEntryForm = ({ journalId = null }) => {
       } else {
         const payload = {
           journalId: journalId,
+          clientId: selectedClient.id,
           ...activityData,
+
         };
         addActivities(payload);
       }
@@ -426,12 +432,13 @@ const JournalEntryForm = ({ journalId = null }) => {
               const survey = surveyTypes.find((s) => Number(s.id) === Number(surveyId));
               if (!survey) return null;
               return {
-                surveyTypes: { name: survey.name },
+                id: generateId(),
+                typeOfSurvey: surveyId,
+                surveyTypes: { name: survey.name, id: survey.id },
                 initialOfSurveyors: activityData.initialOfSurveyors || [],
               };
             })
             .filter(Boolean);
-
           setActivitiesList([...activitiesList, ...newActivities]);
         }
       }
@@ -552,6 +559,21 @@ const JournalEntryForm = ({ journalId = null }) => {
   const showForm = () => {
     setIsShowForm(true);
   };
+
+  const handleArchiveJournal = async () => {
+    let response = await addArchiveDocument(
+      journalId,
+
+    )
+    console.log(response, "response")
+    if (response?.data?.status === "success") {
+      toast.success("Journal archived successfully");
+      router.push('/journal')
+    } else {
+      toast.error("Something went wrong ! Please try again after some time");
+    }
+
+  }
 
   const handleSubmitJournal = async (data, lockJournal = false) => {
     if (isJournalLocked) return;
@@ -725,6 +747,7 @@ const JournalEntryForm = ({ journalId = null }) => {
 
                 {!isJournalLocked && (
                   <Box>
+                    {/* <CommonButton sx={{ mr: 2 }} type="button" text="Archive Journal" onClick={handleArchiveJournal} /> */}
                     <CommonButton type="submit" text={journalId ? "Update" : "Save"} />
                   </Box>
                 )}
