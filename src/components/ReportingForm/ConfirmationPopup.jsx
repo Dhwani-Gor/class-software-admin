@@ -16,7 +16,7 @@ const ConfirmationPopup = ({
 }) => {
   return (
     <Dialog open={open} onClose={onClose}>
-      <DialogTitle>{`Do you wish to ${text} this report?`}</DialogTitle>
+      <DialogTitle>{`Are you sure you want to  ${text} this report?`}</DialogTitle>
       <DialogActions>
         <Button onClick={onClose} variant="outlined">
           No

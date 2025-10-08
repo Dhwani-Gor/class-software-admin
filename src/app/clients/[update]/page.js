@@ -21,7 +21,6 @@ const UpdateClient = ({ params }) => {
   const { update } = use(params);
   const router = useRouter();
   const { data } = useAuth();
-  console.log("welcome",data)
   const [editHistoryDialog, setEditHistoryDialog] = useState(false);
   const [isEditDialogVisible, setIsEditDialogVisible] = useState(false);
   const [editingAllowed, setEditingAllowed] = useState(false);
@@ -74,12 +73,7 @@ const UpdateClient = ({ params }) => {
   return (
     <Layout>
       <CommonCard sx={{ mt: 0, pl: 2 }}>
-        <Stack
-          direction="row"
-          alignItems="center"
-          gap={2}
-          justifyContent={"space-between"}
-        >
+        <Stack direction="row" alignItems="center" gap={2} justifyContent={"space-between"}>
           <Stack direction="row" alignItems="center" gap={2}>
             <IconButton size="small" onClick={() => router.push("/clients")}>
               <ArrowBack />
@@ -91,54 +85,16 @@ const UpdateClient = ({ params }) => {
 
           {reportDetails && (
             <Stack spacing={2} direction={"row"}>
-              {data?.specialPermission?.includes(
-                "DataEntryRights(Clients)"
-              ) && (
-                <CommonButton
-                  sx={{ ml: "auto" }}
-                  variant="outlined"
-                  text="Edit History"
-                  onClick={() => setEditHistoryDialog(true)}
-                />
-              )}
-              {data?.specialPermission?.includes(
-                "DataEntryRights(Clients)"
-              ) && (
-                <CommonButton
-                  text="Edit"
-                  variant="outlined"
-                  color="secondary"
-                  onClick={() => setIsEditDialogVisible(true)}
-                />
-              )}
-              {reportDetails && (
-                <CommonButton
-                  variant="contained"
-                  fontWeight={"700"}
-                  onClick={handleClick}
-                  text="GENERATE SURVEY STATUS"
-                />
-              )}
-              {reportDetails && (
-                <CommonButton
-                  variant="contained"
-                  fontWeight={"700"}
-                  onClick={handleSurveyStatsReport}
-                  text="GENERATE SURVEY REPORT"
-                />
-              )}
+              {data?.specialPermission?.includes("DataEntryRights(Clients)") && <CommonButton sx={{ ml: "auto" }} variant="outlined" text="Edit History" onClick={() => setEditHistoryDialog(true)} />}
+              {data?.specialPermission?.includes("DataEntryRights(Clients)") && <CommonButton text="Edit" variant="outlined" color="secondary" onClick={() => setIsEditDialogVisible(true)} />}
+              {reportDetails && <CommonButton variant="contained" fontWeight={"700"} onClick={handleClick} text="GENERATE SURVEY STATUS" />}
+              {reportDetails && <CommonButton variant="contained" fontWeight={"700"} onClick={handleSurveyStatsReport} text="GENERATE SURVEY REPORT" />}
             </Stack>
           )}
         </Stack>
       </CommonCard>
       <Stack>
-        <AddClientForm
-          editReason={editReason}
-          editingAllowed={editingAllowed}
-          mode="update"
-          clientId={update}
-          role="client"
-        />
+        <AddClientForm editReason={editReason} editingAllowed={editingAllowed} mode="update" clientId={update} role="client" />
       </Stack>
       {isEditDialogVisible && (
         <EditingReasonDialog
@@ -152,13 +108,7 @@ const UpdateClient = ({ params }) => {
           title="Please mention the Reason of Updating Client Details to continue Editing."
         />
       )}
-      {editHistoryDialog && (
-        <EditHistoryDialog
-          open={editHistoryDialog}
-          changeHistory={changeHistory}
-          onCancel={() => setEditHistoryDialog(false)}
-        />
-      )}
+      {editHistoryDialog && <EditHistoryDialog open={editHistoryDialog} changeHistory={changeHistory} onCancel={() => setEditHistoryDialog(false)} />}
     </Layout>
   );
 };

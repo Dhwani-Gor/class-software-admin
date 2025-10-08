@@ -441,7 +441,6 @@ const JournalEntryForm = ({ journalId = null }) => {
         }
       }
     }
-
     setOpenActivityModal(false);
   };
 

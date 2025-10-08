@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Box, Grid, TextField, Select, MenuItem, Button, IconButton, InputLabel, FormControl, Typography } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { addAdditionalFields } from "@/api";
+import { toast } from "react-toastify";
 
 const sectionOptions = ["coc", "statutory", "memoranda", "additional", "compliance"];
 const actionsList = ["Recommended", "Deleted", "Amended", "Extended"];
@@ -69,8 +70,7 @@ const AdditionalFieldsForm = ({ data = [], onDataChange }) => {
 
   const fetchAllJournals = async (clientId) => {
     try {
-      const response = await fetchAllJournals(clientId);
-      console.log("Fetched successfully:", response.data);
+      await fetchAllJournals(clientId);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -79,15 +79,17 @@ const AdditionalFieldsForm = ({ data = [], onDataChange }) => {
   useEffect(() => {
     fetchAllJournals(selectedShip.id);
   }, [selectedShip.id]);
+
   const handleSave = async () => {
     try {
       const payload = { fields: rows };
       const response = await addAdditionalFields(payload);
-      console.log("Saved successfully:", response.data);
-      alert("Data saved successfully!");
+      if (response?.status === 200) {
+        toast.success("Data saved successfully!");
+      }
     } catch (error) {
       console.error("Error saving data:", error);
-      alert("Failed to save data");
+      toast.error("Failed to save data");
     }
   };
 

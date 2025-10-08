@@ -55,7 +55,6 @@ const Login = () => {
   const onSubmit = async (data) => {
     try {
       const res = await adminLogin(data);
-      console.log(res?.data?.data);
       if (res?.data?.data?.permissionModule?.length === 0) {
         return toast.error("You don't have access to any module");
       }
@@ -64,9 +63,6 @@ const Login = () => {
         return toast.error(res?.response?.data?.message);
       }
 
-      // if (!res?.data?.data?.status) {
-      //   setSnackBar({ open: true, message: res?.response?.data?.message });
-      // }
       dispatch(saveUserInfo(res?.data?.data));
       login(res?.data?.data);
       toast.success("login successful");

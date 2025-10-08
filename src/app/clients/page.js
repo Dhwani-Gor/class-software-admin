@@ -2,13 +2,13 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import CircularProgress from "@mui/material/CircularProgress";
-import Pagination from '@mui/material/Pagination';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogTitle from '@mui/material/DialogTitle';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
+import Pagination from "@mui/material/Pagination";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogTitle from "@mui/material/DialogTitle";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
 import Snackbar from "@mui/material/Snackbar";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
@@ -26,12 +26,10 @@ import { useAuth } from "@/hooks/useAuth";
 
 const Clients = () => {
   const router = useRouter();
-  const {data} = useAuth()
-  console.log("==>data",data)
+  const { data } = useAuth();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState(""); // Debounced search state
-  const [snackBar, setSnackBar] = useState({ open: false, message: "" });
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [clientsList, setClientsList] = useState([]);
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [limit, setLimit] = useState(10);
@@ -39,9 +37,6 @@ const Clients = () => {
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedClient, setSelectedClientId] = useState(null);
-  const snackbarClose = () => {
-    setSnackBar({ open: false, message: "" });
-  };
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -56,16 +51,16 @@ const Clients = () => {
       setLoading(true);
       const result = await getAllClients(page, limit, search);
       if (result?.status === 200) {
-        setClientsList(result.data.data)
-        setTotalRows(result.data.results)
+        setClientsList(result.data.data);
+        setTotalRows(result.data.results);
       } else {
-        toast.error("Something went wrong ! Please try again after some time")
+        toast.error("Something went wrong ! Please try again after some time");
       }
 
       setLoading(false);
     } catch (error) {
       setLoading(false);
-      toast.error(error)
+      toast.error(error);
     }
   };
 
@@ -88,12 +83,12 @@ const Clients = () => {
     try {
       const res = await deleteClient({ id: selectedClient });
       if (res?.data?.message) {
-        toast.success(res.data.message)
+        toast.success(res.data.message);
       }
       fetchClients();
     } catch (e) {
       console.error("Error deleting Client:", e.response?.data || e.message);
-      setSnackBar({ open: true, message: "Failed to delete Client." });
+      toast.error("Failed to delete Client.");
     }
   };
 
@@ -115,8 +110,8 @@ const Clients = () => {
       sortable: false,
       renderCell: (params) => {
         return (page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1;
-      }
-    },    
+      },
+    },
     { field: "shipName", headerName: "Ship Name", flex: 1.5 },
     { field: "imoNumber", headerName: "IMO Number", flex: 1 },
     {
@@ -131,18 +126,12 @@ const Clients = () => {
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
           <Tooltip title="Edit Client">
-            <IconButton
-              color="primary"
-              onClick={() => router.push(`/clients/${params?.id}`)}
-            >
+            <IconButton color="primary" onClick={() => router.push(`/clients/${params?.id}`)}>
               <EditIcon />
             </IconButton>
           </Tooltip>
           <Tooltip title="Delete Client">
-            <IconButton
-              color="error"
-              onClick={() => handleDeleteClick(params?.id)}
-            >
+            <IconButton color="error" onClick={() => handleDeleteClick(params?.id)}>
               <DeleteIcon />
             </IconButton>
           </Tooltip>
@@ -154,41 +143,28 @@ const Clients = () => {
   return (
     <Layout>
       <CommonCard sx={{ mt: 0 }}>
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-        >
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Typography variant="h4" fontWeight={700}>
             Clients
           </Typography>
-          {data?.specialPermission?.includes("DataEntryRights(Clients)") && <CommonButton
-            sx={{ textTransform: "capitalize" }}
-            text="Add client"
-            variant="contained"
-            onClick={() => {
-              router.push("/clients/create");
-            }}
-          />}
+          {data?.specialPermission?.includes("DataEntryRights(Clients)") && (
+            <CommonButton
+              sx={{ textTransform: "capitalize" }}
+              text="Add client"
+              variant="contained"
+              onClick={() => {
+                router.push("/clients/create");
+              }}
+            />
+          )}
         </Stack>
       </CommonCard>
 
       <CommonCard>
-        <CommonInput
-          placeholder="Search Clients"
-          fullWidth
-          value={search}
-          onChange={handleSearchChange}
-          sx={{ marginBottom: 2 }}
-        />
+        <CommonInput placeholder="Search Clients" fullWidth value={search} onChange={handleSearchChange} sx={{ marginBottom: 2 }} />
         <Box sx={{ width: "100%", mt: 4 }}>
           {loading ? (
-            <Box
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              height="300px"
-            >
+            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
               <CircularProgress />
             </Box>
           ) : clientsList.length > 0 ? (
@@ -209,25 +185,13 @@ const Clients = () => {
               }}
             />
           ) : (
-            <Typography
-              variant="h6"
-              align="center"
-              sx={{ color: "gray", padding: 3 }}
-            >
+            <Typography variant="h6" align="center" sx={{ color: "gray", padding: 3 }}>
               No Data Found
             </Typography>
           )}
         </Box>
         <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-          <Pagination
-            count={Math.ceil(totalRows / limit)}
-            page={page}
-            onChange={handlePageChange}
-            color="primary"
-            variant="outlined"
-            shape="rounded"
-            sx={{ marginTop: "10px" }}
-          />
+          <Pagination count={Math.ceil(totalRows / limit)} page={page} onChange={handlePageChange} color="primary" variant="outlined" shape="rounded" sx={{ marginTop: "10px" }} />
         </Box>
       </CommonCard>
 
@@ -249,19 +213,6 @@ const Clients = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      <Snackbar
-        open={snackBar.open}
-        autoHideDuration={2000}
-        message={snackBar.message}
-        anchorOrigin={{
-          vertical: "top",
-          horizontal: "center",
-        }}
-        onClose={snackbarClose}
-        className="snackBarColor"
-        key="snackbar"
-      />
     </Layout>
   );
 };

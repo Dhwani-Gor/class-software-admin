@@ -24,6 +24,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import PreviewIcon from "@mui/icons-material/Visibility";
 import CommonConfirmationDialog from "@/components/Dialogs/CommonConfirmationDialog";
 import { toast } from "react-toastify";
+import ShowAmdRemarksDialog from "@/components/Dialogs/ShowAmdRemarksDialog";
 
 const Certificates = () => {
   const dispatch = useDispatch();
@@ -52,6 +53,8 @@ const Certificates = () => {
   const [previewFile, setPreviewFile] = useState(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [openPreviewModal, setOpenPreviewModal] = useState(false);
+  const [openAmdRemarks, setOpenAmdRemarks] = useState(false);
+  const [selectedReportId, setSelectedReportId] = useState(null);
 
   // Client-side search functionality
   const fetchReportsData = async () => {
@@ -98,6 +101,11 @@ const Certificates = () => {
   const handleCancelDelete = () => {
     setSelectedDocument(null);
     setOpenDialog(false);
+  };
+
+  const handleOpenAmdRemarks = (reportId) => {
+    setSelectedReportId(reportId);
+    setOpenAmdRemarks(true);
   };
 
   useEffect(() => {
@@ -207,7 +215,7 @@ const Certificates = () => {
   };
 
   const tabs = ["certificates"];
-  if (data?.specialPermission?.includes("Archiving")) {
+  if (data?.specialPermission?.includes("ArchiveDocuments")) {
     tabs.push("Archive Documents");
   }
   tabs.push("Reports");
@@ -338,8 +346,28 @@ const Certificates = () => {
       field: "journalTypeId",
       headerName: "Report No",
       flex: 1,
-      renderCell: (params) => <Typography fontSize="14px">{params.row.activity?.journal?.journalTypeId || "N/A"}</Typography>,
+      renderCell: (params) => {
+        const hasAmendments = params.row.amendmentVersion > 0;
+        const reportNo = params.row.activity?.journal?.journalTypeId || "N/A";
+
+        return hasAmendments ? (
+          <Typography
+            sx={{
+              color: "primary.main",
+              textDecoration: "underline",
+              cursor: "pointer",
+              fontWeight: 500,
+            }}
+            onClick={() => handleOpenAmdRemarks(params.row.id)}
+          >
+            {reportNo}
+          </Typography>
+        ) : (
+          <Typography fontSize="14px">{reportNo}</Typography>
+        );
+      },
     },
+
     {
       field: "shipName",
       headerName: "Ship Name",
@@ -640,6 +668,7 @@ const Certificates = () => {
       </Dialog>
 
       <CommonConfirmationDialog open={openDialog} onClose={handleCancelDelete} onConfirm={handleConfirmDelete} title="Are you sure you want to delete this survey status report?" description="This action cannot be undone." />
+      <ShowAmdRemarksDialog open={openAmdRemarks} onClose={() => setOpenAmdRemarks(false)} reportDetailId={selectedReportId} />
     </Layout>
   );
 };

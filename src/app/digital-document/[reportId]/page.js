@@ -19,9 +19,7 @@ const DigitalDocument = ({ params }) => {
   const [isIOS, setIsIOS] = useState(false);
   const [companyName, setCompanyName] = useState("");
   const [companyLogo, setCompanyLogo] = useState("");
-  console.log(companyLogo, "companyLogo");
 
-  // Detect mobile and iOS
   useEffect(() => {
     const checkDevice = () => {
       const userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -31,7 +29,6 @@ const DigitalDocument = ({ params }) => {
       setIsMobile(isMobileDevice);
       setIsIOS(isIOSDevice);
     };
-
     checkDevice();
   }, []);
 
@@ -53,7 +50,6 @@ const DigitalDocument = ({ params }) => {
     const currentDate = new Date();
     const validity = new Date(validityDate);
 
-    // Reset time to compare only dates
     currentDate.setHours(0, 0, 0, 0);
     validity.setHours(0, 0, 0, 0);
 
@@ -87,7 +83,6 @@ const DigitalDocument = ({ params }) => {
       setError(null);
 
       const result = await getAllActivityReportDetails("id", params?.reportId);
-      console.log("==>", result?.data?.data[0]);
       if (result?.status === 200 && result?.data?.data && result.data.data.length > 0) {
         const reportData = result.data.data[0];
         setReportDetails(reportData);
@@ -142,8 +137,6 @@ const DigitalDocument = ({ params }) => {
 
     try {
       setDownloadError(null);
-
-      // Validate URL - mobile-safe approach
       let isValidUrl = false;
       try {
         const testUrl = reportDetails.generatedDoc;
@@ -188,10 +181,8 @@ const DigitalDocument = ({ params }) => {
     }
 
     try {
-      // Validate URL - mobile-safe approach
       const testUrl = reportDetails.generatedDoc;
       if (typeof testUrl === "string" && (testUrl.startsWith("http://") || testUrl.startsWith("https://"))) {
-        // For iOS, directly open in new tab instead of modal
         if (isIOS) {
           window.open(reportDetails.generatedDoc, "_blank");
         } else {

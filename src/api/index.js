@@ -983,7 +983,57 @@ export const addAdditionalFields = async (payload) => {
 export const fetchJournalList = async (clientId) => {
   let result;
   try {
-    result = await axiosInstance.get(`/journals?filterKey=clientId&filterValue=${clientId}`);
+    result = await axiosInstance.get(`/journals/fetch?filterKey=clientId&filterValue=${clientId}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const fetchAdditionalDetails = async (clientId) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/additionalField?filterKey=clientId&filterValue=${clientId}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const updateAdditionalFields = async (id, payload) => {
+  let result;
+  try {
+    result = await axiosInstance.put(`/additionalField/${id}`, payload);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const getSingleAdditionalDetails = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/additionalField/${id}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const fetchAmdReamrks = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/reportDetails/amdReports/${id}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const deleteAdditionalField = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.delete(`/additionalField/${id}`);
   } catch (error) {
     result = error;
   }
