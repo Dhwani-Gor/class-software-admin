@@ -657,7 +657,7 @@ const Certificates = () => {
                 <CircularProgress />
               </Box>
             )}
-            <iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile)}&embedded=true`} style={{ width: "100%", height: "100%", border: "none" }} title="File Preview" onLoad={() => setLoadingPreview(false)} />
+            <iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile)}&embedded=true`} pointerEvents="none" style={{ width: "100%", height: "100%", border: "none" }} title="File Preview" onLoad={() => setLoadingPreview(false)} />
           </div>
         </DialogContent>
         <DialogActions>

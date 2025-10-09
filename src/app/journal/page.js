@@ -12,8 +12,8 @@ import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import { DataGrid } from "@mui/x-data-grid";
 import CommonInput from "@/components/CommonInput";
-import { deleteJournal, getAllJournals, getJournalsList } from "@/api";
-import { Button, Dialog, DialogActions, DialogTitle, IconButton, Pagination, Tooltip } from "@mui/material";
+import { deleteJournal, getJournalsList } from "@/api";
+import { Button, Dialog, DialogActions, IconButton, Pagination, Tooltip, Chip, DialogTitle } from "@mui/material";
 import moment from "moment";
 import { toast } from "react-toastify";
 
@@ -29,34 +29,13 @@ const Reports = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedJournalId, setSelectedJournalId] = useState(null);
+  const [activeTab, setActiveTab] = useState("journal"); // chip tab state
 
   const [columns] = useState([
-    {
-      field: "serialNumber",
-      headerName: "No.",
-      flex: 0.5,
-      sortable: false,
-      renderCell: (params) => {
-        return params.value;
-      },
-    },
-    {
-      field: "client",
-      headerName: "Ship / Work",
-      flex: 1,
-      renderCell: (params) => {
-        return params.value?.shipName;
-      },
-    },
+    { field: "serialNumber", headerName: "No.", flex: 0.5, sortable: false, renderCell: (params) => params.value },
+    { field: "client", headerName: "Ship / Work", flex: 1, renderCell: (params) => params.value?.shipName },
     { field: "journalTypeId", headerName: "Report Number", flex: 1 },
-    {
-      field: "createdAt",
-      headerName: "Report Date",
-      flex: 1,
-      renderCell: (params) => {
-        return moment(params.row.createdAt).format("DD/MM/YYYY hh:mm A");
-      },
-    },
+    { field: "createdAt", headerName: "Report Date", flex: 1, renderCell: (params) => moment(params.row.createdAt).format("DD/MM/YYYY hh:mm A") },
     {
       field: "actions",
       headerName: "Actions",
@@ -78,40 +57,41 @@ const Reports = () => {
     },
   ]);
 
-  const handleSearchChange = (event) => {
-    setSearch(event.target.value);
-  };
-
+  const handleSearchChange = (event) => setSearch(event.target.value);
   const handleDeleteClick = (journalId) => {
     setSelectedJournalId(journalId);
     setOpenDialog(true);
   };
-
   const handlePageChange = (event, value) => {
     setPage(value);
     router.push(`/journal?page=${value}&limit=${limit}`);
   };
 
-  const fetchAllJournals = async (search, page, limit) => {
+  const fetchAllJournals = async (search, page, limit, tabType = "journal") => {
     try {
       setLoading(true);
-      const result = await getJournalsList({
+
+      const params = {
         search,
         page,
         limit,
-      });
+        filterKey: "journalArchive",
+        filterValue: tabType === "archive" ? "true" : "false", // Pass true/false based on tab
+      };
+
+      const result = await getJournalsList(params);
 
       if (result?.status === 200) {
         const journalsWithSerialNumbers = (result.data.data || []).map((journal, index) => ({
           ...journal,
           serialNumber: (page - 1) * limit + index + 1,
         }));
-
         setJournals(journalsWithSerialNumbers);
         setTotalRows(result.data.total || result.data.results || 0);
       } else {
-        toast.error("Something went wrong! Please try again after some time");
+        toast.error("Something went wrong! Please try again later");
       }
+
       setLoading(false);
     } catch (error) {
       setLoading(false);
@@ -119,18 +99,19 @@ const Reports = () => {
     }
   };
 
+  // Debounce search
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
       setPage(1);
     }, 300);
-
     return () => clearTimeout(handler);
   }, [search]);
 
+  // Fetch journals on tab / search / pagination change
   useEffect(() => {
-    fetchAllJournals(debouncedSearch, page, limit);
-  }, [debouncedSearch, page, limit]);
+    fetchAllJournals(debouncedSearch, page, limit, activeTab);
+  }, [debouncedSearch, page, limit, activeTab]);
 
   const handleCancelDelete = () => {
     setSelectedJournalId(null);
@@ -141,16 +122,14 @@ const Reports = () => {
     setOpenDialog(false);
     if (!selectedJournalId) return;
     try {
-      const res = await deleteJournal(selectedJournalId);
-      if (res) {
-        toast.success("Journal deleted successfully");
-      }
-      fetchAllJournals(search, page, limit);
+      await deleteJournal(selectedJournalId);
+      toast.success("Journal deleted successfully");
+      fetchAllJournals(search, page, limit, activeTab);
     } catch (e) {
-      console.error("Error deleting Client:", e.response?.data || e.message);
-      toast.error("Failed to delete Client.");
+      toast.error("Failed to delete Journal.");
     }
   };
+
   return (
     <Layout>
       <CommonCard sx={{ mt: 0 }}>
@@ -163,7 +142,25 @@ const Reports = () => {
       </CommonCard>
 
       <CommonCard>
-        <CommonInput placeholder="Search Journal" fullWidth value={search} onChange={handleSearchChange} sx={{ marginBottom: 2 }} />
+        {/* Chip Tabs */}
+        <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+          {["journal", "archive"].map((tab) => (
+            <Chip
+              key={tab}
+              label={tab === "journal" ? "Journal" : "Archived Journal"}
+              color={activeTab === tab ? "primary" : "default"}
+              onClick={() => {
+                setActiveTab(tab);
+                setPage(1);
+                setSearch("");
+              }}
+              clickable
+              sx={{ fontWeight: activeTab === tab ? 600 : 400, px: 2 }}
+            />
+          ))}
+        </Stack>
+
+        <CommonInput placeholder={`Search ${activeTab === "archive" ? "Archived Journal" : "Journal"}`} fullWidth value={search} onChange={handleSearchChange} sx={{ marginBottom: 2 }} />
 
         <Box sx={{ width: "100%", mt: 4 }}>
           {loading ? (
@@ -179,27 +176,21 @@ const Reports = () => {
           )}
         </Box>
 
-        {/* Only show pagination if there are journals and totalRows > 0 */}
         {journals.length > 0 && totalRows > 0 && (
           <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
             <Pagination count={Math.ceil(totalRows / limit)} page={page} onChange={handlePageChange} color="primary" variant="outlined" shape="rounded" sx={{ marginTop: "10px" }} />
           </Box>
         )}
       </CommonCard>
+
+      {/* Delete confirmation dialog */}
       <Dialog open={openDialog} onClose={handleCancelDelete}>
         <DialogTitle>Are you sure you want to delete this Journal?</DialogTitle>
         <DialogActions>
           <Button onClick={handleCancelDelete} color="primary">
             Cancel
           </Button>
-          <Button
-            onClick={handleConfirmDelete}
-            sx={{
-              backgroundColor: "#ed2b1c",
-              color: "white",
-              fontWeight: "500",
-            }}
-          >
+          <Button onClick={handleConfirmDelete} sx={{ backgroundColor: "#ed2b1c", color: "white", fontWeight: 500 }}>
             Delete
           </Button>
         </DialogActions>

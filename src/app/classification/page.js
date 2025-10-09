@@ -130,7 +130,7 @@ const Classifications = () => {
     {
       field: "index",
       headerName: "No.",
-      flex: 1,
+      flex: 0.5,
       sortable: false,
       renderCell: (params) => {
         return (page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1;
@@ -175,13 +175,13 @@ const Classifications = () => {
     {
       field: "postponed",
       headerName: "Postponed Date",
-      flex: 1,
+      flex: 0.7,
       renderCell: (params) => (params.value ? moment(params.value).format("DD/MM/YYYY") : "-"),
     },
     {
       field: "actions",
       headerName: "Actions",
-      width: 100,
+      width: 120,
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
           <Tooltip title="Edit Classification">

@@ -258,7 +258,7 @@ const TextEditor = ({ id }) => {
   }
   
   .page-break-new {
-      margin-top: 80px;
+      margin-top: 680px;
   }
 `;
       contentDocument.head.appendChild(style);
@@ -829,10 +829,10 @@ const TextEditor = ({ id }) => {
 
   const sectionOrder = ["coc", "statutory", "memoranda", "additional", "compliance"];
 
-  const additionalFieldsHtml = additionalFieldData
-    ?.sort((a, b) => sectionOrder.indexOf(a.sectionKey) - sectionOrder.indexOf(b.sectionKey))
-    ?.map((section) => {
-      const title = getSectionTitle(section.sectionKey);
+  const additionalFieldsHtml = sectionOrder
+    .map((key) => {
+      const title = getSectionTitle(key);
+      const section = additionalFieldData?.find((s) => s.sectionKey === key) || {};
 
       // if no data — show "No <section name> recommended"
       if (!section.data || section.data.length === 0) {
@@ -859,20 +859,18 @@ const TextEditor = ({ id }) => {
             <tr>
               <td>${item.type || "-"}</td>
               <td>${item.code || "-"}</td>
-              <td>${item.journalTypeId || "-"}</td>
+              <td>${item.referenceNo || "-"}</td>
               <td>${item.dueDate || "-"}</td>
             </tr>
-             ${
-               item.description ? (
-                 <tr>
-                   <td colspan="4" style="padding: 6px 8px; font-size: 0.9rem; color: #333;">
-                     <strong>Description:</strong> ${item.description || "-"}
-                   </td>
-                 </tr>
-               ) : (
-                 ""
-               )
-             }
+            ${
+              item.description
+                ? `<tr>
+                    <td colspan="4" style="padding: 6px 8px; font-size: 0.9rem; color: #333;">
+                      ${item.description || "-"}
+                    </td>
+                  </tr>`
+                : ""
+            }
           `
         )
         .join("");
@@ -903,16 +901,15 @@ const TextEditor = ({ id }) => {
     .join("");
 
   // Final HTML
-  `
-  <div>
-    <div class="legend">
-      <span class="legend-item"><span class="status-icon expired">C</span>Expired</span>
-      <span class="legend-item"><span class="status-icon expiring1m">C</span>Expires in less than 1 month</span>
-      <span class="legend-item"><span class="status-icon expiring3m">C</span>Expires in less than 3 months</span>
+  const finalHtml = `
+    <div>
+      <div class="legend">
+        <span class="legend-item"><span class="status-icon expired">C</span>Expired</span>
+        <span class="legend-item"><span class="status-icon expiring1m">C</span>Expires in less than 1 month</span>
+        <span class="legend-item"><span class="status-icon expiring3m">C</span>Expires in less than 3 months</span>
+      </div>
     </div>
-  </div>
-      ${additionalFieldsHtml}
-
+    ${additionalFieldsHtml}
   `;
 
   const generateHtmlContent = useCallback(() => {
@@ -1087,7 +1084,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 </div>
 </div>
 
-<div style="text-align: center; align-items: center;" class="page page-break-new">
+<div style="text-align: center; margin-top:500px;align-items: center;" class="page">
 <h2 style="color:black">Table of Contents</h2>
 <div class="toc-container index-page">
 <table style="width: 100%;">
@@ -1225,7 +1222,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 ${htmlString}
 
 <div class="">
-<h4 style="color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)">Surveys / Audits / Inspections</h4>
+<h4 style="color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2);margin-top:10">Surveys / Audits / Inspections</h4>
 
 ${classificationSurveyTableHtml}
 

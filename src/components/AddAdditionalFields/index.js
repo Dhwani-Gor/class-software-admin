@@ -5,7 +5,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { addAdditionalFields } from "@/api";
 import { toast } from "react-toastify";
 
-const sectionOptions = ["coc", "statutory", "memoranda", "additional", "compliance"];
+const sectionOptions = ["coc", "statutory", "memoranda", "additional", "compliance", "pcs_fsi_deficiency"];
 const actionsList = ["Recommended", "Deleted", "Amended", "Extended"];
 
 const sectionsConfig = {
@@ -14,6 +14,7 @@ const sectionsConfig = {
   memoranda: ["Hull", "Machinery"],
   additional: ["Hull", "Machinery"],
   compliance: ["Hull", "Machinery"],
+  pcs_fsi_deficiency: ["Hull", "Machinery"], // New section
 };
 
 const AdditionalFieldsForm = ({ data = [], onDataChange }) => {
@@ -54,7 +55,14 @@ const AdditionalFieldsForm = ({ data = [], onDataChange }) => {
     }
 
     if (field === "type" && value && updated[index].section) {
-      updated[index].code = `${value[0]}${String(index + 1).padStart(4, "0")}`;
+      // Determine code prefix
+      let prefix = "";
+      if (updated[index].section === "pcs_fsi_deficiency") {
+        prefix = "P";
+      } else {
+        prefix = value[0];
+      }
+      updated[index].code = `${prefix}${String(index + 1).padStart(4, "0")}`;
     }
 
     setRows(updated);
@@ -107,7 +115,7 @@ const AdditionalFieldsForm = ({ data = [], onDataChange }) => {
               <Select value={row.section} label="Section" onChange={(e) => updateRow(index, "section", e.target.value)}>
                 {sectionOptions.map((sec) => (
                   <MenuItem key={sec} value={sec}>
-                    {sec.charAt(0).toUpperCase() + sec.slice(1)}
+                    {sec === "pcs_fsi_deficiency" ? "PCS/FSI Deficiency" : sec.charAt(0).toUpperCase() + sec.slice(1)}
                   </MenuItem>
                 ))}
               </Select>
