@@ -78,6 +78,7 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId }) => {
     const reportNumber =
         first?.reportDetail?.activity?.journal?.journalTypeId || "-";
     const shipName = first?.reportDetail?.activity?.journal?.client?.shipName || "-";
+    const surveyType = first?.reportDetail?.activity?.surveyTypes?.name || "-";
     // Determine correct certificate type based on amendedDoc filename
     let certificateType = "-";
     const firstDoc = first?.amendedDoc || "";
@@ -107,7 +108,7 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId }) => {
             const beforeAmd = fileName.slice(0, amdIndex);
             const mcbs = beforeAmd.match(/MCB[0-9A-Z-]*/ig);
             if (mcbs && mcbs.length) {
-                reportNo = mcbs[mcbs.length - 1]; // last MCB before AMD
+                reportNo = `${mcbs[mcbs.length - 1]}-AMD`;
             }
         }
 
@@ -172,6 +173,9 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId }) => {
                             </Typography>
                             <Typography variant="subtitle1">
                                 <strong>Type of Certificate:</strong> {certificateType}
+                            </Typography>
+                            <Typography variant="subtitle1">
+                                <strong>Type of Certificate:</strong> {surveyType}
                             </Typography>
                         </Box>
 

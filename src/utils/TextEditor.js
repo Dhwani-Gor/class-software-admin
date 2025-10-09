@@ -862,16 +862,21 @@ const TextEditor = ({ id }) => {
               <td>${item.referenceNo || "-"}</td>
               <td>${item.dueDate || "-"}</td>
             </tr>
-            ${
-              item.description
-                ? `<tr>
-                    <td colspan="4" style="padding: 6px 8px; font-size: 0.9rem; color: #333;">
-                      ${item.description || "-"}
-                    </td>
-                  </tr>`
-                : ""
-            }
-          `
+             ${
+               item.description
+                 ? `<tr>
+              <td colspan="4" style="
+                padding: 6px 8px; 
+                font-size: 0.9rem; 
+                color: #333; 
+                border-bottom: 2px solid blue;
+              ">
+                ${item.description || "-"}
+              </td>
+            </tr>`
+                 : ""
+             }
+    `
         )
         .join("");
 
@@ -1075,12 +1080,23 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 </div>
 
 
-<div style="text-align: left; display: inline-block; font-size: 16px;">
-<p><strong font-size="16px">Reg. Owner:</strong> ${clientData?.ownerDetails?.companyName || "-"}</p>
-<p><strong font-size="16px">IMO Number:</strong> ${clientData?.imoNumber || "-"}</p>
-<p><strong font-size="16px">Vessel Type:</strong> ${clientData?.typeOfShip || "-"}</p>
-<p><strong font-size="16px">Gross Tonnage:</strong> ${clientData?.grossTonnage || "-"}</p>
-<p><strong font-size="16px">Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : "-"}</p>
+<div style="
+  text-align: center;
+  display: inline-block;
+  font-size: 16px;
+  padding: 12px;
+  color:white;
+  background: linear-gradient(to right, #9013fe, #4a90e2);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  border-radius: 6px;
+  width: 40%;
+  margin-top:90px;
+  
+"><p><strong style="font-size:18px;color:white">Reg. Owner:</strong> ${clientData?.ownerDetails?.companyName || "-"}</p>
+<p><strong style="font-size:18px;color:white">IMO Number:</strong> ${clientData?.imoNumber || "-"}</p>
+<p><strong style="font-size:18px;color:white">Vessel Type:</strong> ${clientData?.typeOfShip || "-"}</p>
+<p><strong style="font-size:18px;color:white">Gross Tonnage:</strong> ${clientData?.grossTonnage || "-"}</p>
+<p><strong style="font-size:18px;color:white">Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : "-"}</p>
 </div>
 </div>
 
