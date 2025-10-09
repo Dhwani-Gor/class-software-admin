@@ -1,6 +1,6 @@
 import { Editor } from "@tinymce/tinymce-react";
 import { useEffect, useState, useCallback } from "react";
-import { getAllListClassificationSurveys, getAllSystemVariables, getSpecificClient, getSurveyReportData, uploadSurveyReport } from "../api";
+import { fetchAdditionalDetails, getAllListClassificationSurveys, getAllSystemVariables, getSpecificClient, getSurveyReportData, uploadSurveyReport } from "../api";
 import { toast } from "react-toastify";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import html2canvas from "html2canvas";
@@ -20,6 +20,8 @@ const TextEditor = ({ id }) => {
   const [loading, setLoading] = useState(true);
   const [editorContent, setEditorContent] = useState("");
   const [classificationData, setClassificationData] = useState([]);
+  const [additionalFieldData, setAdditionalFieldData] = useState([]);
+  console.log(additionalFieldData, "additional fields ");
   const [statutoryData, setStatutoryData] = useState([]);
   const [systemVariables, setSystemVariables] = useState();
   const today = moment();
@@ -35,8 +37,14 @@ const TextEditor = ({ id }) => {
     setClassificationData(response?.data?.data);
   };
 
+  const getAdditionalFields = async () => {
+    const response = await fetchAdditionalDetails(id);
+    setAdditionalFieldData(response?.data?.data);
+  };
+
   useEffect(() => {
     getAllClassification();
+    getAdditionalFields();
   }, []);
 
   const getSystemVariables = async () => {
@@ -250,7 +258,7 @@ const TextEditor = ({ id }) => {
   }
   
   .page-break-new {
-      margin-top: 80px;
+      margin-top: 680px;
   }
 `;
       contentDocument.head.appendChild(style);
@@ -801,6 +809,109 @@ const TextEditor = ({ id }) => {
       .replace(/\b\w/g, (c) => c.toUpperCase());
   };
 
+  // Generate table rows for each section
+  const getSectionTitle = (key) => {
+    switch (key) {
+      case "coc":
+        return "Condition of Class";
+      case "statutory":
+        return "Statutory Condition";
+      case "memoranda":
+        return "Memoranda";
+      case "additional":
+        return "Additional Information";
+      case "compliance":
+        return "Compliance to New Regulations";
+      default:
+        return key.toUpperCase();
+    }
+  };
+
+  const sectionOrder = ["coc", "statutory", "memoranda", "additional", "compliance"];
+
+  const additionalFieldsHtml = sectionOrder
+    .map((key) => {
+      const title = getSectionTitle(key);
+      const section = additionalFieldData?.find((s) => s.sectionKey === key) || {};
+
+      // if no data — show "No <section name> recommended"
+      if (!section.data || section.data.length === 0) {
+        return `
+          <h4 style="
+            margin-top: 20px;
+            color: white;
+            padding: 8px;
+            border-radius: 4px;
+            background: linear-gradient(to right, #9013fe, #4a90e2);
+          ">
+            ${title}
+          </h4>
+          <p style="margin: 10px 0; font-style: italic; color: #555;">
+            No ${title} recommended
+          </p>
+        `;
+      }
+
+      // otherwise render table rows
+      const rows = section.data
+        .map(
+          (item) => `
+            <tr>
+              <td>${item.type || "-"}</td>
+              <td>${item.code || "-"}</td>
+              <td>${item.referenceNo || "-"}</td>
+              <td>${item.dueDate || "-"}</td>
+            </tr>
+            ${
+              item.description
+                ? `<tr>
+                    <td colspan="4" style="padding: 6px 8px; font-size: 0.9rem; color: #333;">
+                      ${item.description || "-"}
+                    </td>
+                  </tr>`
+                : ""
+            }
+          `
+        )
+        .join("");
+
+      return `
+        <h4 style="
+          margin-top: 20px;
+          color: white;
+          padding: 8px;
+          border-radius: 4px;
+          background: linear-gradient(to right, #9013fe, #4a90e2);
+        ">
+          ${title}
+        </h4>
+        <table style="width:100%; border-collapse: collapse; margin-bottom: 10px;">
+          <thead>
+            <tr style="background-color:#f2f2f2;">
+              <th>Type</th>
+              <th>Code</th>
+              <th>Reference No</th>
+              <th>Due Date</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    })
+    .join("");
+
+  // Final HTML
+  const finalHtml = `
+    <div>
+      <div class="legend">
+        <span class="legend-item"><span class="status-icon expired">C</span>Expired</span>
+        <span class="legend-item"><span class="status-icon expiring1m">C</span>Expires in less than 1 month</span>
+        <span class="legend-item"><span class="status-icon expiring3m">C</span>Expires in less than 3 months</span>
+      </div>
+    </div>
+    ${additionalFieldsHtml}
+  `;
+
   const generateHtmlContent = useCallback(() => {
     const classificationRows =
       classificationData?.length > 0
@@ -973,7 +1084,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 </div>
 </div>
 
-<div style="text-align: center; align-items: center;" class="page page-break-new">
+<div style="text-align: center; margin-top:500px;align-items: center;" class="page">
 <h2 style="color:black">Table of Contents</h2>
 <div class="toc-container index-page">
 <table style="width: 100%;">
@@ -991,7 +1102,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 </div>
 
 <div class="page page-break-new">
-<h2 style="color:black">Ship Particulars</h2>
+<h2 style="color:black; margin-top:-90px">Ship Particulars</h2>
 <table class="classification-section-table" style="width: 100%; border-collapse: collapse;">
 <thead>
 <tr>
@@ -1110,8 +1221,8 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 
 ${htmlString}
 
-<div class="page">
-<h4 style="margin-top: -70px; color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)">Surveys / Audits / Inspections</h4>
+<div class="">
+<h4 style="color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2);margin-top:10">Surveys / Audits / Inspections</h4>
 
 ${classificationSurveyTableHtml}
 
@@ -1140,6 +1251,7 @@ ${statutorySurveyTableHtml}
 </tbody>
 </table>
 
+${additionalFieldsHtml}
 </div>
 
 `;

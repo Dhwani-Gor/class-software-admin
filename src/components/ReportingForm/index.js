@@ -52,6 +52,7 @@ const ReportingForm = () => {
   const { data } = useAuth();
   const [loading, setLoading] = useState(false);
   const [clientsList, setClientsList] = useState([]);
+
   const [journals, setJournals] = useState([]);
   const [fullScreenRemarksVisible, setFullScreenRemarksVisible] = useState(null);
   const [selectedShip, setSelectedShip] = useState({ id: "", shipName: "" });
@@ -67,6 +68,7 @@ const ReportingForm = () => {
   const [showForm, setShowForm] = useState(false);
   const [reportDetails, setReportDetails] = useState();
   const [tableData, setTableData] = useState([]);
+  console.log(tableData, "table data");
   const [selectedRow, setSelectedRow] = useState(null);
   const [journalId, setjournalId] = useState(null);
   const [endorsedIssuedBy, setEndorsedIssuedBy] = useState([]);
@@ -84,6 +86,7 @@ const ReportingForm = () => {
   const [showAmendmentDialog, setShowAmendmentDialog] = useState(false);
   const [isOpenConfirmModal, setIsOpenConfirmModal] = useState(false);
   const [amdRemarks, setAmdRemarks] = useState("");
+  const [showArchiveRemarks, setShowArchiveRemarks] = useState("");
 
   useEffect(() => {
     if (selectCertificate === "full_term") {
@@ -363,12 +366,12 @@ const ReportingForm = () => {
   };
 
   const handleFullReportGeneration = async () => {
-    fetchReportDetails(reportDetails?.id);
+    await fetchReportDetails(reportDetails?.id);
+
     if (reportDetails.lastUnarchivedAt !== null) {
       setShowAmendmentDialog(true);
     } else {
       setOpen(true);
-      return;
     }
   };
 
@@ -380,6 +383,7 @@ const ReportingForm = () => {
         data: {
           ...extraFields,
           type: "image",
+          amdRemarks,
           stamp: 6,
           companyText: 8,
           ...(reportName.toLocaleLowerCase() === "certificate of class" && {
@@ -391,6 +395,7 @@ const ReportingForm = () => {
       const result = await generateFullReport(payload);
       if (result?.data?.status === "success" && result?.data?.message) {
         toast.success(result.data.message);
+        setAmdRemarks("");
         return;
       } else if (result?.data?.data) {
         const fileUrl = result?.data?.data;
@@ -485,6 +490,7 @@ const ReportingForm = () => {
       const result = await getAllActivities("journalId", id);
       if (result?.data?.status === "success") {
         setTableData(result?.data?.data);
+        setShowArchiveRemarks(result.data?.data[0]?.journal?.archiveRemarks);
       } else {
         toast.error("Something went wrong ! Please try again after some time");
       }
@@ -617,17 +623,6 @@ const ReportingForm = () => {
     setAmdRemarks(amendmentReason);
     setShowAmendmentDialog(false);
     setOpen(true);
-    const payload = {
-      reportDetailId: reportDetails.id,
-      amdRemarks: amendmentReason,
-      data: {
-        ...reportDetails.data,
-        save: true,
-      },
-    };
-
-    const result = await addAmdRemarks(payload);
-    console.log(result);
   };
 
   return (
@@ -663,26 +658,34 @@ const ReportingForm = () => {
             {selectedShip?.id && (
               <Box mt={2} width="100%" display="block">
                 {data?.specialPermission?.includes("archive/unarchive") && <FormControlLabel control={<Checkbox checked={specialPermission} onChange={handleSpecialPermission} color="primary" />} label="Show Archived Reports" sx={{ mb: 2, display: "block" }} />}
-
-                <FormControl fullWidth sx={{ maxWidth: 300 }}>
-                  <Typography variant="body1" mb={1} display="block">
-                    Select Report Number
-                  </Typography>
-                  <Select value={selectedReportNumber.journalTypeId || ""} onChange={handleReportNumber} displayEmpty fullWidth>
-                    {filteredJournals?.length > 0 ? (
-                      <MenuItem value="" disabled>
-                        Select Report
-                      </MenuItem>
-                    ) : (
-                      <MenuItem disabled>{specialPermission ? "No Archived Journals found" : "No Unarchived Journals found"}</MenuItem>
-                    )}
-                    {filteredJournals?.map((report) => (
-                      <MenuItem key={report.id} value={report.journalTypeId}>
-                        {report.journalTypeId}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <Box display="flex">
+                  <FormControl fullWidth sx={{ maxWidth: 300 }}>
+                    <Typography variant="body1" mb={1} display="block">
+                      Select Report Number
+                    </Typography>
+                    <Select value={selectedReportNumber.journalTypeId || ""} onChange={handleReportNumber} displayEmpty fullWidth>
+                      {filteredJournals?.length > 0 ? (
+                        <MenuItem value="" disabled>
+                          Select Report
+                        </MenuItem>
+                      ) : (
+                        <MenuItem disabled>{specialPermission ? "No Archived Journals found" : "No Unarchived Journals found"}</MenuItem>
+                      )}
+                      {filteredJournals?.map((report) => (
+                        <MenuItem key={report.id} value={report.journalTypeId}>
+                          {report.journalTypeId}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  {showArchiveRemarks && (
+                    <Typography pl={2} mt={5} ml={3}>
+                      {" "}
+                      <b>Archive Remarks: </b>
+                      {showArchiveRemarks}
+                    </Typography>
+                  )}
+                </Box>
               </Box>
             )}
             {selectedShip.id && selectedReportNumber.journalTypeId && (
