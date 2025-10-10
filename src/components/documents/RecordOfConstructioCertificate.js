@@ -19,8 +19,6 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
   const handleCancel = () => {
     setOpenDialog(false);
-    setFormData({});
-
   };
 
   const handleConfirm = () => {

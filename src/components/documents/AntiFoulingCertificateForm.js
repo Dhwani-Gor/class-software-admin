@@ -17,7 +17,6 @@ const AntiFoulingCertificateForm = ({ open, onClose, onSubmit, fields, reportDet
 
   const handleCancel = () => {
     setOpenDialog(false);
-    setFormData({});
   };
 
   const handleConfirm = () => {
