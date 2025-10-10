@@ -42,7 +42,7 @@ const reportSchema = yup.object().shape({
   validitydate: yup.string().optional(),
   surveydate: yup.string().required("Survey date is required"),
   endorsementdate: yup.string().optional(),
-  issuedBy: yup.string().optional(),
+  issuedBy: yup.string().required("Issued by is required"),
   place: yup.string().required("Place is required"),
   newValidityDate: yup.string().optional(),
 });
@@ -63,6 +63,7 @@ const ReportingForm = () => {
     journalTypeId: "",
     index: null,
   });
+  console.log(selectedReportNumber.journalTypeId, "selectedReportNumber");
   const [selectCertificate, setSelectCertificate] = useState("");
   const [showTable, setShowTable] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -103,6 +104,7 @@ const ReportingForm = () => {
       setShowExtraEndorsementField(false);
     }
   }, [selectCertificate]);
+
   useEffect(() => {
     if (!journals) return;
     const data = specialPermission ? journals.archived : journals.unarchived;
@@ -177,8 +179,8 @@ const ReportingForm = () => {
     { value: "extended", label: "Extended" },
   ];
 
-  const areAllActivitiesCompleted = () => {
-    return tableData?.length > 0 && tableData.every((activity) => activity.status === "Completed");
+  const areAnyActivitiesPending = () => {
+    return tableData?.some((activity) => activity.status !== "Completed");
   };
 
   const handleClientChange = (event) => {
@@ -232,39 +234,37 @@ const ReportingForm = () => {
     getAllActivity(journalId);
   };
 
-  const manageArchive = async () => {
+  const manageArchive = async (remark = "") => {
     try {
       setContinueBtnLoading(true);
 
-      if (specialPermission && data.specialPermission?.includes("archive/unarchive")) {
-        // Unarchive logic
-        const payload = {
-          clientId: selectedShip.id,
-          journalId,
-        };
+      const payload = {
+        clientId: selectedShip.id,
+        journalId,
+        archiveRemarks: remark,
+      };
 
+      if (specialPermission && data.specialPermission?.includes("archive/unarchive")) {
         const result = await addUnArchiveDocument(payload);
-        if (result.data.status === "success") {
+        if (result?.data?.status === "success") {
           setShowTable(false);
           setShowButton(false);
           fetchAllJournals();
           setIsOpenConfirmModal(false);
+          setSelectedReportNumber({});
           toast.success(result.data.message);
         } else {
           toast.error("Failed to unarchive");
         }
       } else {
-        // Archive logic - archiveRemarks should already be set from EditingReasonDialog
-        const result = await addArchiveDocument({
-          clientId: selectedShip.id,
-          journalId,
-          archiveRemarks: archiveRemarks,
-        });
-        if (result.data.status === "success") {
+        const result = await addArchiveDocument(payload);
+        if (result?.data?.status === "success") {
           setShowButton(false);
+          setIsOpenConfirmModal(false);
           setShowTable(false);
           fetchAllJournals();
           setIsOpenArchiveModal(false);
+          setSelectedReportNumber({});
           toast.success(result.data.message);
         } else {
           toast.error("Failed to archive");
@@ -285,13 +285,10 @@ const ReportingForm = () => {
       toast.error("Client ID not found");
       return;
     }
-
-    // Show confirmation popup only for unarchive
-    if (specialPermission && journals?.archived?.length > 0) {
-      setIsOpenConfirmModal(true);
-    } else {
-      // Show EditingReasonDialog only for archive
+    if (areAnyActivitiesPending() && !specialPermission) {
       setIsOpenArchiveModal(true);
+    } else {
+      setIsOpenConfirmModal(true);
     }
   };
 
@@ -339,7 +336,7 @@ const ReportingForm = () => {
         setReportDetails(result?.data?.data);
         toast.success("Report saved successfully.");
       } else {
-        toast.error("Failed to generate report");
+        toast.error(result.response.data.message);
       }
       setLoading(false);
     } catch (error) {
@@ -441,7 +438,7 @@ const ReportingForm = () => {
   useEffect(() => {
     fetchClients();
     fetchReportDetails();
-    areAllActivitiesCompleted();
+    areAnyActivitiesPending();
   }, []);
 
   const fetchAllJournals = async () => {
@@ -587,12 +584,7 @@ const ReportingForm = () => {
   };
 
   const onConfirm = () => {
-    if (!areAllActivitiesCompleted() && !specialPermission) {
-      console.log(areAllActivitiesCompleted, specialPermission);
-      setIsOpenArchiveModal(true);
-    } else {
-      manageArchive();
-    }
+    manageArchive();
   };
 
   const handleRemarksChange = async (id, value) => {
@@ -614,13 +606,7 @@ const ReportingForm = () => {
     }
   };
 
-  const handleArchiveRemarks = (remarks) => {
-    setArchiveRemarks(remarks);
-    manageArchive();
-  };
-
   const handleAmendmentSubmit = async (amendmentReason) => {
-    if (!amendmentReason?.trim()) return; // prevent submission if empty
     setAmdRemarks(amendmentReason);
     setShowAmendmentDialog(false);
     setOpen(true);
@@ -679,9 +665,8 @@ const ReportingForm = () => {
                       ))}
                     </Select>
                   </FormControl>
-                  {showArchiveRemarks && (
+                  {selectedReportNumber.journalTypeId && (
                     <Typography pl={2} mt={5} ml={3}>
-                      {" "}
                       <b>Archive Remarks: </b>
                       {showArchiveRemarks}
                     </Typography>
@@ -879,7 +864,7 @@ const ReportingForm = () => {
               <Grid2 item size={{ md: 3 }}>
                 <FormControl fullWidth>
                   <Typography variant="body1" mb={1.5} fontWeight={500}>
-                    Endorsed / Issued By
+                    Endorsed / Issued By <span style={{ color: "red" }}>*</span>
                   </Typography>
                   <Select value={selectSurveyor} onChange={handleSurveyor} displayEmpty name="issuedBy" error={!!errors.issuedBy}>
                     <MenuItem value="" disabled>
@@ -891,6 +876,11 @@ const ReportingForm = () => {
                       </MenuItem>
                     ))}
                   </Select>
+                  {errors.issuedBy && (
+                    <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                      {errors.issuedBy.message}
+                    </Typography>
+                  )}
                 </FormControl>
               </Grid2>
               <Grid2 item size={{ md: 3 }}>
@@ -946,7 +936,16 @@ const ReportingForm = () => {
         </Box>
       )}
       <ConfirmationPopup open={isOpenConfirmModal} onClose={onClose} onConfirm={onConfirm} isLoading={continueBtnLoading} text={specialPermission && journals?.archived?.length > 0 ? "unarchive" : "archive"} />
-      <EditingReasonDialog open={isOpenArchiveModal} onConfirm={handleArchiveRemarks} title="Are you sure you want to archive this journal?" onCancel={() => setIsOpenArchiveModal(false)} />
+      <EditingReasonDialog
+        open={isOpenArchiveModal}
+        onConfirm={(value) => {
+          setIsOpenArchiveModal(false);
+          manageArchive(value); // pass the remark directly
+        }}
+        title="Are you sure you want to archive this journal?"
+        onCancel={() => setIsOpenArchiveModal(false)}
+      />
+
       <FullScreenRemarksDialog
         open={fullScreenRemarksVisible}
         onCancel={() => setFullScreenRemarksVisible(null)}
