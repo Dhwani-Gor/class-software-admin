@@ -1066,7 +1066,7 @@ ${statutoryRows}
 <div class="page">
 ${certificatesTableHtml}
 
-<h2 style="margin-top: 40px; color:black">Surveys/ Audits/ Inspections Staus</h2>
+<h2 style="margin-top: 40px; color:black">Surveys/ Audits/ Inspections Status</h2>
 <p class="subtitle">
 The Conditions of Class / Statutory Status below shows the information available at the time the report is printed.
 This may not indicate certificates issued, surveys carried out or conditions of class / recommendations issued but not yet reported to MCBG Head Office.
@@ -1125,7 +1125,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   background: linear-gradient(to right, #9013fe, #4a90e2);
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
   border-radius: 10px;
-  width: 360px;
+  width: 450px;
   margin-top: 30px;
   line-height: 1.8;
 ">

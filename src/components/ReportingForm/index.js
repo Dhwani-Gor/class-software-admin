@@ -620,6 +620,7 @@ const ReportingForm = () => {
   };
 
   const handleAmendmentSubmit = async (amendmentReason) => {
+    if (!amendmentReason?.trim()) return; // prevent submission if empty
     setAmdRemarks(amendmentReason);
     setShowAmendmentDialog(false);
     setOpen(true);

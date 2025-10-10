@@ -23,10 +23,13 @@ import {
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import GetAppIcon from "@mui/icons-material/GetApp";
 import { fetchAmdReamrks } from "@/api";
+import { useAuth } from "@/hooks/useAuth";
 
 const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId }) => {
+    const { data } = useAuth();
     const [amendments, setAmendments] = useState([]);
     const [loading, setLoading] = useState(false);
+
 
     useEffect(() => {
         if (open && reportDetailId) {
@@ -185,7 +188,7 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId }) => {
                                 <TableHead>
                                     <TableRow>
                                         <TableCell>Amended Document</TableCell>
-                                        <TableCell>Remarks</TableCell>
+                                        {data.specialPermission?.includes("showAmedmentRemark") && <TableCell>Remarks</TableCell>}
                                         <TableCell>Action</TableCell>
                                     </TableRow>
                                 </TableHead>
@@ -200,7 +203,7 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId }) => {
                                             <TableRow key={amd.id}>
                                                 <TableCell>{displayReportNo}</TableCell>
 
-                                                <TableCell>{amd.amdRemarks || "-"}</TableCell>
+                                                {data.specialPermission?.includes("showAmedmentRemark") && <TableCell>{amd.amdRemarks || "-"}</TableCell>}
 
                                                 <TableCell>
                                                     {amd.amendedDoc ? (
