@@ -16,8 +16,8 @@ const sections = [
   { key: "memoranda", label: "Memoranda", options: ["Hull", "Machinery"] },
   { key: "additional", label: "Additional Information", options: ["Hull", "Machinery"] },
   { key: "compliance", label: "Compliance to New Regulations", options: ["Hull", "Machinery"] },
+  { key: "pcsFsi", label: "PCS/FSI Deficiency", options: ["Hull", "Machinery"] }, // New section
 ];
-
 const actions = ["Recommended", "Deleted", "Amended", "Extended"];
 
 const codePrefixes = {
@@ -27,6 +27,7 @@ const codePrefixes = {
   additional: { Hull: "HA", Machinery: "MA" },
   compliance: { Hull: "Z", Machinery: "Z" },
   hull: { Hull: "H", Machinery: "M" },
+  pcsFsi: { Hull: "P", Machinery: "P" },
 };
 
 const AdditionalFieldsList = () => {
@@ -99,7 +100,6 @@ const AdditionalFieldsList = () => {
   };
 
   const handleEditRow = (sectionKey, row) => {
-    // populate dropdown and form for editing
     setSelectedSectionKey(sectionKey);
     setEditingRows((prev) => ({ ...prev, [sectionKey]: row }));
   };
@@ -302,7 +302,7 @@ const AdditionalFieldsList = () => {
 
             {/* Save / Cancel */}
             <Box sx={{ mt: 2, display: "flex", gap: 1, justifyContent: "flex-end" }}>
-              <CommonButton variant="contained" disabled={!selectedClient} onClick={() => handleAddOrUpdate(section.key)} text={editingRow?.id ? "Update" : "Save"} />
+              <CommonButton variant="contained" disabled={!selectedClient || !editingRow?.type || !editingRow?.description} onClick={() => handleAddOrUpdate(section.key)} text={editingRow?.id ? "Update" : "Save"} />
               <CommonButton variant="outlined" onClick={() => handleCancelEdit(section.key)} text="Cancel" />
             </Box>
           </Box>
@@ -323,7 +323,39 @@ const AdditionalFieldsList = () => {
                 <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
                   {s.label}
                 </Typography>
-                <DataGrid rows={rows} columns={commonColumns(s.key, journalList)} getRowId={(row) => row.id} autoHeight={false} hideFooter pageSize={10} rowsPerPageOptions={[10]} sx={{ bgcolor: "white", borderRadius: 2, maxHeight: 400, overflowY: "auto" }} />
+
+                <DataGrid
+                  rows={rows}
+                  columns={commonColumns(s.key, journalList)}
+                  getRowId={(row) => row.id || Math.random()}
+                  autoHeight
+                  hideFooter
+                  pageSize={10}
+                  rowsPerPageOptions={[10]}
+                  sx={{
+                    bgcolor: "white",
+                    borderRadius: 2,
+                    maxHeight: 400,
+                    overflowY: "auto",
+                  }}
+                  slots={{
+                    noRowsOverlay: () => (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          height: 120,
+                          color: "text.secondary",
+                          fontSize: 14,
+                          fontWeight: 500,
+                        }}
+                      >
+                        No {s.label} Recommended
+                      </Box>
+                    ),
+                  }}
+                />
               </Box>
             );
           })}
