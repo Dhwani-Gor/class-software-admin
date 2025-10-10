@@ -829,7 +829,7 @@ const TextEditor = ({ id }) => {
     }
   };
 
-  const sectionOrder = ["coc", "statutory", "memoranda", "additional", "compliance"];
+  const sectionOrder = ["coc", "statutory", "memoranda", "additional", "compliance", "pcsFsi"];
 
   const additionalFieldsHtml = sectionOrder
     .map((key) => {
@@ -1166,6 +1166,9 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 </tr>
 <tr class="toc-section">
 <td><strong>8. Compliance to New Regulations</strong></td>
+</tr>
+<tr class="toc-section">
+<td><strong>9. PCS/FSI Deficiency</strong></td>
 </tr>
 
 </table>
