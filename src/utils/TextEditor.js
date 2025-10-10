@@ -258,7 +258,7 @@ const TextEditor = ({ id }) => {
   }
   
   .page-break-new {
-      margin-top: 680px;
+      margin-top: 480px;
   }
 `;
       contentDocument.head.appendChild(style);
@@ -524,10 +524,10 @@ const TextEditor = ({ id }) => {
       formData.append("clientId", id);
       formData.append("generatedDoc", file);
 
-      const res = await uploadSurveyReport(formData);
-      if (res) {
-        toast.success("Survey Status Report Downloaded Successfully");
-      }
+      // const res = await uploadSurveyReport(formData);
+      // if (res) {
+      //   toast.success("Survey Status Report Downloaded Successfully");
+      // }
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -822,6 +822,8 @@ const TextEditor = ({ id }) => {
         return "Additional Information";
       case "compliance":
         return "Compliance to New Regulations";
+      case "pcsFsi":
+        return "PCS/FSI Deficiency";
       default:
         return key.toUpperCase();
     }
@@ -1074,33 +1076,70 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 
     return `
 <div style="text-align: center; background-color: white; color: black; padding: 60px;">
-<div style={{ textAlign: 'center', backgroundColor: 'white', color: 'black', padding: '60px' }}>
-<img src=${companyLogo}  alt="companyLogo" height="150" width="150" style="margin-bottom: 30px;"/>
-<h1 style="font-size: 28px; color: black; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);" class="company-name">${companyName} - ${clientData?.shipName || "-"}</h1>
+<div style="text-align: center; background-color: white; color: black; padding: 60px;">
+  <div style="
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+  ">
+    <img 
+      src=${companyLogo}  
+      alt="companyLogo" 
+      height="180" 
+      width="180" 
+      style="margin-bottom: 0px; object-fit: contain;"
+    />
+    <h1 
+      style="
+        font-size: 32px; 
+        color: black; 
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        margin: 0;
+      " 
+      class="company-name"
+    >
+      ${companyName}
+    </h1>
+  </div>
+  <h1 
+    style="
+      font-size: 22px; 
+      margin-top: 25px; 
+      color: #333;
+      text-transform: uppercase;
+    "
+  >
+    ${clientData?.shipName || "-"}
+  </h1>
 </div>
+
 
 
 <div style="
-  text-align: center;
+  text-align: left;
   display: inline-block;
   font-size: 16px;
-  padding: 12px;
-  color:white;
+  padding: 18px 28px;
+  color: white;
   background: linear-gradient(to right, #9013fe, #4a90e2);
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-  border-radius: 6px;
-  width: 40%;
-  margin-top:90px;
-  
-"><p><strong style="font-size:18px;color:white">Reg. Owner:</strong> ${clientData?.ownerDetails?.companyName || "-"}</p>
-<p><strong style="font-size:18px;color:white">IMO Number:</strong> ${clientData?.imoNumber || "-"}</p>
-<p><strong style="font-size:18px;color:white">Vessel Type:</strong> ${clientData?.typeOfShip || "-"}</p>
-<p><strong style="font-size:18px;color:white">Gross Tonnage:</strong> ${clientData?.grossTonnage || "-"}</p>
-<p><strong style="font-size:18px;color:white">Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : "-"}</p>
-</div>
+  border-radius: 10px;
+  width: 360px;
+  margin-top: 30px;
+  line-height: 1.8;
+">
+  <p><strong style="font-size:18px; color:white">Reg. Owner:</strong><span style="color:white; font-size:18px; fontWeight: 700; margin-left: 70px">${clientData?.ownerDetails?.companyName || "-"}</span></p>
+  <p><strong style="font-size:18px; color:white">Reg. No:</strong><span style="color:white; font-size:18px; fontWeight: 700; margin-left: 105px">${clientData?.registrationNumber || "-"}</span></p>
+  <p><strong style="font-size:18px; color:white">IMO Number:</strong><span style="color:white; font-size:18px; fontWeight: 700; margin-left: 60px">${clientData?.imoNumber || "-"}</span></p>
+  <p><strong style="font-size:18px; color:white">Vessel Type:</strong><span style="color:white; font-size:18px; fontWeight: 700; margin-left: 74px">${clientData?.typeOfShip || "-"}</span></p>
+  <p><strong style="font-size:18px; color:white">Gross Tonnage:</strong><span style="color:white; font-size:18px; fontWeight: 700; margin-left: 48px">${clientData?.grossTonnage || "-"}</span></p>
+  <p><strong style="font-size:18px; color:white">Date of build:</strong><span style="color:white; font-size:18px; fontWeight: 700; margin-left: 63px">${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : "-"}</span></p>
 </div>
 
-<div style="text-align: center; margin-top:500px;align-items: center;" class="page">
+</div>
+
+<div style="text-align: center; margin-top:140px;align-items: center;" class="page">
 <h2 style="color:black">Table of Contents</h2>
 <div class="toc-container index-page">
 <table style="width: 100%;">
@@ -1113,12 +1152,28 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 <tr class="toc-section">
 <td><strong>3. Conditions of Class / Statutory status</strong></td>
 </tr>
+<tr class="toc-section">
+<td><strong>4. Condition of class</strong></td>
+</tr>
+<tr class="toc-section">
+<td><strong>5. Statutory Condition</strong></td>
+</tr>
+<tr class="toc-section">
+<td><strong>6. Memoranda</strong></td>
+</tr>
+<tr class="toc-section">
+<td><strong>7. Additional Information</strong></td>
+</tr>
+<tr class="toc-section">
+<td><strong>8. Compliance to New Regulations</strong></td>
+</tr>
+
 </table>
 </div>
 </div>
 
 <div class="page page-break-new">
-<h2 style="color:black; margin-top:-90px">Ship Particulars</h2>
+<h2 style="color:black;">Ship Particulars</h2>
 <table class="classification-section-table" style="width: 100%; border-collapse: collapse;">
 <thead>
 <tr>

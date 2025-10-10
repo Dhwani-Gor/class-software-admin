@@ -205,13 +205,6 @@ const AdditionalFieldsList = () => {
       : {},
   ];
 
-  const NoRowsOverlay = ({ sectionLabel }) => (
-    <GridOverlay>
-      <Typography variant="body2" sx={{ mt: 1, color: "text.secondary" }}>
-        No {sectionLabel} Recommended
-      </Typography>
-    </GridOverlay>
-  );
   return (
     <Box sx={{ p: 3, bgcolor: "white", borderRadius: 2, boxShadow: 1, mt: 2 }}>
       {/* Client Dropdown */}
@@ -330,13 +323,39 @@ const AdditionalFieldsList = () => {
                 <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
                   {s.label}
                 </Typography>
-                {rows.length > 0 ? (
-                  <DataGrid rows={rows} columns={commonColumns(s.key, journalList)} getRowId={(row) => row.id} autoHeight={false} hideFooter pageSize={10} rowsPerPageOptions={[10]} sx={{ bgcolor: "white", borderRadius: 2, maxHeight: 400, overflowY: "auto" }} />
-                ) : (
-                  <Typography variant="body2" sx={{ color: "text.secondary", p: 2 }}>
-                    No {s.label} Recommended
-                  </Typography>
-                )}
+
+                <DataGrid
+                  rows={rows}
+                  columns={commonColumns(s.key, journalList)}
+                  getRowId={(row) => row.id || Math.random()}
+                  autoHeight
+                  hideFooter
+                  pageSize={10}
+                  rowsPerPageOptions={[10]}
+                  sx={{
+                    bgcolor: "white",
+                    borderRadius: 2,
+                    maxHeight: 400,
+                    overflowY: "auto",
+                  }}
+                  slots={{
+                    noRowsOverlay: () => (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          height: 120,
+                          color: "text.secondary",
+                          fontSize: 14,
+                          fontWeight: 500,
+                        }}
+                      >
+                        No {s.label} Recommended
+                      </Box>
+                    ),
+                  }}
+                />
               </Box>
             );
           })}

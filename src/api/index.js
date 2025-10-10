@@ -993,7 +993,7 @@ export const fetchJournalList = async (clientId) => {
 export const fetchAdditionalDetails = async (clientId) => {
   let result;
   try {
-    result = await axiosInstance.get(`/additionalField?filterKey=clientId&filterValue=${clientId}`);
+    result = await axiosInstance.get(`/additionalField?clientId=${clientId}`);
   } catch (error) {
     result = error;
   }
