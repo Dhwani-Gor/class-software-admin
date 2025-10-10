@@ -19,7 +19,6 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
   const handleCancel = () => {
     setOpenDialog(false);
-    setFormData({});
   };
 
   const handleConfirm = () => {
@@ -64,7 +63,7 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
   useEffect(() => {
     if (saveData) {
-      handleSubmit(formData,false);
+      handleSubmit(formData, false);
       setSaveData(false);
     }
   }, [formData, handleSubmit, saveData]);

@@ -263,8 +263,9 @@ const Certificates = () => {
       }
 
       const searchQuery = debouncedSearch.trim();
-      const markAsArchive = selectedFilter == "Archive Documents";
-
+      console.log(selectedFilter, "selectedFilter");
+      const markAsArchive = selectedFilter === "Archive Documents" ? true : false;
+      console.log(markAsArchive, "markAsArchive");
       const res = await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, page, limit, startDate, endDate, markAsArchive);
 
       const data = res?.data;

@@ -172,9 +172,6 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId }) => {
                                 <strong>Ship Name:</strong> {shipName}
                             </Typography>
                             <Typography variant="subtitle1">
-                                <strong>Report Number:</strong> {reportNumber}
-                            </Typography>
-                            <Typography variant="subtitle1">
                                 <strong>Type of Certificate:</strong> {certificateType}
                             </Typography>
                             <Typography variant="subtitle1">
