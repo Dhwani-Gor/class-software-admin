@@ -665,7 +665,7 @@ const ReportingForm = () => {
                       ))}
                     </Select>
                   </FormControl>
-                  {selectedReportNumber.journalTypeId && (
+                  {selectedReportNumber.journalTypeId && showArchiveRemarks && (
                     <Typography pl={2} mt={5} ml={3}>
                       <b>Archive Remarks: </b>
                       {showArchiveRemarks}

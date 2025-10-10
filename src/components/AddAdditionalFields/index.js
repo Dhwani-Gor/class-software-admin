@@ -14,7 +14,7 @@ const sectionsConfig = {
   memoranda: ["Hull", "Machinery"],
   additional: ["Hull", "Machinery"],
   compliance: ["Hull", "Machinery"],
-  pcs_fsi_deficiency: ["Hull", "Machinery"], // New section
+  pcs_fsi_deficiency: ["Hull", "Machinery"],
 };
 
 const AdditionalFieldsForm = ({ data = [], onDataChange }) => {
@@ -115,7 +115,7 @@ const AdditionalFieldsForm = ({ data = [], onDataChange }) => {
               <Select value={row.section} label="Section" onChange={(e) => updateRow(index, "section", e.target.value)}>
                 {sectionOptions.map((sec) => (
                   <MenuItem key={sec} value={sec}>
-                    {sec === "pcs_fsi_deficiency" ? "PCS/FSI Deficiency" : sec.charAt(0).toUpperCase() + sec.slice(1)}
+                    {sec === "pcs_fsi_deficiency" ? "PSC/FSI Deficiency" : sec.charAt(0).toUpperCase() + sec.slice(1)}
                   </MenuItem>
                 ))}
               </Select>

@@ -188,13 +188,29 @@ const TextEditor = ({ id }) => {
       break-inside: avoid !important;
       border:none;
   }
+      .report-title {
+          background: linear-gradient(to right, #9013fe, #4a90e2);
+          box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+          color: white;
+          padding: 20px;
+          font-size: 40px !important;
+          width: 90% !important;
+          text-align: center !important;
+          margin: 50px auto !important;
+          border-radius: 8px !important;
+      }
+          .company-logo {
+              margin-top: -80px !important;
+          }
+            
+          u{
+          margin-bottom: 10px; display: inline-block;
+          }
   
   .company-name {
-      font-size: 28px !important;
+      font-size: 50px !important;
       font-weight: bold !important;
       color: black !important;
-      text-align: center !important;
-      margin: 0 10px 30px 0 !important;
       letter-spacing: 0.5px !important;
       text-transform: uppercase !important;
       padding-bottom: 12px !important;
@@ -256,9 +272,9 @@ const TextEditor = ({ id }) => {
       font-size: 11px !important;
       box-shadow: 0 2px 4px rgba(40,167,69,0.3) !important;
   }
-  
+      
   .page-break-new {
-      margin-top: 480px;
+      margin-top: 450px;
   }
 `;
       contentDocument.head.appendChild(style);
@@ -823,7 +839,7 @@ const TextEditor = ({ id }) => {
       case "compliance":
         return "Compliance to New Regulations";
       case "pcsFsi":
-        return "PCS/FSI Deficiency";
+        return "PSC/FSI Deficiency";
       default:
         return key.toUpperCase();
     }
@@ -836,7 +852,6 @@ const TextEditor = ({ id }) => {
       const title = getSectionTitle(key);
       const section = additionalFieldData?.find((s) => s.sectionKey === key) || {};
 
-      // if no data — show "No <section name> recommended"
       if (!section.data || section.data.length === 0) {
         return `
           <h4 style="
@@ -854,14 +869,13 @@ const TextEditor = ({ id }) => {
         `;
       }
 
-      // otherwise render table rows
       const rows = section.data
         .map(
           (item) => `
             <tr>
               <td>${item.type || "-"}</td>
               <td>${item.code || "-"}</td>
-              <td>${item.referenceNo || "-"}</td>
+              <td>${item.journalTypeId || "-"}</td>
               <td>${item.dueDate || "-"}</td>
             </tr>
              ${
@@ -897,7 +911,7 @@ const TextEditor = ({ id }) => {
             <tr style="background-color:#f2f2f2;">
               <th>Type</th>
               <th>Code</th>
-              <th>Reference No</th>
+              <th>Reference No.</th>
               <th>Due Date</th>
             </tr>
           </thead>
@@ -1076,42 +1090,39 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 
     return `
 <div style="text-align: center; background-color: white; color: black; padding: 60px;">
-<div style="text-align: center; background-color: white; color: black; padding: 60px;">
+<div style="text-align: center;background-color: white; color: black;">
   <div style="
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items:center;
     gap: 30px;
-  ">
+  " class="company-logo">
     <img 
       src=${companyLogo}  
       alt="companyLogo" 
-      height="180" 
-      width="180" 
+      height="235" 
+      width="240" 
       style="margin-bottom: 0px; object-fit: contain;"
     />
     <h1 
       style="
-        font-size: 32px; 
+        font-size: 50px;
         color: black; 
         text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        margin: 0;
-      " 
-      class="company-name"
-    >
+        margin: 0;"
+        class="company-name"
+          >
       ${companyName}
     </h1>
   </div>
-  <h1 
-    style="
-      font-size: 22px; 
-      margin-top: 25px; 
-      color: #333;
-      text-transform: uppercase;
-    "
-  >
-    ${clientData?.shipName || "-"}
-  </h1>
+ <div class="report-title">
+  Ship Survey Status Report
+</div>
+
+  <u class="ship-name" style="color:rgb(140, 39, 228); margin-bottom: 10px; display: inline-block;">
+  ${clientData?.shipName || "-"}
+</u>
+
 </div>
 
 
@@ -1121,25 +1132,24 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   display: inline-block;
   font-size: 16px;
   padding: 18px 28px;
-  color: white;
-  background: linear-gradient(to right, #9013fe, #4a90e2);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  color: black;
+ border: 2px solid rgb(140, 39, 228);
   border-radius: 10px;
   width: 450px;
   margin-top: 30px;
   line-height: 1.8;
 ">
-  <p><strong style="font-size:18px; color:white">Reg. Owner:</strong><span style="color:white; font-size:18px; fontWeight: 700; margin-left: 70px">${clientData?.ownerDetails?.companyName || "-"}</span></p>
-  <p><strong style="font-size:18px; color:white">Reg. No:</strong><span style="color:white; font-size:18px; fontWeight: 700; margin-left: 105px">${clientData?.registrationNumber || "-"}</span></p>
-  <p><strong style="font-size:18px; color:white">IMO Number:</strong><span style="color:white; font-size:18px; fontWeight: 700; margin-left: 60px">${clientData?.imoNumber || "-"}</span></p>
-  <p><strong style="font-size:18px; color:white">Vessel Type:</strong><span style="color:white; font-size:18px; fontWeight: 700; margin-left: 74px">${clientData?.typeOfShip || "-"}</span></p>
-  <p><strong style="font-size:18px; color:white">Gross Tonnage:</strong><span style="color:white; font-size:18px; fontWeight: 700; margin-left: 48px">${clientData?.grossTonnage || "-"}</span></p>
-  <p><strong style="font-size:18px; color:white">Date of build:</strong><span style="color:white; font-size:18px; fontWeight: 700; margin-left: 63px">${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : "-"}</span></p>
+  <p><strong style="font-size:18px;">Reg. Owner:</strong><span style="font-size:18px; fontWeight: 700; margin-left: 70px; color:black">${clientData?.ownerDetails?.companyName || "-"}</span></p>
+  <p><strong style="font-size:18px;">Reg. No:</strong><span style="font-size:18px; fontWeight: 700; margin-left: 105px; color:black">${clientData?.registrationNumber || "-"}</span></p>
+  <p><strong style="font-size:18px;">IMO Number:</strong><span style="font-size:18px; fontWeight: 700; margin-left: 60px; color:black">${clientData?.imoNumber || "-"}</span></p>
+  <p><strong style="font-size:18px;">Vessel Type:</strong><span style="font-size:18px; fontWeight: 700; margin-left: 74px; color:black">${clientData?.typeOfShip || "-"}</span></p>
+  <p><strong style="font-size:18px;">Gross Tonnage:</strong><span style="font-size:18px; fontWeight: 700; margin-left: 48px; color:black">${clientData?.grossTonnage || "-"}</span></p>
+  <p><strong style="font-size:18px;">Date of build:</strong><span style="font-size:18px; fontWeight: 700; margin-left: 63px; color:black">${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : "-"}</span></p>
 </div>
 
 </div>
 
-<div style="text-align: center; margin-top:140px;align-items: center;" class="page">
+<div style="text-align: center; margin-top:80px;align-items: center;" class="page">
 <h2 style="color:black">Table of Contents</h2>
 <div class="toc-container index-page">
 <table style="width: 100%;">
@@ -1168,7 +1178,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 <td><strong>8. Compliance to New Regulations</strong></td>
 </tr>
 <tr class="toc-section">
-<td><strong>9. PCS/FSI Deficiency</strong></td>
+<td><strong>9. PSC/FSI Deficiency</strong></td>
 </tr>
 
 </table>
@@ -1485,6 +1495,18 @@ border-radius: 4px;
 letter-spacing: 0.3px;
 }
 
+.report-title {
+background: linear-gradient(to right, #9013fe, #4a90e2);
+box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+color: white;
+padding: 20px;
+font-size: 50px;
+width: 60%;
+text-align: center;
+margin: 50px auto;
+border-radius: 8px;
+}
+
 .section {
 margin-bottom: 30px;
 padding: 15px;
@@ -1770,6 +1792,12 @@ border-bottom: none;
 .page-break-new {
 page-break-before: always !important;
 break-before: always !important;
+}
+.ship-name {
+    font-size: 50px;
+    font-weight: bold;
+    margin-top: 20px;
+    margin-bottom: 20px;
 }
 
 `,

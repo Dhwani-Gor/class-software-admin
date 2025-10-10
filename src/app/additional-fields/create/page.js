@@ -16,7 +16,7 @@ const sections = [
   { key: "memoranda", label: "Memoranda", options: ["Hull", "Machinery"] },
   { key: "additional", label: "Additional Information", options: ["Hull", "Machinery"] },
   { key: "compliance", label: "Compliance to New Regulations", options: ["Hull", "Machinery"] },
-  { key: "pcsFsi", label: "PCS/FSI Deficiency", options: ["Hull", "Machinery"] }, // New section
+  { key: "pcsFsi", label: "PSC/FSI Deficiency", options: ["Hull", "Machinery"] }, // New section
 ];
 const actions = ["Recommended", "Deleted", "Amended", "Extended"];
 
@@ -261,7 +261,22 @@ const AdditionalFieldsList = () => {
 
               <TextField label="Code" value={editingRow?.code || ""} disabled fullWidth size="small" />
 
-              <TextField label="Reference No" value={editingRow?.referenceNo || ""} onChange={(e) => setEditingRows((prev) => ({ ...prev, [section.key]: { ...prev[section.key], referenceNo: e.target.value } }))} select fullWidth size="small">
+              <TextField
+                label="Reference No"
+                value={editingRow?.referenceNo || ""}
+                onChange={(e) =>
+                  setEditingRows((prev) => ({
+                    ...prev,
+                    [section.key]: { ...prev[section.key], referenceNo: e.target.value },
+                  }))
+                }
+                select
+                fullWidth
+                size="small"
+              >
+                {/* Option to select nothing */}
+                <MenuItem value="">&nbsp;</MenuItem>
+
                 {journalList.length > 0 ? (
                   journalList.map((journal) => (
                     <MenuItem key={journal.id} value={journal.id}>
@@ -274,6 +289,7 @@ const AdditionalFieldsList = () => {
               </TextField>
 
               <TextField label="Action" value={editingRow?.action || ""} onChange={(e) => setEditingRows((prev) => ({ ...prev, [section.key]: { ...prev[section.key], action: e.target.value } }))} select fullWidth size="small">
+                <MenuItem value="">&nbsp;</MenuItem>
                 {actions.map((a) => (
                   <MenuItem key={a} value={a}>
                     {a}
