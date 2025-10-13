@@ -200,12 +200,17 @@ const TextEditor = ({ id }) => {
           border-radius: 8px !important;
       }
           .company-logo {
-              margin-top: -80px !important;
+              margin-top: -60px !important;
           }
             
-          u{
-          margin-bottom: 10px; display: inline-block;
-          }
+        .ship-name {
+    font-size: 50px !important;
+    font-weight: bold !important;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    border-bottom: 4px solid #9013fe !important;
+    display: inline-block;
+}
   
   .company-name {
       font-size: 50px !important;
@@ -1022,7 +1027,7 @@ ${moment(rangeFrom, moment.ISO_8601, true).isValid() && moment(rangeTo, moment.I
     const certificateRows = [certificateOfClassRow ? formatCertificateRow(certificateOfClassRow) : null, ...(otherCertificates?.map(formatCertificateRow) || [])].filter(Boolean).join("");
 
     const certificatesTableHtml = `
-<h4 style="margin-top: -90px;color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)" >Certificates</h4>
+<h4 style="margin-top: -100px;color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)" >Certificates</h4>
 <table>
 <thead>
 <tr>
@@ -1119,9 +1124,9 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   Ship Survey Status Report
 </div>
 
-  <u class="ship-name" style="color:rgb(140, 39, 228); margin-bottom: 10px; display: inline-block;">
+  <div class="ship-title ship-name" style="color:rgb(140, 39, 228)">
   ${clientData?.shipName || "-"}
-</u>
+</div>
 
 </div>
 
@@ -1149,7 +1154,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 
 </div>
 
-<div style="text-align: center; margin-top:80px;align-items: center;" class="page">
+<div style="text-align: center; margin-top:30px;align-items: center;" class="page">
 <h2 style="color:black">Table of Contents</h2>
 <div class="toc-container index-page">
 <table style="width: 100%;">
@@ -1798,6 +1803,8 @@ break-before: always !important;
     font-weight: bold;
     margin-top: 20px;
     margin-bottom: 20px;
+    border-bottom: 4px solid #9013fe;
+    display: inline-block;
 }
 
 `,
