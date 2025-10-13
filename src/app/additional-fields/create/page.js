@@ -359,7 +359,7 @@ const AdditionalFieldsList = () => {
                   sx={{
                     bgcolor: "white",
                     borderRadius: 2,
-                    height: 400, // fixed height for scroll
+                    maxHeight: 400, // fixed height for scroll
                     overflow: "auto",
                   }}
                   slots={{
@@ -369,7 +369,6 @@ const AdditionalFieldsList = () => {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          height: 120,
                           color: "text.secondary",
                           fontSize: 14,
                           fontWeight: 500,
