@@ -822,40 +822,95 @@ const ReportingForm = () => {
                     <CommonInput
                       {...field}
                       type="date"
-                      label={
-                        <>
-                          Survey Date <span style={{ color: "red" }}>*</span>
-                        </>
-                      }
+                      label={<>Range From</>}
                       onChange={(e) => {
                         field.onChange(e);
-                        handleFieldChange("surveydate", e.target.value);
+                        handleFieldChange("rangeFrom", e.target.value);
                       }}
                     />
                   )}
                 />
-                {errors.surveydate && (
-                  <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                    {errors.surveydate.message}
-                  </Typography>
-                )}
               </Grid2>
               <Grid2 size={{ md: 3 }}>
                 <Controller
-                  name="rangeFrom"
+                  name="rangeTo"
                   control={control}
                   render={({ field }) => (
                     <CommonInput
                       {...field}
                       type="date"
-                      label={
-                        <>
-                          Range From <span style={{ color: "red" }}>*</span>
-                        </>
-                      }
+                      label={<>Range To</>}
                       onChange={(e) => {
                         field.onChange(e);
-                        handleFieldChange("rangeFrom", e.target.value);
+                        handleFieldChange("rangeTo", e.target.value);
+                      }}
+                    />
+                  )}
+                />
+              </Grid2>
+              <Grid2 size={{ md: 3 }}>
+                <Controller
+                  name="assignmentDate"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label={<>Assignment Date</>}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("assignmentDate", e.target.value);
+                      }}
+                    />
+                  )}
+                />
+              </Grid2>
+              <Grid2 size={{ md: 3 }}>
+                <Controller
+                  name="dueDate"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label={<>Due Date</>}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("dueDate", e.target.value);
+                      }}
+                    />
+                  )}
+                />
+              </Grid2>
+              <Grid2 size={{ md: 3 }}>
+                <Controller
+                  name="postponedDate"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label={<>Postponed Date</>}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("postponedDate", e.target.value);
+                      }}
+                    />
+                  )}
+                />
+              </Grid2>
+              <Grid2 size={{ md: 3 }}>
+                <Controller
+                  name="basedDate"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label={<>Date on which this certificate is based</>}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("basedDate", e.target.value);
                       }}
                     />
                   )}
