@@ -16,7 +16,7 @@ const sections = [
   { key: "memoranda", label: "Memoranda", options: ["Hull", "Machinery"] },
   { key: "additional", label: "Additional Information", options: ["Hull", "Machinery"] },
   { key: "compliance", label: "Compliance to New Regulations", options: ["Hull", "Machinery"] },
-  { key: "pcsFsi", label: "PSC/FSI Deficiency", options: ["Hull", "Machinery"] }, // New section
+  { key: "pcsfsi", label: "PSC/FSI Deficiency", options: ["Hull", "Machinery"] }, // New section
 ];
 const actions = ["Recommended", "Deleted", "Amended", "Extended"];
 
@@ -27,7 +27,7 @@ const codePrefixes = {
   additional: { Hull: "HA", Machinery: "MA" },
   compliance: { Hull: "Z", Machinery: "Z" },
   hull: { Hull: "H", Machinery: "M" },
-  pcsFsi: { Hull: "P", Machinery: "P" },
+  pcsfsi: { Hull: "P", Machinery: "P" },
 };
 
 const AdditionalFieldsList = () => {
