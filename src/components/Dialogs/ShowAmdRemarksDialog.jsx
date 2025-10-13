@@ -26,7 +26,7 @@ import { fetchAmdReamrks } from "@/api";
 import { useAuth } from "@/hooks/useAuth";
 import DocumentPreview from "./DocumentPreview";
 
-const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId, selectedFilter }) => {
+const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId, selectedFilter, hasArchivePermission }) => {
     const { data } = useAuth();
     const [amendments, setAmendments] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -206,21 +206,13 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId, selectedFilter })
                                                                     </IconButton>
                                                                 </Tooltip>
 
-                                                                {(
-                                                                    (data?.specialPermission?.includes("ArchiveDocuments") && selectedFilter === "archive")
-                                                                    ||
-                                                                    (!data?.specialPermission?.includes("ArchiveDocuments") && selectedFilter === "certificates")
-                                                                ) && (
-                                                                        <Tooltip title="Download Document">
-                                                                            <IconButton
-                                                                                color="success"
-                                                                                onClick={() => handleDownload(amd.amendedDoc)}
-                                                                                disabled={!amd.amendedDoc}
-                                                                            >
-                                                                                <GetAppIcon />
-                                                                            </IconButton>
-                                                                        </Tooltip>
-                                                                    )}
+                                                                {((hasArchivePermission && (selectedFilter === "Archive Documents" || selectedFilter === "Archive Documents" || selectedFilter === "certificates")) || (!hasArchivePermission && selectedFilter === "certificates")) && (
+                                                                    <Tooltip title="Download Document">
+                                                                        <IconButton color="success" onClick={() => handleDownload(amd.amendedDoc)} disabled={!amd.amendedDoc}>
+                                                                            <GetAppIcon />
+                                                                        </IconButton>
+                                                                    </Tooltip>
+                                                                )}
 
                                                             </Stack>
                                                         ) : "-"}
