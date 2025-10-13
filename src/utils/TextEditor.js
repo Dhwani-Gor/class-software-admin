@@ -545,10 +545,10 @@ const TextEditor = ({ id }) => {
       formData.append("clientId", id);
       formData.append("generatedDoc", file);
 
-      // const res = await uploadSurveyReport(formData);
-      // if (res) {
-      //   toast.success("Survey Status Report Downloaded Successfully");
-      // }
+      const res = await uploadSurveyReport(formData);
+      if (res) {
+        toast.success("Survey Status Report Downloaded Successfully");
+      }
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
