@@ -208,7 +208,8 @@ const TextEditor = ({ id }) => {
     font-weight: bold !important;
     margin-top: 20px;
     margin-bottom: 20px;
-    border-bottom: 4px solid #9013fe !important;
+    color:  #6659BF;
+    border-bottom: 4px solid #6659BF !important;
     display: inline-block;
 }
   
@@ -279,7 +280,7 @@ const TextEditor = ({ id }) => {
   }
       
   .page-break-new {
-      margin-top: 450px;
+      margin-top: 670px;
   }
 `;
       contentDocument.head.appendChild(style);
@@ -935,6 +936,7 @@ const TextEditor = ({ id }) => {
         <span class="legend-item"><span class="status-icon expiring3m">C</span>Expires in less than 3 months</span>
       </div>
     </div>
+
     ${additionalFieldsHtml}
   `;
 
@@ -1124,7 +1126,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   Ship Survey Status Report
 </div>
 
-  <div class="ship-title ship-name" style="color:rgb(140, 39, 228)">
+  <div class="ship-title ship-name" style="color: #6659BF">
   ${clientData?.shipName || "-"}
 </div>
 
@@ -1138,7 +1140,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   font-size: 16px;
   padding: 18px 28px;
   color: black;
- border: 2px solid rgb(140, 39, 228);
+ border: 2px solid #6659BF;
   border-radius: 10px;
   width: 450px;
   margin-top: 30px;
@@ -1165,25 +1167,10 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 <td><strong>2. Owner/Manager Information</strong></td>
 </tr>
 <tr class="toc-section">
-<td><strong>3. Conditions of Class / Statutory status</strong></td>
+<td><strong>3. Surveys / Audits / Inspections Status </strong></td>
 </tr>
 <tr class="toc-section">
-<td><strong>4. Condition of class</strong></td>
-</tr>
-<tr class="toc-section">
-<td><strong>5. Statutory Condition</strong></td>
-</tr>
-<tr class="toc-section">
-<td><strong>6. Memoranda</strong></td>
-</tr>
-<tr class="toc-section">
-<td><strong>7. Additional Information</strong></td>
-</tr>
-<tr class="toc-section">
-<td><strong>8. Compliance to New Regulations</strong></td>
-</tr>
-<tr class="toc-section">
-<td><strong>9. PSC/FSI Deficiency</strong></td>
+<td><strong>4. Additional Notes</strong></td>
 </tr>
 
 </table>
@@ -1339,6 +1326,7 @@ ${statutorySurveyTableHtml}
 </tr>
 </tbody>
 </table>
+<h2 style="margin-top: 40px; color:black">Additional Details</h2>
 
 ${additionalFieldsHtml}
 </div>
@@ -1803,7 +1791,7 @@ break-before: always !important;
     font-weight: bold;
     margin-top: 20px;
     margin-bottom: 20px;
-    border-bottom: 4px solid #9013fe;
+    border-bottom: 4px solid #6659BF;
     display: inline-block;
 }
 

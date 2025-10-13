@@ -16,8 +16,8 @@ import GetAppIcon from "@mui/icons-material/GetApp";
 import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonInput from "@/components/CommonInput";
-import { deleteDocument, deleteSurveyReport, deleteSurveyStatusReport, getAllIssuedDocuments, getAllJournals, getAllReports, getJournalsList } from "@/api";
-import { Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Select, TextField } from "@mui/material";
+import { deleteSurveyReport, deleteSurveyStatusReport, getAllIssuedDocuments, getAllReports, getJournalsList } from "@/api";
+import { Chip, MenuItem, Select, TextField } from "@mui/material";
 import CommonButton from "@/components/CommonButton";
 import { useAuth } from "@/hooks/useAuth";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -28,7 +28,6 @@ import ShowAmdRemarksDialog from "@/components/Dialogs/ShowAmdRemarksDialog";
 import DocumentPreview from "@/components/Dialogs/DocumentPreview";
 
 const Certificates = () => {
-  const dispatch = useDispatch();
   const { data } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -52,13 +51,10 @@ const Certificates = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState({});
   const [previewFile, setPreviewFile] = useState(null);
-  console.log("previewFile", previewFile);
-  const [loadingPreview, setLoadingPreview] = useState(false);
   const [openPreviewModal, setOpenPreviewModal] = useState(false);
   const [openAmdRemarks, setOpenAmdRemarks] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState(null);
 
-  // Client-side search functionality
   const fetchReportsData = async () => {
     setLoading(true);
     try {
@@ -136,7 +132,7 @@ const Certificates = () => {
       headerName: "Document",
       flex: 1,
       renderCell: (params) => {
-        const fileName = params.row.generatedDoc?.split("/").pop(); // extract file name from URL
+        const fileName = params.row.generatedDoc?.split("/").pop();
         return fileName ? (
           <Tooltip title={fileName}>
             <Typography
@@ -149,7 +145,7 @@ const Certificates = () => {
                 color: "primary.main",
                 textDecoration: "underline",
               }}
-              onClick={() => window.open(params.row.generatedDoc, "_blank")} // open in new tab
+              onClick={() => window.open(params.row.generatedDoc, "_blank")}
             >
               {fileName}
             </Typography>
@@ -176,7 +172,6 @@ const Certificates = () => {
               color="info"
               onClick={() => {
                 setPreviewFile(params.row.generatedDoc);
-                setLoadingPreview(true);
                 setOpenPreviewModal(true);
               }}
             >
@@ -199,27 +194,12 @@ const Certificates = () => {
     },
   ];
 
-  const filteredCertificates = certificatesList.filter((certificate) => {
-    if (!search.trim()) return true;
-
-    const searchTerm = search.toLowerCase();
-    const shipName = certificate.activity?.journal?.client?.shipName?.toLowerCase() || "";
-    const journalTypeId = certificate.activity?.journal?.journalTypeId?.toLowerCase() || "";
-    const certificateType = certificate.typeOfCertificate?.toLowerCase() || "";
-    const place = certificate.place?.toLowerCase() || "";
-
-    return shipName.includes(searchTerm) || journalTypeId.includes(searchTerm) || certificateType.includes(searchTerm) || place.includes(searchTerm);
-  });
-
-  // Remove unused functions and effects
   const handleFilterChange = (newFilter) => {
     setSelectedFilter(newFilter);
   };
 
   const tabs = ["certificates"];
-  if (data?.specialPermission?.includes("ArchiveDocuments")) {
-    tabs.push("Archive Documents");
-  }
+  tabs.push("Archive Documents");
   tabs.push("Reports");
 
   const snackbarClose = () => {
@@ -300,12 +280,8 @@ const Certificates = () => {
 
   const handleViewDocument = (documentUrl) => {
     if (!documentUrl) return;
-
-    // Use Google Docs Viewer as fallback for CORS issues
     const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(documentUrl)}&embedded=true`;
-
     setPreviewFile(viewerUrl);
-    setLoadingPreview(true);
     setOpenPreviewModal(true);
   };
 
@@ -331,6 +307,8 @@ const Certificates = () => {
       window.open(documentUrl, "_blank");
     }
   };
+
+  const hasArchivePermission = data?.specialPermission?.some((perm) => perm.toLowerCase() === "archivedocuments".toLowerCase());
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -426,7 +404,7 @@ const Certificates = () => {
               <VisibilityIcon />
             </IconButton>
           </Tooltip>
-          {data?.specialPermission?.includes("ArchiveDocuments") && (
+          {((hasArchivePermission && (selectedFilter === "Archive Documents" || selectedFilter === "Archive Documents" || selectedFilter === "certificates")) || (!hasArchivePermission && selectedFilter === "certificates")) && (
             <Tooltip title="Download Document">
               <IconButton color="success" onClick={() => handleDownloadDocument(params.row.generatedDoc, params.row.id)} disabled={!params.row.generatedDoc}>
                 <GetAppIcon />
@@ -641,7 +619,7 @@ const Certificates = () => {
       />
       <DocumentPreview open={openPreviewModal} fileUrl={previewFile} onClose={() => setOpenPreviewModal(false)} />
       <CommonConfirmationDialog open={openDialog} onClose={handleCancelDelete} onConfirm={handleConfirmDelete} title="Are you sure you want to delete this survey status report?" description="This action cannot be undone." />
-      <ShowAmdRemarksDialog open={openAmdRemarks} onClose={() => setOpenAmdRemarks(false)} reportDetailId={selectedReportId} />
+      <ShowAmdRemarksDialog open={openAmdRemarks} onClose={() => setOpenAmdRemarks(false)} reportDetailId={selectedReportId} selectedFilter={selectedFilter} />
     </Layout>
   );
 };

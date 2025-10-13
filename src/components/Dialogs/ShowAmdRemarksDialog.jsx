@@ -24,9 +24,9 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import GetAppIcon from "@mui/icons-material/GetApp";
 import { fetchAmdReamrks } from "@/api";
 import { useAuth } from "@/hooks/useAuth";
-import DocumentPreview from "./DocumentPreview"; // import the preview component
+import DocumentPreview from "./DocumentPreview";
 
-const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId }) => {
+const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId, selectedFilter }) => {
     const { data } = useAuth();
     const [amendments, setAmendments] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -83,14 +83,10 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId }) => {
         }
     };
 
-    // Extract header info from first amendment
     const first = amendments[0];
-    const reportNumber =
-        first?.reportDetail?.activity?.journal?.journalTypeId || "-";
     const shipName = first?.reportDetail?.activity?.journal?.client?.shipName || "-";
     const surveyType = first?.reportDetail?.activity?.surveyTypes?.name || "-";
 
-    // Determine certificate type based on amendedDoc filename
     let certificateType = "-";
     const firstDoc = first?.amendedDoc || "";
     if (firstDoc.toLowerCase().includes("full_term")) {
@@ -101,10 +97,9 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId }) => {
         certificateType = "Interim";
     }
 
-    // helper: extract report number (MCB...) and optional AMD index
     const extractReportNumber = (fileNameRaw) => {
         if (!fileNameRaw) return "-";
-        const fileName = fileNameRaw.split("/").pop().replace(/\.pdf$/i, ""); // no .pdf
+        const fileName = fileNameRaw.split("/").pop().replace(/\.pdf$/i, "");
 
         const amdMatch = fileName.match(/AMD\((\d+)\)/i);
         let reportNo = null;
@@ -210,13 +205,23 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId }) => {
                                                                         <VisibilityIcon />
                                                                     </IconButton>
                                                                 </Tooltip>
-                                                                {data?.specialPermission?.includes("ArchiveDocuments") && (
-                                                                    <Tooltip title="Download Document">
-                                                                        <IconButton color="success" onClick={() => handleDownload(amd.amendedDoc)}>
-                                                                            <GetAppIcon />
-                                                                        </IconButton>
-                                                                    </Tooltip>
-                                                                )}
+
+                                                                {(
+                                                                    (data?.specialPermission?.includes("ArchiveDocuments") && selectedFilter === "archive")
+                                                                    ||
+                                                                    (!data?.specialPermission?.includes("ArchiveDocuments") && selectedFilter === "certificates")
+                                                                ) && (
+                                                                        <Tooltip title="Download Document">
+                                                                            <IconButton
+                                                                                color="success"
+                                                                                onClick={() => handleDownload(amd.amendedDoc)}
+                                                                                disabled={!amd.amendedDoc}
+                                                                            >
+                                                                                <GetAppIcon />
+                                                                            </IconButton>
+                                                                        </Tooltip>
+                                                                    )}
+
                                                             </Stack>
                                                         ) : "-"}
                                                     </TableCell>
@@ -237,7 +242,6 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId }) => {
                 </DialogActions>
             </Dialog>
 
-            {/* Document Preview Modal */}
             <DocumentPreview
                 open={openPreviewModal}
                 fileUrl={previewFile}

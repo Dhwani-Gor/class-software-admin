@@ -814,6 +814,53 @@ const ReportingForm = () => {
                   </Typography>
                 )}
               </Grid2>
+              <Grid2 size={{ md: 3 }}>
+                <Controller
+                  name="rangeFrom"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label={
+                        <>
+                          Survey Date <span style={{ color: "red" }}>*</span>
+                        </>
+                      }
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("surveydate", e.target.value);
+                      }}
+                    />
+                  )}
+                />
+                {errors.surveydate && (
+                  <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                    {errors.surveydate.message}
+                  </Typography>
+                )}
+              </Grid2>
+              <Grid2 size={{ md: 3 }}>
+                <Controller
+                  name="rangeFrom"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label={
+                        <>
+                          Range From <span style={{ color: "red" }}>*</span>
+                        </>
+                      }
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("rangeFrom", e.target.value);
+                      }}
+                    />
+                  )}
+                />
+              </Grid2>
               {showEndorsementField && (
                 <Grid2 size={{ md: 3 }}>
                   <Controller
