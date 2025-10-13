@@ -1326,7 +1326,7 @@ ${statutorySurveyTableHtml}
 </tr>
 </tbody>
 </table>
-<h2 style="margin-top: 40px; color:black">Additional Details</h2>
+<h2 style="margin-top: 40px; color:black">Additional Notes</h2>
 
 ${additionalFieldsHtml}
 </div>
