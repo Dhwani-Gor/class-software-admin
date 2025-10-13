@@ -175,7 +175,7 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId }) => {
                                 <strong>Type of Certificate:</strong> {certificateType}
                             </Typography>
                             <Typography variant="subtitle1">
-                                <strong>Type of Certificate:</strong> {surveyType}
+                                <strong>Survey Type</strong> {surveyType}
                             </Typography>
                         </Box>
 

@@ -51,6 +51,7 @@ const Certificates = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState({});
   const [previewFile, setPreviewFile] = useState(null);
+  console.log("previewFile", previewFile);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [openPreviewModal, setOpenPreviewModal] = useState(false);
   const [openAmdRemarks, setOpenAmdRemarks] = useState(false);
@@ -297,9 +298,14 @@ const Certificates = () => {
   };
 
   const handleViewDocument = (documentUrl) => {
-    if (documentUrl) {
-      window.open(documentUrl, "_blank");
-    }
+    if (!documentUrl) return;
+
+    // Use Google Docs Viewer as fallback for CORS issues
+    const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(documentUrl)}&embedded=true`;
+
+    setPreviewFile(viewerUrl);
+    setLoadingPreview(true);
+    setOpenPreviewModal(true);
   };
 
   const handleDownloadDocument = async (documentUrl, certificateId) => {
@@ -419,11 +425,13 @@ const Certificates = () => {
               <VisibilityIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Download Document">
-            <IconButton color="success" onClick={() => handleDownloadDocument(params.row.generatedDoc, params.row.id)} disabled={!params.row.generatedDoc}>
-              <GetAppIcon />
-            </IconButton>
-          </Tooltip>
+          {data?.specialPermission?.includes("ArchiveDocuments") && (
+            <Tooltip title="Download Document">
+              <IconButton color="success" onClick={() => handleDownloadDocument(params.row.generatedDoc, params.row.id)} disabled={!params.row.generatedDoc}>
+                <GetAppIcon />
+              </IconButton>
+            </Tooltip>
+          )}
         </Stack>
       ),
     },
@@ -453,6 +461,8 @@ const Certificates = () => {
     setEndDate("");
     setPage(1);
   };
+
+  const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(previewFile)}&embedded=true`;
 
   return (
     <Layout>
@@ -630,42 +640,61 @@ const Certificates = () => {
       />
       <Dialog open={openPreviewModal} onClose={() => setOpenPreviewModal(false)} maxWidth="md" fullWidth>
         <DialogTitle>Document Preview</DialogTitle>
-        <DialogContent>
-          <div style={{ position: "relative", width: "100%", height: "80vh" }}>
-            {!loadingPreview ? (
-              <a
-                href={previewFile}
-                download
-                rel="noopener noreferrer"
-                style={{
-                  position: "absolute",
-                  top: "10px",
-                  right: "10px",
-                  backgroundColor: "#4CAF50",
-                  color: "white",
-                  padding: "8px 12px",
-                  borderRadius: "4px",
-                  textDecoration: "none",
-                  fontSize: "14px",
-                  zIndex: 1,
-                  border: "none",
-                }}
-              >
-                Download
-              </a>
-            ) : (
+        {/* <DialogContent>
+          <Box position="relative" width="100%" height="80vh">
+            {loadingPreview && (
               <Box display="flex" justifyContent="center" alignItems="center" height="100%">
                 <CircularProgress />
               </Box>
             )}
-            <iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile)}&embedded=true`} pointerEvents="none" style={{ width: "100%", height: "100%", border: "none" }} title="File Preview" onLoad={() => setLoadingPreview(false)} />
+            {previewFile && (
+              <iframe
+                src={previewFile} // direct PDF URL, not gview
+                style={{ width: "100%", height: "100%", border: "none" }}
+                title="File Preview"
+                onLoad={() => setLoadingPreview(false)}
+              />
+            )}
+            <Button variant="contained" color="primary" onClick={() => setOpenPreviewModal(false)}>
+              Close
+            </Button>
+          </Box>
+        </DialogContent> */}
+        <DialogContent>
+          <div style={{ position: "relative", width: "100%", height: "80vh" }}>
+            {!loadingPreview ? (
+              <Box
+                style={{
+                  position: "absolute",
+                  top: "10px",
+                  right: "10px",
+                  zIndex: 1,
+                  backgroundColor: "#4CAF50",
+                  color: "white",
+                  padding: "10px 16px",
+                  border: "none",
+                  borderRadius: "4px",
+                  textDecoration: "none",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                }}
+                onClick={() => setOpenPreviewModal(false)}
+              >
+                X
+              </Box>
+            ) : (
+              <Box display="flex" justifyContent="center" alignItems="center" height="100%" position="absolute" top={0} left={0} width="100%" zIndex={0} sx={{ backgroundColor: "rgba(255,255,255,0.8)" }}>
+                <CircularProgress />
+              </Box>
+            )}
+            <iframe
+              src={previewFile} // direct PDF URL, not gview
+              style={{ width: "100%", height: "100%", border: "none" }}
+              title="File Preview"
+              onLoad={() => setLoadingPreview(false)}
+            />{" "}
           </div>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenPreviewModal(false)} color="primary">
-            Close
-          </Button>
-        </DialogActions>
       </Dialog>
 
       <CommonConfirmationDialog open={openDialog} onClose={handleCancelDelete} onConfirm={handleConfirmDelete} title="Are you sure you want to delete this survey status report?" description="This action cannot be undone." />
