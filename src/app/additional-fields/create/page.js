@@ -16,7 +16,7 @@ const sections = [
   { key: "memoranda", label: "Memoranda", options: ["Hull", "Machinery"] },
   { key: "additional", label: "Additional Information", options: ["Hull", "Machinery"] },
   { key: "compliance", label: "Compliance to New Regulations", options: ["Hull", "Machinery"] },
-  { key: "pcsfsi", label: "PSC/FSI Deficiency", options: ["Hull", "Machinery"] }, // New section
+  { key: "pcsFsi", label: "PSC/FSI Deficiency", options: ["Hull", "Machinery"] },
 ];
 const actions = ["Recommended", "Deleted", "Amended", "Extended"];
 
@@ -27,7 +27,7 @@ const codePrefixes = {
   additional: { Hull: "HA", Machinery: "MA" },
   compliance: { Hull: "Z", Machinery: "Z" },
   hull: { Hull: "H", Machinery: "M" },
-  pcsfsi: { Hull: "P", Machinery: "P" },
+  pcsFsi: { Hull: "P", Machinery: "P" },
 };
 
 const AdditionalFieldsList = () => {
@@ -344,15 +344,14 @@ const AdditionalFieldsList = () => {
                   rows={rows}
                   columns={commonColumns(s.key, journalList)}
                   getRowId={(row) => row.id || Math.random()}
-                  autoHeight
-                  hideFooter
                   pageSize={10}
                   rowsPerPageOptions={[10]}
+                  hideFooter
                   sx={{
                     bgcolor: "white",
                     borderRadius: 2,
-                    maxHeight: 400,
-                    overflowY: "auto",
+                    height: 400, // fixed height for scroll
+                    overflow: "auto",
                   }}
                   slots={{
                     noRowsOverlay: () => (
