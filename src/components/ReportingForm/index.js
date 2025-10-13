@@ -34,6 +34,7 @@ import CommonInput from "@/components/CommonInput";
 import ActivityTable from "./ActivityTable";
 import AmendmentRemarksDialog from "./AmendmentRemarksDialog";
 import EditingReasonDialog from "../Dialogs/EditingReasonDialog";
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider } from "@mui/material";
 
 const reportSchema = yup.object().shape({
   typesOfSurvey: yup.string().required("Type of survey is required"),
@@ -82,14 +83,14 @@ const ReportingForm = () => {
   const [loadingReport, setLoadingReport] = useState(false);
   const [isOpenArchiveModal, setIsOpenArchiveModal] = useState(false);
   const [continueBtnLoading, setContinueBtnLoading] = useState(false);
-  const [showRemarksDialog, setShowRemarksDialog] = useState(false);
-  const [archiveRemarks, setArchiveRemarks] = useState("");
   const [showAmendmentDialog, setShowAmendmentDialog] = useState(false);
   const [isOpenConfirmModal, setIsOpenConfirmModal] = useState(false);
   const [amdRemarks, setAmdRemarks] = useState("");
-  const [showArchiveRemarks, setShowArchiveRemarks] = useState("");
+  const [showArchiveHistoryDialog, setShowArchiveHistoryDialog] = useState(false);
+  const [archiveHistory, setArchiveHistory] = useState([]);
 
   useEffect(() => {
+    ``;
     if (selectCertificate === "full_term") {
       setShowEndorsementField(true);
       setShowExtraEndorsementField(false);
@@ -196,12 +197,14 @@ const ReportingForm = () => {
     setShowTable(false);
     const selectedJournalTypeId = event.target.value;
     const selectedIndex = filteredJournals.findIndex((j) => j.journalTypeId === selectedJournalTypeId);
-    setjournalId(filteredJournals[selectedIndex]?.id);
+    const selectedJournal = filteredJournals[selectedIndex];
+    setjournalId(selectedJournal?.id);
     setSelectedReportNumber({
       journalTypeId: selectedJournalTypeId,
       index: selectedIndex !== -1 ? selectedIndex : null,
     });
-    setTableData(filteredJournals[selectedIndex]?.activities || []);
+    setTableData(selectedJournal?.activities || []);
+    setArchiveHistory(selectedJournal?.journalRemarks || []); // ✅ store remarks
   };
 
   const handleCertificate = (event) => {
@@ -487,7 +490,7 @@ const ReportingForm = () => {
       const result = await getAllActivities("journalId", id);
       if (result?.data?.status === "success") {
         setTableData(result?.data?.data);
-        setShowArchiveRemarks(result.data?.data[0]?.journal?.archiveRemarks);
+        setArchiveHistory(result.data?.data[0]?.journal?.journalRemarks);
       } else {
         toast.error("Something went wrong ! Please try again after some time");
       }
@@ -665,12 +668,6 @@ const ReportingForm = () => {
                       ))}
                     </Select>
                   </FormControl>
-                  {selectedReportNumber.journalTypeId && showArchiveRemarks && (
-                    <Typography pl={2} mt={5} ml={3}>
-                      <b>Archive Remarks: </b>
-                      {showArchiveRemarks}
-                    </Typography>
-                  )}
                 </Box>
               </Box>
             )}
@@ -678,6 +675,7 @@ const ReportingForm = () => {
               <>
                 <CommonButton onClick={handleShowTable} sx={{ marginTop: 3 }} text="Continue" />
                 {selectedShip.id && selectedReportNumber.journalTypeId && data?.specialPermission?.includes("archive/unarchive") && <CommonButton onClick={handleContinue} sx={{ marginTop: 3, marginLeft: 2 }} text={specialPermission ? "Unarchive" : "Archive"} />}
+                {archiveHistory.length > 0 && <CommonButton onClick={() => setShowArchiveHistoryDialog(true)} sx={{ marginTop: 3, marginLeft: 2 }} text="Show Archive Remarks History" />}
               </>
             )}
           </Box>
@@ -1060,6 +1058,31 @@ const ReportingForm = () => {
         title={fullScreenRemarksVisible && typeof fullScreenRemarksVisible === "object" ? `Remarks for ${fullScreenRemarksVisible.surveyTypes?.name}` : "Remarks"}
       />
       <AmendmentRemarksDialog open={showAmendmentDialog} onClose={() => setShowAmendmentDialog(false)} onSubmit={handleAmendmentSubmit} isLoading={continueBtnLoading} />
+      <Dialog open={showArchiveHistoryDialog} onClose={() => setShowArchiveHistoryDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Archive Remarks History</DialogTitle>
+        <DialogContent dividers>
+          {archiveHistory.length > 0 ? (
+            archiveHistory.map((remark, index) => (
+              <Box key={remark.id || index} mb={2}>
+                <Typography variant="body1">
+                  <b>Remark {index + 1}:</b> {remark.remark || "-"}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {moment(remark.createdAt).format("DD MMM YYYY, HH:mm")}
+                </Typography>
+                {index < archiveHistory.length - 1 && <Divider sx={{ my: 1 }} />}
+              </Box>
+            ))
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              No remarks history found.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowArchiveHistoryDialog(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
