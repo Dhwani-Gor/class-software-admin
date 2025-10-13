@@ -25,6 +25,7 @@ import PreviewIcon from "@mui/icons-material/Visibility";
 import CommonConfirmationDialog from "@/components/Dialogs/CommonConfirmationDialog";
 import { toast } from "react-toastify";
 import ShowAmdRemarksDialog from "@/components/Dialogs/ShowAmdRemarksDialog";
+import DocumentPreview from "@/components/Dialogs/DocumentPreview";
 
 const Certificates = () => {
   const dispatch = useDispatch();
@@ -638,65 +639,7 @@ const Certificates = () => {
         className="snackBarColor"
         key="snackbar"
       />
-      <Dialog open={openPreviewModal} onClose={() => setOpenPreviewModal(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Document Preview</DialogTitle>
-        {/* <DialogContent>
-          <Box position="relative" width="100%" height="80vh">
-            {loadingPreview && (
-              <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-                <CircularProgress />
-              </Box>
-            )}
-            {previewFile && (
-              <iframe
-                src={previewFile} // direct PDF URL, not gview
-                style={{ width: "100%", height: "100%", border: "none" }}
-                title="File Preview"
-                onLoad={() => setLoadingPreview(false)}
-              />
-            )}
-            <Button variant="contained" color="primary" onClick={() => setOpenPreviewModal(false)}>
-              Close
-            </Button>
-          </Box>
-        </DialogContent> */}
-        <DialogContent>
-          <div style={{ position: "relative", width: "100%", height: "80vh" }}>
-            {!loadingPreview ? (
-              <Box
-                style={{
-                  position: "absolute",
-                  top: "10px",
-                  right: "10px",
-                  zIndex: 1,
-                  backgroundColor: "#4CAF50",
-                  color: "white",
-                  padding: "10px 16px",
-                  border: "none",
-                  borderRadius: "4px",
-                  textDecoration: "none",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                }}
-                onClick={() => setOpenPreviewModal(false)}
-              >
-                X
-              </Box>
-            ) : (
-              <Box display="flex" justifyContent="center" alignItems="center" height="100%" position="absolute" top={0} left={0} width="100%" zIndex={0} sx={{ backgroundColor: "rgba(255,255,255,0.8)" }}>
-                <CircularProgress />
-              </Box>
-            )}
-            <iframe
-              src={previewFile} // direct PDF URL, not gview
-              style={{ width: "100%", height: "100%", border: "none" }}
-              title="File Preview"
-              onLoad={() => setLoadingPreview(false)}
-            />{" "}
-          </div>
-        </DialogContent>
-      </Dialog>
-
+      <DocumentPreview open={openPreviewModal} fileUrl={previewFile} onClose={() => setOpenPreviewModal(false)} />
       <CommonConfirmationDialog open={openDialog} onClose={handleCancelDelete} onConfirm={handleConfirmDelete} title="Are you sure you want to delete this survey status report?" description="This action cannot be undone." />
       <ShowAmdRemarksDialog open={openAmdRemarks} onClose={() => setOpenAmdRemarks(false)} reportDetailId={selectedReportId} />
     </Layout>

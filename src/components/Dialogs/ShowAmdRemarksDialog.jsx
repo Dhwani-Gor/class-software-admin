@@ -24,12 +24,16 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import GetAppIcon from "@mui/icons-material/GetApp";
 import { fetchAmdReamrks } from "@/api";
 import { useAuth } from "@/hooks/useAuth";
+import DocumentPreview from "./DocumentPreview"; // import the preview component
 
 const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId }) => {
     const { data } = useAuth();
     const [amendments, setAmendments] = useState([]);
     const [loading, setLoading] = useState(false);
 
+    // State for preview
+    const [openPreviewModal, setOpenPreviewModal] = useState(false);
+    const [previewFile, setPreviewFile] = useState("");
 
     useEffect(() => {
         if (open && reportDetailId) {
@@ -63,8 +67,11 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId }) => {
         }
     };
 
-    const handleView = (doc) => {
-        if (doc) window.open(doc, "_blank");
+    const handleView = (documentUrl) => {
+        if (!documentUrl) return;
+        const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(documentUrl)}&embedded=true`;
+        setPreviewFile(viewerUrl);
+        setOpenPreviewModal(true);
     };
 
     const handleDownload = (doc) => {
@@ -82,7 +89,8 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId }) => {
         first?.reportDetail?.activity?.journal?.journalTypeId || "-";
     const shipName = first?.reportDetail?.activity?.journal?.client?.shipName || "-";
     const surveyType = first?.reportDetail?.activity?.surveyTypes?.name || "-";
-    // Determine correct certificate type based on amendedDoc filename
+
+    // Determine certificate type based on amendedDoc filename
     let certificateType = "-";
     const firstDoc = first?.amendedDoc || "";
     if (firstDoc.toLowerCase().includes("full_term")) {
@@ -93,20 +101,15 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId }) => {
         certificateType = "Interim";
     }
 
-
-
     // helper: extract report number (MCB...) and optional AMD index
     const extractReportNumber = (fileNameRaw) => {
         if (!fileNameRaw) return "-";
         const fileName = fileNameRaw.split("/").pop().replace(/\.pdf$/i, ""); // no .pdf
 
-        // find AMD(n) if present
         const amdMatch = fileName.match(/AMD\((\d+)\)/i);
-
         let reportNo = null;
 
         if (amdMatch) {
-            // search for last MCB... that appears before the AMD(...) occurrence
             const amdIndex = fileName.search(/AMD\(\d+\)/i);
             const beforeAmd = fileName.slice(0, amdIndex);
             const mcbs = beforeAmd.match(/MCB[0-9A-Z-]*/ig);
@@ -115,7 +118,6 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId }) => {
             }
         }
 
-        // fallback: find last MCB anywhere in the filename
         if (!reportNo) {
             const allMcbs = fileName.match(/MCB[0-9A-Z-]*/ig);
             if (allMcbs && allMcbs.length) {
@@ -128,118 +130,120 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId }) => {
     };
 
     return (
-        <Dialog
-            open={open}
-            onClose={onClose}
-            fullWidth
-            maxWidth="md"
-            PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
-        >
-            <DialogTitle sx={{ fontWeight: 600, fontSize: 18 }}>
-                Amendment Reports
-            </DialogTitle>
+        <>
+            <Dialog
+                open={open}
+                onClose={onClose}
+                fullWidth
+                maxWidth="md"
+                PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
+            >
+                <DialogTitle sx={{ fontWeight: 600, fontSize: 18 }}>
+                    Amendment Reports
+                </DialogTitle>
 
-            <DialogContent dividers sx={{ minHeight: 300 }}>
-                {loading ? (
-                    <Box
-                        sx={{
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            height: 250,
-                        }}
-                    >
-                        <CircularProgress />
-                    </Box>
-                ) : amendments.length === 0 ? (
-                    <Typography align="center" sx={{ mt: 4 }}>
-                        No amendment reports found.
-                    </Typography>
-                ) : (
-                    <>
-                        {/* Top Summary */}
+                <DialogContent dividers sx={{ minHeight: 300 }}>
+                    {loading ? (
                         <Box
                             sx={{
-                                mb: 2,
-                                p: 2,
-                                borderRadius: 2,
-                                gap: 3,
                                 display: "flex",
-                                backgroundColor: "#f5f5f5",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                height: 250,
                             }}
                         >
-                            <Typography variant="subtitle1">
-                                <strong>Ship Name:</strong> {shipName}
-                            </Typography>
-                            <Typography variant="subtitle1">
-                                <strong>Type of Certificate:</strong> {certificateType}
-                            </Typography>
-                            <Typography variant="subtitle1">
-                                <strong>Survey Type</strong> {surveyType}
-                            </Typography>
+                            <CircularProgress />
                         </Box>
+                    ) : amendments.length === 0 ? (
+                        <Typography align="center" sx={{ mt: 4 }}>
+                            No amendment reports found.
+                        </Typography>
+                    ) : (
+                        <>
+                            <Box
+                                sx={{
+                                    mb: 2,
+                                    p: 2,
+                                    borderRadius: 2,
+                                    gap: 3,
+                                    display: "flex",
+                                    backgroundColor: "#f5f5f5",
+                                }}
+                            >
+                                <Typography variant="subtitle1">
+                                    <strong>Ship Name:</strong> {shipName}
+                                </Typography>
+                                <Typography variant="subtitle1">
+                                    <strong>Type of Certificate:</strong> {certificateType}
+                                </Typography>
+                                <Typography variant="subtitle1">
+                                    <strong>Survey Type</strong> {surveyType}
+                                </Typography>
+                            </Box>
 
-                        {/* Amendments Table */}
-                        <TableContainer component={Paper}>
-                            <Table>
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>Amended Document</TableCell>
-                                        {data.specialPermission?.includes("showAmedmentRemark") && <TableCell>Remarks</TableCell>}
-                                        <TableCell>Action</TableCell>
-                                    </TableRow>
-                                </TableHead>
+                            <TableContainer component={Paper}>
+                                <Table>
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>Amended Document</TableCell>
+                                            {data.specialPermission?.includes("showAmedmentRemark") && <TableCell>Remarks</TableCell>}
+                                            <TableCell>Action</TableCell>
+                                        </TableRow>
+                                    </TableHead>
 
-                                <TableBody>
-                                    {amendments.map((amd) => {
-                                        const rawFileName = amd.amendedDoc?.split("/").pop() || "";
-                                        const cleanedName = rawFileName.replace(/\.pdf$/i, ""); // show without .pdf
-                                        const displayReportNo = extractReportNumber(rawFileName);
+                                    <TableBody>
+                                        {amendments.map((amd) => {
+                                            const rawFileName = amd.amendedDoc?.split("/").pop() || "";
+                                            const displayReportNo = extractReportNumber(rawFileName);
 
-                                        return (
-                                            <TableRow key={amd.id}>
-                                                <TableCell>{displayReportNo}</TableCell>
+                                            return (
+                                                <TableRow key={amd.id}>
+                                                    <TableCell>{displayReportNo}</TableCell>
 
-                                                {data.specialPermission?.includes("showAmedmentRemark") && <TableCell>{amd.amdRemarks || "-"}</TableCell>}
+                                                    {data.specialPermission?.includes("showAmedmentRemark") && <TableCell>{amd.amdRemarks || "-"}</TableCell>}
 
-                                                <TableCell>
-                                                    {amd.amendedDoc ? (
-                                                        <Stack direction="row" spacing={1}>
-                                                            <Tooltip title="View Document">
-                                                                <IconButton color="info" onClick={() => handleView(amd.amendedDoc)}>
-                                                                    <VisibilityIcon />
-                                                                </IconButton>
-                                                            </Tooltip>
+                                                    <TableCell>
+                                                        {amd.amendedDoc ? (
+                                                            <Stack direction="row" spacing={1}>
+                                                                <Tooltip title="View Document">
+                                                                    <IconButton color="info" onClick={() => handleView(amd.amendedDoc)}>
+                                                                        <VisibilityIcon />
+                                                                    </IconButton>
+                                                                </Tooltip>
+                                                                {data?.specialPermission?.includes("ArchiveDocuments") && (
+                                                                    <Tooltip title="Download Document">
+                                                                        <IconButton color="success" onClick={() => handleDownload(amd.amendedDoc)}>
+                                                                            <GetAppIcon />
+                                                                        </IconButton>
+                                                                    </Tooltip>
+                                                                )}
+                                                            </Stack>
+                                                        ) : "-"}
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </>
+                    )}
+                </DialogContent>
 
-                                                            <Tooltip title="Download Document">
-                                                                <IconButton color="success" onClick={() => handleDownload(amd.amendedDoc)}>
-                                                                    <GetAppIcon />
-                                                                </IconButton>
-                                                            </Tooltip>
-                                                        </Stack>
-                                                    ) : (
-                                                        "-"
-                                                    )}
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                </TableBody>
+                <DialogActions>
+                    <Button onClick={onClose} variant="contained" color="primary">
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
-                            </Table>
-                        </TableContainer>
-
-
-                    </>
-                )}
-            </DialogContent>
-
-            <DialogActions>
-                <Button onClick={onClose} variant="contained" color="primary">
-                    Close
-                </Button>
-            </DialogActions>
-        </Dialog>
+            {/* Document Preview Modal */}
+            <DocumentPreview
+                open={openPreviewModal}
+                fileUrl={previewFile}
+                onClose={() => setOpenPreviewModal(false)}
+            />
+        </>
     );
 };
 
