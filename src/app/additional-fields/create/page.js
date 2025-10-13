@@ -251,16 +251,25 @@ const AdditionalFieldsList = () => {
 
           <Box sx={{ mb: 3, p: 3, border: "1px solid #e0e0e0", borderRadius: 2, bgcolor: "#f9f9f9" }}>
             <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
-              <TextField label="Type" value={editingRow?.type || ""} onChange={(e) => handleTypeChange(section.key, e.target.value)} select fullWidth size="small">
+              <TextField
+                value={editingRow?.type || ""}
+                onChange={(e) => handleTypeChange(section.key, e.target.value)}
+                select
+                fullWidth
+                size="small"
+                label={
+                  <span>
+                    Type <span style={{ color: "red" }}>*</span>
+                  </span>
+                }
+              >
                 {section.options.map((opt) => (
                   <MenuItem key={opt} value={opt}>
                     {opt}
                   </MenuItem>
                 ))}
-              </TextField>
-
+              </TextField>{" "}
               <TextField label="Code" value={editingRow?.code || ""} disabled fullWidth size="small" />
-
               <TextField
                 label="Reference No"
                 value={editingRow?.referenceNo || ""}
@@ -287,7 +296,6 @@ const AdditionalFieldsList = () => {
                   <MenuItem disabled>No Journals Found</MenuItem>
                 )}
               </TextField>
-
               <TextField label="Action" value={editingRow?.action || ""} onChange={(e) => setEditingRows((prev) => ({ ...prev, [section.key]: { ...prev[section.key], action: e.target.value } }))} select fullWidth size="small">
                 <MenuItem value="">&nbsp;</MenuItem>
                 {actions.map((a) => (
@@ -296,14 +304,15 @@ const AdditionalFieldsList = () => {
                   </MenuItem>
                 ))}
               </TextField>
-
-              <TextField label="Due Date" type="date" value={editingRow?.dueDate || ""} onChange={(e) => setEditingRows((prev) => ({ ...prev, [section.key]: { ...prev[section.key], dueDate: e.target.value } }))} fullWidth size="small" InputLabelProps={{ shrink: true }} />
+              <>
+                <TextField label="Due Date" type="date" value={editingRow?.dueDate || ""} onChange={(e) => setEditingRows((prev) => ({ ...prev, [section.key]: { ...prev[section.key], dueDate: e.target.value } }))} fullWidth size="small" InputLabelProps={{ shrink: true }} />
+              </>
             </Box>
 
             {/* Description */}
             <Box sx={{ mt: 2 }}>
               <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
-                Description
+                Description <span style={{ color: "red" }}>*</span>
               </Typography>
               <TextareaAutosize minRows={3} value={editingRow?.description || ""} onChange={(e) => setEditingRows((prev) => ({ ...prev, [section.key]: { ...prev[section.key], description: e.target.value } }))} style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "14px", fontFamily: "inherit", resize: "vertical" }} />
             </Box>
