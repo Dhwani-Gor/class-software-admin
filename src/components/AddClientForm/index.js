@@ -1194,7 +1194,7 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
               <TextField fullWidth variant="standard" label="Engine Builder" placeholder="Enter Engine Builder" value={machineList.engine_builder} disabled={!editingAllowed} onChange={(e) => handleMachineListChange("engine_builder", e.target.value)} />
             </Grid2>
             <Grid2 size={{ xs: 4 }}>
-              <TextField fullWidth variant="standard" type="date" label="Engine Built" value={machineList.engine_built} disabled={!editingAllowed} onChange={(e) => handleMachineListChange("engine_built", e.target.value)} InputLabelProps={{ shrink: true }} />
+              <TextField fullWidth variant="standard" type="date" label="Engine Built" value={machineList.engine_built ? machineList.engine_built.split("T")[0] : ""} disabled={!editingAllowed} onChange={(e) => handleMachineListChange("engine_built", e.target.value)} InputLabelProps={{ shrink: true }} />
             </Grid2>
             <Grid2 size={{ xs: 4 }}>
               <TextField fullWidth variant="standard" label="Propeller" placeholder="Enter Propeller" value={machineList.propeller} disabled={!editingAllowed} onChange={(e) => handleMachineListChange("propeller", e.target.value)} />
