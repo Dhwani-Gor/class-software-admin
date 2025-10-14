@@ -590,7 +590,7 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
       if (hasAnyMachineData) {
         payload.machineList = {
           main_engine_model: hasValue(machineList.main_engine_model) ? machineList.main_engine_model : "",
-          no_of_engines: hasValue(machineList.no_of_engines) ? Number(machineList.no_of_engines) : "",
+          no_of_engines: hasValue(machineList.no_of_engines) ? machineList.no_of_engines : "",
           total_power: hasValue(machineList.total_power) ? Number(machineList.total_power) : null,
           engine_builder: hasValue(machineList.engine_builder) ? machineList.engine_builder : "",
           engine_built: hasValue(machineList.engine_built) ? machineList.engine_built : "",

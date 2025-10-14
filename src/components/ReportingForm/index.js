@@ -35,6 +35,7 @@ import ActivityTable from "./ActivityTable";
 import AmendmentRemarksDialog from "./AmendmentRemarksDialog";
 import EditingReasonDialog from "../Dialogs/EditingReasonDialog";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider } from "@mui/material";
+import ArchiveHistoryDialog from "../Dialogs/ArchiveHistoryDialog";
 
 const reportSchema = yup.object().shape({
   typesOfSurvey: yup.string().required("Type of survey is required"),
@@ -53,7 +54,7 @@ const ReportingForm = () => {
   const { data } = useAuth();
   const [loading, setLoading] = useState(false);
   const [clientsList, setClientsList] = useState([]);
-
+  const [shipName, setShipName] = useState("");
   const [journals, setJournals] = useState([]);
   const [fullScreenRemarksVisible, setFullScreenRemarksVisible] = useState(null);
   const [selectedShip, setSelectedShip] = useState({ id: "", shipName: "" });
@@ -191,6 +192,7 @@ const ReportingForm = () => {
       id: selectedId,
       shipName: selectedClient ? selectedClient.shipName : "",
     });
+    setShipName(selectedClient?.shipName);
   };
 
   const handleReportNumber = (event) => {
@@ -1058,7 +1060,7 @@ const ReportingForm = () => {
         title={fullScreenRemarksVisible && typeof fullScreenRemarksVisible === "object" ? `Remarks for ${fullScreenRemarksVisible.surveyTypes?.name}` : "Remarks"}
       />
       <AmendmentRemarksDialog open={showAmendmentDialog} onClose={() => setShowAmendmentDialog(false)} onSubmit={handleAmendmentSubmit} isLoading={continueBtnLoading} />
-      <Dialog open={showArchiveHistoryDialog} onClose={() => setShowArchiveHistoryDialog(false)} maxWidth="sm" fullWidth>
+      {/* <Dialog open={showArchiveHistoryDialog} onClose={() => setShowArchiveHistoryDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Archive Remarks History</DialogTitle>
         <DialogContent dividers>
           {archiveHistory.length > 0 ? (
@@ -1066,6 +1068,9 @@ const ReportingForm = () => {
               <Box key={remark.id || index} mb={2}>
                 <Typography variant="body1">
                   <b>Remark {index + 1}:</b> {remark.remark || "-"}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {remark.journalTypeId}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   {moment(remark.createdAt).format("DD MMM YYYY, HH:mm")}
@@ -1082,7 +1087,8 @@ const ReportingForm = () => {
         <DialogActions>
           <Button onClick={() => setShowArchiveHistoryDialog(false)}>Close</Button>
         </DialogActions>
-      </Dialog>
+      </Dialog> */}
+      <ArchiveHistoryDialog open={showArchiveHistoryDialog} archiveHistory={archiveHistory} onClose={() => setShowArchiveHistoryDialog(false)} shipName={shipName} />
     </Box>
   );
 };
