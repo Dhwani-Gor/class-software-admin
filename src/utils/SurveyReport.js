@@ -1,6 +1,6 @@
 import { Editor } from "@tinymce/tinymce-react";
 import { useEffect, useState, useCallback } from "react";
-import { getAllSystemVariables, getSpecificClient, getSurveyReportData, getVisitDetails, uploadSurveyReport } from "../api";
+import { getAllSystemVariables, getSpecificClient, getSurveyReportDataByJournalId, getVisitDetails, uploadSurveyReport } from "../api";
 import { toast } from "react-toastify";
 import { PDFDocument } from "pdf-lib";
 import html2canvas from "html2canvas";
@@ -400,7 +400,7 @@ const SurveyReport = ({ id, reportNumber }) => {
         setLoading(true);
         setEditorContent("");
 
-        const [clientResult, reportResult] = await Promise.all([getSpecificClient(id), getSurveyReportData(id, reportNumber)]);
+        const [clientResult, reportResult] = await Promise.all([getSpecificClient(id), getSurveyReportDataByJournalId(id, reportNumber)]);
 
         if (clientResult?.status === 200) {
           setClientData(clientResult.data.data);

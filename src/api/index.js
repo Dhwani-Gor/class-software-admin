@@ -812,7 +812,17 @@ export const updateSystemVariable = async (id, payload) => {
   return result;
 };
 
-export const getSurveyReportData = async (clientId, journalId) => {
+export const getSurveyReportData = async (clientId) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/reportDetails?filterKey=activity.journal.clientId&filterValue=${clientId}`);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const getSurveyReportDataByJournalId = async (clientId, journalId) => {
   let result;
   try {
     result = await axiosInstance.get(`/reportDetails?filterKey=activity.journal.clientId&filterValue=${clientId}&journalId=${journalId}`);
