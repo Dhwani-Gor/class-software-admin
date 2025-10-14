@@ -30,32 +30,38 @@ const Reports = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedJournalId, setSelectedJournalId] = useState(null);
   const [activeTab, setActiveTab] = useState("journal"); // chip tab state
+  console.log(activeTab, "activeTab");
 
-  const [columns] = useState([
-    { field: "serialNumber", headerName: "No.", flex: 0.5, sortable: false, renderCell: (params) => params.value },
-    { field: "client", headerName: "Ship / Work", flex: 1, renderCell: (params) => params.value?.shipName },
-    { field: "journalTypeId", headerName: "Report Number", flex: 1 },
-    { field: "createdAt", headerName: "Report Date", flex: 1, renderCell: (params) => moment(params.row.createdAt).format("DD/MM/YYYY hh:mm A") },
-    {
-      field: "actions",
-      headerName: "Actions",
-      width: 100,
-      renderCell: (params) => (
-        <Stack direction="row" spacing={1}>
-          <Tooltip title="Edit Journal">
-            <IconButton color="primary" onClick={() => router.push(`/journal/${params?.id}`)}>
-              <EditIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete Journal">
-            <IconButton color="error" onClick={() => handleDeleteClick(params?.id)}>
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      ),
-    },
-  ]);
+  const columns = React.useMemo(
+    () => [
+      { field: "serialNumber", headerName: "No.", flex: 0.5, sortable: false, renderCell: (params) => params.value },
+      { field: "client", headerName: "Ship / Work", flex: 1, renderCell: (params) => params.value?.shipName },
+      { field: "journalTypeId", headerName: "Report Number", flex: 1 },
+      { field: "createdAt", headerName: "Report Date", flex: 1, renderCell: (params) => moment(params.row.createdAt).format("DD/MM/YYYY hh:mm A") },
+      {
+        field: "actions",
+        headerName: "Actions",
+        width: 100,
+        renderCell: (params) => (
+          <Stack direction="row" spacing={1}>
+            <Tooltip title="Edit Journal">
+              <IconButton color="primary" onClick={() => router.push(`/journal/${params?.id}`)}>
+                <EditIcon />
+              </IconButton>
+            </Tooltip>
+            {activeTab !== "archive" && (
+              <Tooltip title="Delete Journal">
+                <IconButton color="error" onClick={() => handleDeleteClick(params?.id)}>
+                  <DeleteIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Stack>
+        ),
+      },
+    ],
+    [activeTab, router]
+  );
 
   const handleSearchChange = (event) => setSearch(event.target.value);
   const handleDeleteClick = (journalId) => {

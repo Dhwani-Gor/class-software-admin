@@ -74,14 +74,24 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId, selectedFilter, h
         setOpenPreviewModal(true);
     };
 
-    const handleDownload = (doc) => {
-        if (doc) {
-            const link = document.createElement("a");
-            link.href = doc;
-            link.download = doc.split("/").pop();
-            link.click();
+    const handleDownload = async (doc) => {
+        if (!doc) return;
+        try {
+            const response = await fetch(doc, { mode: "cors" });
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = doc.split("/").pop();
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error("Download failed:", err);
         }
     };
+
 
     const first = amendments[0];
     const shipName = first?.reportDetail?.activity?.journal?.client?.shipName || "-";
