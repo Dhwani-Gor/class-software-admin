@@ -10,7 +10,7 @@ import { Box } from "@mui/material";
 import Loader from "@/components/Loader";
 import { useRouter } from "next/navigation";
 
-const SurveyReport = ({ id }) => {
+const SurveyReport = ({ id, reportNumber }) => {
   const router = useRouter();
   const [reportDetails, setReportDetails] = useState(null);
   const [clientData, setClientData] = useState(null);
@@ -400,7 +400,7 @@ const SurveyReport = ({ id }) => {
         setLoading(true);
         setEditorContent("");
 
-        const [clientResult, reportResult] = await Promise.all([getSpecificClient(id), getSurveyReportData(id)]);
+        const [clientResult, reportResult] = await Promise.all([getSpecificClient(id), getSurveyReportData(id, reportNumber)]);
 
         if (clientResult?.status === 200) {
           setClientData(clientResult.data.data);
