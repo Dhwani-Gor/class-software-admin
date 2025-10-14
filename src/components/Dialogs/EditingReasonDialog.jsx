@@ -10,18 +10,17 @@ import CommonButton from "../CommonButton";
 
 const EditingReasonDialog = ({ open, title, onCancel, onConfirm }) => {
   const [value, setValue] = useState("");
-  
-  // Update local state when dialog opens with new remarks
+
   useEffect(() => {
     if (open && typeof open === 'object') {
       setValue(open.remarks || "");
     }
   }, [open]);
-  
+
   return (
-    <Dialog 
-      open={Boolean(open)} 
-      onClose={onCancel} 
+    <Dialog
+      open={Boolean(open)}
+      onClose={onCancel}
     >
       <DialogTitle fontWeight={'600'}>{title}</DialogTitle>
       <DialogContent>
@@ -43,7 +42,7 @@ const EditingReasonDialog = ({ open, title, onCancel, onConfirm }) => {
       </DialogContent>
       <DialogActions>
         <CommonButton text="Cancel" variant="outlined" onClick={onCancel} />
-        <CommonButton text="Save" onClick={() => onConfirm(value)} />
+        <CommonButton text="Save" disabled={!value} onClick={() => onConfirm(value)} />
       </DialogActions>
     </Dialog>
   );

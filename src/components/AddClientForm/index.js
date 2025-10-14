@@ -57,7 +57,7 @@ const schema = yup.object().shape({
   dateOfDelivery: yup.string().required("Date of Delivery required"),
   areaOfOperation: yup.string(),
   carryingCapacity: yup.string(),
-  classSymbol: yup.string(),
+  classSymbol: yup.string().notRequired(),
   hullNotation: yup.string().optional(),
   machineryNotation: yup.string().optional(),
   descriptiveNotation: yup.string().optional(),
