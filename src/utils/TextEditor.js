@@ -75,227 +75,167 @@ const TextEditor = ({ id }) => {
     try {
       const style = contentDocument.createElement("style");
       style.innerHTML = `
-  * {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-      box-sizing: border-box;
-      white-space: normal !important;
-  }
-  
-  html, body {
-      margin: 0 !important;
-      padding: 0 !important;
-      background: white !important;
-      width: 100% !important;
-      height: auto !important;
-      font-size: 13px !important;
-      line-height: 1.6 !important;
-      color: #333 !important;
-  }
-  
-  h1 {
-      font-size: 28px !important;
-      font-weight: bold !important;
-      color: black !important;
-  }
-  
-  h2 {
-      font-size: 22px !important;
-      font-weight: 600 !important;
-      letter-spacing: 0.5px !important;
-  }
-  
-  h4 {
-      font-size: 15px !important;
-      font-weight: 600 !important;
-      letter-spacing: 0.3px !important;
-  }
-  
-  p, div, span {
-      font-size: 13px !important;
-      line-height: 1.6 !important;
-  }
-  
-  p.subtitle {
-      font-size: 13px !important;
-      line-height: 1.6 !important;
-  }
-  
-  table {
-      border-collapse: collapse !important;
-      page-break-inside: auto !important;
-      font-size: 12px !important;
-  }
-  
-  table th, table td {
-      page-break-inside: avoid !important;
-      break-inside: avoid !important;
-      vertical-align: top !important;
-      padding: 6px 8px !important;
-      font-size: 12px !important;
-  }
-  
-  table th {
-      font-size: 12px !important;
-      font-weight: 600 !important;
-      letter-spacing: 0.5px !important;
-  }
-  
-  table thead {
-      display: table-header-group !important;
-  }
-  
-  table tbody {
-      display: table-row-group !important;
-  }
-  
-  .owner-info {
-      font-size: 13px !important;
-      line-height: 1.8 !important;
-  }
-  
-  .owner-info div {
-      font-size: 13px !important;
-  }
-  
-  .legend-item {
-      font-size: 13px !important;
-      font-weight: 500 !important;
-  }
-  
-  .section-title {
-      font-size: 16px !important;
-      font-weight: 600 !important;
-  }
-  
-  .toc-section td {
-      font-size: 15px !important;
-      font-weight: 600 !important;
-  }
-  
-  strong {
-      font-weight: 600 !important;
-  }
-  
-  .no-break {
-      page-break-inside: avoid !important;
-      break-inside: avoid !important;
-  }
-  
-  .no-break-block, 
-  .no-break-block *, 
-  .hull-row {
-      page-break-inside: avoid !important;
-      break-inside: avoid !important;
-      border:none;
-  }
-      .report-title {
-          background: linear-gradient(to right, #9013fe, #4a90e2);
-          box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-          color: white;
-          padding: 20px;
-          font-size: 40px !important;
-          width: 90% !important;
-          text-align: center !important;
-          margin: 50px auto !important;
-          border-radius: 8px !important;
+      * {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+        box-sizing: border-box;
+        white-space: normal !important;
       }
-          .company-logo {
-              margin-top: -60px !important;
-          }
-            
-        .ship-name {
-    font-size: 50px !important;
-    font-weight: bold !important;
-    margin-top: 20px;
-    margin-bottom: 20px;
-    color:  #6659BF;
-    border-bottom: 4px solid #6659BF !important;
-    display: inline-block;
-}
-  
-  .company-name {
-      font-size: 50px !important;
-      font-weight: bold !important;
-      color: black !important;
-      letter-spacing: 0.5px !important;
-      text-transform: uppercase !important;
-      padding-bottom: 12px !important;
-  }
-  
-  
-  
-  span.expired {
-      color: white !important;
-      background-color: #FF0000 !important;
-      width: 18px !important;
-      height: 18px !important;
-      justify-content: center !important;
-      align-items: center !important;
-      font-size: 11px !important;
-      display: flex !important;
-      border-radius: 3px !important;
-      box-shadow: 0 2px 4px rgba(220,53,69,0.3) !important;
-  }
+
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        width: 100% !important;
+        height: auto !important;
+        font-size: 13px !important;
+        line-height: 1.6 !important;
+        color: #333 !important;
+      }
+
+      h1 { font-size: 28px !important; font-weight: bold !important; color: black !important; }
+      h2 { font-size: 22px !important; font-weight: 600 !important; letter-spacing: 0.5px !important; }
+      h4 { font-size: 15px !important; font-weight: 600 !important; letter-spacing: 0.3px !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+
+      p, div, span { font-size: 13px !important; line-height: 1.6 !important; }
+      p.subtitle { font-size: 13px !important; line-height: 1.6 !important; }
+
+      table {
+        border-collapse: collapse !important;
+        page-break-inside: auto !important;
+        font-size: 12px !important;
+      }
+
+      table th, table td {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        vertical-align: top !important;
+        padding: 6px 8px !important;
+        font-size: 12px !important;
+      }
+
+      table th { font-size: 12px !important; font-weight: 600 !important; letter-spacing: 0.5px !important; }
+      table thead { display: table-header-group !important; }
+      table tbody { display: table-row-group !important; }
+
+      .owner-info { font-size: 13px !important; line-height: 1.8 !important; }
+      .owner-info div { font-size: 13px !important; }
+      .legend-item { font-size: 13px !important; font-weight: 500 !important; }
+      .section-title { font-size: 16px !important; font-weight: 600 !important; }
+      .toc-section td { font-size: 15px !important; font-weight: 600 !important; }
+      strong { font-weight: 600 !important; }
+
+      .no-break { page-break-inside: avoid !important; break-inside: avoid !important; }
+      .no-break-block, .no-break-block *, .hull-row { page-break-inside: avoid !important; break-inside: avoid !important; border:none; }
+
+      .report-title {
+        background: linear-gradient(to right, #9013fe, #4a90e2);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        color: white;
+        padding: 20px;
+        font-size: 40px !important;
+        width: 90% !important;
+        text-align: center !important;
+        margin: 50px auto !important;
+        border-radius: 8px !important;
+      }
+
+      .company-logo { margin-top: -60px !important; }
+
+      .ship-name {
+        font-size: 50px !important;
+        font-weight: bold !important;
+        margin-top: 20px;
+        margin-bottom: 20px;
+        color: #6659BF;
+        border-bottom: 4px solid #6659BF !important;
+        display: inline-block;
+      }
+
+      .company-name {
+        font-size: 50px !important;
+        font-weight: bold !important;
+        color: black !important;
+        letter-spacing: 0.5px !important;
+        text-transform: uppercase !important;
+        padding-bottom: 12px !important;
+      }
+
+      span.expired {
+        color: white !important;
+        background-color: #FF0000 !important;
+        width: 18px !important;
+        height: 18px !important;
+        justify-content: center !important;
+        align-items: center !important;
+        font-size: 11px !important;
+        display: flex !important;
+        border-radius: 3px !important;
+        box-shadow: 0 2px 4px rgba(220,53,69,0.3) !important;
+      }
 
       span.expiring1m::before {
-                 display: block !important;
-                 transform: rotate(-45deg) !important;
-                 position: absolute !important;
-                 top: 50% !important;
-                 left: 50% !important;
-                 transform: translate(-50%, -50%) rotate(-45deg) !important;
-             }
+        display: block !important;
+        transform: rotate(-45deg) !important;
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) rotate(-45deg) !important;
+      }
 
-              span.expiring1m {
-                 display: inline-block !important;
-                 width: 8px;
-                 height: 14px;
-                 margin-left: 8px !important;
-                 background-color: #ffc107 !important;
-                 color: white !important;
-                 font-size: 11px !important;
-                 font-weight: bold !important;
-                 transform: rotate(45deg) !important;
-                 align-items: center !important;
-                 display: flex !important;
-                 justify-content: center !important;
-             }
+      span.expiring1m {
+        display: inline-block !important;
+        width: 8px;
+        height: 14px;
+        margin-left: 8px !important;
+        background-color: #ffc107 !important;
+        color: white !important;
+        font-size: 11px !important;
+        font-weight: bold !important;
+        transform: rotate(45deg) !important;
+        align-items: center !important;
+        display: flex !important;
+        justify-content: center !important;
+      }
 
-      span.expiring1m * {
-                 transform: rotate(-45deg) !important;
-                 display: inline-block !important;
-             }
-
-  span.expiring3m {
-      color: white !important;
-      border-radius: 50% !important;
-      background-color: #28a745 !important;
-      width: 18px !important;
-      height: 18px !important;
-      display: inline-flex !important;
-      justify-content: center !important;
-      align-items: center !important;
-      font-size: 11px !important;
-      box-shadow: 0 2px 4px rgba(40,167,69,0.3) !important;
-  }
+      span.expiring1m * { transform: rotate(-45deg) !important; display: inline-block !important; }
+      span.expiring3m {
+        color: white !important;
+        border-radius: 50% !important;
+        background-color: #28a745 !important;
+        width: 18px !important;
+        height: 18px !important;
+        display: inline-flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        font-size: 11px !important;
+        box-shadow: 0 2px 4px rgba(40,167,69,0.3) !important;
+      }
       
-  .page-break-new {
-      margin-top: 670px;
-  }
-`;
+      .page-break-new { margin-top: 640px; }
+    `;
       contentDocument.head.appendChild(style);
 
+      // Handle diamond icons
       const diamondIcons = contentDocument.querySelectorAll("span.expiring1m");
       diamondIcons.forEach((icon) => {
         const text = icon.textContent;
         icon.innerHTML = `<span>${text}</span>`;
       });
 
+      // Prevent page break for table rows
       const tableRows = contentDocument.querySelectorAll("table tr");
       tableRows.forEach((row) => {
         row.classList.add("no-break");
         row.style.pageBreakInside = "avoid";
         row.style.breakInside = "avoid";
+      });
+
+      // Prevent page break for h4 headings
+      const headings = contentDocument.querySelectorAll("h4");
+      headings.forEach((heading) => {
+        heading.classList.add("no-break");
+        heading.style.pageBreakInside = "avoid";
+        heading.style.breakInside = "avoid";
       });
 
       contentBody.style.overflow = "visible";
@@ -323,8 +263,8 @@ const TextEditor = ({ id }) => {
         windowWidth: canvasWidth,
         windowHeight: canvasHeight,
       });
-      const imgWidth = canvas.width;
 
+      const imgWidth = canvas.width;
       const imgHeight = canvas.height;
 
       const pdfDoc = await PDFDocument.create();
@@ -420,116 +360,38 @@ const TextEditor = ({ id }) => {
           const nameY = headerStartY - 35;
           const statusY = headerStartY - 47;
 
-          page.drawText("Name", {
-            x: leftColumnX,
-            y: nameY,
-            size: 9,
-            color: rgb(1, 1, 1),
-            font: fontRegular,
-          });
-          page.drawText(":", {
-            x: colonX,
-            y: nameY,
-            size: 9,
-            color: rgb(1, 1, 1),
-            font: fontRegular,
-          });
-          page.drawText(`${clientData?.shipName || "N/A"}`, {
-            x: valueX,
-            y: nameY,
-            size: 9,
-            color: rgb(0.9, 0.9, 0.9),
-            font: fontBold,
-          });
+          page.drawText("Name", { x: leftColumnX, y: nameY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
+          page.drawText(":", { x: colonX, y: nameY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
+          page.drawText(`${clientData?.shipName || "N/A"}`, { x: valueX, y: nameY, size: 9, color: rgb(0.9, 0.9, 0.9), font: fontBold });
 
-          page.drawText("Status", {
-            x: leftColumnX,
-            y: statusY,
-            size: 9,
-            color: rgb(1, 1, 1),
-            font: fontRegular,
-          });
-          page.drawText(":", {
-            x: colonX,
-            y: statusY,
-            size: 9,
-            color: rgb(1, 1, 1),
-            font: fontRegular,
-          });
-          page.drawText("In Operation, Class Valid", {
-            x: valueX,
-            y: statusY,
-            size: 9,
-            color: rgb(0.9, 0.9, 0.9),
-            font: fontRegular,
-          });
+          page.drawText("Status", { x: leftColumnX, y: statusY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
+          page.drawText(":", { x: colonX, y: statusY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
+          page.drawText("In Operation, Class Valid", { x: valueX, y: statusY, size: 9, color: rgb(0.9, 0.9, 0.9), font: fontRegular });
 
           const rightLabelX = pageWidth - margin - 120;
           const rightColonX = pageWidth - margin - 65;
           const rightValueX = pageWidth - margin - 55;
 
-          page.drawText("IMO Number", {
-            x: rightLabelX,
-            y: statusY,
-            size: 9,
-            color: rgb(1, 1, 1),
-            font: fontRegular,
-          });
-          page.drawText(":", {
-            x: rightColonX,
-            y: statusY,
-            size: 9,
-            color: rgb(1, 1, 1),
-            font: fontRegular,
-          });
-          page.drawText(`${clientData?.imoNumber || "N/A"}`, {
-            x: rightValueX,
-            y: statusY,
-            size: 9,
-            color: rgb(0.9, 0.9, 0.9),
-            font: fontBold,
-          });
+          page.drawText("IMO Number", { x: rightLabelX, y: statusY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
+          page.drawText(":", { x: rightColonX, y: statusY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
+          page.drawText(`${clientData?.imoNumber || "N/A"}`, { x: rightValueX, y: statusY, size: 9, color: rgb(0.9, 0.9, 0.9), font: fontBold });
         }
 
         const contentStartY = pageHeight - headerHeight - margin - 5;
-        page.drawImage(pngImage, {
-          x: margin,
-          y: contentStartY - scaledHeight,
-          width: usableWidth,
-          height: scaledHeight,
-        });
+        page.drawImage(pngImage, { x: margin, y: contentStartY - scaledHeight, width: usableWidth, height: scaledHeight });
 
         if (pageIndex > 0) {
-          page.drawRectangle({
-            x: margin,
-            y: 0,
-            width: usableWidth,
-            height: footerHeight + 8,
-            color: rgb(0.9, 0.9, 0.9),
-          });
-
+          page.drawRectangle({ x: margin, y: 0, width: usableWidth, height: footerHeight + 8, color: rgb(0.9, 0.9, 0.9) });
           const footerStartY = footerHeight - 5;
           const generatedText = ` Generated on: ${moment().format("DD MMM YYYY")}`;
           const totalPages = Math.ceil(imgHeight / baseSliceHeight);
           const pageText = `Page ${pageIndex + 1} of ${totalPages}`;
 
-          page.drawText(generatedText, {
-            x: margin + 7,
-            y: footerStartY,
-            size: 8,
-            color: rgb(0.2, 0.2, 0.2),
-            font: fontRegular,
-          });
-
+          page.drawText(generatedText, { x: margin + 7, y: footerStartY, size: 8, color: rgb(0.2, 0.2, 0.2), font: fontRegular });
           const pageTextWidth = pageText.length * 4.5;
-          page.drawText(pageText, {
-            x: pageWidth - margin - pageTextWidth,
-            y: footerStartY,
-            size: 8,
-            color: rgb(0.2, 0.2, 0.2),
-            font: fontRegular,
-          });
+          page.drawText(pageText, { x: pageWidth - margin - pageTextWidth, y: footerStartY, size: 8, color: rgb(0.2, 0.2, 0.2), font: fontRegular });
         }
+
         currentY += sliceHeight;
         pageIndex++;
       }
@@ -537,10 +399,8 @@ const TextEditor = ({ id }) => {
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes], { type: "application/pdf" });
 
-      const fileName = `MCB Survey Status Report - ${clientData?.imoNumber}-${clientData?.shipName}-${moment(currentDate).format("DD-MM-YYYY")}.pdf`;
-      const file = new File([blob], fileName, {
-        type: "application/pdf",
-      });
+      const fileName = `MCB Survey Status Report - ${clientData?.imoNumber}-${clientData?.shipName}-${moment().format("DD-MM-YYYY")}.pdf`;
+      const file = new File([blob], fileName, { type: "application/pdf" });
 
       const formData = new FormData();
       formData.append("clientId", id);
@@ -554,7 +414,7 @@ const TextEditor = ({ id }) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `MCB Survey Status Report - ${clientData?.imoNumber}-${clientData?.shipName}-${moment(currentDate).format("DD-MM-YYYY")}.pdf`;
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -640,7 +500,7 @@ const TextEditor = ({ id }) => {
     const surveyMap = {};
 
     surveyDataList.forEach((survey) => {
-      const surveyName = survey.activity?.surveyTypes?.name || "";
+      const surveyName = survey.activity?.surveyTypes?.report?.name || "";
       if (!surveyName) return;
 
       if (!surveyMap[surveyName]) {
@@ -860,7 +720,7 @@ const TextEditor = ({ id }) => {
 
       if (!section.data || section.data.length === 0) {
         return `
-          <h4 style="
+          <h4 class="no-break" style="
             margin-top: 20px;
             color: white;
             padding: 8px;
@@ -909,7 +769,7 @@ const TextEditor = ({ id }) => {
           padding: 8px;
           border-radius: 4px;
           background: linear-gradient(to right, #9013fe, #4a90e2);
-        ">
+        " class="no-break">
           ${title}
         </h4>
         <table style="width:100%; border-collapse: collapse; margin-bottom: 10px;">
@@ -980,6 +840,7 @@ ${moment(rangeFrom, moment.ISO_8601, true).isValid() && moment(rangeTo, moment.I
               const surveyName = row.surveyName;
               const surveyDate = row.surveyDate;
               const dueDate = row.dueDate || row.validityDate;
+              let validityDate = row.validityDate;
               let rangeFrom = row.rangeFrom || "";
               let rangeTo = row.rangeTo || "";
               const postponedDate = "";
@@ -989,8 +850,10 @@ ${moment(rangeFrom, moment.ISO_8601, true).isValid() && moment(rangeTo, moment.I
       <td>${surveyName}</td>
       <td>${getClassRangeIcon(currentDate, rangeFrom, rangeTo) ? `<span class="${getClassRangeIcon(currentDate, rangeFrom, rangeTo)}">C</span>` : ""}</td>
       <td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
-      <td>${dueDate ? moment(dueDate).format("DD/MM/YYYY") : ""}</td>
-      <td>${row.typeOfCertificate == "full_term" ? `${rangeFrom ? moment(rangeFrom).format("DD/MM/YYYY") : ""} - ${rangeTo ? moment(rangeTo).format("DD/MM/YYYY") : ""}` : ""}</td>
+<td>
+  ${row.typeOfCertificate === "full_term" ? (dueDate ? moment(dueDate).format("DD/MM/YYYY") : "") : validityDate ? moment(validityDate).format("DD/MM/YYYY") : ""}
+</td>      
+<td>${row.typeOfCertificate == "full_term" ? `${rangeFrom ? moment(rangeFrom).format("DD/MM/YYYY") : ""} - ${rangeTo ? moment(rangeTo).format("DD/MM/YYYY") : ""}` : ""}</td>
       <td>${postponedDate}</td>
       </tr>
       `;
@@ -1029,7 +892,7 @@ ${moment(rangeFrom, moment.ISO_8601, true).isValid() && moment(rangeTo, moment.I
     const certificateRows = [certificateOfClassRow ? formatCertificateRow(certificateOfClassRow) : null, ...(otherCertificates?.map(formatCertificateRow) || [])].filter(Boolean).join("");
 
     const certificatesTableHtml = `
-<h4 style="margin-top: -100px;color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)" >Certificates</h4>
+<h4 class="no-break" style="margin-top: -100px;color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)" >Certificates</h4>
 <table>
 <thead>
 <tr>
@@ -1183,7 +1046,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 <thead>
 <tr>
 <th colspan="4" style="text-align: left;padding: 8px;">
-<h4 style="color:white;padding: 8px;margin-top:-10px;background: linear-gradient(to right, #9013fe, #4a90e2); width:100%; margin-bottom: 5px;">Identification</h4>
+<h4 class="no-break" style="color:white;padding: 8px;margin-top:-10px;background: linear-gradient(to right, #9013fe, #4a90e2); width:100%; margin-bottom: 5px;">Identification</h4>
 </th>
 </tr>
 </thead>
@@ -1210,38 +1073,73 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 </table>
 
 <table class="classification-section-table" style="width: 100%; border-collapse: collapse;">
-<thead>
-<tr>
-<th style="text-align: left; padding: 8px;" colspan="2">
-<h4 style="color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2);">Classification</h4>
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><em><strong>Classification Status:</strong></em></td>
-<td>Active</td>
-</tr>
-<tr>
-<td><em><strong>Hull Notation:</strong></em></td>
-<td>${clientData?.hullNotation || "-"}</td>
-</tr>
-<tr>
-<td><em><strong>Machinery Notation:</strong></em></td>
-<td>${clientData?.machineryNotation || "-"}</td>
-</tr>
-<tr>
-<td><em><strong>Descriptive Notations:</strong></em></td>
-<td>${clientData?.descriptiveNotation || "-"}</td>
-</tr>
-</tbody>
+  <thead>
+    <tr>
+      <th style="text-align: left; padding: 8px;" colspan="2">
+        <h4 class="no-break" style="color:white; background: linear-gradient(to right, #9013fe, #4a90e2);">Classification</h4>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><em><strong>Classification Status:</strong></em></td>
+      <td>Active</td>
+    </tr>
+    <tr>
+      <td><em><strong>Hull Notation:</strong></em></td>
+      <td>${clientData?.hullNotation || "-"}</td>
+    </tr>
+    <tr>
+      <td><em><strong>Machinery Notation:</strong></em></td>
+      <td>${clientData?.machineryNotation || "-"}</td>
+    </tr>
+    <tr>
+      <td><em><strong>Descriptive Notations:</strong></em></td>
+      <td>${clientData?.descriptiveNotation || "-"}</td>
+    </tr>
+    <tr>
+      <td colspan="2">
+        <em><strong>Class History:</strong></em>
+        <table style="width:100%; border-collapse: collapse; margin-top:5px; border:1px solid #ddd;">
+          <thead>
+            <tr style="background-color:#f0f0f0;">
+              <th style="padding:6px; border:1px solid #ddd;">Ship Status</th>
+              <th style="padding:6px; border:1px solid #ddd;">Reason</th>
+              <th style="padding:6px; border:1px solid #ddd;">From Date</th>
+              <th style="padding:6px; border:1px solid #ddd;">To Date</th>
+              <th style="padding:6px; border:1px solid #ddd;">Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              clientData?.classHistory
+                ?.map(
+                  (history) => `
+              <tr>
+                <td style="padding:6px; border:1px solid #ddd;">${history.shipStatus || "-"}</td>
+                <td style="padding:6px; border:1px solid #ddd;">${history.reason || "-"}</td>
+                <td style="padding:6px; border:1px solid #ddd;">${history.from_date || "-"}</td>
+                <td style="padding:6px; border:1px solid #ddd;">${history.to_date || "-"}</td>
+                <td style="padding:6px; border:1px solid #ddd;">${history.remarks || "-"}</td>
+              </tr>
+            `
+                )
+                .join("") || `<tr><td colspan="5" style="padding:6px; border:1px solid #ddd;">-</td></tr>`
+            }
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  </tbody>
 </table>
+
+
 
 
 <table class="hull-section-table" style="width: 100%; border-collapse: collapse; border:none;">
 <thead>
 <tr>
-<th colspan="2" style="text-align: left; padding: 8px; border:none;"><h4 style="color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)">Hull</h4></th>
+<th colspan="2" style="text-align: left; padding: 8px; border:none;"><h4 class="no-break" style="color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)">Hull</h4></th>
 </tr>
 </thead>
 <tbody>
@@ -1275,19 +1173,51 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 </tbody>
 </table>
 
+
+<table class="hull-section-table" style="width: 100%; border-collapse: collapse; border:none;">
+  <thead>
+    <tr>
+      <th colspan="2" style="text-align: left; padding: 8px; border:none;" >
+        <h4 class="no-break" style="color:white; background: linear-gradient(to right, #9013fe, #4a90e2);">Machinery</h4>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="width:50%;"><em><strong>Main Engine Model:</strong></em> ${clientData?.machineList.main_engine_model || "-"}</td>
+      <td><strong>Engine Builder:</strong> ${clientData?.machineList.engine_builder || "-"}</td>
+    </tr>
+    <tr>
+      <td><em><strong>Main Engine Power:</strong></em> ${clientData?.machineList.main_engine_power || "-"}</td>
+      <td><strong>Engine Built:</strong> ${clientData?.machineList.engine_built || "-"}</td>
+    </tr>
+    <tr>
+      <td><em><strong>No of Engines:</strong></em> ${clientData?.machineList.no_of_engines || "-"}</td>
+      <td colspan="2" style="width:50%;"><em><strong>Electrical Installation:</strong></em> ${clientData?.machineList.electrical_installation || "-"}</td>
+    </tr>
+    <tr>
+      <td><em><strong>Total Power:</strong></em> ${clientData?.machineList.total_power || "-"}</td>
+      <td><strong>Boiler:</strong> ${clientData?.machineList.boilers || "-"}</td>
+    </tr>
+    <tr>
+    </tr>
+  </tbody>
+</table>
+
+
 </div>
 
 <div class="owner-section page">
 <h2 style="margin-top: -75px;">Owner / Manager Information</h2>
 
-<h4 style="color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)">Registered Owner</h4>
+<h4 class="no-break" style="color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)">Registered Owner</h4>
 <div class="owner-info">
 <div><em><strong>Company Name:</strong></em> ${clientData?.ownerDetails?.companyName || "-"}</div>
 <div><em><strong>IMO Number:</strong></em> ${clientData?.ownerDetails?.imoNumber || "-"}</div>
 <div><em><strong>Address:</strong></em> ${clientData?.ownerDetails?.companyAddress || "-"}</div>
 </div>
 
-<h4 style="color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)">Manager</h4>
+<h4 class="no-break" style="color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)">Manager</h4>
 <div class="owner-info">
 <div><em><strong>Company Name:</strong></em> ${clientData?.managerDetails?.companyName || "-"}</div>
 <div><em><strong>IMO Number:</strong></em> ${clientData?.managerDetails?.imoNumber || "-"}</div>
@@ -1298,7 +1228,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 ${htmlString}
 
 <div class="">
-<h4 style="color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2);margin-top:10">Surveys / Audits / Inspections</h4>
+<h4 class="no-break" style="color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2);margin-top:10">Surveys / Audits / Inspections</h4>
 
 ${classificationSurveyTableHtml}
 

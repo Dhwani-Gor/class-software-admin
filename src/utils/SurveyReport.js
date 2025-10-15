@@ -1,6 +1,6 @@
 import { Editor } from "@tinymce/tinymce-react";
 import { useEffect, useState, useCallback } from "react";
-import { getAllSystemVariables, getSpecificClient, getSurveyReportDataByJournalId, getVisitDetails, uploadSurveyReport } from "../api";
+import { getAllListClassificationSurveys, getAllSystemVariables, getSpecificClient, getSurveyReportDataByJournalId, getVisitDetails, uploadSurveyReport } from "../api";
 import { toast } from "react-toastify";
 import { PDFDocument } from "pdf-lib";
 import html2canvas from "html2canvas";
@@ -21,9 +21,24 @@ const SurveyReport = ({ id, reportNumber }) => {
   const [lastVisit, setLastVisit] = useState(null);
   const [numOfVisit, setNumOfVisit] = useState(null);
   const [journalId, setJournalId] = useState("");
+  const [classificationData, setClassificationData] = useState([]);
   const currentDate = new Date();
 
+  const formatSurveyName = (name) => {
+    if (!name) return "";
+    return name
+      .replace(/_/g, " ")
+      .toLowerCase()
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
+  const getAllClassification = async () => {
+    const response = await getAllListClassificationSurveys({ clientId: id });
+    setClassificationData(response?.data?.data);
+  };
+
   useEffect(() => {
+    getAllClassification();
     const getSystemVariables = async () => {
       try {
         const response = await getAllSystemVariables();
@@ -55,48 +70,59 @@ const SurveyReport = ({ id, reportNumber }) => {
     try {
       const style = contentDocument.createElement("style");
       style.innerHTML = `
-              * {
-                  font-family: Arial, sans-serif !important;
-                  font-size: 11px !important;
-                  line-height: 20px !important;
-                  word-spacing: 0.05em !important;
-                  box-sizing: border-box;
-                  white-space: normal !important;
-              }
-  
-              html, body {
-                  margin: 0 !important;
-                  padding: 0 !important;
-                  background: white !important;
-                  width: 100% !important;
-                  height: auto !important;
-              }
-  
-              table {
-                  border-collapse: collapse !important;
-                  page-break-inside: auto !important;
-              }
-  
-              table tr, table td, table th {
-                  page-break-inside: avoid !important;
-                  break-inside: avoid !important;
-                  vertical-align: top !important;
-                  padding: 4px !important;
-              }
-  
-              table thead {
-                  display: table-header-group !important;
-              }
-  
-              table tbody {
-                  display: table-row-group !important;
-              }
-  
-              .no-break {
-                  page-break-inside: avoid !important;
-                  break-inside: avoid !important;
-              }
-          `;
+      * {
+        font-family: 'Times New Roman', serif !important;
+        font-size: 11px !important;
+        line-height: 20px !important;
+        word-spacing: 0.05em !important;
+        box-sizing: border-box;
+        white-space: normal !important;
+      }
+
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+      
+      body > * {
+        margin: 0 !important;
+      }
+
+      table {
+        border-collapse: collapse !important;
+        page-break-inside: auto !important;
+        width: 100% !important;
+      }
+
+      table tr, table td, table th {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        vertical-align: top !important;
+        padding: 4px !important;
+      }
+
+      table thead {
+        display: table-header-group !important;
+      }
+
+      table tbody {
+        display: table-row-group !important;
+      }
+
+      .no-break {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      
+      .page {
+        margin: 0 !important;
+        padding: 40px !important;
+      }
+    `;
       contentDocument.head.appendChild(style);
 
       const tableRows = contentDocument.querySelectorAll("table tr");
@@ -110,14 +136,36 @@ const SurveyReport = ({ id, reportNumber }) => {
       contentBody.style.height = "auto";
       contentBody.style.maxHeight = "none";
 
+      // Scroll iframe to top
+      if (iframe.contentWindow) {
+        iframe.contentWindow.scrollTo(0, 0);
+      }
+      contentDocument.documentElement.scrollTop = 0;
+      contentBody.scrollTop = 0;
+
+      // Force layout recalculation
+      contentBody.offsetHeight;
+      contentDocument.documentElement.style.overflow = "visible";
+      contentDocument.documentElement.style.height = "auto";
+
       await document.fonts.ready;
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 800));
 
       const pageWidth = 595.28;
       const pageHeight = 841.89;
       const dpiRatio = 1.3333;
       const canvasWidth = pageWidth * dpiRatio;
-      const canvasHeight = contentBody.scrollHeight;
+
+      // Get the actual content height
+      const contentHeight = Math.max(contentBody.scrollHeight, contentBody.offsetHeight, contentBody.clientHeight, contentDocument.documentElement.scrollHeight, contentDocument.documentElement.offsetHeight);
+
+      console.log("Content dimensions:", {
+        scrollHeight: contentBody.scrollHeight,
+        offsetHeight: contentBody.offsetHeight,
+        clientHeight: contentBody.clientHeight,
+        docScrollHeight: contentDocument.documentElement.scrollHeight,
+        finalHeight: contentHeight,
+      });
 
       const canvas = await html2canvas(contentBody, {
         scale: 2,
@@ -126,22 +174,29 @@ const SurveyReport = ({ id, reportNumber }) => {
         scrollX: 0,
         scrollY: 0,
         backgroundColor: "#ffffff",
-        width: canvasWidth,
-        height: canvasHeight,
+        logging: true,
         windowWidth: canvasWidth,
-        windowHeight: canvasHeight,
+      });
+
+      console.log("Canvas captured:", {
+        width: canvas.width,
+        height: canvas.height,
+        scale: 2,
+        contentHeight: contentHeight,
       });
 
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
 
+      console.log("Canvas captured:", { imgWidth, imgHeight, scale: 2 });
+
       const pdfDoc = await PDFDocument.create();
-      const margin = 40;
+      const margin = 30;
       const usableWidth = pageWidth - 2 * margin;
       const usableHeight = pageHeight - 2 * margin;
       const scaleFactor = usableWidth / imgWidth;
 
-      const baseSliceHeight = Math.floor((usableHeight - 20) / scaleFactor);
+      const baseSliceHeight = Math.floor((usableHeight - 10) / scaleFactor);
 
       const getTableRowPositions = () => {
         const rows = contentDocument.querySelectorAll("table tr");
@@ -184,8 +239,9 @@ const SurveyReport = ({ id, reportNumber }) => {
       };
 
       let currentY = 0;
-      let pageIndex = 0;
+      const pages = []; // Store all pages first
 
+      // First pass: create all page slices
       while (currentY < imgHeight) {
         const maxSliceHeight = Math.min(baseSliceHeight, imgHeight - currentY);
         const sliceHeight = getOptimalSliceHeight(currentY, maxSliceHeight);
@@ -198,6 +254,16 @@ const SurveyReport = ({ id, reportNumber }) => {
         ctx.drawImage(canvas, 0, currentY, imgWidth, sliceHeight, 0, 0, imgWidth, sliceHeight);
 
         const pngUrl = sliceCanvas.toDataURL("image/png");
+        pages.push({ pngUrl, sliceHeight });
+
+        currentY += sliceHeight;
+      }
+
+      // Second pass: create PDF pages with correct total page count
+      const totalPages = pages.length;
+
+      for (let i = 0; i < pages.length; i++) {
+        const { pngUrl, sliceHeight } = pages[i];
         const pngImage = await pdfDoc.embedPng(pngUrl);
         const scaledHeight = sliceHeight * scaleFactor;
 
@@ -209,19 +275,15 @@ const SurveyReport = ({ id, reportNumber }) => {
           height: scaledHeight,
         });
 
-        // Footer
+        // Footer with correct page numbers
         const footerY = margin / 2;
-        const totalPages = Math.ceil(imgHeight / baseSliceHeight); // Approximate
-        const pageText = `Page ${pageIndex + 1} of ${totalPages}`;
+        const pageText = `Page ${i + 1} of ${totalPages}`;
 
         page.drawText(pageText, {
           x: pageWidth - margin - pageText.length * 5.5,
           y: footerY,
           size: 9,
         });
-
-        currentY += sliceHeight;
-        pageIndex++;
       }
 
       const pdfBytes = await pdfDoc.save();
@@ -236,7 +298,7 @@ const SurveyReport = ({ id, reportNumber }) => {
       if (res) {
         toast.success("Survey Report Downloaded Successfully");
       }
-      console.log("response");
+
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -252,217 +314,195 @@ const SurveyReport = ({ id, reportNumber }) => {
     }
   };
 
+  const getClassRangeIcon = (currentDate, rangeFrom, rangeTo) => {
+    const today = moment(currentDate, "YYYY-MM-DD");
+    if (!rangeFrom || !rangeTo) return "";
+
+    const from = moment(rangeFrom, "YYYY-MM-DD");
+    const to = moment(rangeTo, "YYYY-MM-DD");
+    if (!from.isValid() || !to.isValid()) return "";
+
+    if (today.isAfter(to, "day")) return "status-icon expired";
+
+    const daysToRangeTo = to.diff(today, "days");
+    if (daysToRangeTo >= 0 && daysToRangeTo < 30) return "status-icon expiring1m";
+    if (today.isBetween(from, to, "day", "[]") && daysToRangeTo >= 30) return "status-icon expiring3m";
+    return "";
+  };
+
   const generateHtmlContent = useCallback(() => {
     if (!clientData || !reportDetails || !systemVariables) return "";
 
-    const companyName = systemVariables?.data?.find((item) => item.name === "company_name")?.information || "-";
-    const companyLogo = systemVariables?.data?.find((item) => item.name === "company_logo")?.information || "-";
-    const stamp = systemVariables?.data?.find((item) => item.name === "company_stamp")?.information || "-";
-    const issuer = reportDetails?.map((item) => item?.issuer?.name);
-    const portOfSurvey = reportDetails?.map((item) => item?.place?.toLowerCase());
+    const companyName = systemVariables?.data?.find((i) => i.name === "company_name")?.information || "-";
+    const companyLogo = systemVariables?.data?.find((i) => i.name === "company_logo")?.information || "-";
+    const stamp = systemVariables?.data?.find((i) => i.name === "company_stamp")?.information || "-";
+    const issuer = reportDetails?.map((i) => i?.issuer?.name);
+    const portOfSurvey = reportDetails?.map((i) => i?.place?.toLowerCase());
     const uniquePorts = [...new Set(portOfSurvey)].join(",").toUpperCase();
     const uniqueSurveyors = [...new Set(issuer)].join(",").toUpperCase();
+
+    const classificationRows =
+      classificationData?.map((row) => {
+        const surveyName = formatSurveyName(row.surveyName);
+        const issuanceDate = row.issuanceDate;
+        const surveyDate = row.surveyDate;
+        const dueDate = row.dueDate;
+        const rangeTo = row.rangeTo ? moment(row.rangeTo).format("YYYY-MM-DD") : null;
+        const rangeFrom = row.rangeFrom ? moment(row.rangeFrom).format("YYYY-MM-DD") : null;
+        const postponedDate = row.postponed;
+        const currentDate = new Date().toISOString().split("T")[0];
+
+        return `
+        <tr>
+          <td>${surveyName}</td>
+          <td>${getClassRangeIcon(currentDate, rangeFrom, rangeTo) ? `<span class="${getClassRangeIcon(currentDate, rangeFrom, rangeTo)}">S</span>` : ""}</td>
+          <td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
+          <td>${issuanceDate ? moment(issuanceDate).format("DD/MM/YYYY") : ""}</td>
+          <td>${dueDate ? moment(dueDate).format("DD/MM/YYYY") : ""}</td>
+          <td>${moment(rangeFrom).isValid() && moment(rangeTo).isValid() ? `${moment(rangeFrom).format("DD/MM/YYYY")} - ${moment(rangeTo).format("DD/MM/YYYY")}` : "-"}</td>
+          <td>${postponedDate ? moment(postponedDate).format("DD/MM/YYYY") : ""}</td>
+        </tr>`;
+      }) || [];
 
     const surveyRows = reportDetails
       ?.map((cert) => {
         const type = cert?.typeOfCertificate === "short_term" ? "ST" : cert?.typeOfCertificate === "full_term" ? "FT" : cert?.typeOfCertificate === "intrim" ? "IT" : cert?.typeOfCertificate === "extended" ? "ET" : cert?.typeOfCertificate || "[Type]";
 
         return `
-            <tr>
-              <td>${cert?.activity?.surveyTypes?.report?.name}</td>
-              <td style="text-align: center;">${type}</td>
-              <td style="text-align: center;">${cert?.endorsementDate ? moment(cert.endorsementDate).format("DD/MM/YYYY") : "-"}</td>
-              <td>${cert?.activity?.surveyTypes?.name}</td>
-              <td style="text-align: center;">${cert?.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : ""}</td>
-              <td style="text-align: center;">${cert?.validityDate ? moment(cert.validityDate).format("DD/MM/YYYY") : ""}</td>
-            </tr>
-          `;
+          <tr>
+            <td>${cert?.activity?.surveyTypes?.report?.name}</td>
+            <td style="text-align: center;">${type}</td>
+            <td style="text-align: center;">${cert?.endorsementDate ? moment(cert.endorsementDate).format("DD/MM/YYYY") : "-"}</td>
+            <td>${cert?.activity?.surveyTypes?.name}</td>
+            <td style="text-align: center;">${cert?.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : ""}</td>
+            <td style="text-align: center;">${cert?.validityDate ? moment(cert.validityDate).format("DD/MM/YYYY") : ""}</td>
+          </tr>`;
       })
       .join("");
 
-    const certificatesTableHtml = `
-      <h4>Surveys</h4>
-      <table>
-        <thead>
-          <tr>
-            <th>Survey Name</th>
-            <th>Cert.Term</th>
-            <th>Endorsed</th>
-            <th>Survey Type</th>
-            <th>Issued or Extended</th>
-            <th>Expiry Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${surveyRows}
-        </tbody>
-      </table>
-    `;
-
     return `
-        <div class="page">
-        
-        <div style="background-color: white; color: black;display: flex; justify-content: space-around;margin-top: 30px">
-        <img src=${companyLogo} alt="companyLogo" height="100" width="100" />
-        <div style="display: flex; flex-direction: column;">
-          <p>${companyName}</p>
-          <p style="margin-top: -10px">Survey Report</p>
-        </div>
-     <div style="justifyContent: start; display: flex; backgroundColor: white; color: black; padding: 60px">
-</div>
-
-    </div>
-
- <table class="three-columns-table" style="width: 100%; border: 1px dotted gray;">
-    <tr style="border: 1px dotted gray;">
-      <td class="label" style="border: 1px dotted gray;"><strong>Ship's Name:</strong></td>
-      <td style="border: 1px dotted gray;">${clientData?.shipName || "-"}</td>
-            <td class="label" style="border: 1px dotted gray;"><strong></strong></td>
-
-      <td class="label" style="border: 1px dotted gray;"><strong></strong></td>
-      <td class="label" style="border: 1px dotted gray;"><strong>Report No:</strong></td>
-      <td style="border: 1px dotted gray;">${reportDetails[0]?.activity?.journal?.journalTypeId}</td>
-
-    </tr>
-    <tr style="border: 1px dotted gray;">
-      <td class="label" style="border: 1px dotted gray;"><strong>Date of Build:</strong></td>
-      <td style="border: 1px dotted gray;">${(clientData && moment(clientData?.dateOfBuild).format("DD/MM/YYYY")) || "-"}</td>
-      <td class="label" style="border: 1px dotted gray;"><strong>Ship Type:</strong></td>
-      <td style="border: 1px dotted gray;">${clientData?.typeOfShip || "-"}</td>
-      <td class="label" style="border: 1px dotted gray;"><strong>Flag:</strong></td>
-      <td style="border: 1px dotted gray;">${clientData?.flag || "-"}</td>
-    </tr>
-    <tr style="border: 1px dotted gray;">
-      <td style="border: 1px dotted gray;"><strong>IMO Number:</strong></td>
-      <td style="border: 1px dotted gray;">${clientData?.imoNumber || "-"}</td>
-      <td style="border: 1px dotted gray;"><strong>First Visit:</strong></td>
-      <td style="border: 1px dotted gray;">${firstVisit ? moment(firstVisit).format("DD/MM/YYYY") : "-"}</td>
-      <td style="border: 1px dotted gray;"><strong>Port of Survey:</strong></td>
-      <td style="border: 1px dotted gray;">${uniquePorts || "-"}</td>
-    </tr>
-    <tr style="border: 1px dotted gray;">
-      <td style="border: 1px dotted gray;"><strong>Port of Registry:</strong></td>
-      <td style="border: 1px dotted gray;">${clientData?.portOfRegistry || "-"}</td>
-      <td style="border: 1px dotted gray;"><strong>Last Visit:</strong></td>
-      <td style="border: 1px dotted gray;">${lastVisit ? moment(lastVisit).format("DD/MM/YYYY") : "-"}</td>
-      <td style="border: 1px dotted gray;"><strong>No of Visits:</strong></td>
-      <td style="border: 1px dotted gray;">${numOfVisit || "-"}</td>
-    </tr>
-    <tr style="border: 1px dotted gray;">
-      <td class="label" style="border: 1px dotted gray;"><strong>Gross Tons:</strong></td>
-      <td style="border: 1px dotted gray;">${clientData?.grossTonnage || "-"}</td>
-      <td style="border: 1px dotted gray;"></td>
-      <td style="border: 1px dotted gray;"></td>
-      <td style="border: 1px dotted gray;"></td>
-      <td style="border: 1px dotted gray;"></td>
-    </tr>
-  </table>
-
-  <h4 style="margin-top: 40px; font-weight: bold;">Recommendation</h4>
-  <p style="margin-bottom: -40px;">
-    The following surveys have been carried out on the above ship in accordance with the relevant Rules and
-    Statutory regulations and the items examined as detailed hereon were found to comply with the said rules and
-    regulations unless otherwise stated in this report. It is recommended to <strong>${companyName}</strong> that the ship
-    remains as classed with new dates of survey as shown, subject to any Conditions of Class recommended now
-    or previously, being dealt with as recommended.
-  </p>
+      <div class="page">
+      <div class="certificate-header" >
+  <div class="header-left">
+    ${companyLogo ? `<img src="${companyLogo}" alt="Logo" />` : ""}
   </div>
-    <div class="page">
-        ${certificatesTableHtml}
-        <div><img src="${stamp}" width="100" height="100" alt="Stamp" /></div>
-        <table style="width: 100%; border: 1px dotted gray;">
-  <tr style="border: 1px dotted gray;">
-    <td style="border: 1px dotted gray;"><strong>Surveyors</strong></td>
-    <td style="border: 1px dotted gray; word-wrap: break-word; width: 10%; ">${uniqueSurveyors || "-"}</td>
-    <td style="border: 1px dotted gray;"><strong>This Report is Reviewed and Authorized by:</strong></td>
-  </tr>
-  <tr style="border: 1px dotted gray;">
-    <td style="border: 1px dotted gray;"><strong>Port</strong></td>
-    <td style="border: 1px dotted gray; word-wrap: break-word; width: 50%">${uniquePorts || "-"}</td>
-    <td style="border: 1px dotted gray;"><strong>Reviewed On:</strong>  ${new Date().toLocaleDateString()}</td>
-  </tr>
-  <tr style="border: 1px dotted gray;">
-    <td style="border: 1px dotted gray;"><strong>Date</strong></td>
-    <td style="border: 1px dotted gray;">${new Date().toLocaleDateString()}</td>
-  </tr>
-</table>
-        <div style="margin-top: 22px; font-size: 16px;"><strong>Note: </strong>Cert. Term - FT = Full Term, ST = Short Term, ET= Extended Term, INT = Interim, PROV = Provisional
+
+  <div class="header-right">
+    <h2 class="company-name" style="font-size: 22px !important; margin-bottom:5px;">${companyName}</h2>
+    <p class="report-title" style="font-size: 24px !important;">SURVEY REPORT</p>
+  </div>
 </div>
-    </div>
-`;
-  }, [clientData, reportDetails, systemVariables, journalId, firstVisit, lastVisit, numOfVisit]);
+
+
+        <table>
+          <tr><th>Ship's Name</th><td>${clientData?.shipName || "-"}</td><th>Report No</th><td>${reportDetails[0]?.activity?.journal?.journalTypeId}</td></tr>
+          <tr><th>Date of Build</th><td>${clientData?.dateOfBuild ? moment(clientData.dateOfBuild).format("DD/MM/YYYY") : "-"}</td><th>Ship Type</th><td>${clientData?.typeOfShip || "-"}</td></tr>
+          <tr><th>IMO Number</th><td>${clientData?.imoNumber || "-"}</td><th>Flag</th><td>${clientData?.flag || "-"}</td></tr>
+          <tr><th>First Visit</th><td>${firstVisit ? moment(firstVisit).format("DD/MM/YYYY") : "-"}</td><th>Last Visit</th><td>${lastVisit ? moment(lastVisit).format("DD/MM/YYYY") : "-"}</td></tr>
+          <tr><th>No. of Visits</th><td>${numOfVisit || "-"}</td><th>Port of Survey</th><td>${uniquePorts || "-"}</td></tr>
+        </table>
+
+        <h4>Recommendation</h4>
+        <p>The following surveys have been carried out on the above ship in accordance with relevant rules and statutory regulations. Items examined were found satisfactory unless otherwise noted.</p>
+        <p>It is recommended that <strong>${companyName}</strong> confirms the vessel remains classed with new dates of survey as shown, subject to any existing conditions.</p>
+
+        <h4>Surveys</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>Survey Name</th>
+              <th>Cert. Term</th>
+              <th>Endorsed</th>
+              <th>Survey Type</th>
+              <th>Issued / Extended</th>
+              <th>Expiry Date</th>
+            </tr>
+          </thead>
+          <tbody>${surveyRows}</tbody>
+        </table>
+
+        <h4>Classification Surveys</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>Survey Name</th>
+              <th>Status</th>
+              <th>Survey Date</th>
+              <th>Assigned Date</th>
+              <th>Due Date</th>
+              <th>Range</th>
+              <th>Postponed</th>
+            </tr>
+          </thead>
+          <tbody>${classificationRows.join("")}</tbody>
+        </table>
+
+        <div class="stamp"><img src="${stamp}" width="100" height="100" alt="Stamp" /></div>
+
+        <h4>Surveyors and Authorization</h4>
+        <table>
+          <tr><th>Surveyors</th><td>${uniqueSurveyors || "-"}</td><th>Reviewed On</th><td>${moment(new Date()).format("DD/MM/YYYY")}</td></tr>
+          <tr><th>Port</th><td>${uniquePorts || "-"}</td><th>Date</th><td>${moment(new Date()).format("DD/MM/YYYY")}</td></tr>
+        </table>
+
+        <p style="font-size:12px; margin-top:20px;">
+          <strong>Note:</strong> Cert. Term - FT = Full Term, ST = Short Term, ET = Extended, IT = Interim, PROV = Provisional
+        </p>
+
+        <div class="certificate-footer">© ${companyName} | Generated on ${moment(currentDate).format("DD-MM-YYYY")}</div>
+      </div>
+    `;
+  }, [clientData, reportDetails, systemVariables, classificationData, firstVisit, lastVisit, numOfVisit]);
 
   useEffect(() => {
     if (!id) return;
-
     const loadAllData = async () => {
       try {
         setLoading(true);
-        setEditorContent("");
-
         const [clientResult, reportResult] = await Promise.all([getSpecificClient(id), getSurveyReportDataByJournalId(id, reportNumber)]);
-
-        if (clientResult?.status === 200) {
-          setClientData(clientResult.data.data);
-        } else {
-          toast.error("Failed to load client data");
-          return;
-        }
-
+        if (clientResult?.status === 200) setClientData(clientResult.data.data);
         if (reportResult?.status === 200) {
           const reportData = reportResult.data.data;
           setReportDetails(reportData);
 
-          const journalIds = reportData.map((item) => item?.activity?.journal?.id).filter(Boolean);
+          const journalIds = reportData.map((i) => i?.activity?.journal?.id).filter(Boolean);
           const uniqueJournalId = [...new Set(journalIds)][0];
-
           if (uniqueJournalId) {
             setJournalId(uniqueJournalId);
-
             const visitResponse = await getVisitDetails("journalId", uniqueJournalId);
             const visits = visitResponse?.data?.data;
-
             if (visits?.length) {
               setFirstVisit(visits[0]?.date);
               setLastVisit(visits[visits.length - 1]?.date);
               setNumOfVisit(visits.length);
             }
           }
-        } else {
-          toast.error("Failed to load report data");
         }
       } catch (error) {
-        console.error("Error loading data:", error);
-        toast.error(error.message || "Error loading data");
+        toast.error("Failed to load data");
       } finally {
         setLoading(false);
       }
     };
-
     loadAllData();
   }, [id]);
 
   useEffect(() => {
-    const isDataReady = clientData && reportDetails && systemVariables && !loading;
-
-    if (isDataReady) {
-      const newContent = generateHtmlContent();
-      setEditorContent(newContent);
+    if (clientData && reportDetails && systemVariables && !loading) {
+      setEditorContent(generateHtmlContent());
     }
   }, [clientData, reportDetails, systemVariables, loading, generateHtmlContent]);
 
   const handleEditorChange = (content) => {
     setEditorContent(content);
-    console.log("Editor content changed:", content);
   };
 
-  if (loading) {
+  if (loading)
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <Loader />
       </Box>
     );
-  }
 
   return (
     <>
@@ -471,84 +511,86 @@ const SurveyReport = ({ id, reportNumber }) => {
         value={editorContent}
         onEditorChange={handleEditorChange}
         init={{
-          disabled: false,
           height: 800,
           menubar: true,
-          visual: false,
-          content_css: false,
-          plugins: ["advlist", "autolink", "lists", "link", "image", "charmap", "print", "preview", "searchreplace", "wordcount", "code", "fullscreen"],
-          toolbar: "undo redo | formatselect | bold italic | alignleft aligncenter alignright | outdent indent | link image | code fullscreen",
-          readonly: false,
-          setup: (editor) => {
-            editor.on("input", () => {
-              setTimeout(() => {}, 100);
-            });
-          },
+          plugins: ["advlist", "autolink", "lists", "link", "image", "charmap", "print", "preview", "code", "fullscreen"],
+          toolbar: "undo redo | bold italic underline | alignleft aligncenter alignright | bullist numlist | code fullscreen",
           content_style: `
-            body { 
-              font-family: Arial, sans-serif; 
-              margin: 0;
-              padding: 20px;
-              line-height: 1.4;
-              font-size: 14px;
+            body {
+              font-family: 'Times New Roman', serif;
+              font-size: 13px;
+              background-color: #fdfcf7;
+              padding: 40px;
+              color: #1a1a1a;
             }
-            
             .page {
-              width: 8.5in;
-              margin: 0 auto;
-              padding: 20px;
-              background-color: white;
-              position: relative;
+              border: 6px double #1a1a1a;
+              padding: 40px;
+              background: #fff;
+              margin: auto;
+              box-shadow: 0 0 10px rgba(0,0,0,0.1);
             }
+              .certificate-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px double #003366;
+    padding-bottom: 12px;
+    margin-bottom: 25px;
+  }
 
+  .certificate-header .header-left img {
+    width: 150px;
+    height: auto;
+  }
+
+  .certificate-header .header-right {
+    text-align: right;
+  }
+
+  .certificate-header .company-name {
+    color: #003366;
+    font-size: 22px;
+    margin: 0;
+    text-transform: uppercase;
+  }
+
+  .certificate-header .report-title {
+    font-weight: 700;
+    font-size: 16px;
+    color: #000;
+    margin: 2px 0 0 0;
+    text-transform: uppercase;
+  }
             h2 {
-              color: #4884eb;
+              color: #003366;
+              font-family: 'Times New Roman', serif;
               text-align: center;
-              font-size: 18px;
-              margin: 0 0 30px 0;
-              font-weight: bold;
             }
-
-            h4 {
-              color: #4884eb;
-              font-size: 14px;
-              margin: 20px 0 5px 0;
-              padding-bottom: 2px;
-              border-bottom: 1px solid #4884eb;
-              font-weight: bold;
-            }
-
+            h4 { text-align: left; border-bottom: 1px solid #999; font-size:20px; color: #003366;
+}
             table {
               width: 100%;
               border-collapse: collapse;
-              margin-top: 20px;
-              margin-bottom: 20px;
+              margin-top: 15px;
+              font-size:14px;
             }
-            td {
-              vertical-align: top;
-              padding: 5px;
+            th, td {
+              border: 1px solid #999;
+              padding: 6px 8px;
             }
-            td.label {
-              font-weight: bold;
-              width: 30%;
+            th {
+              background-color: #f3f3f3;
+              color: #003366;
             }
-            td.value {
-              width: 30%;
+            .stamp{
+            margin-top:10px;
             }
-            .recommendation-title {
-              font-weight: bold;
-            }
-            
-            strong {
-              font-weight: bold;
-            }
-
-            em {
-              font-style: italic;
-            }
+            tr:nth-child(even) { background-color: #fafafa; }
           `,
         }}
       />
+
       <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
         <CommonButton onClick={() => router.push(`/clients/${id}`)} text="Back" />
         <CommonButton onClick={downloadEditorContentAsPdf} text="Download PDF" />
