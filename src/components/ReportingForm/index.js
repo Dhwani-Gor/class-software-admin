@@ -36,6 +36,7 @@ import AmendmentRemarksDialog from "./AmendmentRemarksDialog";
 import EditingReasonDialog from "../Dialogs/EditingReasonDialog";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider } from "@mui/material";
 import ArchiveHistoryDialog from "../Dialogs/ArchiveHistoryDialog";
+import EndorsementDialog from "../documents/EndorsementDialog";
 
 const reportSchema = yup.object().shape({
   typesOfSurvey: yup.string().required("Type of survey is required"),
@@ -61,6 +62,9 @@ const ReportingForm = () => {
   const [specialPermission, setSpecialPermission] = useState(false);
   const [filteredJournals, setFilteredJournals] = useState([]);
   const [showButton, setShowButton] = useState(true);
+  const [openEndrosemet, setOpenEndrosemet] = useState(false);
+  const [endorsementTitle, setEndorsementTitle] = useState([]);
+  console.log(endorsementTitle, "endorsementTitle");
   const [selectedReportNumber, setSelectedReportNumber] = useState({
     journalTypeId: "",
     index: null,
@@ -197,6 +201,7 @@ const ReportingForm = () => {
 
   const handleReportNumber = (event) => {
     setShowTable(false);
+    setOpenEndrosemet(true);
     const selectedJournalTypeId = event.target.value;
     const selectedIndex = filteredJournals.findIndex((j) => j.journalTypeId === selectedJournalTypeId);
     const selectedJournal = filteredJournals[selectedIndex];
@@ -298,6 +303,7 @@ const ReportingForm = () => {
   };
 
   const handleGenerateReport = async () => {
+    setOpenEndrosemet(true);
     const isValid = await trigger();
     if (!isValid) {
       toast.error("Please fill in all required fields correctly.");
@@ -382,6 +388,7 @@ const ReportingForm = () => {
     try {
       const payload = {
         reportDetailId: reportDetails?.id,
+        data: { ...reportDetails.data, endorsementValues },
         data: {
           ...extraFields,
           type: "image",
@@ -547,8 +554,14 @@ const ReportingForm = () => {
     try {
       setLoading(true);
       const result = await getSelectedActivityReportDetails(row?.id);
+      console.log(row, "rows");
       setReportName(row?.surveyTypes?.report?.name);
-
+      const endorsements = row?.surveyTypes?.report?.endorsements;
+      console.log(endorsements, "endorsements");
+      if (endorsements?.length > 0) {
+        setEndorsementTitle(endorsements);
+        setOpenEndrosemet(true);
+      }
       const data = extractUnderscoreFields(row);
       setUnderscoreFields(data);
 
@@ -1059,6 +1072,7 @@ const ReportingForm = () => {
         }}
         title={fullScreenRemarksVisible && typeof fullScreenRemarksVisible === "object" ? `Remarks for ${fullScreenRemarksVisible.surveyTypes?.name}` : "Remarks"}
       />
+      {reportDetails?.typeOfCertificate === "full_term" && openEndrosemet && !!reportDetails?.endorsementDate && <EndorsementDialog open={openEndrosemet} onClose={() => setOpenEndrosemet(false)} onSubmit={handleSubmitReport} endorsementList={endorsementTitle} reportDetailsId={reportDetails?.id} />}
       <AmendmentRemarksDialog open={showAmendmentDialog} onClose={() => setShowAmendmentDialog(false)} onSubmit={handleAmendmentSubmit} isLoading={continueBtnLoading} />
       {/* <Dialog open={showArchiveHistoryDialog} onClose={() => setShowArchiveHistoryDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Archive Remarks History</DialogTitle>

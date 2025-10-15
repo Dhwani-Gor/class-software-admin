@@ -1274,6 +1274,35 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 </tr>
 </tbody>
 </table>
+<table class="hull-section-table" style="width: 100%; border-collapse: collapse; border:none;">
+  <thead>
+    <tr>
+      <th colspan="2" style="text-align: left; padding: 8px; border:none;">
+        <h4 style="color:white; background: linear-gradient(to right, #9013fe, #4a90e2);">Machinery Details</h4>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="width: 50%;">
+        <em><strong>Main Engine Model:</strong></em> ${clientData?.machineList.main_engine_model || "-"}<br>
+        <em><strong>Main Engine Power:</strong></em> ${clientData?.machineList.main_engine_power || "-"}<br>
+        <em><strong>No of Engines:</strong></em> ${clientData?.machineList.no_of_engines || "-"}<br>
+        <em><strong>Total Power:</strong></em> ${clientData?.machineList.total_power || "-"}<br>
+        <em><strong>Engine Builder:</strong></em> ${clientData?.machineList.engine_builder || "-"}<br>
+        <em><strong>Engine Built:</strong></em> ${clientData?.machineList.engine_built || "-"}<br>
+        <em><strong>Propeller:</strong></em> ${clientData?.machineList.propeller || "-"}
+
+      </td>
+
+      <td>
+        <em><strong>Boiler:</strong></em> ${clientData?.machineList.boilers || "-"}<br>
+        <em><strong>Electrical Installation:</strong></em> ${clientData?.machineList.electrical_installation || "-"}<br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
 
 </div>
 
