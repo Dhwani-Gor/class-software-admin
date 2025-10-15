@@ -52,6 +52,7 @@ const reportSchema = yup.object().shape({
 const ReportingForm = () => {
   const router = useRouter();
   const { data } = useAuth();
+  console.log(data, "data");
   const [loading, setLoading] = useState(false);
   const [clientsList, setClientsList] = useState([]);
   const [shipName, setShipName] = useState("");
@@ -1088,7 +1089,7 @@ const ReportingForm = () => {
           <Button onClick={() => setShowArchiveHistoryDialog(false)}>Close</Button>
         </DialogActions>
       </Dialog> */}
-      <ArchiveHistoryDialog open={showArchiveHistoryDialog} archiveHistory={archiveHistory} onClose={() => setShowArchiveHistoryDialog(false)} shipName={shipName} />
+      <ArchiveHistoryDialog open={showArchiveHistoryDialog} archiveHistory={archiveHistory} onClose={() => setShowArchiveHistoryDialog(false)} shipName={shipName} username={data.name} />
     </Box>
   );
 };
