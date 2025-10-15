@@ -5,7 +5,7 @@ import Layout from "@/Layout";
 import Stack from "@mui/material/Stack";
 import CommonCard from "@/components/CommonCard";
 import AddClientForm from "@/components/AddClientForm";
-import { Box, Dialog, IconButton, MenuItem, TextField } from "@mui/material";
+import { Autocomplete, Box, Dialog, IconButton, MenuItem, TextField } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import CommonButton from "@/components/CommonButton";
@@ -142,27 +142,22 @@ const UpdateClient = ({ params }) => {
       {editHistoryDialog && <EditHistoryDialog open={editHistoryDialog} changeHistory={changeHistory} onCancel={() => setEditHistoryDialog(false)} />}
 
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm">
-        {journalData?.length > 0 ? (
+        {journalData?.length > 0 && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2, p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Select Report Number
             </Typography>
-            <TextField label="Report No" select fullWidth size="medium" value={selectedJournal} onChange={(e) => setSelectedJournal(e.target.value)}>
-              <MenuItem value="">&nbsp;</MenuItem>
-              {journalData.map((journal) => (
-                <MenuItem key={journal.id} value={journal.id}>
-                  {journal.journalTypeId}
-                </MenuItem>
-              ))}
-            </TextField>
+
+            <Autocomplete options={journalData} getOptionLabel={(option) => option.journalTypeId || ""} value={journalData.find((j) => j.id === selectedJournal) || null} onChange={(event, newValue) => setSelectedJournal(newValue?.id || "")} renderInput={(params) => <TextField {...params} label="Report No" fullWidth />} isOptionEqualToValue={(option, value) => option.id === value.id} />
 
             {/* Action buttons */}
             <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}>
               <CommonButton variant="outlined" color="secondary" text="Cancel" onClick={() => setOpenDialog(false)} />
-              <CommonButton text="Save" variant="contained" onClick={handleSaveJournal} />
+              <CommonButton text="Ok" variant="contained" onClick={handleSaveJournal} />
             </Box>
           </Box>
-        ) : (
+        )}
+        {journalData?.length === 0 && (
           <Box sx={{ p: 3 }}>
             <Typography>No Journals Found</Typography>
             <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
