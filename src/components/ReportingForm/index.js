@@ -93,6 +93,7 @@ const ReportingForm = () => {
   const [amdRemarks, setAmdRemarks] = useState("");
   const [showArchiveHistoryDialog, setShowArchiveHistoryDialog] = useState(false);
   const [archiveHistory, setArchiveHistory] = useState([]);
+  const [endorsementValues, setEndorsementValues] = useState([]);
 
   useEffect(() => {
     ``;
@@ -383,14 +384,15 @@ const ReportingForm = () => {
     }
   };
 
-  const handleSubmitReport = async (extraFields) => {
+  const handleSubmitReport = async (extraFieldsOrEndorsements = []) => {
     setLoadingReport(true);
     try {
       const payload = {
         reportDetailId: reportDetails?.id,
-        data: { ...reportDetails.data, endorsementValues },
         data: {
-          ...extraFields,
+          ...reportDetails.data,
+          endorsementValues: Array.isArray(extraFieldsOrEndorsements) ? extraFieldsOrEndorsements : endorsementValues,
+          ...(!Array.isArray(extraFieldsOrEndorsements) ? extraFieldsOrEndorsements : {}),
           type: "image",
           amdRemarks,
           stamp: 6,
@@ -405,7 +407,6 @@ const ReportingForm = () => {
       if (result?.data?.status === "success" && result?.data?.message) {
         toast.success(result.data.message);
         setAmdRemarks("");
-        return;
       } else if (result?.data?.data) {
         const fileUrl = result?.data?.data;
         if (fileUrl) {
@@ -1072,7 +1073,18 @@ const ReportingForm = () => {
         }}
         title={fullScreenRemarksVisible && typeof fullScreenRemarksVisible === "object" ? `Remarks for ${fullScreenRemarksVisible.surveyTypes?.name}` : "Remarks"}
       />
-      {reportDetails?.typeOfCertificate === "full_term" && openEndrosemet && !!reportDetails?.endorsementDate && <EndorsementDialog open={openEndrosemet} onClose={() => setOpenEndrosemet(false)} onSubmit={handleSubmitReport} endorsementList={endorsementTitle} reportDetailsId={reportDetails?.id} />}
+      {reportDetails?.typeOfCertificate === "full_term" && openEndrosemet && !!reportDetails?.endorsementDate && (
+        <EndorsementDialog
+          open={openEndrosemet}
+          onClose={() => setOpenEndrosemet(false)}
+          onSubmit={(values) => {
+            setEndorsementValues(values); // store selected endorsements
+            handleSubmitReport(values); // continue with report generation
+          }}
+          endorsementList={endorsementTitle}
+          reportDetailsId={reportDetails?.id}
+        />
+      )}
       <AmendmentRemarksDialog open={showAmendmentDialog} onClose={() => setShowAmendmentDialog(false)} onSubmit={handleAmendmentSubmit} isLoading={continueBtnLoading} />
       {/* <Dialog open={showArchiveHistoryDialog} onClose={() => setShowArchiveHistoryDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Archive Remarks History</DialogTitle>

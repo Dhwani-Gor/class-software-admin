@@ -96,6 +96,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
       if (result?.status === 200) {
         const documentData = result.data.data;
 
+        // Set file preview and form values
         setPreviewState((prev) => ({
           ...prev,
           open: false,
@@ -113,37 +114,21 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           interimDocument: mode === "duplicate" ? null : documentData.interimFilePath || null,
         });
 
+        // ✅ Handle additional fields
+        let parsedFields = [];
         if (documentData.fields) {
-          try {
-            let parsedFields = documentData.fields;
-
-            if (typeof parsedFields === "string") {
-              parsedFields = JSON.parse(parsedFields);
-            }
-
-            if (!Array.isArray(parsedFields)) {
-              parsedFields = [parsedFields];
-            }
-
-            const extractedEndorsements = [];
-            const extractedAdditionalFields = [];
-
-            parsedFields.forEach((item) => {
-              if (item.endorsements && Array.isArray(item.endorsements)) {
-                extractedEndorsements.push(...item.endorsements);
-              } else if (item.attribute && item.label) {
-                extractedAdditionalFields.push(item);
-              }
-            });
-
-            setAdditionalFields(extractedAdditionalFields);
-            setEndorsements(extractedEndorsements);
-          } catch (err) {
-            console.error("Failed to parse fields:", err);
-            setAdditionalFields([]);
-            setEndorsements([]);
-          }
+          parsedFields = typeof documentData.fields === "string" ? JSON.parse(documentData.fields) : documentData.fields;
         }
+        if (!Array.isArray(parsedFields)) parsedFields = [parsedFields];
+        setAdditionalFields(parsedFields);
+
+        // ✅ Handle endorsements (fix)
+        let parsedEndorsements = [];
+        if (documentData.endorsements) {
+          parsedEndorsements = typeof documentData.endorsements === "string" ? JSON.parse(documentData.endorsements) : documentData.endorsements;
+        }
+        if (!Array.isArray(parsedEndorsements)) parsedEndorsements = [parsedEndorsements];
+        setEndorsements(parsedEndorsements);
       } else {
         toast.error("Error fetching document details");
       }
