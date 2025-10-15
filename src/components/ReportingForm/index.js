@@ -273,7 +273,7 @@ const ReportingForm = () => {
           setSelectedReportNumber({});
           toast.success(result.data.message);
         } else {
-          toast.error("Failed to archive");
+          toast.error(result?.response?.data?.message);
         }
       }
     } catch (error) {
