@@ -6,6 +6,7 @@ import CommonButton from "../CommonButton";
 const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList, reportDetailsId }) => {
   const [checkedItems, setCheckedItems] = useState({});
   const [reportDetails, setReportDetails] = useState({});
+  console.log(endorsementList, "endorsementList");
 
   const fetchReportDetais = async () => {
     const response = await getSelectedReportDetails(reportDetailsId);
@@ -35,25 +36,23 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList, reportDet
   };
 
   const handleSubmit = () => {
-    console.log(checkedItems, "checkedItems");
     const selected = Object.values(checkedItems);
-    const formattedData = selected.map((endorsement) => {
-      const result = {};
-      console.log(endorsement, "endorsement");
-      console.log(reportDetails, "reportDetails");
+    let result = {};
+
+    selected.forEach((endorsement) => {
       Object.entries(endorsement).forEach(([key, value]) => {
         if (key !== "title") {
-          if (key.includes("endorsedby") || key.includes("endorsed_by")) result[key] = reportDetails?.issuer?.name;
-          else if (key.includes("endorsed_place") || key.includes("issuance_place")) result[key] = reportDetails?.place;
-          else if (key.includes("issuance_date")) result[key] = formatDate(reportDetails?.issuanceDate);
-          else if (key.includes("validity_date")) result[key] = formatDate(reportDetails?.validityDate);
+          if (key.includes("endorsedby") || key.includes("endorsed_by")) result[value] = reportDetails?.issuedBy || reportDetails?.issuer?.name;
+          else if (key.includes("endorsed_place") || key.includes("issuance_place")) result[value] = reportDetails?.place;
+          else if (key.includes("issuance_date")) result[value] = reportDetails?.issuanceDate ? formatDate(reportDetails?.issuanceDate) : "-";
+          else if (key.includes("validity_date")) result[value] = reportDetails?.validityDate ? formatDate(reportDetails?.validityDate) : "-";
         }
       });
-
-      return result;
     });
 
-    onSubmit(formattedData); // now array
+    console.log(result, "final endorsement object");
+
+    onSubmit(result); // ✅ single object now
     onClose();
   };
 
