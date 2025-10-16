@@ -16,12 +16,14 @@ const currentDate = new Date();
 const TextEditor = ({ id }) => {
   const router = useRouter();
   const [reportDetails, setReportDetails] = useState([]);
+  console.log(reportDetails, "report details");
   const [clientData, setClientData] = useState();
   const [loading, setLoading] = useState(true);
   const [editorContent, setEditorContent] = useState("");
   const [classificationData, setClassificationData] = useState([]);
   const [additionalFieldData, setAdditionalFieldData] = useState([]);
   const [statutoryData, setStatutoryData] = useState([]);
+  const [auditsData, setAuditsData] = useState([]);
   console.log(statutoryData, "statutory date");
   const [systemVariables, setSystemVariables] = useState();
   const today = moment();
@@ -532,8 +534,8 @@ const TextEditor = ({ id }) => {
     };
   };
 
-  const populateStatutoryRows = (surveyDataList) => {
-    if (!surveyDataList || surveyDataList.length === 0) return;
+  const populateSurveyRows = (surveyDataList) => {
+    if (!surveyDataList || surveyDataList.length === 0) return { statutory: [], audits: [] };
 
     const surveyMap = {};
 
@@ -547,38 +549,24 @@ const TextEditor = ({ id }) => {
         const existing = surveyMap[surveyName];
         const existingDate = new Date(existing.updatedAt);
         const currentDate = new Date(survey.updatedAt);
-
-        if (currentDate > existingDate) {
-          surveyMap[surveyName] = survey;
-        }
+        if (currentDate > existingDate) surveyMap[surveyName] = survey;
       }
     });
 
     const uniqueSurveys = Object.values(surveyMap);
 
-    return uniqueSurveys?.flatMap((survey) => {
+    const result = {
+      statutory: [],
+      audits: [],
+    };
+
+    uniqueSurveys.forEach((survey) => {
       const surveyName = survey.activity?.surveyTypes?.report?.name || "";
       const surveyDate = survey.surveyDate ? format(new Date(survey.surveyDate), "yyyy-MM-dd") : "";
       const validityDate = survey.validityDate ? format(new Date(survey.validityDate), "yyyy-MM-dd") : "";
       const issuanceDate = survey.issuanceDate ? format(new Date(survey.issuanceDate), "yyyy-MM-dd") : "";
       const typeOfCertificate = survey.typeOfCertificate || "";
-      const certificateName = survey.activity?.surveyTypes?.report?.name || "";
-
-      const isCalculatedSurvey = surveyName.toLowerCase().includes("safcon change of flag") || surveyName.toLowerCase().includes("safcon initial") || surveyName.toLowerCase().includes("safcon renewal") || surveyName.toLowerCase().includes("safcon general examination");
-
-      if (isCalculatedSurvey && survey.data?.calculatedSurveys?.length > 0) {
-        return survey.data.calculatedSurveys.map((calc) => ({
-          surveyName: calc.statutorySurveyName,
-          surveyDate: calc.statutorySurveyDate ? format(new Date(calc.statutorySurveyDate), "yyyy-MM-dd") : "",
-          validityDate,
-          dueDate: calc.statutoryDueDate ? format(new Date(calc.statutoryDueDate), "yyyy-MM-dd") : "",
-          rangeFrom: calc.statutoryRangeFrom ? format(new Date(calc.statutoryRangeFrom), "yyyy-MM-dd") : "",
-          rangeTo: calc.statutoryRangeTo ? format(new Date(calc.statutoryRangeTo), "yyyy-MM-dd") : "",
-          postponedDate: "",
-          typeOfCertificate,
-          certificateName,
-        }));
-      }
+      const isAudit = survey.activity?.surveyTypes?.audit === true;
 
       let dueDate = "";
       let rangeFrom = "";
@@ -591,24 +579,31 @@ const TextEditor = ({ id }) => {
         rangeTo = t;
       }
 
-      return [
-        {
-          surveyName,
-          surveyDate,
-          validityDate,
-          dueDate,
-          rangeFrom,
-          rangeTo,
-          postponedDate: "",
-          typeOfCertificate,
-        },
-      ];
+      const surveyRow = {
+        surveyName,
+        surveyDate,
+        validityDate,
+        dueDate,
+        rangeFrom,
+        rangeTo,
+        postponedDate: "",
+        typeOfCertificate,
+      };
+
+      if (isAudit) {
+        result.audits.push(surveyRow);
+      } else {
+        result.statutory.push(surveyRow);
+      }
     });
+
+    return result;
   };
 
   useEffect(() => {
-    const statutory = populateStatutoryRows(reportDetails);
-    setStatutoryData(statutory);
+    const surveyData = populateSurveyRows(reportDetails);
+    setStatutoryData(surveyData.statutory);
+    setAuditsData(surveyData.audits);
   }, [reportDetails]);
 
   const updateStatusIcons = (editor) => {
@@ -969,20 +964,74 @@ ${classificationRows}
 </table>
 `;
 
-    const statutorySurveyTableHtml = `
-<div class="section-title" style="margin-top: 20px; font-size: 16px; font-weight: bold;">Statutory Surveys</div>
-<table>
-<tr>
-<th>Survey Name</th>
-<th></th>
-<th>Survey Date</th>
-<th>Due Date</th>
-<th>Range (from, to)</th>
-<th>Postponed</th>
-</tr>
-${statutoryRows}
-</table>
-`;
+    //     const AuditsTableHtml = `
+    // <div class="section-title" style="margin-top: 20px; font-size: 16px; font-weight: bold;">Audits</div>
+    // <table>
+    // <tr>
+    // <th>Survey Name</th>
+    // <th></th>
+    // <th>Survey Date</th>
+    // <th>Due Date</th>
+    // <th>Range (from, to)</th>
+    // <th>Postponed</th>
+    // </tr>
+    // ${statutoryRows}
+    // </table>
+    // `;
+
+    //     const statutorySurveyTableHtml = `
+    // <div class="section-title" style="margin-top: 20px; font-size: 16px; font-weight: bold;">Statutory Surveys</div>
+    // <table>
+    // <tr>
+    // <th>Survey Name</th>
+    // <th></th>
+    // <th>Survey Date</th>
+    // <th>Due Date</th>
+    // <th>Range (from, to)</th>
+    // <th>Postponed</th>
+    // </tr>
+    // ${statutoryRows}
+    // </table>
+    // `;
+
+    const buildSurveyTable = (data, title) => {
+      if (!data?.length) return "";
+
+      const rows = data
+        .filter((row) => row.surveyName.toLowerCase() !== "certificate of class")
+        .map((row) => {
+          const currentDate = new Date().toISOString().split("T")[0];
+          const dueDate = row.dueDate || row.validityDate;
+          return `
+        <tr>
+          <td>${row.surveyName}</td>
+          <td>${getClassRangeIcon(currentDate, row.rangeFrom, row.rangeTo) ? `<span class="${getClassRangeIcon(currentDate, row.rangeFrom, row.rangeTo)}">C</span>` : ""}</td>
+          <td>${row.surveyDate ? moment(row.surveyDate).format("DD/MM/YYYY") : ""}</td>
+          <td>${row.typeOfCertificate === "full_term" ? (dueDate ? moment(dueDate).format("DD/MM/YYYY") : "") : row.validityDate ? moment(row.validityDate).format("DD/MM/YYYY") : ""}</td>
+          <td>${row.typeOfCertificate === "full_term" ? `${row.rangeFrom ? moment(row.rangeFrom).format("DD/MM/YYYY") : ""} - ${row.rangeTo ? moment(row.rangeTo).format("DD/MM/YYYY") : ""}` : ""}</td>
+          <td>${row.postponedDate}</td>
+        </tr>`;
+        })
+        .join("");
+
+      return `
+    <div class="section-title" style="margin-top: 20px; font-size: 16px; font-weight: bold;">${title}</div>
+    <table>
+      <tr>
+        <th>Survey Name</th>
+        <th></th>
+        <th>Survey Date</th>
+        <th>Due Date</th>
+        <th>Range (from, to)</th>
+        <th>Postponed</th>
+      </tr>
+      ${rows}
+    </table>
+  `;
+    };
+
+    const statutorySurveyTableHtml = buildSurveyTable(statutoryData, "Statutory Surveys");
+    const auditSurveyTableHtml = buildSurveyTable(auditsData, "Audits");
 
     const htmlString = `
 <div class="page">
@@ -1293,6 +1342,8 @@ ${htmlString}
 ${classificationSurveyTableHtml}
 
 ${statutorySurveyTableHtml}
+
+${auditSurveyTableHtml}
 
 <table class="survey-summary-table" style="width: 100%; border-collapse: collapse; margin-top: 16px; page-break-inside: avoid;">
 <tbody>
