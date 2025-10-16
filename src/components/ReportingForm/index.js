@@ -274,6 +274,7 @@ const ReportingForm = () => {
           toast.success(result.data.message);
         } else {
           toast.error(result?.response?.data?.message);
+          setIsOpenArchiveModal(false);
         }
       }
     } catch (error) {
