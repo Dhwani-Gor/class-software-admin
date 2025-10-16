@@ -21,8 +21,8 @@ const TextEditor = ({ id }) => {
   const [editorContent, setEditorContent] = useState("");
   const [classificationData, setClassificationData] = useState([]);
   const [additionalFieldData, setAdditionalFieldData] = useState([]);
-  console.log(additionalFieldData, "additional fields ");
   const [statutoryData, setStatutoryData] = useState([]);
+  console.log(statutoryData, "statutory date");
   const [systemVariables, setSystemVariables] = useState();
   const today = moment();
   const companyName = systemVariables?.data?.find((item) => item.name === "company_name")?.information || "-";
@@ -57,6 +57,37 @@ const TextEditor = ({ id }) => {
       console.log(error);
     }
   };
+
+  const getCurrentShipStatus = () => {
+    const today = new Date();
+
+    if (!clientData?.classHistory || clientData.classHistory.length === 0) {
+      return "Class";
+    }
+
+    // Find the relevant classHistory entry
+    for (const history of clientData.classHistory) {
+      const shipStatus = history.shipStatus?.toLowerCase();
+      const fromDate = history.from_date ? new Date(history.from_date) : null;
+      const toDate = history.to_date ? new Date(history.to_date) : null;
+
+      if (shipStatus === "withdrawn") {
+        // Case: no dates
+        if (!fromDate && !toDate) return "Class";
+
+        // Case: current date between from and to
+        if (fromDate && toDate && today >= fromDate && today <= toDate) return "Withdrawn";
+
+        // Case: toDate not there
+        if (!toDate) return "Class";
+      }
+    }
+
+    // Default: Class
+    return "Class";
+  };
+
+  const currentStatus = getCurrentShipStatus();
 
   const downloadEditorContentAsPdf = async () => {
     const iframe = document.querySelector("iframe.tox-edit-area__iframe");
@@ -94,8 +125,15 @@ const TextEditor = ({ id }) => {
 
       h1 { font-size: 28px !important; font-weight: bold !important; color: black !important; }
       h2 { font-size: 22px !important; font-weight: 600 !important; letter-spacing: 0.5px !important; }
-      h4 { font-size: 15px !important; font-weight: 600 !important; letter-spacing: 0.3px !important; page-break-inside: avoid !important; break-inside: avoid !important; }
-
+  h4 { 
+        font-size: 15px !important; 
+        font-weight: 600 !important; 
+        letter-spacing: 0.3px !important; 
+        page-break-inside: avoid !important; 
+        break-inside: avoid !important;
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+      }
       p, div, span { font-size: 13px !important; line-height: 1.6 !important; }
       p.subtitle { font-size: 13px !important; line-height: 1.6 !important; }
 
@@ -366,7 +404,7 @@ const TextEditor = ({ id }) => {
 
           page.drawText("Status", { x: leftColumnX, y: statusY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
           page.drawText(":", { x: colonX, y: statusY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
-          page.drawText("In Operation, Class Valid", { x: valueX, y: statusY, size: 9, color: rgb(0.9, 0.9, 0.9), font: fontRegular });
+          page.drawText(currentStatus, { x: valueX, y: statusY, size: 9, color: rgb(0.9, 0.9, 0.9), font: fontBold });
 
           const rightLabelX = pageWidth - margin - 120;
           const rightColonX = pageWidth - margin - 65;
@@ -1256,7 +1294,7 @@ ${statutorySurveyTableHtml}
 </tr>
 </tbody>
 </table>
-<h2 style="margin-top: 40px; color:black">Additional Notes</h2>
+<h2 style="margin-top: 10px; color:black">Additional Notes</h2>
 
 ${additionalFieldsHtml}
 </div>
