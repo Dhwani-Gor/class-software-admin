@@ -52,7 +52,7 @@ const ArchiveTrail = ({ archiveHistory, shipName, username }) => {
                                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                                     <Person fontSize="small" sx={{ color: "text.secondary" }} />
                                     <Typography variant="body2" color="text.secondary">
-                                        {username || "-"}
+                                        {remark?.user?.name || "-"}
                                     </Typography>
                                 </Box>
 
@@ -100,7 +100,7 @@ const ArchiveTrail = ({ archiveHistory, shipName, username }) => {
     );
 };
 
-const ArchiveHistoryDialog = ({ open, archiveHistory = [], onClose, shipName, username }) => {
+const ArchiveHistoryDialog = ({ open, archiveHistory = [], onClose, shipName }) => {
     return (
         <Dialog
             open={open}
@@ -116,7 +116,7 @@ const ArchiveHistoryDialog = ({ open, archiveHistory = [], onClose, shipName, us
             <DialogContent dividers sx={{ overflowY: "auto" }}>
                 {archiveHistory.length > 0 ? (
                     <Box sx={{ maxWidth: "700px", mx: "auto", p: 1 }}>
-                        <ArchiveTrail archiveHistory={archiveHistory} shipName={shipName} username={username} />
+                        <ArchiveTrail archiveHistory={archiveHistory} shipName={shipName} />
                     </Box>
                 ) : (
                     <Typography variant="body2" color="text.secondary">

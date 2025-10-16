@@ -1091,7 +1091,7 @@ const ReportingForm = () => {
           <Button onClick={() => setShowArchiveHistoryDialog(false)}>Close</Button>
         </DialogActions>
       </Dialog> */}
-      <ArchiveHistoryDialog open={showArchiveHistoryDialog} archiveHistory={archiveHistory} onClose={() => setShowArchiveHistoryDialog(false)} shipName={shipName} username={data.name} />
+      <ArchiveHistoryDialog open={showArchiveHistoryDialog} archiveHistory={archiveHistory} onClose={() => setShowArchiveHistoryDialog(false)} shipName={shipName} />
     </Box>
   );
 };
