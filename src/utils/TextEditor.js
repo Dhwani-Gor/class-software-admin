@@ -1139,33 +1139,49 @@ This may not indicate certificates issued, surveys carried out or conditions of 
       <td colspan="2">
         <em><strong>Class History:</strong></em>
         <table style="width:100%; border-collapse: collapse; margin-top:5px; border:1px solid #ddd;">
-          <thead>
-            <tr style="background-color:#f0f0f0;">
-              <th style="padding:6px; border:1px solid #ddd;">Ship Status</th>
-              <th style="padding:6px; border:1px solid #ddd;">Reason</th>
-              <th style="padding:6px; border:1px solid #ddd;">From Date</th>
-              <th style="padding:6px; border:1px solid #ddd;">To Date</th>
-              <th style="padding:6px; border:1px solid #ddd;">Remarks</th>
+  <thead>
+    <tr style="background-color:#f0f0f0;">
+      <th style="padding:6px; border:1px solid #ddd;">Ship Status</th>
+      <th style="padding:6px; border:1px solid #ddd;">Reason</th>
+      <th style="padding:6px; border:1px solid #ddd;">From Date</th>
+      <th style="padding:6px; border:1px solid #ddd;">To Date</th>
+      <th style="padding:6px; border:1px solid #ddd;">Remarks</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${(() => {
+      const defaultRows = [{ shipStatus: "Class" }, { shipStatus: "Withdrawn" }, { shipStatus: "Re-classed" }];
+
+      // Merge response data with defaults
+      const data = defaultRows.map((def) => {
+        const found = clientData?.classHistory?.find((item) => item.shipStatus?.toLowerCase() === def.shipStatus.toLowerCase());
+        return { ...def, ...found };
+      });
+
+      // Generate table rows
+      return (
+        data
+          ?.map(
+            (history) => `
+            <tr>
+              <td style="padding:6px; border:1px solid #ddd;">${history.shipStatus || "-"}</td>
+              <td style="padding:6px; border:1px solid #ddd;">${history.reason || "-"}</td>
+              <td style="padding:6px; border:1px solid #ddd;">
+                ${history.from_date ? moment(history.from_date).format("DD/MM/YYYY") : "-"}
+              </td>
+              <td style="padding:6px; border:1px solid #ddd;">
+                ${history.to_date ? moment(history.to_date).format("DD/MM/YYYY") : "-"}
+              </td>
+              <td style="padding:6px; border:1px solid #ddd;">${history.remarks || "-"}</td>
             </tr>
-          </thead>
-          <tbody>
-            ${
-              clientData?.classHistory
-                ?.map(
-                  (history) => `
-              <tr>
-                <td style="padding:6px; border:1px solid #ddd;">${history.shipStatus || "-"}</td>
-                <td style="padding:6px; border:1px solid #ddd;">${history.reason || "-"}</td>
-                <td style="padding:6px; border:1px solid #ddd;">${history.from_date || "-"}</td>
-                <td style="padding:6px; border:1px solid #ddd;">${history.to_date || "-"}</td>
-                <td style="padding:6px; border:1px solid #ddd;">${history.remarks || "-"}</td>
-              </tr>
-            `
-                )
-                .join("") || `<tr><td colspan="5" style="padding:6px; border:1px solid #ddd;">-</td></tr>`
-            }
-          </tbody>
-        </table>
+          `
+          )
+          .join("") || `<tr><td colspan="5" style="padding:6px; border:1px solid #ddd;">-</td></tr>`
+      );
+    })()}
+  </tbody>
+</table>
+
       </td>
     </tr>
   </tbody>
@@ -1223,21 +1239,27 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   <tbody>
     <tr>
       <td style="width:50%;"><em><strong>Main Engine Model:</strong></em> ${clientData?.machineList.main_engine_model || "-"}</td>
-      <td><strong>Engine Builder:</strong> ${clientData?.machineList.engine_builder || "-"}</td>
-    </tr>
-    <tr>
-      <td><em><strong>Main Engine Power:</strong></em> ${clientData?.machineList.main_engine_power || "-"}</td>
-      <td><strong>Engine Built:</strong> ${clientData?.machineList.engine_built || "-"}</td>
-    </tr>
+      <td><em><strong>Propeller:</strong></em> ${clientData?.machineList.propeller || "-"}</td>
+
+      </tr>
     <tr>
       <td><em><strong>No of Engines:</strong></em> ${clientData?.machineList.no_of_engines || "-"}</td>
+      <td><strong>Engine Built:</strong> ${clientData?.machineList.engine_built ? moment(clientData?.machineList.engine_built).format("DD/MM/YYYY") : "-"}</td>
+    </tr>
+    
+    <tr>
+      <td><em><strong>Total Power:</strong></em> ${clientData?.machineList.total_power || "-"}</td>
       <td colspan="2" style="width:50%;"><em><strong>Electrical Installation:</strong></em> ${clientData?.machineList.electrical_installation || "-"}</td>
     </tr>
     <tr>
-      <td><em><strong>Total Power:</strong></em> ${clientData?.machineList.total_power || "-"}</td>
+      <td><strong>Engine Builder:</strong> ${clientData?.machineList.engine_builder || "-"}</td>
       <td><strong>Boiler:</strong> ${clientData?.machineList.boilers || "-"}</td>
     </tr>
     <tr>
+<td>
+  <em><strong>Speed:</strong></em>
+  ${clientData?.machineList?.speed_knots || clientData?.machineList?.rpm ? ` ${clientData?.machineList?.speed_knots || "-"} Knots  &nbsp;  <b>RPM</b>:  ${clientData?.machineList?.rpm || "-"}` : "-"}
+</td>
     </tr>
   </tbody>
 </table>

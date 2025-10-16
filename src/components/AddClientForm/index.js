@@ -168,6 +168,23 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
       hullNotation: "",
       machineryNotation: "",
       descriptiveNotation: "",
+      machineList: {
+        main_engine_model: "",
+        no_of_engines: "",
+        total_power: null,
+        engine_builder: "",
+        engine_built: "",
+        propeller: "",
+        electrical_installation: "",
+        boilers: "",
+        speed_knots: null,
+        rpm: null,
+      },
+      classHistory: [
+        { shipStatus: "Class", reason: "", remarks: "", from_date: "", to_date: "" },
+        { shipStatus: "Withdrawn", reason: "", remarks: "", from_date: "", to_date: "" },
+        { shipStatus: "Re-classed", reason: "", remarks: "", from_date: "", to_date: "" },
+      ],
       ownerDetails: {
         nameOfCompany: "",
         companyAddress: "",
