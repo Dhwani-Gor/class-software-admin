@@ -41,18 +41,30 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList, reportDet
 
     selected.forEach((endorsement) => {
       Object.entries(endorsement).forEach(([key, value]) => {
-        if (key !== "title") {
-          if (key.includes("endorsedby") || key.includes("endorsed_by")) result[value] = reportDetails?.issuedBy || reportDetails?.issuer?.name;
-          else if (key.includes("endorsed_place") || key.includes("issuance_place")) result[value] = reportDetails?.place;
-          else if (key.includes("issuance_date")) result[value] = reportDetails?.issuanceDate ? formatDate(reportDetails?.issuanceDate) : "-";
-          else if (key.includes("validity_date")) result[value] = reportDetails?.validityDate ? formatDate(reportDetails?.validityDate) : "-";
+        // Skip the title field
+        if (key === "title") return;
+
+        // Skip empty, null, or whitespace-only values
+        if (!value || (typeof value === "string" && value.trim() === "")) return;
+
+        // Skip keys that are empty strings
+        if (!key || key.trim() === "") return;
+
+        // Now process the valid key-value pairs
+        if (key.includes("endorsedby") || key.includes("endorsed_by")) {
+          result[value] = reportDetails?.issuedBy || reportDetails?.issuer?.name || "-";
+        } else if (key.includes("endorsed_place") || key.includes("issuance_place")) {
+          result[value] = reportDetails?.place || "-";
+        } else if (key.includes("issuance_date")) {
+          result[value] = reportDetails?.issuanceDate ? formatDate(reportDetails?.issuanceDate) : "-";
+        } else if (key.includes("validity_date")) {
+          result[value] = reportDetails?.validityDate ? formatDate(reportDetails?.validityDate) : "-";
         }
       });
     });
 
     console.log(result, "final endorsement object");
-
-    onSubmit(result); // ✅ single object now
+    onSubmit(result);
     onClose();
   };
 
