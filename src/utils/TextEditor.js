@@ -963,37 +963,6 @@ ${certificateRows}
 ${classificationRows}
 </table>
 `;
-
-    //     const AuditsTableHtml = `
-    // <div class="section-title" style="margin-top: 20px; font-size: 16px; font-weight: bold;">Audits</div>
-    // <table>
-    // <tr>
-    // <th>Survey Name</th>
-    // <th></th>
-    // <th>Survey Date</th>
-    // <th>Due Date</th>
-    // <th>Range (from, to)</th>
-    // <th>Postponed</th>
-    // </tr>
-    // ${statutoryRows}
-    // </table>
-    // `;
-
-    //     const statutorySurveyTableHtml = `
-    // <div class="section-title" style="margin-top: 20px; font-size: 16px; font-weight: bold;">Statutory Surveys</div>
-    // <table>
-    // <tr>
-    // <th>Survey Name</th>
-    // <th></th>
-    // <th>Survey Date</th>
-    // <th>Due Date</th>
-    // <th>Range (from, to)</th>
-    // <th>Postponed</th>
-    // </tr>
-    // ${statutoryRows}
-    // </table>
-    // `;
-
     const buildSurveyTable = (data, title) => {
       if (!data?.length) return "";
 
@@ -1031,7 +1000,7 @@ ${classificationRows}
     };
 
     const statutorySurveyTableHtml = buildSurveyTable(statutoryData, "Statutory Surveys");
-    const auditSurveyTableHtml = buildSurveyTable(auditsData, "Audits");
+    const auditSurveyTableHtml = buildSurveyTable(auditsData, "Audit Surveys");
 
     const htmlString = `
 <div class="page">
