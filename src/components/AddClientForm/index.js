@@ -617,6 +617,8 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
           speed_knots: hasValue(machineList.speed_knots) ? Number(machineList.speed_knots) : null,
           rpm: hasValue(machineList.rpm) ? Number(machineList.rpm) : null,
         };
+      } else {
+        payload.machineList = {};
       }
 
       if (clientId) {
