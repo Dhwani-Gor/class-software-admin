@@ -329,6 +329,8 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
         }
         if (validEndorsements.length > 0) {
           formData.append("endorsements", JSON.stringify(validEndorsements));
+        } else {
+          formData.append("endorsements", JSON.stringify([]));
         }
 
         // API call to create a new document (used for both new and duplicate)
@@ -360,6 +362,8 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           }
           if (validEndorsements.length > 0) {
             formData.append("endorsements", JSON.stringify(validEndorsements));
+          } else {
+            formData.append("endorsements", JSON.stringify([]));
           }
 
           response = await updateDocument(documentId, formData);
