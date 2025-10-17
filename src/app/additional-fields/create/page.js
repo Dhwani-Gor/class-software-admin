@@ -9,6 +9,7 @@ import { TextareaAutosize } from "@mui/material";
 import { addAdditionalFields, updateAdditionalFields, fetchAdditionalDetails, fetchJournalList, getAllClients, deleteAdditionalField } from "@/api";
 import CommonButton from "@/components/CommonButton";
 import { toast } from "react-toastify";
+import moment from "moment";
 
 const sections = [
   { key: "coc", label: "Condition of Class", options: ["Hull", "Machinery"] },
@@ -184,7 +185,7 @@ const AdditionalFieldsList = () => {
     },
     { field: "description", headerName: "Description", flex: 2 },
     { field: "remarks", headerName: "Remarks", flex: 2 },
-    { field: "dueDate", headerName: "Due Date", flex: 1 },
+    { field: "dueDate", headerName: "Due Date", flex: 1, valueGetter: (params) => (params ? moment(params).format("DD/MM/YYYY") : "") },
     { field: "action", headerName: "Action", flex: 1 },
     editable
       ? {
@@ -192,7 +193,7 @@ const AdditionalFieldsList = () => {
           headerName: "Actions",
           flex: 1,
           renderCell: (params) => (
-            <Box sx={{ display: "flex", gap: 1 }}>
+            <Box sx={{ display: "flex", gap: 1, mt: 0.5 }}>
               <IconButton color="primary" onClick={() => handleEditRow(sectionKey, params.row)}>
                 <EditIcon fontSize="small" />
               </IconButton>
@@ -372,6 +373,7 @@ const AdditionalFieldsList = () => {
                           color: "text.secondary",
                           fontSize: 14,
                           fontWeight: 500,
+                          mt: 2,
                         }}
                       >
                         No {s.label} Recommended

@@ -53,6 +53,7 @@ const reportSchema = yup.object().shape({
 const ReportingForm = () => {
   const router = useRouter();
   const { data } = useAuth();
+  console.log(data, "data");
   const [loading, setLoading] = useState(false);
   const [clientsList, setClientsList] = useState([]);
   const [shipName, setShipName] = useState("");
@@ -278,7 +279,8 @@ const ReportingForm = () => {
           setSelectedReportNumber({});
           toast.success(result.data.message);
         } else {
-          toast.error("Failed to archive");
+          toast.error(result?.response?.data?.message);
+          setIsOpenConfirmModal(false);
         }
       }
     } catch (error) {
@@ -631,6 +633,7 @@ const ReportingForm = () => {
     setOpen(true);
   };
 
+  console.log(tableData.length, "tableData");
   return (
     <Box mt={2}>
       <CommonCard sx={{ mt: 2 }}>
@@ -690,7 +693,7 @@ const ReportingForm = () => {
             {selectedShip.id && selectedReportNumber.journalTypeId && (
               <>
                 <CommonButton onClick={handleShowTable} sx={{ marginTop: 3 }} text="Continue" />
-                {selectedShip.id && selectedReportNumber.journalTypeId && data?.specialPermission?.includes("archive/unarchive") && <CommonButton onClick={handleContinue} sx={{ marginTop: 3, marginLeft: 2 }} text={specialPermission ? "Unarchive" : "Archive"} />}
+                {selectedShip.id && selectedReportNumber.journalTypeId && data?.specialPermission?.includes("archive/unarchive") && <CommonButton onClick={handleContinue} sx={{ marginTop: 3, marginLeft: 2 }} disabled={!tableData?.length > 0} text={specialPermission ? "Unarchive" : "Archive"} />}
                 {archiveHistory?.length > 0 && <CommonButton onClick={() => setShowArchiveHistoryDialog(true)} sx={{ marginTop: 3, marginLeft: 2 }} text="Show Archive Remarks History" />}
               </>
             )}
@@ -1056,7 +1059,7 @@ const ReportingForm = () => {
         open={isOpenArchiveModal}
         onConfirm={(value) => {
           setIsOpenArchiveModal(false);
-          manageArchive(value); // pass the remark directly
+          manageArchive(value);
         }}
         title="Are you sure you want to archive this journal?"
         onCancel={() => setIsOpenArchiveModal(false)}
