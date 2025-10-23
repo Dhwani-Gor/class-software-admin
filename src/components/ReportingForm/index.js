@@ -53,7 +53,6 @@ const reportSchema = yup.object().shape({
 const ReportingForm = () => {
   const router = useRouter();
   const { data } = useAuth();
-  console.log(data, "data");
   const [loading, setLoading] = useState(false);
   const [clientsList, setClientsList] = useState([]);
   const [shipName, setShipName] = useState("");
@@ -65,18 +64,15 @@ const ReportingForm = () => {
   const [showButton, setShowButton] = useState(true);
   const [openEndrosemet, setOpenEndrosemet] = useState(false);
   const [endorsementTitle, setEndorsementTitle] = useState([]);
-  console.log(endorsementTitle, "endorsementTitle");
   const [selectedReportNumber, setSelectedReportNumber] = useState({
     journalTypeId: "",
     index: null,
   });
-  console.log(selectedReportNumber.journalTypeId, "selectedReportNumber");
   const [selectCertificate, setSelectCertificate] = useState("");
   const [showTable, setShowTable] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [reportDetails, setReportDetails] = useState();
   const [tableData, setTableData] = useState([]);
-  console.log(tableData, "table data");
   const [selectedRow, setSelectedRow] = useState(null);
   const [journalId, setjournalId] = useState(null);
   const [endorsedIssuedBy, setEndorsedIssuedBy] = useState([]);
@@ -95,6 +91,7 @@ const ReportingForm = () => {
   const [showArchiveHistoryDialog, setShowArchiveHistoryDialog] = useState(false);
   const [archiveHistory, setArchiveHistory] = useState([]);
   const [endorsementValues, setEndorsementValues] = useState([]);
+  const [endorsements, setEndorsements] = useState([]);
 
   useEffect(() => {
     ``;
@@ -203,7 +200,6 @@ const ReportingForm = () => {
 
   const handleReportNumber = (event) => {
     setShowTable(false);
-    setOpenEndrosemet(true);
     const selectedJournalTypeId = event.target.value;
     const selectedIndex = filteredJournals.findIndex((j) => j.journalTypeId === selectedJournalTypeId);
     const selectedJournal = filteredJournals[selectedIndex];
@@ -213,7 +209,28 @@ const ReportingForm = () => {
       index: selectedIndex !== -1 ? selectedIndex : null,
     });
     setTableData(selectedJournal?.activities || []);
-    setArchiveHistory(selectedJournal?.journalRemarks || []); // ✅ store remarks
+    setArchiveHistory(selectedJournal?.journalRemarks || []);
+
+    setShowForm(false);
+    setSelectedRow(null);
+    setReportDetails(undefined);
+    setSelectCertificate("");
+    setSelectSurveyor("");
+    setReportName("");
+    setShowEndorsementField(false);
+    setShowExtraEndorsementField(false);
+
+    // Reset form values
+    setValue("typesOfSurvey", "");
+    setValue("typeOfCertificate", "");
+    setValue("issuancedate", "");
+    setValue("validitydate", "");
+    setValue("surveydate", "");
+    setValue("endorsementdate", "");
+    setValue("issuedBy", "");
+    setValue("place", "");
+    setValue("newValidityDate", "");
+    clearErrors();
   };
 
   const handleCertificate = (event) => {
@@ -306,7 +323,6 @@ const ReportingForm = () => {
   };
 
   const handleGenerateReport = async () => {
-    setOpenEndrosemet(true);
     const isValid = await trigger();
     if (!isValid) {
       toast.error("Please fill in all required fields correctly.");
@@ -328,7 +344,7 @@ const ReportingForm = () => {
       place: values.place || "",
       validityDate: hiddenReports?.includes(reportName) ? "" : values.validitydate ? formatDate(values.validitydate) : "",
       ...((selectCertificate === "full_term" || selectCertificate === "extended") && {
-        endorsementDate: values.endorsementdate ? formatDate(values.endorsementdate) : "",
+        endorsementDate: values.endorsementdate ? formatDate(values.endorsementdate) : null,
       }),
       ...(selectCertificate === "extended" && {
         newValidityDate: values.newValidityDate ? formatDate(values.newValidityDate) : "",
@@ -377,24 +393,32 @@ const ReportingForm = () => {
   };
 
   const handleFullReportGeneration = async () => {
-    await fetchReportDetails(reportDetails?.id);
-
-    if (reportDetails.lastUnarchivedAt !== null) {
-      setShowAmendmentDialog(true);
+    if (endorsements?.length > 0 && reportDetails.endorsementDate !== null) {
+      setEndorsementTitle(endorsements);
+      setOpenEndrosemet(true);
     } else {
-      setOpen(true);
+      await fetchReportDetails(reportDetails?.id);
+      if (reportDetails.lastUnarchivedAt !== null && !reportDetails?.endorsementDate) {
+        setShowAmendmentDialog(true);
+      } else {
+        setOpen(true);
+      }
     }
   };
 
   const handleSubmitReport = async (extraFieldsOrEndorsements = []) => {
     setLoadingReport(true);
     try {
+      const isArrayData = Array.isArray(extraFieldsOrEndorsements);
+
+      const { endorsementValues: _, ...cleanReportData } = reportDetails.data || {};
+
       const payload = {
         reportDetailId: reportDetails?.id,
         data: {
-          ...reportDetails.data,
-          endorsementValues: Array.isArray(extraFieldsOrEndorsements) ? extraFieldsOrEndorsements : endorsementValues,
-          ...(!Array.isArray(extraFieldsOrEndorsements) ? extraFieldsOrEndorsements : {}),
+          ...cleanReportData,
+          ...(isArrayData && { endorsementValues: extraFieldsOrEndorsements }),
+          ...(!isArrayData ? extraFieldsOrEndorsements : {}),
           type: "image",
           amdRemarks,
           stamp: 6,
@@ -559,12 +583,8 @@ const ReportingForm = () => {
       const result = await getSelectedActivityReportDetails(row?.id);
       console.log(row, "rows");
       setReportName(row?.surveyTypes?.report?.name);
-      const endorsements = row?.surveyTypes?.report?.endorsements;
-      console.log(endorsements, "endorsements");
-      if (endorsements?.length > 0) {
-        setEndorsementTitle(endorsements);
-        setOpenEndrosemet(true);
-      }
+      setEndorsements(row?.surveyTypes?.report?.endorsements);
+      console.log(row?.surveyTypes?.report?.endorsements, "endorsements");
       const data = extractUnderscoreFields(row);
       setUnderscoreFields(data);
 
@@ -633,7 +653,6 @@ const ReportingForm = () => {
     setOpen(true);
   };
 
-  console.log(tableData.length, "tableData");
   return (
     <Box mt={2}>
       <CommonCard sx={{ mt: 2 }}>
@@ -1081,11 +1100,12 @@ const ReportingForm = () => {
           open={openEndrosemet}
           onClose={() => setOpenEndrosemet(false)}
           onSubmit={(values) => {
-            setEndorsementValues(values); // store selected endorsements
-            handleSubmitReport(values); // continue with report generation
+            setEndorsementValues(values);
+            handleSubmitReport(values);
           }}
           endorsementList={endorsementTitle}
           reportDetailsId={reportDetails?.id}
+          endorsedIssuedBy={surveyorOptions}
         />
       )}
       <AmendmentRemarksDialog open={showAmendmentDialog} onClose={() => setShowAmendmentDialog(false)} onSubmit={handleAmendmentSubmit} isLoading={continueBtnLoading} />

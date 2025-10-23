@@ -526,6 +526,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           endorsed_place: "",
           issuance_date: "",
           validity_date: "",
+          endorsement_type: "",
         },
       ]);
     } else {
@@ -788,6 +789,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                         <TextField label="Endorsed Place" value={endorsement.endorsed_place || ""} onChange={(e) => handleEndorsementChange(index, "endorsed_place", e.target.value)} fullWidth size="small" />
                         <TextField label="Issuance Date" value={endorsement.issuance_date || ""} onChange={(e) => handleEndorsementChange(index, "issuance_date", e.target.value)} fullWidth size="small" />
                         <TextField label="Validity Date" value={endorsement.validity_date || ""} onChange={(e) => handleEndorsementChange(index, "validity_date", e.target.value)} fullWidth size="small" />
+                        <TextField label="endorsement_type" value={endorsement.endorsement_type || ""} onChange={(e) => handleEndorsementChange(index, "endorsement_type", e.target.value)} fullWidth size="small" />
                       </Box>
                     </Stack>
                   </Box>

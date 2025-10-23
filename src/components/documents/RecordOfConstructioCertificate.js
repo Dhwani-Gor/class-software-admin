@@ -170,7 +170,6 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
       });
     });
   }
-  console.log(maxEngineNumber, "maxEngineNumber");
 
   const vocFields = fields.filter((field) => field.attribute && field.attribute?.includes("_IAPP_VOC_"));
 
@@ -493,7 +492,6 @@ const IAPPForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
       { key: "14", label: "AM Not Applicable" },
     ];
 
-    console.log(remainingFields, "remainingFields");
     return (
       <Card variant="outlined" sx={{ mb: 2 }}>
         <CardContent>

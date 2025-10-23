@@ -439,7 +439,7 @@ const TextEditor = ({ id }) => {
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes], { type: "application/pdf" });
 
-      const fileName = `MCB Survey Status Report - ${clientData?.imoNumber}-${clientData?.shipName}-${moment().format("DD-MM-YYYY")}.pdf`;
+      const fileName = `MCBG Survey Status Report - ${clientData?.imoNumber}-${clientData?.shipName}-${moment().format("DD-MM-YYYY")}.pdf`;
       const file = new File([blob], fileName, { type: "application/pdf" });
 
       const formData = new FormData();
@@ -747,76 +747,98 @@ const TextEditor = ({ id }) => {
   const sectionOrder = ["coc", "statutory", "memoranda", "additional", "compliance", "pcsFsi"];
 
   const additionalFieldsHtml = sectionOrder
-    .map((key) => {
+    ?.map((key) => {
       const title = getSectionTitle(key);
       const section = additionalFieldData?.find((s) => s.sectionKey === key) || {};
 
-      if (!section.data || section.data.length === 0) {
+      // Handle empty or missing data
+      if (!section?.data || section?.data?.length === 0) {
         return `
-          <h4 class="no-break" style="
-            margin-top: 20px;
-            color: white;
-            padding: 8px;
-            border-radius: 4px;
-            background: linear-gradient(to right, #9013fe, #4a90e2);
-          ">
-            ${title}
-          </h4>
-          <p style="margin: 10px 0; font-style: italic; color: #555;">
-            No ${title} recommended
-          </p>
-        `;
-      }
-
-      const rows = section.data
-        .map(
-          (item) => `
-            <tr>
-              <td>${item.type || "-"}</td>
-              <td>${item.code || "-"}</td>
-              <td>${item.journalTypeId || "-"}</td>
-              <td>${item.dueDate || "-"}</td>
-            </tr>
-             ${
-               item.description
-                 ? `<tr>
-              <td colspan="4" style="
-                padding: 6px 8px; 
-                font-size: 0.9rem; 
-                color: #333; 
-                border-bottom: 2px solid blue;
-              ">
-                ${item.description || "-"}
-              </td>
-            </tr>`
-                 : ""
-             }
-    `
-        )
-        .join("");
-
-      return `
-        <h4 style="
+        <h4 class="no-break" style="
           margin-top: 20px;
           color: white;
           padding: 8px;
           border-radius: 4px;
           background: linear-gradient(to right, #9013fe, #4a90e2);
-        " class="no-break">
+        ">
           ${title}
         </h4>
-        <table style="width:100%; border-collapse: collapse; margin-bottom: 10px;">
-          <thead>
-            <tr style="background-color:#f2f2f2;">
-              <th>Type</th>
-              <th>Code</th>
-              <th>Reference No.</th>
-              <th>Due Date</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
+        <p style="margin: 10px 0; font-style: italic; color: #555;">
+          No ${title} recommended
+        </p>
       `;
+      }
+
+      // Filter out rows with action: "Deleted"
+      const filteredData = section?.data?.filter((item) => item.action !== "Deleted");
+
+      // If all rows were deleted, show "No recommendation" message
+      if (filteredData?.length === 0) {
+        return `
+        <h4 class="no-break" style="
+          margin-top: 20px;
+          color: white;
+          padding: 8px;
+          border-radius: 4px;
+          background: linear-gradient(to right, #9013fe, #4a90e2);
+        ">
+          ${title}
+        </h4>
+        <p style="margin: 10px 0; font-style: italic; color: #555;">
+          No ${title} recommended
+        </p>
+      `;
+      }
+
+      const rows = filteredData
+        .map(
+          (item) => `
+          <tr>
+            <td>${item.type || "-"}</td>
+            <td>${item.code || "-"}</td>
+            <td>${item.journalTypeId || "-"}</td>
+            <td>${item.dueDate || "-"}</td>
+          </tr>
+          ${
+            item.description
+              ? `<tr>
+                  <td colspan="4" style="
+                    padding: 6px 8px;
+                    font-size: 0.9rem;
+                    color: #333;
+                    border-bottom: 2px solid blue;
+                  ">
+                    ${item.description}
+                  </td>
+                </tr>`
+              : ""
+          }
+        `
+        )
+        .join("");
+
+      return `
+      <h4 style="
+        margin-top: 20px;
+        color: white;
+        padding: 8px;
+        border-radius: 4px;
+        background: linear-gradient(to right, #9013fe, #4a90e2);
+      " class="no-break">
+        ${title}
+      </h4>
+      <table style="width:100%; border-collapse: collapse; margin-bottom: 10px;">
+        <thead>
+          <tr style="background-color:#f2f2f2;">
+            <th>Type</th>
+            <th>Code</th>
+            <th>Reference No.</th>
+            <th>Due Date</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
     })
     .join("");
 
