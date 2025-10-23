@@ -81,7 +81,7 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
       } else if (key.includes("place") || key.includes("endorsed_place")) {
         flattenedData[newKey] = reportDetails?.place || "";
       } else if (key.includes("issuance_date")) {
-        flattenedData[newKey] = reportDetails?.issuanceDate ? formatDate(reportDetails.issuanceDate) : "";
+        flattenedData[newKey] = reportDetails?.issuanceDate ? formatDate(reportDetails.endorsementDate) : "";
       } else if (key.includes("validity_date")) {
         flattenedData[newKey] = reportDetails?.validityDate ? formatDate(reportDetails.validityDate) : "";
       } else {
