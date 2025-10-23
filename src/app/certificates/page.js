@@ -26,6 +26,8 @@ import CommonConfirmationDialog from "@/components/Dialogs/CommonConfirmationDia
 import { toast } from "react-toastify";
 import ShowAmdRemarksDialog from "@/components/Dialogs/ShowAmdRemarksDialog";
 import DocumentPreview from "@/components/Dialogs/DocumentPreview";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 const Certificates = () => {
   const { data } = useAuth();
@@ -54,11 +56,12 @@ const Certificates = () => {
   const [openPreviewModal, setOpenPreviewModal] = useState(false);
   const [openAmdRemarks, setOpenAmdRemarks] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState(null);
+  const [showAll, setShowAll] = useState(false);
 
   const fetchReportsData = async () => {
     setLoading(true);
     try {
-      const res = await getAllReports(page, limit);
+      const res = showAll ? await getAllReports() : await getAllReports(page, limit);
       const data = res?.data;
       if (data?.status === "success" && Array.isArray(data?.data)) {
         setReportsList(data.data);
@@ -112,7 +115,18 @@ const Certificates = () => {
     } else {
       fetchCertificatesData();
     }
-  }, [selectedFilter, selectedReportNumber, placeFilter, statusFilter, debouncedSearch, page, limit, startDate, endDate]);
+  }, [
+    selectedFilter,
+    selectedReportNumber,
+    placeFilter,
+    statusFilter,
+    debouncedSearch,
+    page,
+    limit,
+    startDate,
+    endDate,
+    showAll, // ✅ added here
+  ]);
 
   const reportColumns = [
     {
@@ -202,6 +216,10 @@ const Certificates = () => {
   tabs.push("Archive Documents");
   tabs.push("Reports");
 
+  useEffect(() => {
+    setPage(1);
+  }, [selectedFilter]);
+
   const snackbarClose = () => {
     setSnackBar({ open: false, message: "" });
   };
@@ -248,7 +266,7 @@ const Certificates = () => {
       console.log(selectedFilter, "selectedFilter");
       const markAsArchive = selectedFilter === "Archive Documents" ? true : false;
       console.log(markAsArchive, "markAsArchive");
-      const res = await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, page, limit, startDate, endDate, markAsArchive);
+      const res = showAll ? await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, undefined, undefined, startDate, endDate, markAsArchive) : await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, page, limit, startDate, endDate, markAsArchive);
 
       const data = res?.data;
 
@@ -443,6 +461,39 @@ const Certificates = () => {
 
   const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(previewFile)}&embedded=true`;
 
+  const handleBulkDownload = async () => {
+    if (!certificatesList.length) return;
+
+    const zip = new JSZip();
+    const folder = zip.folder(`${certificatesList[0].activity?.journal?.client?.shipName || "Certificates"}`); // optional folder inside zip
+
+    try {
+      setLoading(true);
+
+      const fetchFiles = certificatesList.map(async (cert) => {
+        if (!cert.generatedDoc) return;
+
+        const fileUrl = cert.generatedDoc;
+        const shipName = cert.activity?.journal?.client?.shipName || "UnknownShip";
+        const fileName = `${shipName}_${fileUrl.split("/").pop()}`;
+
+        const response = await fetch(fileUrl);
+        const blob = await response.blob();
+        folder.file(fileName, blob);
+      });
+
+      await Promise.all(fetchFiles);
+
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, `${certificatesList[0].activity?.journal?.client?.shipName || "Certificates"}.zip`);
+      toast.success("All files downloaded successfully as a zip!");
+    } catch (error) {
+      console.error("Bulk download failed:", error);
+      toast.error("Failed to download all files.");
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <Layout>
       <CommonCard sx={{ mt: 0 }}>
@@ -454,11 +505,29 @@ const Certificates = () => {
       </CommonCard>
 
       <CommonCard>
-        <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-          {tabs.map((type) => (
-            <Chip key={type} label={type.charAt(0).toUpperCase() + type.slice(1)} color={selectedFilter === type ? "primary" : "default"} onClick={() => handleFilterChange(type)} clickable sx={{ fontWeight: selectedFilter === type ? 600 : 400, px: 2 }} />
-          ))}
-        </Stack>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
+            {tabs.map((type) => (
+              <Chip
+                key={type}
+                label={type.charAt(0).toUpperCase() + type.slice(1)}
+                color={selectedFilter === type ? "primary" : "default"}
+                onClick={() => handleFilterChange(type)}
+                clickable
+                sx={{
+                  fontWeight: selectedFilter === type ? 600 : 400,
+                  px: 2,
+                }}
+              />
+            ))}
+          </Stack>
+          {selectedFilter !== "Reports" && certificatesList.length > 0 && (
+            <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+              <CommonButton text="Download All" variant="contained" size="small" sx={{ textTransform: "uppercase" }} onClick={handleBulkDownload} />
+            </Stack>
+          )}
+        </Box>
+
         {selectedFilter !== "Reports" && <CommonInput placeholder="Search Certificate By Place or Type" fullWidth value={search} onChange={handleSearchChange} sx={{ marginBottom: 2 }} />}
         {selectedFilter !== "Reports" && (
           <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2, mt: 2 }}>
@@ -535,7 +604,7 @@ const Certificates = () => {
           </Stack>
         )}
 
-        <Box sx={{ width: "100%", mt: 4 }}>
+        <Box sx={{ width: "100%", mt: 4, height: "70vh" }}>
           {loading ? (
             <Box display="flex" justifyContent="center" alignItems="center" height="300px">
               <CircularProgress />
@@ -597,10 +666,24 @@ const Certificates = () => {
 
         {totalRows > limit && (
           <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-            <Typography variant="body1" fontWeight={600} fontSize="16px" mt={2} color="text.primary">
-              Total Count: {count}
-            </Typography>
-            <Pagination count={Math.ceil(totalRows / limit)} page={page} onChange={handlePageChange} color="primary" variant="outlined" shape="rounded" sx={{ marginTop: "10px" }} />
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Typography variant="body1" fontWeight={600} fontSize="16px" mt={2} color="text.primary">
+                Total Count: {count}
+              </Typography>
+            </Stack>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <CommonButton
+                text={showAll ? "Show Paginated" : "Show All"}
+                variant="outlined"
+                size="small"
+                sx={{ textTransform: "uppercase", padding: "6px 6px", fontSize: "14px" }}
+                onClick={() => {
+                  setShowAll((prev) => !prev);
+                  setPage(1);
+                }}
+              />
+              {!showAll && <Pagination count={Math.ceil(totalRows / limit)} page={page} onChange={handlePageChange} color="primary" variant="outlined" shape="rounded" sx={{ marginTop: "10px" }} />}
+            </Stack>
           </Box>
         )}
       </CommonCard>
