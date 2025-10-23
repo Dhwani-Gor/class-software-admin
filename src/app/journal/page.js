@@ -30,7 +30,6 @@ const Reports = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedJournalId, setSelectedJournalId] = useState(null);
   const [activeTab, setActiveTab] = useState("journal"); // chip tab state
-  console.log(activeTab, "activeTab");
 
   const columns = React.useMemo(
     () => [

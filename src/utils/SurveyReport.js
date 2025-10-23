@@ -293,6 +293,7 @@ const SurveyReport = ({ id, reportNumber }) => {
       const formData = new FormData();
       formData.append("clientId", id);
       formData.append("generatedDoc", file);
+      formData.append("reportNumber", reportDetails[0]?.activity?.journal?.journalTypeId);
 
       const res = await uploadSurveyReport(formData);
       if (res) {
@@ -302,7 +303,7 @@ const SurveyReport = ({ id, reportNumber }) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `MCB Survey Report - ${clientData?.imoNumber}-${clientData?.shipName}-${moment(currentDate).format("DD-MM-YYYY")}.pdf`;
+      link.download = `MCBG Survey Report - ${clientData?.imoNumber}-${clientData?.shipName}-${reportDetails[0]?.activity?.journal?.journalTypeId}-${moment(currentDate).format("DD-MM-YYYY")}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

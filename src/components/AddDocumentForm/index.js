@@ -60,7 +60,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
   const [endorsements, setEndorsements] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
-  const [loadingPreview, setLoadingPreview] = useState(false);
   const [previewState, setPreviewState] = useState({
     open: false,
     loading: false,
@@ -87,6 +86,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
     if (documentId) {
       fetchDocumentDetails();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentId]);
 
   const fetchDocumentDetails = async () => {
@@ -95,13 +95,16 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
       const result = await getDocumentDetails(documentId);
       if (result?.status === 200) {
         const documentData = result.data.data;
-        setLoadingPreview(true);
-        setPreviewState({
+
+        // Set file preview and form values
+        setPreviewState((prev) => ({
+          ...prev,
           open: false,
           loading: false,
-          fileUrl: documentData.fullTermFilePath || documentData.interimFilePath || documentData.shortTermFilePath,
+          fileUrl: documentData.fullTermFilePath || documentData.interimFilePath || documentData.shortTermFilePath || null,
           title: documentData.name || "",
-        });
+        }));
+
         setFormValues({
           name: mode === "duplicate" ? `${documentData.name} (Copy)` : documentData.name || "",
           type: documentData.type || "",
@@ -111,45 +114,29 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           interimDocument: mode === "duplicate" ? null : documentData.interimFilePath || null,
         });
 
+        // ✅ Handle additional fields
+        let parsedFields = [];
         if (documentData.fields) {
-          try {
-            let parsedFields = documentData.fields;
-
-            if (typeof parsedFields === "string") {
-              parsedFields = JSON.parse(parsedFields);
-            }
-
-            if (!Array.isArray(parsedFields)) {
-              parsedFields = [parsedFields];
-            }
-
-            const extractedEndorsements = [];
-            const extractedAdditionalFields = [];
-
-            parsedFields.forEach((item) => {
-              if (item.endorsements && Array.isArray(item.endorsements)) {
-                extractedEndorsements.push(...item.endorsements);
-              } else if (item.attribute && item.label) {
-                extractedAdditionalFields.push(item);
-              }
-            });
-
-            setAdditionalFields(extractedAdditionalFields);
-            setEndorsements(extractedEndorsements);
-          } catch (err) {
-            console.error("Failed to parse fields:", err);
-            setAdditionalFields([]);
-            setEndorsements([]);
-          }
+          parsedFields = typeof documentData.fields === "string" ? JSON.parse(documentData.fields) : documentData.fields;
         }
+        if (!Array.isArray(parsedFields)) parsedFields = [parsedFields];
+        setAdditionalFields(parsedFields);
+
+        // ✅ Handle endorsements (fix)
+        let parsedEndorsements = [];
+        if (documentData.endorsements) {
+          parsedEndorsements = typeof documentData.endorsements === "string" ? JSON.parse(documentData.endorsements) : documentData.endorsements;
+        }
+        if (!Array.isArray(parsedEndorsements)) parsedEndorsements = [parsedEndorsements];
+        setEndorsements(parsedEndorsements);
       } else {
         toast.error("Error fetching document details");
       }
-      setLoading(false);
     } catch (error) {
-      setLoading(false);
       toast.error("Something went wrong while fetching document details");
       console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -301,6 +288,8 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate form before submission
     if (!validateForm()) {
       toast.error("Please fill all required fields");
       return;
@@ -310,13 +299,20 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
       setLoading(true);
       let response;
 
+      // Filter out valid additional fields and endorsements
+      const validFields = (additionalFields || []).filter((field) => field.attribute?.toString().trim() && field.label?.toString().trim());
+      const validEndorsements = (endorsements || []).filter((endorsement) => endorsement.title?.toString().trim() || endorsement.endorsedby_1?.toString().trim() || endorsement.endorsed_place?.toString().trim() || endorsement.issuance_date?.toString().trim() || endorsement.validity_date?.toString().trim());
+
+      // ---------- CREATE / DUPLICATE DOCUMENT ----------
       if (mode === "create" || mode === "duplicate") {
         const formData = new FormData();
-        formData.append("name", formValues.name);
+
+        // Append basic document fields
+        formData.append("name", formValues.name); // For duplicate, name is usually appended with (Copy)
         formData.append("type", formValues.type);
         formData.append("abbreviation", formValues.abbreviation);
 
-        // Add all document types that have files
+        // Append document files if provided
         if (formValues.fullTermDocument instanceof File) {
           formData.append("fullTermDocument", formValues.fullTermDocument);
         }
@@ -327,15 +323,20 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           formData.append("interimDocument", formValues.interimDocument);
         }
 
-        if (additionalFields?.length > 0) {
-          const validFields = additionalFields.filter((field) => field.attribute.trim() && field.label.trim());
-          if (validFields.length > 0) {
-            formData.append("fields", JSON.stringify(validFields));
-          }
+        // Append additional fields and endorsements separately
+        if (validFields.length > 0) {
+          formData.append("fields", JSON.stringify(validFields));
+        }
+        if (validEndorsements.length > 0) {
+          formData.append("endorsements", JSON.stringify(validEndorsements));
+        } else {
+          formData.append("endorsements", JSON.stringify([]));
         }
 
+        // API call to create a new document (used for both new and duplicate)
         response = await createDocument(formData);
       } else {
+        // ---------- UPDATE DOCUMENT ----------
         const hasFiles = formValues.fullTermDocument instanceof File || formValues.shortTermDocument instanceof File || formValues.interimDocument instanceof File;
 
         if (hasFiles) {
@@ -356,15 +357,18 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
 
           if (editReason) formData.append("reason", editReason);
 
-          if (additionalFields?.length > 0) {
-            const validFields = additionalFields.filter((field) => field.attribute.trim() && field.label.trim());
-            if (validFields.length > 0) {
-              formData.append("fields", JSON.stringify(validFields));
-            }
+          if (validFields.length > 0) {
+            formData.append("fields", JSON.stringify(validFields));
+          }
+          if (validEndorsements.length > 0) {
+            formData.append("endorsements", JSON.stringify(validEndorsements));
+          } else {
+            formData.append("endorsements", JSON.stringify([]));
           }
 
           response = await updateDocument(documentId, formData);
         } else {
+          // Update without file uploads (JSON payload)
           const payload = {
             name: formValues.name,
             type: formValues.type,
@@ -382,24 +386,32 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
             payload.interimDocument = formValues.interimDocument;
           }
 
-          if (additionalFields?.length > 0) {
-            const validFields = additionalFields.filter((field) => field.attribute.trim() && field.label.trim());
-            if (validFields.length > 0) {
-              payload.fields = JSON.stringify(validFields);
-            }
+          if (validFields.length > 0) {
+            payload.fields = JSON.stringify(validFields);
+          }
+          if (validEndorsements.length > 0) {
+            payload.endorsements = JSON.stringify(validEndorsements);
           }
 
           response = await updateDocument(documentId, payload);
         }
       }
 
+      // ---------- HANDLE SUCCESS / ERROR ----------
       if (response?.status === 200 || response?.status === 201) {
-        toast.success(mode === "duplicate" ? "Document duplicated successfully" : mode === "update" ? "Document updated successfully" : "Document created successfully");
+        toast.success(
+          mode === "duplicate"
+            ? "Document duplicated successfully" // Specific message for duplicate
+            : mode === "update"
+            ? "Document updated successfully"
+            : "Document created successfully"
+        );
         router.push("/documents");
       } else {
         toast.error(response?.response?.data?.message || "Something went wrong! Please try again.");
       }
     } catch (error) {
+      console.error(error);
       toast.error("An error occurred. Please try again.");
     } finally {
       setLoading(false);
@@ -450,7 +462,12 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
   const handleDragStart = (e, index) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/html", e.target);
+    // store the index as string
+    try {
+      e.dataTransfer.setData("text/plain", String(index));
+    } catch (err) {
+      // ignore if not allowed
+    }
   };
 
   const handleDragEnd = () => {
@@ -470,6 +487,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
 
   const handleDrop = (e, dropIndex) => {
     e.preventDefault();
+    // If dataTransfer had index, it can be used; but we rely on draggedIndex state
     if (draggedIndex === null || draggedIndex === dropIndex) return;
 
     const updatedFields = [...additionalFields];
@@ -507,6 +525,8 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           endorsedby_1: "",
           endorsed_place: "",
           issuance_date: "",
+          validity_date: "",
+          endorsement_type: "",
         },
       ]);
     } else {
@@ -528,18 +548,18 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
     return mode === "update" ? "Update Document" : "Create Document";
   };
 
-  const renderFileUpload = (documentType, label) => {
-    const document = formValues[documentType];
+  const renderFileUpload = (documentTypeKey, label) => {
+    const document = formValues[documentTypeKey];
     const hasDocument = document instanceof File || (typeof document === "string" && document);
 
     return (
-      <Box key={documentType}>
+      <Box key={documentTypeKey}>
         <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
           {label}
         </Typography>
         <FormControl fullWidth>
+          {/* outer container is a div (Box) not a label to avoid nested label issues */}
           <Box
-            component="label"
             sx={{
               display: "flex",
               alignItems: "center",
@@ -558,7 +578,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
               e.preventDefault();
               const file = e.dataTransfer.files[0];
               if (file) {
-                handleFileChange(documentType, file);
+                handleFileChange(documentTypeKey, file);
               }
             }}
           >
@@ -573,21 +593,13 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                   color="primary"
                   onClick={(e) => {
                     e.preventDefault();
-                    setLoadingPreview(true);
-
-                    let fileUrl = null;
-                    if (typeof document === "string") {
-                      fileUrl = document;
-                    } else if (document instanceof File) {
-                      fileUrl = URL.createObjectURL(document);
-                    }
-
-                    setPreviewState({
+                    setPreviewState((prev) => ({
+                      ...prev,
                       open: true,
                       loading: true,
-                      fileUrl: fileUrl,
+                      fileUrl: typeof document === "string" ? document : URL.createObjectURL(document),
                       title: formValues.name || label,
-                    });
+                    }));
                   }}
                   aria-label="preview document"
                   size="small"
@@ -595,7 +607,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                   <VisibilityIcon />
                 </IconButton>
               )}
-              <label htmlFor={`upload-input-${documentType}`}>
+              <label htmlFor={`upload-input-${documentTypeKey}`}>
                 <CommonButton
                   text="Upload"
                   variant="contained"
@@ -611,13 +623,15 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                 <input
                   type="file"
                   hidden
-                  id={`upload-input-${documentType}`}
+                  id={`upload-input-${documentTypeKey}`}
                   accept=".doc,.docx,.pdf"
                   onChange={(e) => {
                     const file = e.target.files[0];
                     if (file) {
-                      handleFileChange(documentType, file);
+                      handleFileChange(documentTypeKey, file);
                     }
+                    // clear input value so same file can be reselected if needed
+                    e.currentTarget.value = "";
                   }}
                 />
               </label>
@@ -735,7 +749,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
 
               <Stack direction={"row"} spacing={2}>
                 <CommonButton text="Add Attribute" variant="outlined" onClick={handleAddField} sx={{ alignSelf: "flex-start" }} />
-                <CommonButton text="Export XLSX" variant="contained" onClick={handleExportCSV} sx={{ aliTnSelf: "flex-start" }} startIcon={<FileDownloadIcon />} />
+                <CommonButton text="Export XLSX" variant="contained" onClick={handleExportCSV} sx={{ alignSelf: "flex-start" }} startIcon={<FileDownloadIcon />} />
                 <Box>
                   <input type="file" accept=".csv,.xlsx,.xls" onChange={handleImportCSV} style={{ display: "none" }} id="import-csv-input" />
                   <label htmlFor="import-csv-input">
@@ -775,10 +789,12 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                         <TextField label="Endorsed Place" value={endorsement.endorsed_place || ""} onChange={(e) => handleEndorsementChange(index, "endorsed_place", e.target.value)} fullWidth size="small" />
                         <TextField label="Issuance Date" value={endorsement.issuance_date || ""} onChange={(e) => handleEndorsementChange(index, "issuance_date", e.target.value)} fullWidth size="small" />
                         <TextField label="Validity Date" value={endorsement.validity_date || ""} onChange={(e) => handleEndorsementChange(index, "validity_date", e.target.value)} fullWidth size="small" />
+                        <TextField label="endorsement_type" value={endorsement.endorsement_type || ""} onChange={(e) => handleEndorsementChange(index, "endorsement_type", e.target.value)} fullWidth size="small" />
                       </Box>
                     </Stack>
                   </Box>
                 ))}
+              <CommonButton text="Add Endorsement" variant="outlined" onClick={handleAddEndorsement} sx={{ alignSelf: "flex-start" }} />
             </Stack>
 
             <Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mt: 3 }}>
@@ -788,41 +804,78 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           </Stack>
         </Box>
       </CommonCard>
-      <Dialog open={previewState.open} onClose={() => setPreviewState({ open: false })} maxWidth="md" fullWidth>
+
+      <Dialog
+        open={previewState.open}
+        onClose={() =>
+          setPreviewState((prev) => ({
+            ...prev,
+            open: false,
+          }))
+        }
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>Document Preview</DialogTitle>
         <DialogContent>
           <div style={{ position: "relative", width: "100%", height: "80vh" }}>
-            {!loadingPreview ? (
-              <a
-                href={previewState.fileUrl}
-                download
-                rel="noopener noreferrer"
-                style={{
-                  position: "absolute",
-                  top: "10px",
-                  right: "10px",
-                  zIndex: 1,
-                  backgroundColor: "#4CAF50",
-                  color: "white",
-                  padding: "8px 12px",
-                  border: "none",
-                  borderRadius: "4px",
-                  textDecoration: "none",
-                  fontSize: "14px",
-                }}
-              >
-                Download
-              </a>
+            {!previewState.loading ? (
+              previewState.fileUrl && (
+                <a
+                  href={previewState.fileUrl}
+                  download
+                  rel="noopener noreferrer"
+                  style={{
+                    position: "absolute",
+                    top: "10px",
+                    right: "10px",
+                    zIndex: 1,
+                    backgroundColor: "#4CAF50",
+                    color: "white",
+                    padding: "8px 12px",
+                    border: "none",
+                    borderRadius: "4px",
+                    textDecoration: "none",
+                    fontSize: "14px",
+                  }}
+                >
+                  Download
+                </a>
+              )
             ) : (
               <Box display="flex" justifyContent="center" alignItems="center" height="100%" position="absolute" top={0} left={0} width="100%" zIndex={0} sx={{ backgroundColor: "rgba(255,255,255,0.8)" }}>
                 <CircularProgress />
               </Box>
             )}
-            <iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(previewState.fileUrl)}&embedded=true`} style={{ width: "100%", height: "100%", border: "none" }} title="File Preview" onLoad={() => setLoadingPreview(false)} />
+
+            {/* only render iframe if fileUrl exists */}
+            {previewState.fileUrl ? (
+              <iframe
+                src={`https://docs.google.com/gview?url=${encodeURIComponent(previewState.fileUrl)}&embedded=true`}
+                style={{ width: "100%", height: "100%", border: "none" }}
+                title="File Preview"
+                onLoad={() =>
+                  setPreviewState((prev) => ({
+                    ...prev,
+                    loading: false,
+                  }))
+                }
+              />
+            ) : (
+              !previewState.loading && <Box p={2}>No file to preview</Box>
+            )}
           </div>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPreviewState({ open: false })} color="primary">
+          <Button
+            onClick={() =>
+              setPreviewState((prev) => ({
+                ...prev,
+                open: false,
+              }))
+            }
+            color="primary"
+          >
             Close
           </Button>
         </DialogActions>

@@ -126,10 +126,6 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
           })
           .filter(Boolean) || [];
 
-      console.log("Backend data:", data);
-      console.log("Mapped permissions:", mappedPermissions);
-      console.log("Mapped special permissions:", mappedSpecial);
-
       // Reset form with all data including mapped permissions
       reset({
         name: data.name || "",
