@@ -175,7 +175,7 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
       }
     };
 
-    const findSpecialSurveyHull = () => existingSurveys.find((survey) => survey.surveyName?.trim().toLowerCase() === "special survey hull" && survey.surveyDate);
+    const findSpecialSurveyHull = () => existingSurveys.find((survey) => survey.surveyName?.trim().toLowerCase() === "special survey hull" && (survey.surveyDate || survey.issuanceDate));
 
     const findDockingSurvey = () => existingSurveys.find((survey) => survey.surveyName?.trim().toLowerCase() === "docking survey" && survey.surveyDate);
 
@@ -189,7 +189,7 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
       case "Special Survey (Fi-Fi)":
         dueDate = addYears(issuanceDateObj, 5);
         rangeFrom = addMonths(dueDate, -3);
-        rangeTo = addMonths(dueDate, 3);
+        rangeTo = dueDate;
         break;
 
       case "Annual Survey":
@@ -197,6 +197,9 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
       case "Annual Survey (FIFI)":
       case "Annual Survey (UMS)": {
         const surveyNameLower = surveyName.toLowerCase();
+
+        // For Annual surveys, survey date = assignment date
+        // No need for separate logic here as they're the same
 
         const lastAnnualSurvey = existingSurveys.filter((s) => s.surveyName?.toLowerCase().includes("annual survey") && s.surveyName?.toLowerCase() === surveyNameLower && s.dueDate).sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate))[0];
 
@@ -209,9 +212,9 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
           if (surveyNameLower.includes("ig system")) {
             relatedSpecialSurveyName = "special survey ig system";
           } else if (surveyNameLower.includes("fifi")) {
-            relatedSpecialSurveyName = "special survey fifi";
+            relatedSpecialSurveyName = "special survey (fi-fi)";
           } else if (surveyNameLower.includes("ums")) {
-            relatedSpecialSurveyName = "special survey ums";
+            relatedSpecialSurveyName = "special survey (ums)";
           } else {
             relatedSpecialSurveyName = "special survey hull";
           }
@@ -220,6 +223,9 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
 
           if (relatedSpecialSurvey?.surveyDate) {
             const baseDate = new Date(relatedSpecialSurvey.surveyDate);
+            dueDate = addYears(baseDate, 1);
+          } else if (relatedSpecialSurvey?.issuanceDate) {
+            const baseDate = new Date(relatedSpecialSurvey.issuanceDate);
             dueDate = addYears(baseDate, 1);
           } else {
             dueDate = addYears(issuanceDateObj, 1);
@@ -241,8 +247,8 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
         const currentSurveyType = surveyName.toLowerCase();
         const existingCurrentSurveys = existingSurveys.filter((s) => s.surveyName?.trim().toLowerCase() === currentSurveyType && s.dueDate).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
-        if (specialSurveyHull && specialSurveyHull.surveyDate) {
-          const sshDate = new Date(specialSurveyHull.surveyDate);
+        if (specialSurveyHull) {
+          const sshDate = new Date(specialSurveyHull.surveyDate || specialSurveyHull.issuanceDate);
           const sshDueDate = addYears(sshDate, 5);
 
           if (existingCurrentSurveys.length === 0) {
@@ -283,8 +289,8 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
         const specialSurveyHull = findSpecialSurveyHull();
         const existingDockingSurveys = existingSurveys.filter((s) => s.surveyName?.trim().toLowerCase() === "docking survey" && s.dueDate).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
-        if (specialSurveyHull && specialSurveyHull.surveyDate) {
-          const sshDate = new Date(specialSurveyHull.surveyDate);
+        if (specialSurveyHull) {
+          const sshDate = new Date(specialSurveyHull.surveyDate || specialSurveyHull.issuanceDate);
           const sshDueDate = addYears(sshDate, 5);
 
           if (existingDockingSurveys.length === 0) {
@@ -333,32 +339,74 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
       case "Intermediate survey": {
         const specialSurveyHull = findSpecialSurveyHull();
 
-        if (specialSurveyHull && specialSurveyHull.surveyDate) {
-          const sshDate = new Date(specialSurveyHull.surveyDate);
+        if (specialSurveyHull) {
+          // Get the Special Survey Hull date (prefer surveyDate, fallback to issuanceDate)
+          const sshDate = new Date(specialSurveyHull.surveyDate || specialSurveyHull.issuanceDate);
+          const sshDueDate = addYears(sshDate, 5);
 
-          const intermediate2Years = addYears(sshDate, 2);
-          const intermediate3Years = addYears(sshDate, 3);
+          // Normalize dates to compare only dates (not times)
+          const normalizeDateForComparison = (date) => {
+            if (!date) return null;
+            const d = new Date(date);
+            return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+          };
 
-          const targetDate = addMonths(sshDate, 30);
-          const diff2 = Math.abs(intermediate2Years - targetDate);
-          const diff3 = Math.abs(intermediate3Years - targetDate);
+          const normalizedIssuanceDate = normalizeDateForComparison(issuanceDate);
+          const normalizedSSHDate = normalizeDateForComparison(sshDate);
 
-          dueDate = diff2 < diff3 ? intermediate2Years : intermediate3Years;
+          // Check if intermediate survey date matches special survey date
+          const isMatchingDate = normalizedIssuanceDate && normalizedSSHDate && normalizedIssuanceDate.getTime() === normalizedSSHDate.getTime();
 
-          rangeFrom = addMonths(dueDate, -3);
-          rangeTo = addMonths(dueDate, 3);
+          if (isMatchingDate) {
+            // If dates match, calculate both 2-year and 3-year options
+            const intermediate2Years = addYears(sshDate, 2);
+            const intermediate3Years = addYears(sshDate, 3);
+
+            // Check which is closer to 2.5 years (30 months)
+            const targetDate = addMonths(sshDate, 30);
+            const diff2 = Math.abs(intermediate2Years - targetDate);
+            const diff3 = Math.abs(intermediate3Years - targetDate);
+
+            dueDate = diff2 < diff3 ? intermediate2Years : intermediate3Years;
+            rangeFrom = addMonths(dueDate, -3);
+            rangeTo = dueDate; // Range is only -3 months to due date
+          } else {
+            // Check if intermediate survey was done between SSH and SSH due date
+            const issuanceDateObj = new Date(issuanceDate);
+
+            if (issuanceDateObj > sshDate && issuanceDateObj < sshDueDate) {
+              // Intermediate survey done within the 5-year cycle
+              // No need to do it again - leave dates empty
+              dueDate = "";
+              rangeFrom = "";
+              rangeTo = "";
+            } else {
+              // Outside the 5-year cycle, calculate normally
+              const intermediate2Years = addYears(sshDate, 2);
+              const intermediate3Years = addYears(sshDate, 3);
+
+              const targetDate = addMonths(sshDate, 30);
+              const diff2 = Math.abs(intermediate2Years - targetDate);
+              const diff3 = Math.abs(intermediate3Years - targetDate);
+
+              dueDate = diff2 < diff3 ? intermediate2Years : intermediate3Years;
+              rangeFrom = addMonths(dueDate, -3);
+              rangeTo = dueDate; // Range is only -3 months to due date
+            }
+          }
         } else {
-          dueDate = addYears(issuanceDateObj, 1);
-          rangeFrom = addMonths(dueDate, -3);
-          rangeTo = addMonths(dueDate, 3);
+          // No Special Survey Hull found
+          dueDate = "";
+          rangeFrom = "";
+          rangeTo = "";
         }
         break;
       }
 
       case "Tailshaft condition monitoring annual survey": {
         const specialSurveyHull = findSpecialSurveyHull();
-        if (specialSurveyHull && specialSurveyHull.surveyDate) {
-          const sshDate = new Date(specialSurveyHull.surveyDate);
+        if (specialSurveyHull) {
+          const sshDate = new Date(specialSurveyHull.surveyDate || specialSurveyHull.issuanceDate);
           dueDate = addYears(sshDate, 1);
 
           rangeFrom = addMonths(dueDate, -3);
@@ -401,6 +449,16 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
 
     if (field === "surveyName") {
       checkAndShowSSHWarning(value);
+    }
+
+    // For Annual surveys, when survey date changes, update assignment date to match
+    if (field === "surveyDate" && updatedRows[index].surveyName?.toLowerCase().includes("annual survey")) {
+      updatedRows[index].issuanceDate = value;
+    }
+
+    // For Annual surveys, when assignment date changes, update survey date to match
+    if (field === "issuanceDate" && updatedRows[index].surveyName?.toLowerCase().includes("annual survey")) {
+      updatedRows[index].surveyDate = value;
     }
 
     if (field === "surveyName" || field === "issuanceDate") {
@@ -459,8 +517,6 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
       }
     } catch (error) {
       toast.error(error.message || "Error fetching data");
-    } finally {
-      setLoading(false);
     }
   };
 
