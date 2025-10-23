@@ -115,13 +115,10 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
     if (radioFields.length === 0) return null;
 
     return (
-      <Box sx={{ ml: 4, mt: 1, mb: 2, p: 2, backgroundColor: "#f5f5f5", borderRadius: 1 }}>
+      <Box sx={{ ml: 4, mt: 1, p: 2, display: "flex", borderRadius: 1 }}>
         {radioFields.map((field) => (
-          <Box key={field.key} sx={{ mb: 2 }}>
-            <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: "primary.main" }}>
-              {field.label}
-            </Typography>
-            <MuiRadioGroup value={radioValues[field.value] || ""} onChange={(e) => handleRadioChange(field.value, e.target.value)}>
+          <Box key={field.key}>
+            <MuiRadioGroup sx={{ display: "flex", flexDirection: "row" }} value={radioValues[field.value] || ""} onChange={(e) => handleRadioChange(field.value, e.target.value)}>
               {field.options.map((opt) => (
                 <FormControlLabel key={opt} value={opt} control={<Radio size="small" />} label={opt} sx={{ ml: 1 }} />
               ))}
