@@ -905,12 +905,13 @@ const JournalEntryForm = ({ journalId = null }) => {
                           </TableCell>
                           {!isJournalLocked || !isJournalArchived && (
                             <TableCell align="right">
-                              <IconButton onClick={() => handleEdit(visit)}>
+                              <IconButton onClick={() => handleEdit(visit)} disabled={isJournalArchived || isJournalLocked}>
                                 <EditIcon />
                               </IconButton>
                               {!isJournalArchived && (
                                 <IconButton
                                   onClick={() => handleDelete(visit.id)}
+                                  disabled={isJournalArchived || isJournalLocked}
                                 >
                                   <DeleteIcon />
                                 </IconButton>
@@ -949,12 +950,11 @@ const JournalEntryForm = ({ journalId = null }) => {
                   <Table aria-label="simple table">
                     <TableHead sx={{ backgroundColor: "lightgray" }}>
                       <TableRow>
-                        <TableCell>SL No.</TableCell>
+                        <TableCell>Sr. No.</TableCell>
                         <TableCell>Type of survey/Inspection</TableCell>
                         {/* <TableCell>Initial of surveyors</TableCell> */}
-                        {!isJournalLocked || !isJournalArchived && (
-                          <TableCell align="right">Actions</TableCell>
-                        )}
+                        <TableCell align="right">Actions</TableCell>
+
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -962,18 +962,18 @@ const JournalEntryForm = ({ journalId = null }) => {
                         <TableRow key={activity.id}>
                           <TableCell>{index + 1}</TableCell>
                           <TableCell>{activity.surveyTypes?.name || activity?.name}</TableCell>
-                          {!isJournalLocked || !isJournalArchived && (
-                            <TableCell align="right">
+                          <TableCell align="right">
 
-                              <IconButton
-                                onClick={() =>
-                                  handleActivityDelete(activity)
-                                }
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </TableCell>
-                          )}
+                            <IconButton
+                              disabled={isJournalArchived || isJournalLocked}
+                              onClick={() =>
+                                handleActivityDelete(activity)
+                              }
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </TableCell>
+
                         </TableRow>
                       ))}
                     </TableBody>
