@@ -286,14 +286,33 @@ const Certificates = () => {
                 <TableContainer component={Paper}>
                   <Table>
                     <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ width: "10%" }}>No.</TableCell>
-                        <TableCell sx={{ width: "15%" }}>Ship Name</TableCell>
-                        <TableCell>Document</TableCell>
-                        <TableCell sx={{ width: "15%" }}>Created At</TableCell>
-                        <TableCell>Actions</TableCell>
+                      <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                        {[
+                          { label: "No.", key: null, width: "10%" },
+                          { label: "Ship Name", key: "activity.journal.client.shipName", width: "15%" },
+                          { label: "Document", key: "generatedDoc" },
+                          { label: "Created At", key: "createdAt", width: "15%" },
+                          { label: "Actions", key: null },
+                        ].map((col) => (
+                          <TableCell
+                            key={col.label}
+                            sx={{
+                              cursor: col.key ? "pointer" : "default",
+                              fontWeight: 600,
+                              width: col.width || "auto",
+                              whiteSpace: "nowrap",
+                            }}
+                            onClick={() => col.key && handleSort(col.key)}
+                          >
+                            <Stack direction="row" alignItems="center" spacing={0.5}>
+                              <Typography variant="body2">{col.label}</Typography>
+                              {col.key && sortConfig.key === col.key && (sortConfig.direction === "asc" ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}
+                            </Stack>
+                          </TableCell>
+                        ))}
                       </TableRow>
                     </TableHead>
+
                     <TableBody>
                       {sortedReports.map((row, idx) => (
                         <TableRow key={row.id}>
