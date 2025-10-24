@@ -292,8 +292,9 @@ const SurveyReport = ({ id, reportNumber }) => {
       const file = new File([blob], "survey-report.pdf", { type: "application/pdf" });
       const formData = new FormData();
       formData.append("clientId", id);
-      formData.append("generatedDoc", file);
       formData.append("reportNumber", reportDetails[0]?.activity?.journal?.journalTypeId);
+      formData.append("surveyType", reportDetails[0]?.activity?.surveyTypes?.name);
+      formData.append("generatedDoc", file);
 
       const res = await uploadSurveyReport(formData);
       if (res) {
