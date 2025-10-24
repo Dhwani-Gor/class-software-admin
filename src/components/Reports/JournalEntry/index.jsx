@@ -887,9 +887,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                         <TableCell align="right">
                           Initial Of Surveyors
                         </TableCell>
-                        {!isJournalLocked || !isJournalArchived && (
-                          <TableCell align="right">Actions</TableCell>
-                        )}
+                        <TableCell align="right">Actions</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -903,21 +901,19 @@ const JournalEntryForm = ({ journalId = null }) => {
                           <TableCell align="right">
                             {visit?.surveyors?.map(s => s.name).join(", ")}
                           </TableCell>
-                          {!isJournalLocked || !isJournalArchived && (
-                            <TableCell align="right">
-                              <IconButton onClick={() => handleEdit(visit)} disabled={isJournalArchived || isJournalLocked}>
-                                <EditIcon />
+                          <TableCell align="right">
+                            <IconButton onClick={() => handleEdit(visit)} disabled={isJournalArchived || isJournalLocked}>
+                              <EditIcon />
+                            </IconButton>
+                            {!isJournalArchived && (
+                              <IconButton
+                                onClick={() => handleDelete(visit.id)}
+                                disabled={isJournalArchived || isJournalLocked}
+                              >
+                                <DeleteIcon />
                               </IconButton>
-                              {!isJournalArchived && (
-                                <IconButton
-                                  onClick={() => handleDelete(visit.id)}
-                                  disabled={isJournalArchived || isJournalLocked}
-                                >
-                                  <DeleteIcon />
-                                </IconButton>
-                              )}
-                            </TableCell>
-                          )}
+                            )}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
