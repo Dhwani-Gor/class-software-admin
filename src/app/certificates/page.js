@@ -287,10 +287,10 @@ const Certificates = () => {
                   <Table>
                     <TableHead>
                       <TableRow>
-                        <TableCell>No.</TableCell>
-                        <TableCell>Ship Name</TableCell>
+                        <TableCell sx={{ width: "10%" }}>No.</TableCell>
+                        <TableCell sx={{ width: "15%" }}>Ship Name</TableCell>
                         <TableCell>Document</TableCell>
-                        <TableCell>Created At</TableCell>
+                        <TableCell sx={{ width: "15%" }}>Created At</TableCell>
                         <TableCell>Actions</TableCell>
                       </TableRow>
                     </TableHead>
