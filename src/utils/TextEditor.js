@@ -744,6 +744,105 @@ const TextEditor = ({ id }) => {
     }
   };
 
+  function mergeClassificationSurveys(classificationData, reportDetailsList) {
+    const combined = [];
+
+    // Step 1: Extract from classificationData
+    if (classificationData?.length) {
+      classificationData.forEach((row) => {
+        combined.push({
+          name: row.surveyName,
+          type: "classification",
+          surveyDate: row.surveyDate,
+          dueDate: row.dueDate,
+          rangeFrom: row.rangeFrom,
+          rangeTo: row.rangeTo,
+          postponed: row.postponed,
+          updatedAt: row.updatedAt || row.createdAt,
+          source: "classificationData",
+        });
+      });
+    }
+
+    // Step 2: Extract from reportDetails (only classification survey types)
+    if (reportDetailsList?.length) {
+      reportDetailsList.forEach((r) => {
+        const isClassification = r?.activity?.surveyTypes?.classificationSurvey === true;
+
+        if (isClassification) {
+          combined.push({
+            name: r.activity.surveyTypes.name,
+            type: "classification",
+            surveyDate: r.surveyDate,
+            dueDate: r.dueDate,
+            rangeFrom: r.rangeFrom,
+            rangeTo: r.rangeTo,
+            postponed: r.postponed,
+            updatedAt: r.updatedAt?.val ? new Date().toISOString() : r.updatedAt || r.createdAt,
+            source: "reportDetails",
+          });
+        }
+      });
+    }
+
+    // Step 3: Remove duplicates (keep latest by name)
+    const latestByName = combined.reduce((acc, curr) => {
+      const existing = acc[curr.name];
+      if (!existing) {
+        acc[curr.name] = curr;
+      } else {
+        const existingDate = moment(existing.updatedAt);
+        const currentDate = moment(curr.updatedAt);
+        if (currentDate.isAfter(existingDate)) {
+          acc[curr.name] = curr;
+        }
+      }
+      return acc;
+    }, {});
+
+    // Step 4: Return as an array
+    return Object.values(latestByName);
+  }
+
+  const finalClassificationData = mergeClassificationSurveys(classificationData, reportDetails);
+
+  const classificationRows =
+    finalClassificationData.length > 0
+      ? finalClassificationData
+          .map((row) => {
+            const rangeFrom = row.rangeFrom ? moment(row.rangeFrom).format("DD/MM/YYYY") : "";
+            const rangeTo = row.rangeTo ? moment(row.rangeTo).format("DD/MM/YYYY") : "";
+            const dueDate = row.dueDate ? moment(row.dueDate).format("DD/MM/YYYY") : "-";
+            const surveyDate = row.surveyDate ? moment(row.surveyDate).format("DD/MM/YYYY") : "-";
+            const postponed = row.postponed ? moment(row.postponed).format("DD/MM/YYYY") : "-";
+
+            return `
+<tr>
+<td>${row.name}</td>
+<td>${surveyDate}</td>
+<td>${dueDate}</td>
+<td>${rangeFrom} - ${rangeTo}</td>
+<td>${postponed}</td>
+</tr>
+`;
+          })
+          .join("")
+      : `<tr><td colspan="5">No classification surveys available</td></tr>`;
+
+  const classificationSurveyTableHtml = `
+<p class="section-title" style="font-size: 16px; font-weight: bold;">Classification Surveys</p>
+<table class="">
+<tr>
+<th>Survey Name</th>
+<th>Survey Date</th>
+<th>Due Date</th>
+<th>Range (From - To)</th>
+<th>Postponed</th>
+</tr>
+${classificationRows}
+</table>
+`;
+
   const sectionOrder = ["coc", "statutory", "memoranda", "additional", "compliance", "pcsFsi"];
 
   const additionalFieldsHtml = sectionOrder
@@ -856,66 +955,6 @@ const TextEditor = ({ id }) => {
   `;
 
   const generateHtmlContent = useCallback(() => {
-    const classificationRows =
-      classificationData?.length > 0
-        ? (
-            classificationData?.map((row) => {
-              const surveyName = formatSurveyName(row.surveyName);
-              const issuanceDate = row.issuanceDate;
-              const surveyDate = row.surveyDate;
-              const dueDate = row.dueDate;
-              const rangeTo = row.rangeTo ? moment(row.rangeTo).format("YYYY-MM-DD") : null;
-              const rangeFrom = row.rangeFrom ? moment(row.rangeFrom).format("YYYY-MM-DD") : null;
-              const postponedDate = row.postponed;
-              const currentDate = new Date().toISOString().split("T")[0];
-
-              return `
-<tr>
-<td>${surveyName}</td>
-<td>${getClassRangeIcon(currentDate, rangeFrom, rangeTo) ? `<span class="${getClassRangeIcon(currentDate, rangeFrom, rangeTo)}">S</span>` : ""}</td>
-<td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
-<td>${issuanceDate ? moment(issuanceDate).format("DD/MM/YYYY") : ""}</td>
-<td>${dueDate ? moment(dueDate).format("DD/MM/YYYY") : ""}
-<td>
-${moment(rangeFrom, moment.ISO_8601, true).isValid() && moment(rangeTo, moment.ISO_8601, true).isValid() ? `${moment(rangeFrom).format("DD/MM/YYYY")} - ${moment(rangeTo).format("DD/MM/YYYY")}` : "-"}
-</td>
-
-<td>${postponedDate ? moment(postponedDate).format("DD/MM/YYYY") : ""}</td>
-</tr>
-`;
-            }) || []
-          ).join("")
-        : "";
-
-    const statutoryRows =
-      statutoryData?.length > 0
-        ? statutoryData
-            ?.filter((row) => row.surveyName.toLowerCase() !== "certificate of class")
-            .map((row) => {
-              const surveyName = row.surveyName;
-              const surveyDate = row.surveyDate;
-              const dueDate = row.dueDate || row.validityDate;
-              let validityDate = row.validityDate;
-              let rangeFrom = row.rangeFrom || "";
-              let rangeTo = row.rangeTo || "";
-              const postponedDate = "";
-              const currentDate = new Date().toISOString().split("T")[0];
-              return `
-      <tr>
-      <td>${surveyName}</td>
-      <td>${getClassRangeIcon(currentDate, rangeFrom, rangeTo) ? `<span class="${getClassRangeIcon(currentDate, rangeFrom, rangeTo)}">C</span>` : ""}</td>
-      <td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
-<td>
-  ${row.typeOfCertificate === "full_term" ? (dueDate ? moment(dueDate).format("DD/MM/YYYY") : "") : validityDate ? moment(validityDate).format("DD/MM/YYYY") : ""}
-</td>      
-<td>${row.typeOfCertificate == "full_term" ? `${rangeFrom ? moment(rangeFrom).format("DD/MM/YYYY") : ""} - ${rangeTo ? moment(rangeTo).format("DD/MM/YYYY") : ""}` : ""}</td>
-      <td>${postponedDate}</td>
-      </tr>
-      `;
-            })
-            .join("")
-        : "";
-
     const certificateOfClassRow = reportDetails?.find((cert) => cert?.activity?.surveyTypes?.report?.name?.toLowerCase() === "certificate of class");
 
     const otherCertificates = reportDetails?.filter((cert) => cert?.activity?.surveyTypes?.report?.name?.toLowerCase() !== "certificate of class");
@@ -970,21 +1009,6 @@ ${certificateRows}
 </div>
 `;
 
-    const classificationSurveyTableHtml = `
-<p class="section-title" style="font-size: 16px; font-weight: bold;">Classification Surveys</p>
-<table class="">
-<tr>
-<th>Survey Name</th>
-<th></th>
-<th>Survey Date</th>
-<th>Assigned Date</th>
-<th>Due Date</th>
-<th>Range (from, to)</th>
-<th>Postponed</th>
-</tr>
-${classificationRows}
-</table>
-`;
     const buildSurveyTable = (data, title) => {
       if (!data?.length) return "";
 
