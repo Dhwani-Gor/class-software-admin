@@ -151,6 +151,30 @@ const Certificates = () => {
     }
   };
 
+  const handleConfirmDelete = async () => {
+    setOpenDialog(false);
+    if (!selectedDocument) return;
+    try {
+      if (selectedDocument.type === "document") {
+        const res = await deleteSurveyStatusReport(selectedDocument.id);
+        toast.success("Document deleted successfully");
+        fetchReportsData();
+      } else if (selectedDocument.type === "report") {
+        await deleteSurveyReport(selectedDocument.id);
+        toast.success("Report deleted successfully");
+        fetchReportsData();
+      }
+    } catch (e) {
+      console.error("Error deleting:", e.response?.data || e.message);
+      toast.error("Failed to delete.");
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setSelectedDocument(null);
+    setOpenDialog(false);
+  };
+
   const fetchReportsData = async () => {
     setLoading(true);
     try {
@@ -345,9 +369,15 @@ const Certificates = () => {
                                   <VisibilityIcon />
                                 </IconButton>
                               </Tooltip>
-                              <Tooltip title="Download Document">
-                                <IconButton color="success" onClick={() => handleDownloadDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
-                                  <GetAppIcon />
+                              <Tooltip title="Delete Report">
+                                <IconButton
+                                  color="error"
+                                  onClick={() => {
+                                    setSelectedDocument({ id: row?.id, type: "report" });
+                                    setOpenDialog(true);
+                                  }}
+                                >
+                                  <DeleteIcon />
                                 </IconButton>
                               </Tooltip>
                             </Stack>
@@ -547,7 +577,7 @@ const Certificates = () => {
       </CommonCard>
 
       <DocumentPreview open={openPreviewModal} fileUrl={previewFile} onClose={() => setOpenPreviewModal(false)} />
-      <CommonConfirmationDialog open={openDialog} onClose={() => setOpenDialog(false)} onConfirm={() => {}} title="Are you sure?" description="This action cannot be undone." />
+      <CommonConfirmationDialog open={openDialog} onClose={handleCancelDelete} onConfirm={handleConfirmDelete} title="Are you sure you want to delete this survey status report?" description="This action cannot be undone." />
       <ShowAmdRemarksDialog open={openAmdRemarks} onClose={() => setOpenAmdRemarks(false)} reportDetailId={selectedReportId} hasArchivePermission={hasArchivePermission} />
     </Layout>
   );
