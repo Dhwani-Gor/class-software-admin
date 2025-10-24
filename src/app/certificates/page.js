@@ -343,23 +343,13 @@ const Certificates = () => {
                           <TableCell>{(page - 1) * limit + idx + 1}</TableCell>
                           <TableCell>{row.client?.shipName || "N/A"}</TableCell>
                           <TableCell>
-                            {row.generatedDoc ? (
-                              <a
-                                style={{
-                                  color: "#1976d2",
-                                  textDecoration: "underline",
-                                  cursor: "pointer",
-                                  fontWeight: 500,
-                                }}
-                                href={row.generatedDoc}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                {row.generatedDoc.split("/").pop()}
-                              </a>
-                            ) : (
-                              "N/A"
-                            )}
+                            {row.generatedDoc
+                              ? row.generatedDoc
+                                  .split("/")
+                                  .pop()
+                                  .replace(/_/g, " ")
+                                  .replace(/\.[^/.]+$/, "")
+                              : "N/A"}
                           </TableCell>
                           <TableCell>{formatDate(row.createdAt)}</TableCell>
                           <TableCell>

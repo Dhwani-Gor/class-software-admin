@@ -48,6 +48,12 @@ const reportSchema = yup.object().shape({
   issuedBy: yup.string().required("Issued by is required"),
   place: yup.string().required("Place is required"),
   newValidityDate: yup.string().optional(),
+  rangeFrom: yup.string().optional(),
+  rangeTo: yup.string().optional(),
+  assignmentDate: yup.string().optional(),
+  dueDate: yup.string().optional(),
+  postponedDate: yup.string().optional(),
+  certificateBaseDate: yup.string().optional(),
 });
 
 const ReportingForm = () => {
@@ -173,6 +179,12 @@ const ReportingForm = () => {
       endorsementdate: "",
       issuedBy: "",
       place: "",
+      rangeFrom: "",
+      rangeTo: "",
+      assignmentDate: "",
+      dueDate: "",
+      postponedDate: "",
+      certificateBaseDate: "",
     },
     resolver: yupResolver(reportSchema),
   });
@@ -230,6 +242,10 @@ const ReportingForm = () => {
     setValue("issuedBy", "");
     setValue("place", "");
     setValue("newValidityDate", "");
+    setValue("assignmentDate", "");
+    setValue("dueDate", "");
+    setValue("postponedDate", "");
+    setValue("certificateBaseDate", "");
     clearErrors();
   };
 
@@ -349,6 +365,10 @@ const ReportingForm = () => {
       ...(selectCertificate === "extended" && {
         newValidityDate: values.newValidityDate ? formatDate(values.newValidityDate) : "",
       }),
+      assignmentDate: values.assignmentDate ? formatDate(values.assignmentDate) : null,
+      dueDate: values.dueDate ? formatDate(values.dueDate) : null,
+      postponedDate: values.postponedDate ? formatDate(values.postponedDate) : null,
+      certificateBaseDate: values.certificateBaseDate ? formatDate(values.certificateBaseDate) : null,
     };
 
     if (reportDetails) {
@@ -606,6 +626,12 @@ const ReportingForm = () => {
         setValue("issuedBy", reportData?.issuedBy?.toString() || "");
         setSelectSurveyor(reportData?.issuedBy?.toString() || "");
         setValue("place", reportData?.place || "");
+        setValue("rangeFrom", reportData?.rangeFrom ? moment(reportData?.rangeFrom).format("YYYY-MM-DD") : "");
+        setValue("rangeTo", reportData?.rangeTo ? moment(reportData?.rangeTo).format("YYYY-MM-DD") : "");
+        setValue("assignmentDate", reportData?.assignmentDate ? moment(reportData?.assignmentDate).format("YYYY-MM-DD") : "");
+        setValue("postponedDate", reportData?.postponedDate ? moment(reportData?.postponedDate).format("YYYY-MM-DD") : "");
+        setValue("certificateBaseDate", reportData?.certificateBaseDate ? moment(reportData?.certificateBaseDate).format("YYYY-MM-DD") : "");
+        setValue("dueDate", reportData?.dueDate ? moment(reportData?.dueDate).format("YYYY-MM-DD") : "");
       } else {
         clearErrors();
         setShowForm(true);
@@ -937,7 +963,7 @@ const ReportingForm = () => {
               </Grid2>
               <Grid2 size={{ md: 3 }}>
                 <Controller
-                  name="basedDate"
+                  name="certificateBaseDate"
                   control={control}
                   render={({ field }) => (
                     <CommonInput
