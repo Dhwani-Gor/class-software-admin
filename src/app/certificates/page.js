@@ -376,6 +376,7 @@ const Certificates = () => {
                                     setSelectedDocument({ id: row?.id, type: "report" });
                                     setOpenDialog(true);
                                   }}
+                                  disabled={!row.generatedDoc}
                                 >
                                   <DeleteIcon />
                                 </IconButton>
