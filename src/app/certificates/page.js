@@ -288,7 +288,7 @@ const Certificates = () => {
               <Chip key={tab} label={tab} color={selectedFilter === tab ? "primary" : "default"} onClick={() => setSelectedFilter(tab)} />
             ))}
           </Stack>
-          {selectedFilter !== "Reports" && (
+          {selectedFilter !== "Reports" && ((hasArchivePermission && (selectedFilter === "Archive Documents" || selectedFilter === "Archive Documents" || selectedFilter === "certificates")) || (!hasArchivePermission && selectedFilter === "certificates")) && (
             <Stack>
               <CommonButton variant="contained" onClick={handleBulkDownload} text="Download All">
                 Download All
@@ -308,12 +308,12 @@ const Certificates = () => {
             <>
               {selectedFilter === "Reports" && (
                 <TableContainer component={Paper}>
-                  <Table>
+                  <Table sx={{ marginTop: 2 }}>
                     <TableHead>
                       <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
                         {[
                           { label: "No.", key: null, width: "10%" },
-                          { label: "Ship Name", key: "activity.journal.client.shipName", width: "15%" },
+                          { label: "Ship Name", key: "client.shipName", width: "15%" },
                           { label: "Document", key: "generatedDoc" },
                           { label: "Created At", key: "createdAt", width: "15%" },
                           { label: "Actions", key: null },
@@ -392,7 +392,7 @@ const Certificates = () => {
 
               {selectedFilter === "certificates" && (
                 <TableContainer component={Paper}>
-                  <Table>
+                  <Table sx={{ marginTop: 2 }}>
                     <TableHead>
                       <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
                         {[
@@ -474,7 +474,7 @@ const Certificates = () => {
 
               {selectedFilter === "Archive Documents" && (
                 <TableContainer component={Paper}>
-                  <Table>
+                  <Table sx={{ marginTop: 2 }}>
                     <TableHead>
                       <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
                         {[
