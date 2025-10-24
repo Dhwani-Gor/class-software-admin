@@ -18,7 +18,7 @@ import TextField from "@mui/material/TextField";
 import CommonInput from "../CommonInput";
 import CommonButton from "../CommonButton";
 import { createClient, getSpecificClient, searchinvoicing_detail, searchmanager_detail, searchowner_detail, updateClient } from "@/api";
-import { Accordion, AccordionDetails, AccordionSummary, Typography, IconButton } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Typography, IconButton, TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DeleteIcon from "@mui/icons-material/Delete";
 
@@ -1141,36 +1141,56 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
         >
           <Typography fontWeight={600}>Class History</Typography>
         </AccordionSummary>
-        <AccordionDetails>
-          <Stack spacing={1}>
-            <Grid2 container spacing={16} sx={{ fontWeight: "bold", borderBottom: "1px solid #ccc", pb: 1 }}>
-              <Grid2 xs={2.7}>Ship Status</Grid2>
-              <Grid2 sx={{ ml: 5 }}>Reason</Grid2>
-              <Grid2 sx={{ ml: 9 }}>Remarks</Grid2>
-              <Grid2 sx={{ ml: 8 }}>From Date</Grid2>
-              <Grid2 sx={{ ml: -2 }}>To Date</Grid2>
-            </Grid2>
 
-            {classHistory.map((item, index) => (
-              <Grid2 container spacing={8} key={index} sx={{ borderBottom: "1px solid #e0e0e0", py: 1 }}>
-                <Grid2 xs={2.4}>
-                  <CommonInput fullWidth variant="standard" value={item.shipStatus || ""} disabled inputProps={{ readOnly: true, style: { color: "#000" } }} />
-                </Grid2>
-                <Grid2 xs={2.4}>
-                  <CommonInput fullWidth variant="standard" placeholder="Enter Reason" value={item.reason} disabled={!editingAllowed} onChange={(e) => handleClassHistoryChange(index, "reason", e.target.value)} />
-                </Grid2>
-                <Grid2 xs={2.4}>
-                  <CommonInput fullWidth variant="standard" placeholder="Enter Remarks" value={item.remarks} disabled={!editingAllowed} onChange={(e) => handleClassHistoryChange(index, "remarks", e.target.value)} />
-                </Grid2>
-                <Grid2 xs={2.4}>
-                  <CommonInput fullWidth variant="standard" type="date" value={item.from_date} disabled={!editingAllowed} onChange={(e) => handleClassHistoryChange(index, "from_date", e.target.value)} InputLabelProps={{ shrink: true }} />
-                </Grid2>
-                <Grid2 xs={2.4}>
-                  <CommonInput fullWidth variant="standard" type="date" value={item.to_date} disabled={!editingAllowed} onChange={(e) => handleClassHistoryChange(index, "to_date", e.target.value)} InputLabelProps={{ shrink: true }} />
-                </Grid2>
-              </Grid2>
-            ))}
-          </Stack>
+        <AccordionDetails>
+          <TableContainer sx={{ boxShadow: "none" }}>
+            <Table sx={{ borderCollapse: "collapse", "& td, & th": { border: "none" } }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 600 }}>Ship Status</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Reason</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Remarks</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>From Date</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>To Date</TableCell>
+                </TableRow>
+              </TableHead>
+
+              <TableBody>
+                {classHistory.map((item, index) => (
+                  <TableRow key={index} sx={{ verticalAlign: "top" }}>
+                    <TableCell sx={{ width: "20%" }}>
+                      <CommonInput
+                        fullWidth
+                        variant="standard"
+                        value={item.shipStatus || ""}
+                        disabled
+                        inputProps={{
+                          readOnly: true,
+                          style: { color: "#000" },
+                        }}
+                      />
+                    </TableCell>
+
+                    <TableCell sx={{ width: "20%" }}>
+                      <CommonInput fullWidth variant="standard" placeholder="Enter Reason" value={item.reason || ""} disabled={!editingAllowed} onChange={(e) => handleClassHistoryChange(index, "reason", e.target.value)} />
+                    </TableCell>
+
+                    <TableCell sx={{ width: "25%" }}>
+                      <CommonInput fullWidth variant="standard" placeholder="Enter Remarks" value={item.remarks || ""} disabled={!editingAllowed} onChange={(e) => handleClassHistoryChange(index, "remarks", e.target.value)} />
+                    </TableCell>
+
+                    <TableCell sx={{ width: "17.5%" }}>
+                      <CommonInput fullWidth variant="standard" type="date" value={item.from_date || ""} disabled={!editingAllowed} onChange={(e) => handleClassHistoryChange(index, "from_date", e.target.value)} InputLabelProps={{ shrink: true }} />
+                    </TableCell>
+
+                    <TableCell sx={{ width: "17.5%" }}>
+                      <CommonInput fullWidth variant="standard" type="date" value={item.to_date || ""} disabled={!editingAllowed} onChange={(e) => handleClassHistoryChange(index, "to_date", e.target.value)} InputLabelProps={{ shrink: true }} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </AccordionDetails>
       </Accordion>
     );
