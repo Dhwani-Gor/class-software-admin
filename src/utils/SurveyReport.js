@@ -1,6 +1,6 @@
 import { Editor } from "@tinymce/tinymce-react";
 import { useEffect, useState, useCallback } from "react";
-import { getAllListClassificationSurveys, getAllSystemVariables, getSpecificClient, getSurveyReportDataByJournalId, getVisitDetails, uploadSurveyReport } from "../api";
+import { fetchAdditionalDetails, getAllListClassificationSurveys, getAllSystemVariables, getSpecificClient, getSurveyReportDataByJournalId, getVisitDetails, uploadSurveyReport } from "../api";
 import { toast } from "react-toastify";
 import { PDFDocument } from "pdf-lib";
 import html2canvas from "html2canvas";
@@ -21,7 +21,8 @@ const SurveyReport = ({ id, reportNumber }) => {
   const [lastVisit, setLastVisit] = useState(null);
   const [numOfVisit, setNumOfVisit] = useState(null);
   const [journalId, setJournalId] = useState("");
-  const [classificationData, setClassificationData] = useState([]);
+  const [additionalFieldData, setAdditionalFieldData] = useState([]);
+  console.log(additionalFieldData, "additionalFieldData");
   const currentDate = new Date();
 
   const formatSurveyName = (name) => {
@@ -32,13 +33,13 @@ const SurveyReport = ({ id, reportNumber }) => {
       .replace(/\b\w/g, (c) => c.toUpperCase());
   };
 
-  const getAllClassification = async () => {
-    const response = await getAllListClassificationSurveys({ clientId: id });
-    setClassificationData(response?.data?.data);
+  const getAdditionalFields = async () => {
+    const response = await fetchAdditionalDetails(id);
+    setAdditionalFieldData(response?.data?.data);
   };
 
   useEffect(() => {
-    getAllClassification();
+    getAdditionalFields();
     const getSystemVariables = async () => {
       try {
         const response = await getAllSystemVariables();
@@ -343,42 +344,97 @@ const SurveyReport = ({ id, reportNumber }) => {
     const uniquePorts = [...new Set(portOfSurvey)].join(",").toUpperCase();
     const uniqueSurveyors = [...new Set(issuer)].join(",").toUpperCase();
 
-    const classificationRows =
-      classificationData?.map((row) => {
-        const surveyName = formatSurveyName(row.surveyName);
-        const issuanceDate = row.issuanceDate;
-        const surveyDate = row.surveyDate;
-        const dueDate = row.dueDate;
-        const rangeTo = row.rangeTo ? moment(row.rangeTo).format("YYYY-MM-DD") : null;
-        const rangeFrom = row.rangeFrom ? moment(row.rangeFrom).format("YYYY-MM-DD") : null;
-        const postponedDate = row.postponed;
-        const currentDate = new Date().toISOString().split("T")[0];
+    // const classificationRows =
+    //   classificationData?.map((row) => {
+    //     const surveyName = formatSurveyName(row.surveyName);
+    //     const issuanceDate = row.issuanceDate;
+    //     const surveyDate = row.surveyDate;
+    //     const dueDate = row.dueDate;
+    //     const rangeTo = row.rangeTo ? moment(row.rangeTo).format("YYYY-MM-DD") : null;
+    //     const rangeFrom = row.rangeFrom ? moment(row.rangeFrom).format("YYYY-MM-DD") : null;
+    //     const postponedDate = row.postponed;
+    //     const currentDate = new Date().toISOString().split("T")[0];
 
-        return `
+    //     return `
+    //     <tr>
+    //       <td>${surveyName}</td>
+    //       <td>${getClassRangeIcon(currentDate, rangeFrom, rangeTo) ? `<span class="${getClassRangeIcon(currentDate, rangeFrom, rangeTo)}">S</span>` : ""}</td>
+    //       <td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
+    //       <td>${issuanceDate ? moment(issuanceDate).format("DD/MM/YYYY") : ""}</td>
+    //       <td>${dueDate ? moment(dueDate).format("DD/MM/YYYY") : ""}</td>
+    //       <td>${moment(rangeFrom).isValid() && moment(rangeTo).isValid() ? `${moment(rangeFrom).format("DD/MM/YYYY")} - ${moment(rangeTo).format("DD/MM/YYYY")}` : "-"}</td>
+    //       <td>${postponedDate ? moment(postponedDate).format("DD/MM/YYYY") : ""}</td>
+    //     </tr>`;
+    //   }) || [];
+    const classificationRows = (() => {
+      if (!reportDetails?.length) return [];
+
+      const validCerts = reportDetails.filter(
+        (cert) => cert?.activity?.surveyTypes?.classificationSurvey === true && cert?.activity?.surveyTypes?.report?.name // ensure report is not null
+      );
+
+      const latestMap = {};
+      validCerts.forEach((cert) => {
+        const reportName = cert?.activity?.surveyTypes?.report?.name;
+        if (!reportName) return;
+
+        if (!latestMap[reportName] || new Date(cert?.issuanceDate || 0) > new Date(latestMap[reportName]?.issuanceDate || 0)) {
+          latestMap[reportName] = cert;
+        }
+      });
+
+      const latestCerts = Object.values(latestMap);
+
+      // Generate table rows
+      return latestCerts
+        .map((cert) => {
+          const formattedName = formatSurveyName(cert?.activity?.surveyTypes?.name);
+          const issuanceDate = cert?.issuanceDate;
+          const surveyDate = cert?.surveyDate;
+          const dueDate = cert?.dueDate;
+          const rangeTo = cert?.rangeTo ? moment(cert.rangeTo).format("YYYY-MM-DD") : null;
+          const rangeFrom = cert?.rangeFrom ? moment(cert.rangeFrom).format("YYYY-MM-DD") : null;
+          const postponedDate = cert?.postponed;
+          const currentDate = new Date().toISOString().split("T")[0];
+
+          return `
         <tr>
-          <td>${surveyName}</td>
+          <td>${formattedName}</td>
           <td>${getClassRangeIcon(currentDate, rangeFrom, rangeTo) ? `<span class="${getClassRangeIcon(currentDate, rangeFrom, rangeTo)}">S</span>` : ""}</td>
           <td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
-          <td>${issuanceDate ? moment(issuanceDate).format("DD/MM/YYYY") : ""}</td>
-          <td>${dueDate ? moment(dueDate).format("DD/MM/YYYY") : ""}</td>
-          <td>${moment(rangeFrom).isValid() && moment(rangeTo).isValid() ? `${moment(rangeFrom).format("DD/MM/YYYY")} - ${moment(rangeTo).format("DD/MM/YYYY")}` : "-"}</td>
-          <td>${postponedDate ? moment(postponedDate).format("DD/MM/YYYY") : ""}</td>
+          
         </tr>`;
-      }) || [];
+        })
+        .join("");
+    })();
 
-    const surveyRows = reportDetails
-      ?.map((cert) => {
+    const latestReportsMap = {};
+
+    reportDetails?.forEach((cert) => {
+      const reportName = cert?.activity?.surveyTypes?.report?.name;
+
+      if (!reportName) return; // skip invalid entries
+
+      if (!latestReportsMap[reportName] || new Date(cert?.issuanceDate || 0) > new Date(latestReportsMap[reportName]?.issuanceDate || 0)) {
+        latestReportsMap[reportName] = cert;
+      }
+    });
+
+    const latestReports = Object.values(latestReportsMap);
+
+    const surveyRows = latestReports
+      .map((cert) => {
         const type = cert?.typeOfCertificate === "short_term" ? "ST" : cert?.typeOfCertificate === "full_term" ? "FT" : cert?.typeOfCertificate === "intrim" ? "IT" : cert?.typeOfCertificate === "extended" ? "ET" : cert?.typeOfCertificate || "[Type]";
 
         return `
-          <tr>
-            <td>${cert?.activity?.surveyTypes?.report?.name}</td>
-            <td style="text-align: center;">${type}</td>
-            <td style="text-align: center;">${cert?.endorsementDate ? moment(cert.endorsementDate).format("DD/MM/YYYY") : "-"}</td>
-            <td>${cert?.activity?.surveyTypes?.name}</td>
-            <td style="text-align: center;">${cert?.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : ""}</td>
-            <td style="text-align: center;">${cert?.validityDate ? moment(cert.validityDate).format("DD/MM/YYYY") : ""}</td>
-          </tr>`;
+      <tr>
+        <td>${cert?.activity?.surveyTypes?.report?.name}</td>
+        <td style="text-align: center;">${type}</td>
+        <td style="text-align: center;">${cert?.endorsementDate ? moment(cert.endorsementDate).format("DD/MM/YYYY") : "-"}</td>
+        <td>${cert?.activity?.surveyTypes?.name}</td>
+        <td style="text-align: center;">${cert?.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : ""}</td>
+        <td style="text-align: center;">${cert?.validityDate ? moment(cert.validityDate).format("DD/MM/YYYY") : ""}</td>
+      </tr>`;
       })
       .join("");
 
@@ -429,14 +485,11 @@ const SurveyReport = ({ id, reportNumber }) => {
             <tr>
               <th>Survey Name</th>
               <th>Status</th>
-              <th>Survey Date</th>
-              <th>Assigned Date</th>
-              <th>Due Date</th>
-              <th>Range</th>
-              <th>Postponed</th>
+              <th>Last Visit Date</th>
+              
             </tr>
           </thead>
-          <tbody>${classificationRows.join("")}</tbody>
+          <tbody>${classificationRows}</tbody>
         </table>
 
         <div class="stamp"><img src="${stamp}" width="100" height="100" alt="Stamp" /></div>
@@ -454,7 +507,7 @@ const SurveyReport = ({ id, reportNumber }) => {
         <div class="certificate-footer">© ${companyName} | Generated on ${moment(currentDate).format("DD-MM-YYYY")}</div>
       </div>
     `;
-  }, [clientData, reportDetails, systemVariables, classificationData, firstVisit, lastVisit, numOfVisit]);
+  }, [clientData, reportDetails, systemVariables, firstVisit, lastVisit, numOfVisit]);
 
   useEffect(() => {
     if (!id) return;

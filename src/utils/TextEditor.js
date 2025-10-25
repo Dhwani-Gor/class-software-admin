@@ -793,7 +793,7 @@ const TextEditor = ({ id }) => {
       } else {
         const existingDate = moment(existing.updatedAt);
         const currentDate = moment(curr.updatedAt);
-        if (currentDate.isAfter(existingDate)) {
+        if (existingDate.isAfter(currentDate)) {
           acc[curr.name] = curr;
         }
       }
@@ -805,6 +805,8 @@ const TextEditor = ({ id }) => {
   }
 
   const finalClassificationData = mergeClassificationSurveys(classificationData, reportDetails);
+  console.log(finalClassificationData, "finalClassificationData");
+  console.log("test");
 
   const classificationRows =
     finalClassificationData.length > 0
@@ -957,55 +959,61 @@ ${classificationRows}
   const generateHtmlContent = useCallback(() => {
     const certificateOfClassRow = reportDetails?.find((cert) => cert?.activity?.surveyTypes?.report?.name?.toLowerCase() === "certificate of class");
 
-    const otherCertificates = reportDetails?.filter((cert) => cert?.activity?.surveyTypes?.report?.name?.toLowerCase() !== "certificate of class");
+    const otherCertificates = reportDetails?.filter((cert) => cert?.activity?.surveyTypes?.report?.name && cert?.activity?.surveyTypes?.report?.name?.toLowerCase() !== "certificate of class");
 
     const formatCertificateRow = (cert) => {
-      const name = cert?.activity?.surveyTypes?.report?.name || "-";
+      // ✅ Skip if report is missing
+      if (!cert?.activity?.surveyTypes?.report?.name) return "";
+
+      const name = cert.activity.surveyTypes.report.name;
       const issued = cert.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : "";
       const expiry = cert.validityDate;
       const expiryFormatted = expiry ? moment(expiry).format("YYYY-MM-DD") : null;
 
-      const type = cert?.typeOfCertificate === "short_term" ? "ST" : cert?.typeOfCertificate === "full_term" ? "FT" : cert?.typeOfCertificate === "intrim" ? "IT" : cert?.typeOfCertificate === "extended" ? "ET" : cert?.typeOfCertificate || "-";
+      const type = cert.typeOfCertificate === "short_term" ? "ST" : cert.typeOfCertificate === "full_term" ? "FT" : cert.typeOfCertificate === "intrim" ? "IT" : cert.typeOfCertificate === "extended" ? "ET" : cert.typeOfCertificate || "-";
 
       const status = "";
       const currentDate = new Date().toISOString().split("T")[0];
 
       return `
 <tr>
-<td>${name}</td>
-<td>${getClassName(expiryFormatted, currentDate) ? `<span class="${getClassName(expiryFormatted, currentDate)}">C</span>` : ""}</td>
-<td>${issued}</td>
-<td>${expiry ? moment(expiry).format("DD/MM/YYYY") : ""}</td>
-<td></td>
-<td>${type}</td>
-<td>${status}</td>
-</tr>
-`;
+  <td>${name}</td>
+  <td>${getClassName(expiryFormatted, currentDate) ? `<span class="${getClassName(expiryFormatted, currentDate)}">C</span>` : ""}</td>
+  <td>${issued}</td>
+  <td>${expiry ? moment(expiry).format("DD/MM/YYYY") : ""}</td>
+  <td></td>
+  <td>${type}</td>
+  <td>${status}</td>
+</tr>`;
     };
 
-    const certificateRows = [certificateOfClassRow ? formatCertificateRow(certificateOfClassRow) : null, ...(otherCertificates?.map(formatCertificateRow) || [])].filter(Boolean).join("");
+    // ✅ Build table rows (filter out skipped entries)
+    const certificateRows = [certificateOfClassRow ? formatCertificateRow(certificateOfClassRow) : "", ...(otherCertificates?.map(formatCertificateRow) || [])].filter((row) => row && row.trim() !== "").join("");
 
     const certificatesTableHtml = `
-<h4 class="no-break" style="margin-top: -100px;color:white;background-color:linear-gradient(to right, #9013fe, #4a90e2)" >Certificates</h4>
+<h4 class="no-break" style="margin-top: -100px; color:white; background: linear-gradient(to right, #9013fe, #4a90e2);">
+  Certificates
+</h4>
 <table>
-<thead>
-<tr>
-<th>Certificate Name</th>
-<th></th>
-<th>Issued</th>
-<th>Expiry</th>
-<th>Extended</th>
-<th>Type</th>
-</tr>
-</thead>
-<tbody>
-${certificateRows}
-</tbody>
+  <thead>
+    <tr>
+      <th>Certificate Name</th>
+      <th></th>
+      <th>Issued</th>
+      <th>Expiry</th>
+      <th>Extended</th>
+      <th>Type</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${certificateRows || `<tr><td colspan="7">No valid certificates available</td></tr>`}
+  </tbody>
 </table>
 <div class="legend">
-<span class="legend-item"><span class="status-icon expired">C</span>Expired</span>
-<span class="legend-item"><span class="status-icon expiring1m">C</span>Expires in less than 1 month</span>
-<span class="legend-item"><span class="status-icon expiring3m">C</span>Expires in less than 3 months</span>
+  <span class="legend-item"><span class="status-icon expired">C</span>Expired</span>
+  <span class="legend-item"><span class="status-icon expiring1m">C</span>Expires in less than 1 month</span>
+  <span class="legend-item"><span class="status-icon expiring3m">C</span>Expires in less than 3 months</span>
 </div>
 `;
 
