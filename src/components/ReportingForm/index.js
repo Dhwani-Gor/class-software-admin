@@ -243,6 +243,8 @@ const ReportingForm = () => {
     setValue("place", "");
     setValue("newValidityDate", "");
     setValue("assignmentDate", "");
+    setValue("rangeFrom", "");
+    setValue("rangeTo", "");
     setValue("dueDate", "");
     setValue("postponedDate", "");
     setValue("certificateBaseDate", "");
@@ -365,6 +367,8 @@ const ReportingForm = () => {
       ...(selectCertificate === "extended" && {
         newValidityDate: values.newValidityDate ? formatDate(values.newValidityDate) : "",
       }),
+      rangeFrom: values.rangeFrom ? formatDate(values.rangeFrom) : null,
+      rangeTo: values.rangeTo ? formatDate(values.rangeTo) : null,
       assignmentDate: values.assignmentDate ? formatDate(values.assignmentDate) : null,
       dueDate: values.dueDate ? formatDate(values.dueDate) : null,
       postponedDate: values.postponedDate ? formatDate(values.postponedDate) : null,
