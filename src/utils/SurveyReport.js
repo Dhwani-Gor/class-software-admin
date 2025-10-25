@@ -1,6 +1,6 @@
 import { Editor } from "@tinymce/tinymce-react";
 import { useEffect, useState, useCallback } from "react";
-import { fetchAdditionalDetails, getAllListClassificationSurveys, getAllSystemVariables, getSpecificClient, getSurveyReportDataByJournalId, getVisitDetails, uploadSurveyReport } from "../api";
+import { fetchAdditionalDetails, getAllSystemVariables, getSpecificClient, getSurveyReportDataByJournalId, getVisitDetails, uploadSurveyReport } from "../api";
 import { toast } from "react-toastify";
 import { PDFDocument } from "pdf-lib";
 import html2canvas from "html2canvas";
@@ -22,7 +22,6 @@ const SurveyReport = ({ id, reportNumber }) => {
   const [numOfVisit, setNumOfVisit] = useState(null);
   const [journalId, setJournalId] = useState("");
   const [additionalFieldData, setAdditionalFieldData] = useState([]);
-  console.log(additionalFieldData, "additionalFieldData");
   const currentDate = new Date();
 
   const formatSurveyName = (name) => {
@@ -34,8 +33,12 @@ const SurveyReport = ({ id, reportNumber }) => {
   };
 
   const getAdditionalFields = async () => {
-    const response = await fetchAdditionalDetails(id);
-    setAdditionalFieldData(response?.data?.data);
+    try {
+      const response = await fetchAdditionalDetails(id);
+      setAdditionalFieldData(response?.data?.data || []);
+    } catch (err) {
+      console.error("fetchAdditionalDetails error", err);
+    }
   };
 
   useEffect(() => {
@@ -52,7 +55,337 @@ const SurveyReport = ({ id, reportNumber }) => {
     };
 
     getSystemVariables();
-  }, []);
+  }, [id]);
+
+  const matchesReportNumber = (item, reportNumber) => {
+    if (!reportNumber) return true;
+    const ref = item?.referenceNo?.toString() || "";
+    const journalTypeId = item?.journalTypeId?.toString() || "";
+
+    if (ref && ref === reportNumber) return true;
+    if (journalTypeId && journalTypeId === reportNumber) return true;
+
+    if (ref && reportNumber.includes(ref)) return true;
+
+    const digits = (reportNumber.match(/\d+/g) || []).join("");
+    if (digits && ref && digits === ref) return true;
+
+    return false;
+  };
+
+  const generateHtmlContent = useCallback(
+    (reportDetailsInput, additionalFieldDataInput = []) => {
+      if (!reportDetailsInput || !systemVariables) return "";
+
+      const formatValue = (val) => (val || val === 0 ? val : "—");
+      const companyName = systemVariables?.data?.find((i) => i.name === "company_name")?.information || "-";
+      const companyLogo = systemVariables?.data?.find((i) => i.name === "company_logo")?.information || "-";
+      const stamp = systemVariables?.data?.find((i) => i.name === "company_stamp")?.information || "-";
+      const issuer = reportDetailsInput?.map((i) => i?.issuer?.name);
+      const portOfSurvey = reportDetailsInput?.map((i) => i?.place?.toLowerCase());
+      const uniquePorts = [...new Set(portOfSurvey)].join(",").toUpperCase();
+      const uniqueSurveyors = [...new Set(issuer)].join(",").toUpperCase();
+
+      const classificationRows = (() => {
+        if (!reportDetailsInput?.length) return "";
+
+        const validCerts = reportDetailsInput.filter((cert) => cert?.activity?.surveyTypes?.classificationSurvey === true && cert?.activity?.surveyTypes?.report?.name);
+
+        const latestMap = {};
+        validCerts.forEach((cert) => {
+          const reportName = cert?.activity?.surveyTypes?.report?.name;
+          if (!reportName) return;
+          if (!latestMap[reportName] || new Date(cert?.issuanceDate || 0) > new Date(latestMap[reportName]?.issuanceDate || 0)) {
+            latestMap[reportName] = cert;
+          }
+        });
+
+        return Object.values(latestMap)
+          .map((cert) => {
+            const formattedName = formatSurveyName(cert?.activity?.surveyTypes?.name);
+            const status = cert?.activity?.status || "";
+            return `
+              <tr>
+                <td style="text-align:center;padding:6px;">${formattedName}</td>
+                <td style="text-align:center;padding:6px;">${status}</td>
+                <td style="text-align:center;padding:6px;">${lastVisit ? moment(lastVisit).format("DD/MM/YYYY") : ""}</td>
+              </tr>
+            `;
+          })
+          .join("");
+      })();
+
+      const latestReportsMap = {};
+      reportDetailsInput?.forEach((cert) => {
+        const reportName = cert?.activity?.surveyTypes?.report?.name;
+        if (!reportName) return;
+        if (!latestReportsMap[reportName] || new Date(cert?.issuanceDate || 0) > new Date(latestReportsMap[reportName]?.issuanceDate || 0)) {
+          latestReportsMap[reportName] = cert;
+        }
+      });
+
+      const latestReports = Object.values(latestReportsMap);
+
+      const surveyRows = latestReports
+        .map((cert) => {
+          const type = cert?.typeOfCertificate === "short_term" ? "ST" : cert?.typeOfCertificate === "full_term" ? "FT" : cert?.typeOfCertificate === "intrim" ? "IT" : cert?.typeOfCertificate === "extended" ? "ET" : cert?.typeOfCertificate || "[Type]";
+
+          return `
+          <tr>
+            <td>${cert?.activity?.surveyTypes?.report?.name}</td>
+            <td style="text-align:center;">${type}</td>
+            <td style="text-align:center;">${cert?.endorsementDate ? moment(cert.endorsementDate).format("DD/MM/YYYY") : "-"}</td>
+            <td>${cert?.activity?.surveyTypes?.name}</td>
+            <td style="text-align:center;">${cert?.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : ""}</td>
+            <td style="text-align:center;">${cert?.validityDate ? moment(cert.validityDate).format("DD/MM/YYYY") : ""}</td>
+          </tr>
+        `;
+        })
+        .join("");
+
+      const renderAdditionalFields = () => {
+  if (!Array.isArray(additionalFieldDataInput) || !additionalFieldDataInput.length) return "";
+
+  const sectionOrder = [
+    "coc",
+    "statutory",
+    "memoranda",
+    "additional",
+    "compliance",
+    "pcsfsi",
+    "psc/fsi",
+  ];
+
+  const titleForKey = (k) => {
+    if (!k) return "Other";
+    const key = k.toLowerCase();
+
+    switch (key) {
+      case "coc":
+        return "Condition of Class";
+      case "statutory":
+        return "Statutory";
+      case "memoranda":
+        return "Memoranda";
+      case "additional":
+        return "Additional Information";
+      case "compliance":
+        return "Compliance to New Regulations";
+      case "pcsfsi":
+      case "psc/fsi":
+        return "PSC / FSI Deficiency";
+      default:
+        return k.toUpperCase();
+    }
+  };
+
+  // Sort sections based on defined order
+  const sortedSections = [...additionalFieldDataInput].sort((a, b) => {
+    const idxA = sectionOrder.indexOf(a.sectionKey?.toLowerCase());
+    const idxB = sectionOrder.indexOf(b.sectionKey?.toLowerCase());
+    if (idxA === -1 && idxB === -1) return 0;
+    if (idxA === -1) return 1;
+    if (idxB === -1) return -1;
+    return idxA - idxB;
+  });
+
+  const sectionsHtml = sortedSections
+    .map((section) => {
+      const rows = Array.isArray(section.data) ? section.data : section.data || [];
+      const matchedRows = rows.filter((r) => matchesReportNumber(r, reportNumber));
+
+      if (!matchedRows.length) return "";
+
+      const rowsHtml = matchedRows
+        .map((r) => {
+          const due = r?.dueDate ? moment(r.dueDate).format("DD/MM/YYYY") : "-";
+          const status = r?.action || "-";
+          return `
+            <tr>
+              <td style="padding:8px;border:1px solid #ccc;text-align:left;">${formatValue(r?.code)}</td>
+              <td style="padding:8px;border:1px solid #ccc;text-align:left;">${formatValue(r?.description)}</td>
+              <td style="padding:8px;border:1px solid #ccc;text-align:center;">${status}</td>
+              <td style="padding:8px;border:1px solid #ccc;text-align:center;">${due}</td>
+            </tr>
+          `;
+        })
+        .join("");
+
+      return `
+        <h3 style="margin-top:18px;margin-bottom:8px;font-size:16px;color:#003366;">
+          ${titleForKey(section.sectionKey)}
+        </h3>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:13px;">
+          <thead>
+            <tr>
+              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:left;">Code</th>
+              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:left;">Description</th>
+              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;">Status</th>
+              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;">Due Date</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      `;
+    })
+    .join("");
+
+  return sectionsHtml;
+};
+
+      const mainDetailsHtml = `
+        <h2 style="font-size:18px;margin-top:20px;color:#2e2e2e;">${reportDetailsInput[0]?.activity?.journal?.journalTypeId || "Survey Report"}</h2>
+        <table style="border-collapse:collapse;width:100%;margin-bottom:12px;font-size:14px;">
+          <tr>
+            <td style="padding:8px;border:1px solid #ccc;width:30%;">Ship's Name</td>
+            <td style="padding:8px;border:1px solid #ccc;">${formatValue(clientData?.shipName)}</td>
+            <td style="padding:8px;border:1px solid #ccc;width:15%;">Report No</td>
+            <td style="padding:8px;border:1px solid #ccc;">${formatValue(reportDetailsInput[0]?.activity?.journal?.journalTypeId)}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid #ccc;">Date of Build</td>
+            <td style="padding:8px;border:1px solid #ccc;">${clientData?.dateOfBuild ? moment(clientData.dateOfBuild).format("DD/MM/YYYY") : "—"}</td>
+            <td style="padding:8px;border:1px solid #ccc;">Ship Type</td>
+            <td style="padding:8px;border:1px solid #ccc;">${formatValue(clientData?.typeOfShip)}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid #ccc;">IMO Number</td>
+            <td style="padding:8px;border:1px solid #ccc;">${formatValue(clientData?.imoNumber)}</td>
+            <td style="padding:8px;border:1px solid #ccc;">Flag</td>
+            <td style="padding:8px;border:1px solid #ccc;">${formatValue(clientData?.flag)}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid #ccc;">First Visit</td>
+            <td style="padding:8px;border:1px solid #ccc;">${firstVisit ? moment(firstVisit).format("DD/MM/YYYY") : "—"}</td>
+            <td style="padding:8px;border:1px solid #ccc;">Last Visit</td>
+            <td style="padding:8px;border:1px solid #ccc;">${lastVisit ? moment(lastVisit).format("DD/MM/YYYY") : "—"}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px;border:1px solid #ccc;">No. of Visits</td>
+            <td style="padding:8px;border:1px solid #ccc;">${numOfVisit || "—"}</td>
+            <td style="padding:8px;border:1px solid #ccc;">Port of Survey</td>
+            <td style="padding:8px;border:1px solid #ccc;">${uniquePorts || "—"}</td>
+          </tr>
+        </table>
+      `;
+
+      // Combine everything
+      return `
+        <div class="page" style="font-family: 'Times New Roman', serif; background:#fff; padding:30px;">
+          <div class="certificate-header" style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px double #003366;padding-bottom:12px;margin-bottom:18px;">
+            <div class="header-left">${companyLogo ? `<img src="${companyLogo}" alt="Logo" style="max-width:140px;height:auto;" />` : ""}</div>
+            <div class="header-right" style="text-align:right;">
+              <h2 style="margin:0;color:#003366;font-size:22px;text-transform:uppercase">${companyName}</h2>
+              <p style="margin:6px 0 0 0;font-size:16px;font-weight:700">SURVEY REPORT</p>
+            </div>
+          </div>
+
+          ${mainDetailsHtml}
+
+          <h4 style="color:#003366;margin-top:14px;border-bottom:1px solid #999;padding-bottom:6px;">Surveys</h4>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:12px;">
+            <thead>
+              <tr>
+                <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;">Survey Name</th>
+                <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;">Cert. Term</th>
+                <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;">Endorsed</th>
+                <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;">Survey Type</th>
+                <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;">Issued / Extended</th>
+                <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;">Expiry Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${surveyRows}
+            </tbody>
+          </table>
+
+          <h4 style="color:#003366;margin-top:10px;border-bottom:1px solid #999;padding-bottom:6px;">Classification Surveys</h4>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:12px;">
+            <thead>
+              <tr>
+                <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;">Survey Name</th>
+                <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;">Status</th>
+                <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;">Last Visit Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${classificationRows}
+            </tbody>
+          </table>
+
+
+          <div style="margin-top:12px;">
+            <div class="stamp">${stamp ? `<img src="${stamp}" width="100" height="100" alt="Stamp" />` : ""}</div>
+            <h4 style="color:#003366;margin-top:18px;border-bottom:1px solid #999;padding-bottom:6px;">Surveyors and Authorization</h4>
+            <table style="width:100%;border-collapse:collapse;margin-bottom:12px;">
+              <tr>
+                <td style="padding:8px;border:1px solid #ccc;">Surveyors</td>
+                <td style="padding:8px;border:1px solid #ccc;">${uniqueSurveyors || "-"}</td>
+                <td style="padding:8px;border:1px solid #ccc;">Reviewed On</td>
+                <td style="padding:8px;border:1px solid #ccc;">${moment(new Date()).format("DD/MM/YYYY")}</td>
+              </tr>
+              <tr>
+                <td style="padding:8px;border:1px solid #ccc;">Port</td>
+                <td style="padding:8px;border:1px solid #ccc;">${uniquePorts || "-"}</td>
+                <td style="padding:8px;border:1px solid #ccc;">Date</td>
+                <td style="padding:8px;border:1px solid #ccc;">${moment(new Date()).format("DD/MM/YYYY")}</td>
+              </tr>
+            </table>
+          </div>
+
+          <p style="font-size:12px;margin-top:12px;">
+            <strong>Note:</strong> Cert. Term - FT = Full Term, ST = Short Term, ET = Extended, IT = Interim, PROV = Provisional
+          </p>
+
+          ${renderAdditionalFields()}
+
+          <div class="certificate-footer" style="margin-top:18px;">© ${companyName} | Generated on ${moment(currentDate).format("DD-MM-YYYY")}</div>
+        </div>
+      `;
+    },
+    [systemVariables, clientData, firstVisit, lastVisit, numOfVisit, currentDate, reportNumber]
+  );
+
+  useEffect(() => {
+    if (!id) return;
+    const loadAllData = async () => {
+      try {
+        setLoading(true);
+        const [clientResult, reportResult] = await Promise.all([getSpecificClient(id), getSurveyReportDataByJournalId(id, reportNumber)]);
+        if (clientResult?.status === 200) setClientData(clientResult.data.data);
+        if (reportResult?.status === 200) {
+          const reportData = reportResult.data.data;
+          setReportDetails(reportData);
+
+          const journalIds = reportData.map((i) => i?.activity?.journal?.id).filter(Boolean);
+          const uniqueJournalId = [...new Set(journalIds)][0];
+          if (uniqueJournalId) {
+            setJournalId(uniqueJournalId);
+            const visitResponse = await getVisitDetails("journalId", uniqueJournalId);
+            const visits = visitResponse?.data?.data;
+            if (visits?.length) {
+              setFirstVisit(visits[0]?.date);
+              setLastVisit(visits[visits.length - 1]?.date);
+              setNumOfVisit(visits.length);
+            }
+          }
+        }
+      } catch (error) {
+        toast.error("Failed to load data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadAllData();
+  }, [id, reportNumber]);
+
+  useEffect(() => {
+    // when data and additionalFieldData are available, set editor content
+    if (clientData && reportDetails && systemVariables && !loading) {
+      const html = generateHtmlContent(reportDetails, additionalFieldData);
+      setEditorContent(html);
+    }
+  }, [clientData, reportDetails, systemVariables, loading, generateHtmlContent, additionalFieldData]);
 
   const downloadEditorContentAsPdf = async () => {
     const iframe = document.querySelector("iframe.tox-edit-area__iframe");
@@ -157,16 +490,7 @@ const SurveyReport = ({ id, reportNumber }) => {
       const dpiRatio = 1.3333;
       const canvasWidth = pageWidth * dpiRatio;
 
-      // Get the actual content height
       const contentHeight = Math.max(contentBody.scrollHeight, contentBody.offsetHeight, contentBody.clientHeight, contentDocument.documentElement.scrollHeight, contentDocument.documentElement.offsetHeight);
-
-      console.log("Content dimensions:", {
-        scrollHeight: contentBody.scrollHeight,
-        offsetHeight: contentBody.offsetHeight,
-        clientHeight: contentBody.clientHeight,
-        docScrollHeight: contentDocument.documentElement.scrollHeight,
-        finalHeight: contentHeight,
-      });
 
       const canvas = await html2canvas(contentBody, {
         scale: 2,
@@ -179,24 +503,14 @@ const SurveyReport = ({ id, reportNumber }) => {
         windowWidth: canvasWidth,
       });
 
-      console.log("Canvas captured:", {
-        width: canvas.width,
-        height: canvas.height,
-        scale: 2,
-        contentHeight: contentHeight,
-      });
-
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
-
-      console.log("Canvas captured:", { imgWidth, imgHeight, scale: 2 });
 
       const pdfDoc = await PDFDocument.create();
       const margin = 30;
       const usableWidth = pageWidth - 2 * margin;
       const usableHeight = pageHeight - 2 * margin;
       const scaleFactor = usableWidth / imgWidth;
-
       const baseSliceHeight = Math.floor((usableHeight - 10) / scaleFactor);
 
       const getTableRowPositions = () => {
@@ -240,9 +554,8 @@ const SurveyReport = ({ id, reportNumber }) => {
       };
 
       let currentY = 0;
-      const pages = []; // Store all pages first
+      const pages = [];
 
-      // First pass: create all page slices
       while (currentY < imgHeight) {
         const maxSliceHeight = Math.min(baseSliceHeight, imgHeight - currentY);
         const sliceHeight = getOptimalSliceHeight(currentY, maxSliceHeight);
@@ -260,7 +573,6 @@ const SurveyReport = ({ id, reportNumber }) => {
         currentY += sliceHeight;
       }
 
-      // Second pass: create PDF pages with correct total page count
       const totalPages = pages.length;
 
       for (let i = 0; i < pages.length; i++) {
@@ -276,7 +588,6 @@ const SurveyReport = ({ id, reportNumber }) => {
           height: scaledHeight,
         });
 
-        // Footer with correct page numbers
         const footerY = margin / 2;
         const pageText = `Page ${i + 1} of ${totalPages}`;
 
@@ -317,8 +628,8 @@ const SurveyReport = ({ id, reportNumber }) => {
     }
   };
 
-  const getClassRangeIcon = (currentDate, rangeFrom, rangeTo) => {
-    const today = moment(currentDate, "YYYY-MM-DD");
+  const getClassRangeIcon = (currentDateParam, rangeFrom, rangeTo) => {
+    const today = moment(currentDateParam, "YYYY-MM-DD");
     if (!rangeFrom || !rangeTo) return "";
 
     const from = moment(rangeFrom, "YYYY-MM-DD");
@@ -332,221 +643,6 @@ const SurveyReport = ({ id, reportNumber }) => {
     if (today.isBetween(from, to, "day", "[]") && daysToRangeTo >= 30) return "status-icon expiring3m";
     return "";
   };
-
-  const generateHtmlContent = useCallback(() => {
-    if (!clientData || !reportDetails || !systemVariables) return "";
-
-    const companyName = systemVariables?.data?.find((i) => i.name === "company_name")?.information || "-";
-    const companyLogo = systemVariables?.data?.find((i) => i.name === "company_logo")?.information || "-";
-    const stamp = systemVariables?.data?.find((i) => i.name === "company_stamp")?.information || "-";
-    const issuer = reportDetails?.map((i) => i?.issuer?.name);
-    const portOfSurvey = reportDetails?.map((i) => i?.place?.toLowerCase());
-    const uniquePorts = [...new Set(portOfSurvey)].join(",").toUpperCase();
-    const uniqueSurveyors = [...new Set(issuer)].join(",").toUpperCase();
-
-    // const classificationRows =
-    //   classificationData?.map((row) => {
-    //     const surveyName = formatSurveyName(row.surveyName);
-    //     const issuanceDate = row.issuanceDate;
-    //     const surveyDate = row.surveyDate;
-    //     const dueDate = row.dueDate;
-    //     const rangeTo = row.rangeTo ? moment(row.rangeTo).format("YYYY-MM-DD") : null;
-    //     const rangeFrom = row.rangeFrom ? moment(row.rangeFrom).format("YYYY-MM-DD") : null;
-    //     const postponedDate = row.postponed;
-    //     const currentDate = new Date().toISOString().split("T")[0];
-
-    //     return `
-    //     <tr>
-    //       <td>${surveyName}</td>
-    //       <td>${getClassRangeIcon(currentDate, rangeFrom, rangeTo) ? `<span class="${getClassRangeIcon(currentDate, rangeFrom, rangeTo)}">S</span>` : ""}</td>
-    //       <td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
-    //       <td>${issuanceDate ? moment(issuanceDate).format("DD/MM/YYYY") : ""}</td>
-    //       <td>${dueDate ? moment(dueDate).format("DD/MM/YYYY") : ""}</td>
-    //       <td>${moment(rangeFrom).isValid() && moment(rangeTo).isValid() ? `${moment(rangeFrom).format("DD/MM/YYYY")} - ${moment(rangeTo).format("DD/MM/YYYY")}` : "-"}</td>
-    //       <td>${postponedDate ? moment(postponedDate).format("DD/MM/YYYY") : ""}</td>
-    //     </tr>`;
-    //   }) || [];
-    const classificationRows = (() => {
-      if (!reportDetails?.length) return [];
-
-      const validCerts = reportDetails.filter(
-        (cert) => cert?.activity?.surveyTypes?.classificationSurvey === true && cert?.activity?.surveyTypes?.report?.name // ensure report is not null
-      );
-
-      const latestMap = {};
-      validCerts.forEach((cert) => {
-        const reportName = cert?.activity?.surveyTypes?.report?.name;
-        if (!reportName) return;
-
-        if (!latestMap[reportName] || new Date(cert?.issuanceDate || 0) > new Date(latestMap[reportName]?.issuanceDate || 0)) {
-          latestMap[reportName] = cert;
-        }
-      });
-
-      const latestCerts = Object.values(latestMap);
-
-      // Generate table rows
-      return latestCerts
-        .map((cert) => {
-          const formattedName = formatSurveyName(cert?.activity?.surveyTypes?.name);
-          const issuanceDate = cert?.issuanceDate;
-          const surveyDate = cert?.surveyDate;
-          const dueDate = cert?.dueDate;
-          const rangeTo = cert?.rangeTo ? moment(cert.rangeTo).format("YYYY-MM-DD") : null;
-          const rangeFrom = cert?.rangeFrom ? moment(cert.rangeFrom).format("YYYY-MM-DD") : null;
-          const postponedDate = cert?.postponed;
-          const currentDate = new Date().toISOString().split("T")[0];
-
-          return `
-        <tr>
-          <td>${formattedName}</td>
-          <td>${getClassRangeIcon(currentDate, rangeFrom, rangeTo) ? `<span class="${getClassRangeIcon(currentDate, rangeFrom, rangeTo)}">S</span>` : ""}</td>
-          <td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
-          
-        </tr>`;
-        })
-        .join("");
-    })();
-
-    const latestReportsMap = {};
-
-    reportDetails?.forEach((cert) => {
-      const reportName = cert?.activity?.surveyTypes?.report?.name;
-
-      if (!reportName) return; // skip invalid entries
-
-      if (!latestReportsMap[reportName] || new Date(cert?.issuanceDate || 0) > new Date(latestReportsMap[reportName]?.issuanceDate || 0)) {
-        latestReportsMap[reportName] = cert;
-      }
-    });
-
-    const latestReports = Object.values(latestReportsMap);
-
-    const surveyRows = latestReports
-      .map((cert) => {
-        const type = cert?.typeOfCertificate === "short_term" ? "ST" : cert?.typeOfCertificate === "full_term" ? "FT" : cert?.typeOfCertificate === "intrim" ? "IT" : cert?.typeOfCertificate === "extended" ? "ET" : cert?.typeOfCertificate || "[Type]";
-
-        return `
-      <tr>
-        <td>${cert?.activity?.surveyTypes?.report?.name}</td>
-        <td style="text-align: center;">${type}</td>
-        <td style="text-align: center;">${cert?.endorsementDate ? moment(cert.endorsementDate).format("DD/MM/YYYY") : "-"}</td>
-        <td>${cert?.activity?.surveyTypes?.name}</td>
-        <td style="text-align: center;">${cert?.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : ""}</td>
-        <td style="text-align: center;">${cert?.validityDate ? moment(cert.validityDate).format("DD/MM/YYYY") : ""}</td>
-      </tr>`;
-      })
-      .join("");
-
-    return `
-      <div class="page">
-      <div class="certificate-header" >
-  <div class="header-left">
-    ${companyLogo ? `<img src="${companyLogo}" alt="Logo" />` : ""}
-  </div>
-
-  <div class="header-right">
-    <h2 class="company-name" style="font-size: 22px !important; margin-bottom:5px;">${companyName}</h2>
-    <p class="report-title" style="font-size: 24px !important;">SURVEY REPORT</p>
-  </div>
-</div>
-
-
-        <table>
-          <tr><th>Ship's Name</th><td>${clientData?.shipName || "-"}</td><th>Report No</th><td>${reportDetails[0]?.activity?.journal?.journalTypeId}</td></tr>
-          <tr><th>Date of Build</th><td>${clientData?.dateOfBuild ? moment(clientData.dateOfBuild).format("DD/MM/YYYY") : "-"}</td><th>Ship Type</th><td>${clientData?.typeOfShip || "-"}</td></tr>
-          <tr><th>IMO Number</th><td>${clientData?.imoNumber || "-"}</td><th>Flag</th><td>${clientData?.flag || "-"}</td></tr>
-          <tr><th>First Visit</th><td>${firstVisit ? moment(firstVisit).format("DD/MM/YYYY") : "-"}</td><th>Last Visit</th><td>${lastVisit ? moment(lastVisit).format("DD/MM/YYYY") : "-"}</td></tr>
-          <tr><th>No. of Visits</th><td>${numOfVisit || "-"}</td><th>Port of Survey</th><td>${uniquePorts || "-"}</td></tr>
-        </table>
-
-        <h4>Recommendation</h4>
-        <p>The following surveys have been carried out on the above ship in accordance with relevant rules and statutory regulations. Items examined were found satisfactory unless otherwise noted.</p>
-        <p>It is recommended that <strong>${companyName}</strong> confirms the vessel remains classed with new dates of survey as shown, subject to any existing conditions.</p>
-
-        <h4>Surveys</h4>
-        <table>
-          <thead>
-            <tr>
-              <th>Survey Name</th>
-              <th>Cert. Term</th>
-              <th>Endorsed</th>
-              <th>Survey Type</th>
-              <th>Issued / Extended</th>
-              <th>Expiry Date</th>
-            </tr>
-          </thead>
-          <tbody>${surveyRows}</tbody>
-        </table>
-
-        <h4>Classification Surveys</h4>
-        <table>
-          <thead>
-            <tr>
-              <th>Survey Name</th>
-              <th>Status</th>
-              <th>Last Visit Date</th>
-              
-            </tr>
-          </thead>
-          <tbody>${classificationRows}</tbody>
-        </table>
-
-        <div class="stamp"><img src="${stamp}" width="100" height="100" alt="Stamp" /></div>
-
-        <h4>Surveyors and Authorization</h4>
-        <table>
-          <tr><th>Surveyors</th><td>${uniqueSurveyors || "-"}</td><th>Reviewed On</th><td>${moment(new Date()).format("DD/MM/YYYY")}</td></tr>
-          <tr><th>Port</th><td>${uniquePorts || "-"}</td><th>Date</th><td>${moment(new Date()).format("DD/MM/YYYY")}</td></tr>
-        </table>
-
-        <p style="font-size:12px; margin-top:20px;">
-          <strong>Note:</strong> Cert. Term - FT = Full Term, ST = Short Term, ET = Extended, IT = Interim, PROV = Provisional
-        </p>
-
-        <div class="certificate-footer">© ${companyName} | Generated on ${moment(currentDate).format("DD-MM-YYYY")}</div>
-      </div>
-    `;
-  }, [clientData, reportDetails, systemVariables, firstVisit, lastVisit, numOfVisit]);
-
-  useEffect(() => {
-    if (!id) return;
-    const loadAllData = async () => {
-      try {
-        setLoading(true);
-        const [clientResult, reportResult] = await Promise.all([getSpecificClient(id), getSurveyReportDataByJournalId(id, reportNumber)]);
-        if (clientResult?.status === 200) setClientData(clientResult.data.data);
-        if (reportResult?.status === 200) {
-          const reportData = reportResult.data.data;
-          setReportDetails(reportData);
-
-          const journalIds = reportData.map((i) => i?.activity?.journal?.id).filter(Boolean);
-          const uniqueJournalId = [...new Set(journalIds)][0];
-          if (uniqueJournalId) {
-            setJournalId(uniqueJournalId);
-            const visitResponse = await getVisitDetails("journalId", uniqueJournalId);
-            const visits = visitResponse?.data?.data;
-            if (visits?.length) {
-              setFirstVisit(visits[0]?.date);
-              setLastVisit(visits[visits.length - 1]?.date);
-              setNumOfVisit(visits.length);
-            }
-          }
-        }
-      } catch (error) {
-        toast.error("Failed to load data");
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadAllData();
-  }, [id]);
-
-  useEffect(() => {
-    if (clientData && reportDetails && systemVariables && !loading) {
-      setEditorContent(generateHtmlContent());
-    }
-  }, [clientData, reportDetails, systemVariables, loading, generateHtmlContent]);
 
   const handleEditorChange = (content) => {
     setEditorContent(content);
@@ -585,62 +681,27 @@ const SurveyReport = ({ id, reportNumber }) => {
               margin: auto;
               box-shadow: 0 0 10px rgba(0,0,0,0.1);
             }
-              .certificate-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 3px double #003366;
-    padding-bottom: 12px;
-    margin-bottom: 25px;
-  }
-
-  .certificate-header .header-left img {
-    width: 150px;
-    height: auto;
-  }
-
-  .certificate-header .header-right {
-    text-align: right;
-  }
-
-  .certificate-header .company-name {
-    color: #003366;
-    font-size: 22px;
-    margin: 0;
-    text-transform: uppercase;
-  }
-
-  .certificate-header .report-title {
-    font-weight: 700;
-    font-size: 16px;
-    color: #000;
-    margin: 2px 0 0 0;
-    text-transform: uppercase;
-  }
-            h2 {
-              color: #003366;
-              font-family: 'Times New Roman', serif;
-              text-align: center;
+            .certificate-header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              border-bottom: 3px double #003366;
+              padding-bottom: 12px;
+              margin-bottom: 25px;
             }
-            h4 { text-align: left; border-bottom: 1px solid #999; font-size:20px; color: #003366;
-}
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 15px;
-              font-size:14px;
+            .certificate-header .header-left img {
+              width: 150px;
+              height: auto;
             }
-            th, td {
-              border: 1px solid #999;
-              padding: 6px 8px;
-            }
-            th {
-              background-color: #f3f3f3;
-              color: #003366;
-            }
-            .stamp{
-            margin-top:10px;
-            }
+            .certificate-header .header-right { text-align: right; }
+            .certificate-header .company-name { color: #003366; font-size: 22px; margin: 0; text-transform: uppercase; }
+            .certificate-header .report-title { font-weight: 700; font-size: 16px; color: #000; margin: 2px 0 0 0; text-transform: uppercase; }
+            h2 { color: #003366; font-family: 'Times New Roman', serif; text-align: center; }
+            h4 { text-align: left; border-bottom: 1px solid #999; font-size:20px; color: #003366; }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size:14px; }
+            th, td { border: 1px solid #999; padding: 6px 8px; }
+            th { background-color: #f3f3f3; color: #003366; }
+            .stamp{ margin-top:10px; }
             tr:nth-child(even) { background-color: #fafafa; }
           `,
         }}
