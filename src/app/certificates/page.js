@@ -89,7 +89,7 @@ const Certificates = () => {
 
   const hasArchivePermission = data?.specialPermission?.some((perm) => perm.toLowerCase() === "archivedocuments");
 
-  const tabs = ["certificates", "Archive Documents", "Reports"];
+  const tabs = ["Certificates", "Archive Documents", "Reports"];
 
   const formatDate = (dateString) =>
     dateString
