@@ -144,63 +144,55 @@ const SurveyReport = ({ id, reportNumber }) => {
         .join("");
 
       const renderAdditionalFields = () => {
-  if (!Array.isArray(additionalFieldDataInput) || !additionalFieldDataInput.length) return "";
+        if (!Array.isArray(additionalFieldDataInput) || !additionalFieldDataInput.length) return "";
 
-  const sectionOrder = [
-    "coc",
-    "statutory",
-    "memoranda",
-    "additional",
-    "compliance",
-    "pcsfsi",
-    "psc/fsi",
-  ];
+        const sectionOrder = ["coc", "statutory", "memoranda", "additional", "compliance", "pcsfsi", "psc/fsi"];
 
-  const titleForKey = (k) => {
-    if (!k) return "Other";
-    const key = k.toLowerCase();
+        const titleForKey = (k) => {
+          if (!k) return "Other";
+          const key = k.toLowerCase();
 
-    switch (key) {
-      case "coc":
-        return "Condition of Class";
-      case "statutory":
-        return "Statutory";
-      case "memoranda":
-        return "Memoranda";
-      case "additional":
-        return "Additional Information";
-      case "compliance":
-        return "Compliance to New Regulations";
-      case "pcsfsi":
-      case "psc/fsi":
-        return "PSC / FSI Deficiency";
-      default:
-        return k.toUpperCase();
-    }
-  };
+          switch (key) {
+            case "coc":
+              return "Condition of Class";
+            case "statutory":
+              return "Statutory";
+            case "memoranda":
+              return "Memoranda";
+            case "additional":
+              return "Additional Information";
+            case "compliance":
+              return "Compliance to New Regulations";
+            case "pcsfsi":
+            case "psc/fsi":
+              return "PSC / FSI Deficiency";
+            default:
+              return k.toUpperCase();
+          }
+        };
 
-  // Sort sections based on defined order
-  const sortedSections = [...additionalFieldDataInput].sort((a, b) => {
-    const idxA = sectionOrder.indexOf(a.sectionKey?.toLowerCase());
-    const idxB = sectionOrder.indexOf(b.sectionKey?.toLowerCase());
-    if (idxA === -1 && idxB === -1) return 0;
-    if (idxA === -1) return 1;
-    if (idxB === -1) return -1;
-    return idxA - idxB;
-  });
+        // Sort sections based on defined order
+        const sortedSections = [...additionalFieldDataInput].sort((a, b) => {
+          const idxA = sectionOrder.indexOf(a.sectionKey?.toLowerCase());
+          const idxB = sectionOrder.indexOf(b.sectionKey?.toLowerCase());
+          if (idxA === -1 && idxB === -1) return 0;
+          if (idxA === -1) return 1;
+          if (idxB === -1) return -1;
+          return idxA - idxB;
+        });
 
-  const sectionsHtml = sortedSections
-    .map((section) => {
-      const rows = Array.isArray(section.data) ? section.data : section.data || [];
-      const matchedRows = rows.filter((r) => matchesReportNumber(r, reportNumber));
+        const sectionsHtml = sortedSections
+          .map((section) => {
+            const rows = Array.isArray(section.data) ? section.data : section.data || [];
+            const matchedRows = rows.filter((r) => matchesReportNumber(r, reportNumber));
 
-      if (!matchedRows.length) return "";
+            if (!matchedRows.length) return "";
 
-      const rowsHtml = matchedRows
-        .map((r) => {
-          const due = r?.dueDate ? moment(r.dueDate).format("DD/MM/YYYY") : "-";
-          const status = r?.action || "-";
-          return `
+            const rowsHtml = matchedRows
+              .map((r) => {
+                const due = r?.dueDate ? moment(r.dueDate).format("DD/MM/YYYY") : "-";
+                const status = r?.action || "-";
+                return `
             <tr>
               <td style="padding:8px;border:1px solid #ccc;text-align:left;">${formatValue(r?.code)}</td>
               <td style="padding:8px;border:1px solid #ccc;text-align:left;">${formatValue(r?.description)}</td>
@@ -208,10 +200,10 @@ const SurveyReport = ({ id, reportNumber }) => {
               <td style="padding:8px;border:1px solid #ccc;text-align:center;">${due}</td>
             </tr>
           `;
-        })
-        .join("");
+              })
+              .join("");
 
-      return `
+            return `
         <h3 style="margin-top:18px;margin-bottom:8px;font-size:16px;color:#003366;">
           ${titleForKey(section.sectionKey)}
         </h3>
@@ -227,14 +219,13 @@ const SurveyReport = ({ id, reportNumber }) => {
           <tbody>${rowsHtml}</tbody>
         </table>
       `;
-    })
-    .join("");
+          })
+          .join("");
 
-  return sectionsHtml;
-};
+        return sectionsHtml;
+      };
 
       const mainDetailsHtml = `
-        <h2 style="font-size:18px;margin-top:20px;color:#2e2e2e;">${reportDetailsInput[0]?.activity?.journal?.journalTypeId || "Survey Report"}</h2>
         <table style="border-collapse:collapse;width:100%;margin-bottom:12px;font-size:14px;">
           <tr>
             <td style="padding:8px;border:1px solid #ccc;width:30%;">Ship's Name</td>
