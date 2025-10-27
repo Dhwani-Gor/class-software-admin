@@ -696,7 +696,7 @@ const ReportingForm = () => {
 
       setReportDetails(reportData);
       setSelectedRow(row);
-      setShowForm(true);
+      setShowForm(true);  
       clearErrors();
 
       const surveyType = row.surveyTypes?.name;
