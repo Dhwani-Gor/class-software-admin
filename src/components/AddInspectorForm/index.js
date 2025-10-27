@@ -64,6 +64,7 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
     setValue,
     getValues,
     reset,
+    watch,
   } = useForm({
     resolver: yupResolver(schema, { context: { isUpdate } }),
     defaultValues: {
@@ -81,10 +82,17 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
       ...defaultValues,
     },
   });
+  const userRole = watch("role");
 
   useEffect(() => {
     fetchClients();
   }, []);
+
+  useEffect(() => {
+    if (userRole !== "agent") {
+      setValue("clientIds", []);
+    }
+  }, [userRole, setValue]);
 
   const fetchClients = async () => {
     try {
@@ -172,15 +180,25 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
     const payload = {
       ...data,
       roleId,
+      ...(data.role === "agent" ? {} : { clientIds: [] }),
     };
 
     try {
       if (userId) {
-        const res = await updateInspectorDetail(userId, payload);
-        toast.success("User updated successfully");
+        let res = await updateInspectorDetail(userId, payload);
+        console.log(res, "res");
+        if (res?.data?.status === "success") {
+          toast.success(res?.data?.message);
+        } else {
+          toast.error(res?.response?.data?.message);
+        }
       } else {
-        const res = await createInspector(payload);
-        toast.success("User created successfully");
+        let res = await createInspector(payload);
+        if (res?.response?.data?.status === "error") {
+          toast.error(res?.response?.data?.message);
+        } else {
+          toast.success(res?.response?.data?.message);
+        }
       }
       router.push("/staff");
     } catch (error) {
@@ -332,27 +350,30 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
                   )}
                 />
               </Grid2>
-
-              <Grid2 size={{ xs: 12 }}>
-                <Typography>Select the Ship</Typography>
-                <Controller
-                  name="clientIds"
-                  control={control}
-                  render={({ field }) => (
-                    <Autocomplete
-                      {...field}
-                      multiple
-                      options={clientsList}
-                      getOptionLabel={(option) => option.shipName || ""}
-                      value={clientsList.filter((item) => field.value?.includes(item.id)) || []}
-                      onChange={(_, newValue) => {
-                        field.onChange(newValue.map((item) => item.id));
-                      }}
-                      renderInput={(params) => <TextField {...params} variant="standard" error={Boolean(errors.clientIds)} helperText={errors.clientIds?.message} fullWidth />}
-                    />
-                  )}
-                />
-              </Grid2>
+              {userRole === "agent" && (
+                <Grid2 size={{ xs: 12 }}>
+                  <Typography>
+                    Select the Ship <span style={{ color: "red" }}>*</span>
+                  </Typography>
+                  <Controller
+                    name="clientIds"
+                    control={control}
+                    render={({ field }) => (
+                      <Autocomplete
+                        {...field}
+                        multiple
+                        options={clientsList}
+                        getOptionLabel={(option) => option.shipName || ""}
+                        value={clientsList.filter((item) => field.value?.includes(item.id)) || []}
+                        onChange={(_, newValue) => {
+                          field.onChange(newValue.map((item) => item.id));
+                        }}
+                        renderInput={(params) => <TextField {...params} variant="standard" error={Boolean(errors.clientIds)} helperText={errors.clientIds?.message} fullWidth />}
+                      />
+                    )}
+                  />
+                </Grid2>
+              )}
             </Grid2>
 
             <Box>

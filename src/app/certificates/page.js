@@ -178,7 +178,7 @@ const Certificates = () => {
   const fetchReportsData = async () => {
     setLoading(true);
     try {
-      const res = showAll ? await getAllReports() : await getAllReports(page, limit);
+      const res = showAll ? await getAllReports("", "", search) : await getAllReports(page, limit, search);
       const data = res?.data;
       if (data?.status === "success" && Array.isArray(data?.data)) {
         setReportsList(data?.data);
@@ -253,7 +253,7 @@ const Certificates = () => {
           if (!cert.generatedDoc) return;
           const res = await fetch(cert.generatedDoc);
           const blob = await res.blob();
-          const fileName = `${cert.activity?.journal?.client?.shipName || "Ship"}_${cert.generatedDoc.split("/").pop()}`;
+          const fileName = `${cert.generatedDoc.split("/").pop()}`;
           folder.file(fileName, blob);
         })
       );
@@ -270,6 +270,32 @@ const Certificates = () => {
 
   const sortedCertificates = sortData(certificatesList);
   const sortedReports = sortData(reportsList);
+
+  const handleBulkDownloadReports = async () => {
+    if (!reportsList.length) return;
+    const zip = new JSZip();
+    const folder = zip.folder(reportsList[0]?.client?.shipName || "Reports");
+    setLoading(true);
+    try {
+      await Promise.all(
+        reportsList.map(async (report) => {
+          if (!report.generatedDoc) return;
+          const res = await fetch(report.generatedDoc);
+          const blob = await res.blob();
+          const fileName = `${report.client?.shipName || "Report"}_${report.generatedDoc.split("/").pop()}`;
+          folder.file(fileName, blob);
+        })
+      );
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, `${reportsList[0]?.client?.shipName || "Reports"}.zip`);
+      toast.success("All reports downloaded successfully as a zip!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to download all reports.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Layout>
@@ -288,17 +314,15 @@ const Certificates = () => {
               <Chip key={tab} label={tab} color={selectedFilter === tab ? "primary" : "default"} onClick={() => setSelectedFilter(tab)} />
             ))}
           </Stack>
-          {selectedFilter !== "Reports" && ((hasArchivePermission && (selectedFilter === "Archive Documents" || selectedFilter === "Archive Documents" || selectedFilter === "certificates")) || (!hasArchivePermission && selectedFilter === "certificates")) && (
+          {hasArchivePermission && (
             <Stack>
-              <CommonButton variant="contained" onClick={handleBulkDownload} text="Download All">
+              <CommonButton variant="contained" onClick={selectedFilter === "Reports" ? handleBulkDownloadReports : handleBulkDownload} text="Download All">
                 Download All
               </CommonButton>
             </Stack>
           )}
         </Box>
-
-        {selectedFilter !== "Reports" && <CommonInput placeholder="Search" fullWidth value={search} onChange={(e) => setSearch(e.target.value)} sx={{ mb: 2 }} />}
-
+        <CommonInput placeholder="Search" fullWidth value={search} onChange={(e) => setSearch(e.target.value)} sx={{ mb: 2 }} />
         <Box sx={{ width: "100%", overflowX: "auto", height: "70vh" }}>
           {loading ? (
             <Box display="flex" justifyContent="center" alignItems="center" height="300px">
@@ -315,7 +339,7 @@ const Certificates = () => {
                           { label: "No.", key: null, width: "10%" },
                           { label: "Ship Name", key: "client.shipName", width: "15%" },
                           { label: "Document", key: "generatedDoc" },
-                          { label: "Created At", key: "createdAt", width: "15%" },
+                          { label: "Created Date", key: "createdAt", width: "15%" },
                           { label: "Actions", key: null },
                         ].map((col) => (
                           <TableCell
@@ -548,7 +572,6 @@ const Certificates = () => {
             </>
           )}
         </Box>
-
         <Stack direction="row" justifyContent="space-between" alignItems="center" mt={2}>
           <Typography>Total Count: {count}</Typography>
           <Stack direction="row" spacing={2} alignItems="center">

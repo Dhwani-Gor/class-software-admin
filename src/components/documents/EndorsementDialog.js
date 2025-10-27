@@ -81,7 +81,7 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
       } else if (key.includes("place") || key.includes("endorsed_place")) {
         flattenedData[newKey] = reportDetails?.place || "";
       } else if (key.includes("issuance_date")) {
-        flattenedData[newKey] = reportDetails?.issuanceDate ? formatDate(reportDetails.endorsementDate) : "";
+        flattenedData[newKey] = reportDetails?.endorsementDate ? formatDate(reportDetails.endorsementDate) : "";
       } else if (key.includes("validity_date")) {
         flattenedData[newKey] = reportDetails?.validityDate ? formatDate(reportDetails.validityDate) : "";
       } else {
@@ -96,7 +96,6 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
   const renderEndorsementFields = (item) => {
     const radioFields = [];
 
-    // Find all fields where VALUE starts with _st_
     Object.entries(item).forEach(([key, value]) => {
       if (typeof value === "string" && value.startsWith("_st_") && key !== "title") {
         const [, raw] = value.split("_st_");

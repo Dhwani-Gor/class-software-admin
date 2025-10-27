@@ -22,6 +22,8 @@ const SurveyReport = ({ id, reportNumber }) => {
   const [numOfVisit, setNumOfVisit] = useState(null);
   const [journalId, setJournalId] = useState("");
   const [additionalFieldData, setAdditionalFieldData] = useState([]);
+  const [places, setPlaces] = useState([]);
+  console.log(places, "places");
   const currentDate = new Date();
 
   const formatSurveyName = (name) => {
@@ -83,13 +85,33 @@ const SurveyReport = ({ id, reportNumber }) => {
       const stamp = systemVariables?.data?.find((i) => i.name === "company_stamp")?.information || "-";
       const issuer = reportDetailsInput?.map((i) => i?.issuer?.name);
       const portOfSurvey = reportDetailsInput?.map((i) => i?.place?.toLowerCase());
+      console.log(
+        reportDetailsInput.map((i) => i?.place?.toLowerCase()),
+        "reportDetailsInput"
+      );
+      console.log(portOfSurvey, "port of survey");
       const uniquePorts = [...new Set(portOfSurvey)].join(",").toUpperCase();
       const uniqueSurveyors = [...new Set(issuer)].join(",").toUpperCase();
 
       const classificationRows = (() => {
-        if (!reportDetailsInput?.length) return "";
+        if (!reportDetailsInput?.length)
+          return `
+    <tr>
+      <td colspan="3" style="text-align:center;padding:6px;">No classification record recommended</td>
+    </tr>
+  `;
 
-        const validCerts = reportDetailsInput.filter((cert) => cert?.activity?.surveyTypes?.classificationSurvey === true && cert?.activity?.surveyTypes?.report?.name);
+        const validCerts = reportDetailsInput.filter((cert) => cert?.activity?.surveyTypes?.classificationSurvey === true && cert?.activity?.surveyTypes?.report && cert?.activity?.surveyTypes?.report?.name);
+
+        if (!validCerts.length) {
+          return `
+
+          
+      <tr>
+        <td colspan="3" style="text-align:center;padding:6px;">No classification surveys recomended</td>
+      </tr>
+    `;
+        }
 
         const latestMap = {};
         validCerts.forEach((cert) => {
@@ -100,19 +122,27 @@ const SurveyReport = ({ id, reportNumber }) => {
           }
         });
 
-        return Object.values(latestMap)
+        const rows = Object.values(latestMap)
+          .filter((cert) => cert?.activity?.surveyTypes?.report?.name)
           .map((cert) => {
             const formattedName = formatSurveyName(cert?.activity?.surveyTypes?.name);
             const status = cert?.activity?.status || "";
             return `
-              <tr>
-                <td style="text-align:center;padding:6px;">${formattedName}</td>
-                <td style="text-align:center;padding:6px;">${status}</td>
-                <td style="text-align:center;padding:6px;">${lastVisit ? moment(lastVisit).format("DD/MM/YYYY") : ""}</td>
-              </tr>
-            `;
-          })
-          .join("");
+        <tr>
+          <td style="text-align:left;padding:6px;">${formattedName}</td>
+          <td style="text-align:center;padding:6px;">${status}</td>
+          <td style="text-align:center;padding:6px;">${lastVisit ? moment(lastVisit).format("DD/MM/YYYY") : ""}</td>
+        </tr>
+      `;
+          });
+
+        return rows.length
+          ? rows.join("")
+          : `
+      <tr>
+        <td colspan="3" style="text-align:center;padding:6px;">No classification surveys recommended</td>
+      </tr>
+    `;
       })();
 
       const latestReportsMap = {};
@@ -210,10 +240,10 @@ const SurveyReport = ({ id, reportNumber }) => {
         <table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:13px;">
           <thead>
             <tr>
-              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:left;">Code</th>
-              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:left;">Description</th>
-              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;">Status</th>
-              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;">Due Date</th>
+              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:left;width:10%;">Code</th>
+              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:left;width:60%">Description</th>
+              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:15%">Status</th>
+              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:25%">Due Date</th>
             </tr>
           </thead>
           <tbody>${rowsHtml}</tbody>
@@ -231,7 +261,7 @@ const SurveyReport = ({ id, reportNumber }) => {
             <td style="padding:8px;border:1px solid #ccc;width:30%;">Ship's Name</td>
             <td style="padding:8px;border:1px solid #ccc;">${formatValue(clientData?.shipName)}</td>
             <td style="padding:8px;border:1px solid #ccc;width:15%;">Report No</td>
-            <td style="padding:8px;border:1px solid #ccc;">${formatValue(reportDetailsInput[0]?.activity?.journal?.journalTypeId)}</td>
+            <td style="padding:8px;border:1px solid #ccc;">${reportDetailsInput[0]?.activity?.journal?.journalTypeId || "—"}</td>
           </tr>
           <tr>
             <td style="padding:8px;border:1px solid #ccc;">Date of Build</td>
@@ -255,12 +285,11 @@ const SurveyReport = ({ id, reportNumber }) => {
             <td style="padding:8px;border:1px solid #ccc;">No. of Visits</td>
             <td style="padding:8px;border:1px solid #ccc;">${numOfVisit || "—"}</td>
             <td style="padding:8px;border:1px solid #ccc;">Port of Survey</td>
-            <td style="padding:8px;border:1px solid #ccc;">${uniquePorts || "—"}</td>
+            <td style="padding:8px;border:1px solid #ccc;">${places || "—"}</td>
           </tr>
         </table>
       `;
 
-      // Combine everything
       return `
         <div class="page" style="font-family: 'Times New Roman', serif; background:#fff; padding:30px;">
           <div class="certificate-header" style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px double #003366;padding-bottom:12px;margin-bottom:18px;">
@@ -272,8 +301,13 @@ const SurveyReport = ({ id, reportNumber }) => {
           </div>
 
           ${mainDetailsHtml}
+ <h4>Recommendation</h4>
+        <p style="font-size:16px;">The following surveys have been carried out on the above ship in accordance with the relevant Rules and Statutory regulations and the items
+examined as detailed hereon were found to comply with the said rules and regulations unless otherwise stated in this report. It is recommended
+to the Commitee of ${companyName} that the ship remains as classed with new dates of survey as shown, subject to any Conditions
+of Class recommended now or previously, being dealt with as recommended.</p>
 
-          <h4 style="color:#003366;margin-top:14px;border-bottom:1px solid #999;padding-bottom:6px;">Surveys</h4>
+          <h4 style="color:#003366;margin-top:14px;border-bottom:1px solid #999;padding-bottom:6px;">Statutory Surveys</h4>
           <table style="width:100%;border-collapse:collapse;margin-bottom:12px;">
             <thead>
               <tr>
@@ -296,7 +330,7 @@ const SurveyReport = ({ id, reportNumber }) => {
               <tr>
                 <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;">Survey Name</th>
                 <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;">Status</th>
-                <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;">Last Visit Date</th>
+                <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;">Date</th>
               </tr>
             </thead>
             <tbody>
@@ -304,6 +338,7 @@ const SurveyReport = ({ id, reportNumber }) => {
             </tbody>
           </table>
 
+          ${renderAdditionalFields()}
 
           <div style="margin-top:12px;">
             <div class="stamp">${stamp ? `<img src="${stamp}" width="100" height="100" alt="Stamp" />` : ""}</div>
@@ -317,7 +352,7 @@ const SurveyReport = ({ id, reportNumber }) => {
               </tr>
               <tr>
                 <td style="padding:8px;border:1px solid #ccc;">Port</td>
-                <td style="padding:8px;border:1px solid #ccc;">${uniquePorts || "-"}</td>
+                <td style="padding:8px;border:1px solid #ccc;">${places || "-"}</td>
                 <td style="padding:8px;border:1px solid #ccc;">Date</td>
                 <td style="padding:8px;border:1px solid #ccc;">${moment(new Date()).format("DD/MM/YYYY")}</td>
               </tr>
@@ -328,7 +363,6 @@ const SurveyReport = ({ id, reportNumber }) => {
             <strong>Note:</strong> Cert. Term - FT = Full Term, ST = Short Term, ET = Extended, IT = Interim, PROV = Provisional
           </p>
 
-          ${renderAdditionalFields()}
 
           <div class="certificate-footer" style="margin-top:18px;">© ${companyName} | Generated on ${moment(currentDate).format("DD-MM-YYYY")}</div>
         </div>
@@ -347,17 +381,19 @@ const SurveyReport = ({ id, reportNumber }) => {
         if (reportResult?.status === 200) {
           const reportData = reportResult.data.data;
           setReportDetails(reportData);
-
           const journalIds = reportData.map((i) => i?.activity?.journal?.id).filter(Boolean);
           const uniqueJournalId = [...new Set(journalIds)][0];
           if (uniqueJournalId) {
             setJournalId(uniqueJournalId);
             const visitResponse = await getVisitDetails("journalId", uniqueJournalId);
             const visits = visitResponse?.data?.data;
+            console.log(visits, "visits");
             if (visits?.length) {
               setFirstVisit(visits[0]?.date);
               setLastVisit(visits[visits.length - 1]?.date);
               setNumOfVisit(visits.length);
+              const places = visits.map((visit) => visit?.location?.replace(/\s*\(.*?\)\s*/g, "").trim()).filter(Boolean);
+              setPlaces(places);
             }
           }
         }

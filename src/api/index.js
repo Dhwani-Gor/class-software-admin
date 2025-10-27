@@ -727,10 +727,14 @@ export const deleteAttachment = async (activityId, attachmentId) => {
   return result;
 };
 
-export const getAllReports = async (page, limit) => {
+export const getAllReports = async (page, limit, searchQuery) => {
   let result;
   try {
-    result = await axiosInstance.get(`/surveyStatusReports?limit=${limit}&page=${page}`);
+    const params = {};
+    if (searchQuery) params.search = searchQuery;
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+    result = await axiosInstance.get(`/surveyStatusReports`, { params });
   } catch (error) {
     result = error;
   }

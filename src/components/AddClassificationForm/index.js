@@ -14,7 +14,6 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
   const [cancelled, setCancelled] = useState(false);
   const [surveyTypes, setSurveyTypes] = useState([]);
   const [existingSurveys, setExistingSurveys] = useState([]);
-  console.log(existingSurveys, "existingSurveys");
   const [showSSHWarning, setShowSSHWarning] = useState({
     show: false,
     surveyType: "",
@@ -125,31 +124,23 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
       checkAndShowSSHWarning(value);
     }
 
-    // When Survey Date changes, auto-fill Assignment Date with same value
     if (field === "surveyDate") {
       updatedRows[index].issuanceDate = value;
 
-      // Recalculate dates if survey type is selected
       if (updatedRows[index].surveyName) {
         const { dueDate, rangeFrom, rangeTo } = calculateDates(value || new Date().toISOString().split("T")[0], updatedRows[index].surveyName, existingSurveys);
         updatedRows[index].dueDate = dueDate;
         updatedRows[index].rangeFrom = rangeFrom;
         updatedRows[index].rangeTo = rangeTo;
       }
-    }
-
-    // When Assignment Date changes manually, recalculate dates
-    else if (field === "issuanceDate") {
+    } else if (field === "issuanceDate") {
       if (updatedRows[index].surveyName) {
         const { dueDate, rangeFrom, rangeTo } = calculateDates(value || new Date().toISOString().split("T")[0], updatedRows[index].surveyName, existingSurveys);
         updatedRows[index].dueDate = dueDate;
         updatedRows[index].rangeFrom = rangeFrom;
         updatedRows[index].rangeTo = rangeTo;
       }
-    }
-
-    // When Survey Type changes, recalculate dates
-    else if (field === "surveyName") {
+    } else if (field === "surveyName") {
       const dateToUse = updatedRows[index].issuanceDate || updatedRows[index].surveyDate;
       if (dateToUse) {
         const { dueDate, rangeFrom, rangeTo } = calculateDates(dateToUse, value, existingSurveys);
@@ -342,17 +333,14 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
                     <TextField label="Range From" type="date" fullWidth value={row.rangeFrom ? moment(row.rangeFrom).format("YYYY-MM-DD") : ""} onChange={(e) => handleChange("classification", index, "rangeFrom", e.target.value)} InputLabelProps={{ shrink: true }} />
                   </Grid2>
 
-                  {/* Range To */}
                   <Grid2 size={{ xs: 12, md: 1.7 }}>
                     <TextField label="Range To" type="date" fullWidth value={row.rangeTo ? moment(row.rangeTo).format("YYYY-MM-DD") : ""} onChange={(e) => handleChange("classification", index, "rangeTo", e.target.value)} InputLabelProps={{ shrink: true }} />
                   </Grid2>
 
-                  {/* Postponed Date */}
                   <Grid2 size={{ xs: 12, md: 1.7 }}>
                     <TextField label="Postponed Date" type="date" fullWidth value={row.postponed ? moment(row.postponed).format("YYYY-MM-DD") : ""} onChange={(e) => handleChange("classification", index, "postponed", e.target.value)} InputLabelProps={{ shrink: true }} />
                   </Grid2>
 
-                  {/* Delete button */}
                   {mode !== "update" && row.length > 1 && (
                     <Grid2 size={{ xs: 12, md: 0.2 }} display="flex" justifyContent="center">
                       <IconButton onClick={() => handleDeleteRow(index)} color="error" size="small" sx={{ mr: -1 }}>
