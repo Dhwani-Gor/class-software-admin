@@ -743,7 +743,6 @@ const TextEditor = ({ id }) => {
         return key.toUpperCase();
     }
   };
-
   function mergeClassificationSurveys(classificationData, reportDetailsList) {
     const combined = [];
 
@@ -758,55 +757,54 @@ const TextEditor = ({ id }) => {
           rangeFrom: row.rangeFrom,
           rangeTo: row.rangeTo,
           postponed: row.postponed,
-          updatedAt: row.updatedAt || row.createdAt,
           source: "classificationData",
         });
       });
     }
 
-    // Step 2: Extract from reportDetails (only classification survey types)
+    // Step 2: Extract from reportDetails (only valid classification survey types with non-null report)
     if (reportDetailsList?.length) {
       reportDetailsList.forEach((r) => {
-        const isClassification = r?.activity?.surveyTypes?.classificationSurvey === true;
+        const surveyType = r?.activity?.surveyTypes;
+        const isClassification = surveyType?.classificationSurvey === true;
+        const hasValidReport = surveyType?.report?.name;
 
-        if (isClassification) {
+        if (isClassification && hasValidReport) {
           combined.push({
-            name: r.activity.surveyTypes.name,
+            name: surveyType.name,
             type: "classification",
             surveyDate: r.surveyDate,
             dueDate: r.dueDate,
             rangeFrom: r.rangeFrom,
             rangeTo: r.rangeTo,
             postponed: r.postponed,
-            updatedAt: r.updatedAt?.val ? new Date().toISOString() : r.updatedAt || r.createdAt,
             source: "reportDetails",
           });
         }
       });
     }
 
-    // Step 3: Remove duplicates (keep latest by name)
+    // Step 3: Remove duplicates — keep latest by surveyDate
     const latestByName = combined.reduce((acc, curr) => {
       const existing = acc[curr.name];
       if (!existing) {
         acc[curr.name] = curr;
       } else {
-        const existingDate = moment(existing.updatedAt);
-        const currentDate = moment(curr.updatedAt);
-        if (existingDate.isAfter(currentDate)) {
-          acc[curr.name] = curr;
+        const existingDate = new Date(existing.surveyDate);
+        const currentDate = new Date(curr.surveyDate);
+
+        if (currentDate > existingDate) {
+          acc[curr.name] = curr; // keep latest record
         }
       }
       return acc;
     }, {});
 
-    // Step 4: Return as an array
     return Object.values(latestByName);
   }
 
+  // Usage example
   const finalClassificationData = mergeClassificationSurveys(classificationData, reportDetails);
-  console.log(finalClassificationData, "finalClassificationData");
-  console.log("test");
 
   const classificationRows =
     finalClassificationData.length > 0
