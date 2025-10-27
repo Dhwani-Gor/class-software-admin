@@ -367,14 +367,25 @@ const Certificates = () => {
                           <TableCell>{(page - 1) * limit + idx + 1}</TableCell>
                           <TableCell>{row.client?.shipName || "N/A"}</TableCell>
                           <TableCell>
-                            {row.generatedDoc
-                              ? row.generatedDoc
-                                  .split("/")
-                                  .pop()
-                                  .replace(/_/g, " ")
-                                  .replace(/\.[^/.]+$/, "")
-                              : "N/A"}
+                            {(() => {
+                              if (!row.generatedDoc) return "N/A";
+
+                              const fileName = row.generatedDoc.split("/").pop(); // extract filename
+
+                              // Find the *last* MCB code (e.g. MCB25M002, MCB25N014)
+                              const matches = fileName.match(/MCB[A-Z0-9]+/gi);
+                              const reportNo = matches ? matches[matches.length - 1] : null;
+
+                              if (/status[_ ]?report/i.test(fileName)) {
+                                return "Survey Status Report";
+                              } else if (/survey[_ ]?report/i.test(fileName)) {
+                                return `Survey Report${reportNo ? ` - ${reportNo}` : ""}`;
+                              } else {
+                                return fileName.replace(/_/g, " ").replace(/\.[^/.]+$/, "");
+                              }
+                            })()}
                           </TableCell>
+
                           <TableCell>{formatDate(row.createdAt)}</TableCell>
                           <TableCell>
                             <Stack direction="row" spacing={1}>
