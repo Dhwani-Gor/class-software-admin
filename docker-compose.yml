@@ -11,38 +11,18 @@ services:
     command: certonly --webroot -w /var/www/certbot  --non-interactive --agree-tos -d gambiaclass.org -d www.gambiaclass.org -d dev.gambiaclass.org
 
   # Next.js frontend
-  class-admin:
-    container_name: class-admin
+  class-admin-dev:
+    container_name: class-admin-dev
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "13000:13000"
     env_file:
       - .env
     restart: always
     networks:
-      - class-software-network
-
-  # Nginx reverse proxy
-  nginx:
-    image: nginx:alpine
-    container_name: nginx-proxy
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./ssl:/etc/nginx/ssl
-      - ./ssl-challenge:/var/www/certbot
-      - /var/log/nginx:/var/log/nginx
-    depends_on:
-      - class-admin
-    restart: always
-    networks:
-      - class-software-network
-volumes:
-  ssl-data:
+      - class-software-dev-network
 networks:
-  class-software-network:
+  class-software-dev-network:
     external: true

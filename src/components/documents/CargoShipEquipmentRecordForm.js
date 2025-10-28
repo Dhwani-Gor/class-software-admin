@@ -9,12 +9,21 @@ import CommonConfirmationDialog from "../Dialogs/CommonConfirmationDialog";
 const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [expandedSection, setExpandedSection] = useState("lifeSaving");
   const [saveData, setSaveData] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
   const { formData, setFormData } = useFormInitialization(fields, reportDetails, open);
   const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, saveData);
 
   const handleClose = () => {
     onClose();
-    setFormData({});
+  };
+
+  const handleCancel = () => {
+    setOpenDialog(false);
+  };
+
+  const handleConfirm = () => {
+    setOpenDialog(false);
+    handleSubmit(formData);
   };
 
   const handleInputChange = (fieldName, value) => {
@@ -52,46 +61,9 @@ const CSSForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
     return <TextField fullWidth size="small" value={value} label={field.label || formatLabel(attr)} title={field.label || formatLabel(attr)} onChange={(e) => handleInputChange(attr, e.target.value)} placeholder={formatLabel(attr).toLowerCase()} type={isDate ? "date" : "text"} InputLabelProps={isDate ? { shrink: true } : undefined} />;
   };
 
-  const isStrikethroughText = (text) => text?.split("").some((c) => c === "\u0336");
-
-  // useEffect(() => {
-  //   if (fields && fields.length > 0) {
-  //     const initialValues = {};
-  //     fields.forEach((field) => {
-  //       if (field.attribute.startsWith("_checkbox")) {
-  //         if (reportDetails && reportDetails[field.attribute] === "\u2611") {
-  //           initialValues[field.attribute] = true;
-  //         } else {
-  //           initialValues[field.attribute] = false;
-  //         }
-  //       } else if (field.attribute.startsWith("_st_")) {
-  //         if (reportDetails && reportDetails[field.attribute]) {
-  //           const parts = reportDetails[field.attribute]
-  //             .split(" / ")
-  //             .map((s) => s.trim());
-
-  //           const selectedOptions = parts.filter(
-  //             (part) => !isStrikethroughText(part)
-  //           );
-  //           initialValues[field.attribute] = selectedOptions;
-  //         } else {
-  //           initialValues[field.attribute] = [];
-  //         }
-  //       } else {
-  //         if (reportDetails && reportDetails[field.attribute]) {
-  //           initialValues[field.attribute] = reportDetails[field.attribute];
-  //         } else {
-  //           initialValues[field.attribute] = "";
-  //         }
-  //       }
-  //     });
-  //     setFormData(initialValues);
-  //   }
-  // }, [fields, open]);
-
   useEffect(() => {
     if (saveData) {
-      handleSubmit(formData);
+      handleSubmit(formData, false);
       setSaveData(false);
     }
   }, [formData, handleSubmit, saveData]);

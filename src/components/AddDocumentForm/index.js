@@ -22,11 +22,11 @@ import { toast } from "react-toastify";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import { createDocument, getDocumentDetails, updateDocument } from "@/api";
-import UploadIcon from '@mui/icons-material/Upload';
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import UploadIcon from "@mui/icons-material/Upload";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { Chip } from "@mui/material";
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import * as XLSX from 'xlsx';
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import * as XLSX from "xlsx";
 
 const documentValidityType = [
   { value: "interim", label: "Interim" },
@@ -60,12 +60,11 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
   const [endorsements, setEndorsements] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
-  const [loadingPreview, setLoadingPreview] = useState(false);
   const [previewState, setPreviewState] = useState({
     open: false,
     loading: false,
     fileUrl: null,
-    title: ''
+    title: "",
   });
 
   const handleSelectChange = (e) => {
@@ -87,6 +86,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
     if (documentId) {
       fetchDocumentDetails();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentId]);
 
   const fetchDocumentDetails = async () => {
@@ -95,13 +95,16 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
       const result = await getDocumentDetails(documentId);
       if (result?.status === 200) {
         const documentData = result.data.data;
-        setLoadingPreview(true);
-        setPreviewState({
+
+        // Set file preview and form values
+        setPreviewState((prev) => ({
+          ...prev,
           open: false,
           loading: false,
-          fileUrl: documentData.fullTermFilePath || documentData.interimFilePath || documentData.shortTermFilePath,
-          title: documentData.name || ""
-        });
+          fileUrl: documentData.fullTermFilePath || documentData.interimFilePath || documentData.shortTermFilePath || null,
+          title: documentData.name || "",
+        }));
+
         setFormValues({
           name: mode === "duplicate" ? `${documentData.name} (Copy)` : documentData.name || "",
           type: documentData.type || "",
@@ -111,47 +114,31 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           interimDocument: mode === "duplicate" ? null : documentData.interimFilePath || null,
         });
 
+        // ✅ Handle additional fields
+        let parsedFields = [];
         if (documentData.fields) {
-          try {
-            let parsedFields = documentData.fields;
-
-            if (typeof parsedFields === 'string') {
-              parsedFields = JSON.parse(parsedFields);
-            }
-
-            if (!Array.isArray(parsedFields)) {
-              parsedFields = [parsedFields];
-            }
-
-            const extractedEndorsements = [];
-            const extractedAdditionalFields = [];
-
-            parsedFields.forEach((item) => {
-              if (item.endorsements && Array.isArray(item.endorsements)) {
-                extractedEndorsements.push(...item.endorsements);
-              } else if (item.attribute && item.label) {
-                extractedAdditionalFields.push(item);
-              }
-            });
-
-            setAdditionalFields(extractedAdditionalFields);
-            setEndorsements(extractedEndorsements);
-          } catch (err) {
-            console.error("Failed to parse fields:", err);
-            setAdditionalFields([]);
-            setEndorsements([]);
-          }
+          parsedFields = typeof documentData.fields === "string" ? JSON.parse(documentData.fields) : documentData.fields;
         }
+        if (!Array.isArray(parsedFields)) parsedFields = [parsedFields];
+        setAdditionalFields(parsedFields);
+
+        // ✅ Handle endorsements (fix)
+        let parsedEndorsements = [];
+        if (documentData.endorsements) {
+          parsedEndorsements = typeof documentData.endorsements === "string" ? JSON.parse(documentData.endorsements) : documentData.endorsements;
+        }
+        if (!Array.isArray(parsedEndorsements)) parsedEndorsements = [parsedEndorsements];
+        setEndorsements(parsedEndorsements);
       } else {
         toast.error("Error fetching document details");
       }
-      setLoading(false);
     } catch (error) {
-      setLoading(false);
       toast.error("Something went wrong while fetching document details");
       console.error(error);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -192,17 +179,14 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
       return;
     }
 
-    const wsData = [
-      ['attribute', 'label'],
-      ...additionalFields.map(field => [field.attribute || '', field.label || ''])
-    ];
+    const wsData = [["attribute", "label"], ...additionalFields.map((field) => [field.attribute || "", field.label || ""])];
 
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-    XLSX.utils.book_append_sheet(wb, ws, 'Additional Fields');
+    XLSX.utils.book_append_sheet(wb, ws, "Additional Fields");
 
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
     const filename = `additional_fields_${timestamp}.xlsx`;
 
     XLSX.writeFile(wb, filename);
@@ -217,7 +201,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
     reader.onload = (e) => {
       try {
         const data = e.target.result;
-        const workbook = XLSX.read(data, { type: 'array' });
+        const workbook = XLSX.read(data, { type: "array" });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
@@ -227,38 +211,71 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           return;
         }
 
-        // Check if headers are correct
-        const headers = jsonData[0].map(header => header.toLowerCase().trim());
-        const attributeIndex = headers.indexOf('attribute');
-        const labelIndex = headers.indexOf('label');
+        const headers = jsonData[0].map((header) => header.toLowerCase().trim());
+        const attributeIndex = headers.indexOf("attribute");
+        const labelIndex = headers.indexOf("label");
 
         if (attributeIndex === -1 || labelIndex === -1) {
           toast.error("Invalid file format. File should contain 'attribute' and 'label' columns.");
           return;
         }
 
-        // Extract data rows (skip header)
-        const newFields = [];
+        const importedFields = [];
         for (let i = 1; i < jsonData.length; i++) {
           const row = jsonData[i];
-          const attribute = row[attributeIndex]?.toString().trim() || '';
-          const label = row[labelIndex]?.toString().trim() || '';
-          
-          // Only add rows that have at least one non-empty field
+          const attribute = row[attributeIndex]?.toString().trim() || "";
+          const label = row[labelIndex]?.toString().trim() || "";
+
           if (attribute || label) {
-            newFields.push({ attribute, label });
+            importedFields.push({ attribute, label });
           }
         }
 
-        if (newFields.length === 0) {
+        if (importedFields.length === 0) {
           toast.warning("No valid data found in the file.");
           return;
         }
 
-        // Append to existing fields
-        setAdditionalFields(prev => [...prev, ...newFields]);
-        toast.success(`${newFields.length} fields imported successfully`);
+        // Check if there are actual changes (order-independent comparison)
+        const hasChanges = () => {
+          if (additionalFields.length !== importedFields.length) return true;
 
+          // Create normalized versions for comparison (sorted by attribute+label)
+          const normalizeFields = (fields) => {
+            return fields
+              .map((field) => ({
+                attribute: field.attribute.trim().toLowerCase(),
+                label: field.label.trim().toLowerCase(),
+              }))
+              .sort((a, b) => {
+                const aKey = `${a.attribute}|${a.label}`;
+                const bKey = `${b.attribute}|${b.label}`;
+                return aKey.localeCompare(bKey);
+              });
+          };
+
+          const normalizedExisting = normalizeFields(additionalFields);
+          const normalizedImported = normalizeFields(importedFields);
+
+          // Compare each field
+          return !normalizedExisting.every((existingField, index) => {
+            const importedField = normalizedImported[index];
+            return existingField.attribute === importedField.attribute && existingField.label === importedField.label;
+          });
+        };
+
+        if (additionalFields?.length > 0) {
+          if (!hasChanges()) {
+            toast.info("No changes detected - file contains the same fields.");
+            return;
+          }
+
+          setAdditionalFields(importedFields);
+          toast.success(`${importedFields.length} fields imported successfully`);
+        } else {
+          setAdditionalFields(importedFields);
+          toast.success(`${importedFields.length} fields imported successfully`);
+        }
       } catch (error) {
         console.error("Error importing file:", error);
         toast.error("Error reading file. Please make sure it's a valid CSV or Excel file.");
@@ -266,12 +283,13 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
     };
 
     reader.readAsArrayBuffer(file);
-    // Clear the input value to allow importing the same file again
-    event.target.value = '';
+    event.target.value = "";
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate form before submission
     if (!validateForm()) {
       toast.error("Please fill all required fields");
       return;
@@ -281,13 +299,20 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
       setLoading(true);
       let response;
 
+      // Filter out valid additional fields and endorsements
+      const validFields = (additionalFields || []).filter((field) => field.attribute?.toString().trim() && field.label?.toString().trim());
+      const validEndorsements = (endorsements || []).filter((endorsement) => endorsement.title?.toString().trim() || endorsement.endorsedby_1?.toString().trim() || endorsement.endorsed_place?.toString().trim() || endorsement.issuance_date?.toString().trim() || endorsement.validity_date?.toString().trim());
+
+      // ---------- CREATE / DUPLICATE DOCUMENT ----------
       if (mode === "create" || mode === "duplicate") {
         const formData = new FormData();
-        formData.append("name", formValues.name);
+
+        // Append basic document fields
+        formData.append("name", formValues.name); // For duplicate, name is usually appended with (Copy)
         formData.append("type", formValues.type);
         formData.append("abbreviation", formValues.abbreviation);
 
-        // Add all document types that have files
+        // Append document files if provided
         if (formValues.fullTermDocument instanceof File) {
           formData.append("fullTermDocument", formValues.fullTermDocument);
         }
@@ -298,21 +323,21 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           formData.append("interimDocument", formValues.interimDocument);
         }
 
-        if (additionalFields?.length > 0) {
-          const validFields = additionalFields.filter(
-            (field) => field.attribute.trim() && field.label.trim()
-          );
-          if (validFields.length > 0) {
-            formData.append("fields", JSON.stringify(validFields));
-          }
+        // Append additional fields and endorsements separately
+        if (validFields.length > 0) {
+          formData.append("fields", JSON.stringify(validFields));
+        }
+        if (validEndorsements.length > 0) {
+          formData.append("endorsements", JSON.stringify(validEndorsements));
+        } else {
+          formData.append("endorsements", JSON.stringify([]));
         }
 
+        // API call to create a new document (used for both new and duplicate)
         response = await createDocument(formData);
       } else {
-        const hasFiles =
-          formValues.fullTermDocument instanceof File ||
-          formValues.shortTermDocument instanceof File ||
-          formValues.interimDocument instanceof File;
+        // ---------- UPDATE DOCUMENT ----------
+        const hasFiles = formValues.fullTermDocument instanceof File || formValues.shortTermDocument instanceof File || formValues.interimDocument instanceof File;
 
         if (hasFiles) {
           const formData = new FormData();
@@ -332,17 +357,18 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
 
           if (editReason) formData.append("reason", editReason);
 
-          if (additionalFields?.length > 0) {
-            const validFields = additionalFields.filter(
-              (field) => field.attribute.trim() && field.label.trim()
-            );
-            if (validFields.length > 0) {
-              formData.append("fields", JSON.stringify(validFields));
-            }
+          if (validFields.length > 0) {
+            formData.append("fields", JSON.stringify(validFields));
+          }
+          if (validEndorsements.length > 0) {
+            formData.append("endorsements", JSON.stringify(validEndorsements));
+          } else {
+            formData.append("endorsements", JSON.stringify([]));
           }
 
           response = await updateDocument(documentId, formData);
         } else {
+          // Update without file uploads (JSON payload)
           const payload = {
             name: formValues.name,
             type: formValues.type,
@@ -350,47 +376,42 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
             ...(editReason && { reason: editReason }),
           };
 
-          // Add existing document paths if they exist
-          if (formValues.fullTermDocument && typeof formValues.fullTermDocument === 'string') {
+          if (formValues.fullTermDocument && typeof formValues.fullTermDocument === "string") {
             payload.fullTermDocument = formValues.fullTermDocument;
           }
-          if (formValues.shortTermDocument && typeof formValues.shortTermDocument === 'string') {
+          if (formValues.shortTermDocument && typeof formValues.shortTermDocument === "string") {
             payload.shortTermDocument = formValues.shortTermDocument;
           }
-          if (formValues.interimDocument && typeof formValues.interimDocument === 'string') {
+          if (formValues.interimDocument && typeof formValues.interimDocument === "string") {
             payload.interimDocument = formValues.interimDocument;
           }
 
-          if (additionalFields?.length > 0) {
-            const validFields = additionalFields.filter(
-              (field) => field.attribute.trim() && field.label.trim()
-            );
-            if (validFields.length > 0) {
-              payload.fields = JSON.stringify(validFields);
-            }
+          if (validFields.length > 0) {
+            payload.fields = JSON.stringify(validFields);
+          }
+          if (validEndorsements.length > 0) {
+            payload.endorsements = JSON.stringify(validEndorsements);
           }
 
           response = await updateDocument(documentId, payload);
         }
       }
 
-      // Common success handling
+      // ---------- HANDLE SUCCESS / ERROR ----------
       if (response?.status === 200 || response?.status === 201) {
         toast.success(
           mode === "duplicate"
-            ? "Document duplicated successfully"
+            ? "Document duplicated successfully" // Specific message for duplicate
             : mode === "update"
-              ? "Document updated successfully"
-              : "Document created successfully"
+            ? "Document updated successfully"
+            : "Document created successfully"
         );
         router.push("/documents");
       } else {
-        toast.error(
-          response?.response?.data?.message ||
-          "Something went wrong! Please try again."
-        );
+        toast.error(response?.response?.data?.message || "Something went wrong! Please try again.");
       }
     } catch (error) {
+      console.error(error);
       toast.error("An error occurred. Please try again.");
     } finally {
       setLoading(false);
@@ -416,15 +437,14 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
     const updatedFields = [...additionalFields];
     updatedFields[index] = {
       ...updatedFields[index],
-      [field]: value
+      [field]: value,
     };
     setAdditionalFields(updatedFields);
   };
 
   const handleAddField = () => {
     const lastField = additionalFields[additionalFields.length - 1];
-    if (!additionalFields.length ||
-      (lastField?.attribute?.trim() !== "" && lastField?.label?.trim() !== "")) {
+    if (!additionalFields.length || (lastField?.attribute?.trim() !== "" && lastField?.label?.trim() !== "")) {
       setAdditionalFields((prev) => [...prev, { attribute: "", label: "" }]);
     } else {
       toast.error("Please fill both attribute and label before adding another field.");
@@ -441,8 +461,13 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
   // Drag and drop handlers for additional fields
   const handleDragStart = (e, index) => {
     setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', e.target);
+    e.dataTransfer.effectAllowed = "move";
+    // store the index as string
+    try {
+      e.dataTransfer.setData("text/plain", String(index));
+    } catch (err) {
+      // ignore if not allowed
+    }
   };
 
   const handleDragEnd = () => {
@@ -452,7 +477,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
 
   const handleDragOver = (e, index) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    e.dataTransfer.dropEffect = "move";
     setDragOverIndex(index);
   };
 
@@ -462,18 +487,19 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
 
   const handleDrop = (e, dropIndex) => {
     e.preventDefault();
+    // If dataTransfer had index, it can be used; but we rely on draggedIndex state
     if (draggedIndex === null || draggedIndex === dropIndex) return;
 
     const updatedFields = [...additionalFields];
     const draggedItem = updatedFields[draggedIndex];
-    
+
     // Remove the dragged item
     updatedFields.splice(draggedIndex, 1);
-    
+
     // Insert at new position
     const newIndex = draggedIndex < dropIndex ? dropIndex - 1 : dropIndex;
     updatedFields.splice(newIndex, 0, draggedItem);
-    
+
     setAdditionalFields(updatedFields);
     setDraggedIndex(null);
     setDragOverIndex(null);
@@ -484,22 +510,25 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
     const updatedEndorsements = [...endorsements];
     updatedEndorsements[index] = {
       ...updatedEndorsements[index],
-      [field]: value
+      [field]: value,
     };
     setEndorsements(updatedEndorsements);
   };
 
   const handleAddEndorsement = () => {
     const lastEndorsement = endorsements[endorsements.length - 1];
-    if (!endorsements.length ||
-      (lastEndorsement && (lastEndorsement.title?.trim() || lastEndorsement.endorsedby_1?.trim() ||
-        lastEndorsement.endorsed_place?.trim() || lastEndorsement.issuance_date?.trim()))) {
-      setEndorsements((prev) => [...prev, {
-        title: "",
-        endorsedby_1: "",
-        endorsed_place: "",
-        issuance_date: ""
-      }]);
+    if (!endorsements.length || (lastEndorsement && (lastEndorsement.title?.trim() || lastEndorsement.endorsedby_1?.trim() || lastEndorsement.endorsed_place?.trim() || lastEndorsement.issuance_date?.trim()))) {
+      setEndorsements((prev) => [
+        ...prev,
+        {
+          title: "",
+          endorsedby_1: "",
+          endorsed_place: "",
+          issuance_date: "",
+          validity_date: "",
+          endorsement_type: "",
+        },
+      ]);
     } else {
       toast.error("Please fill at least one field in the current endorsement before adding another.");
     }
@@ -519,18 +548,18 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
     return mode === "update" ? "Update Document" : "Create Document";
   };
 
-  const renderFileUpload = (documentType, label) => {
-    const document = formValues[documentType];
-    const hasDocument = document instanceof File || (typeof document === 'string' && document);
+  const renderFileUpload = (documentTypeKey, label) => {
+    const document = formValues[documentTypeKey];
+    const hasDocument = document instanceof File || (typeof document === "string" && document);
 
     return (
-      <Box key={documentType}>
+      <Box key={documentTypeKey}>
         <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
           {label}
         </Typography>
         <FormControl fullWidth>
+          {/* outer container is a div (Box) not a label to avoid nested label issues */}
           <Box
-            component="label"
             sx={{
               display: "flex",
               alignItems: "center",
@@ -549,17 +578,13 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
               e.preventDefault();
               const file = e.dataTransfer.files[0];
               if (file) {
-                handleFileChange(documentType, file);
+                handleFileChange(documentTypeKey, file);
               }
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <CloudUploadIcon />
-              <Typography variant="body2">
-                {hasDocument
-                  ? (document instanceof File ? document.name : `Existing: ${document.split('/').pop()}`)
-                  : "Drag files or browse to upload"}
-              </Typography>
+              <Typography variant="body2">{hasDocument ? (document instanceof File ? document.name : `Existing: ${document.split("/").pop()}`) : "Drag files or browse to upload"}</Typography>
             </Box>
 
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -568,21 +593,13 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                   color="primary"
                   onClick={(e) => {
                     e.preventDefault();
-                    setLoadingPreview(true);
-
-                    let fileUrl = null;
-                    if (typeof document === 'string') {
-                      fileUrl = document;
-                    } else if (document instanceof File) {
-                      fileUrl = URL.createObjectURL(document);
-                    }
-
-                    setPreviewState({
+                    setPreviewState((prev) => ({
+                      ...prev,
                       open: true,
                       loading: true,
-                      fileUrl: fileUrl,
-                      title: formValues.name || label
-                    });
+                      fileUrl: typeof document === "string" ? document : URL.createObjectURL(document),
+                      title: formValues.name || label,
+                    }));
                   }}
                   aria-label="preview document"
                   size="small"
@@ -590,7 +607,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                   <VisibilityIcon />
                 </IconButton>
               )}
-              <label htmlFor={`upload-input-${documentType}`}>
+              <label htmlFor={`upload-input-${documentTypeKey}`}>
                 <CommonButton
                   text="Upload"
                   variant="contained"
@@ -606,13 +623,15 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                 <input
                   type="file"
                   hidden
-                  id={`upload-input-${documentType}`}
+                  id={`upload-input-${documentTypeKey}`}
                   accept=".doc,.docx,.pdf"
                   onChange={(e) => {
                     const file = e.target.files[0];
                     if (file) {
-                      handleFileChange(documentType, file);
+                      handleFileChange(documentTypeKey, file);
                     }
+                    // clear input value so same file can be reselected if needed
+                    e.currentTarget.value = "";
                   }}
                 />
               </label>
@@ -630,7 +649,11 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           <Stack spacing={3}>
             <TextField
               fullWidth
-              label={<Typography variant="body1" color="gray" fontWeight={400}>Document Name <span style={{ color: "red" }}>*</span></Typography>}
+              label={
+                <Typography variant="body1" color="gray" fontWeight={400}>
+                  Document Name <span style={{ color: "red" }}>*</span>
+                </Typography>
+              }
               name="name"
               value={formValues.name}
               onChange={handleInputChange}
@@ -640,7 +663,11 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
 
             <TextField
               fullWidth
-              label={<Typography variant="body1" color="gray" fontWeight={400}>Abbreviation <span style={{ color: "red" }}>*</span></Typography>}
+              label={
+                <Typography variant="body1" color="gray" fontWeight={400}>
+                  Abbreviation <span style={{ color: "red" }}>*</span>
+                </Typography>
+              }
               name="abbreviation"
               value={formValues.abbreviation}
               onChange={handleInputChange}
@@ -649,14 +676,11 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
             />
 
             <FormControl fullWidth error={errors.type}>
-              <Select
-                name="type"
-                value={formValues.type}
-                onChange={handleSelectChange}
-                displayEmpty
-              >
+              <Select name="type" value={formValues.type} onChange={handleSelectChange} displayEmpty>
                 <MenuItem value="" disabled>
-                  <Typography variant="body1" color="gray" fontWeight={400}>Select Document Type <span style={{ color: "red" }}>*</span></Typography>
+                  <Typography variant="body1" color="gray" fontWeight={400}>
+                    Select Document Type <span style={{ color: "red" }}>*</span>
+                  </Typography>
                 </MenuItem>
                 {documentType.map((document) => (
                   <MenuItem key={document.value} value={document.value}>
@@ -665,19 +689,16 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                 ))}
               </Select>
               {errors.type && (
-                <Typography
-                  variant="caption"
-                  color="error"
-                  mt={"3px"}
-                  marginInline={"14px"}
-                >
+                <Typography variant="caption" color="error" mt={"3px"} marginInline={"14px"}>
                   Document type is required
                 </Typography>
               )}
             </FormControl>
 
             {/* Document Upload Sections */}
-            <Typography variant="h6" sx={{ mt: 2 }}>Document Uploads</Typography>
+            <Typography variant="h6" sx={{ mt: 2 }}>
+              Document Uploads
+            </Typography>
             <Stack spacing={3}>
               {renderFileUpload("fullTermDocument", "Full Term Document")}
               {renderFileUpload("shortTermDocument", "Short Term Document")}
@@ -686,22 +707,23 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
 
             <Typography variant="h6">Additional Fields</Typography>
             <Stack spacing={2}>
-              {Array.isArray(additionalFields) && additionalFields.length > 0 &&
+              {Array.isArray(additionalFields) &&
+                additionalFields.length > 0 &&
                 additionalFields.map((field, index) => (
-                  <Box 
-                    key={index} 
-                    sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
+                  <Box
+                    key={index}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
                       gap: 1,
                       p: 1.5,
-                      border: '1px solid',
-                      borderColor: dragOverIndex === index ? 'primary.main' : 'grey.300',
+                      border: "1px solid",
+                      borderColor: dragOverIndex === index ? "primary.main" : "grey.300",
                       borderRadius: 1,
-                      backgroundColor: draggedIndex === index ? 'grey.50' : 'transparent',
+                      backgroundColor: draggedIndex === index ? "grey.50" : "transparent",
                       opacity: draggedIndex === index ? 0.5 : 1,
-                      transition: 'all 0.2s ease',
-                      cursor: 'move'
+                      transition: "all 0.2s ease",
+                      cursor: "move",
                     }}
                     draggable
                     onDragStart={(e) => handleDragStart(e, index)}
@@ -710,216 +732,150 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                     onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDrop(e, index)}
                   >
-                    <DragIndicatorIcon 
-                      sx={{ 
-                        color: 'grey.500', 
-                        cursor: 'grab',
-                        '&:active': { cursor: 'grabbing' }
-                      }} 
+                    <DragIndicatorIcon
+                      sx={{
+                        color: "grey.500",
+                        cursor: "grab",
+                        "&:active": { cursor: "grabbing" },
+                      }}
                     />
-                    <TextField
-                      label="Attribute"
-                      value={field.attribute || ""}
-                      onChange={(e) => handleFieldChange(index, "attribute", e.target.value)}
-                      fullWidth
-                      size="small"
-                    />
-                    <TextField
-                      label="Label"
-                      value={field.label || ""}
-                      onChange={(e) => handleFieldChange(index, "label", e.target.value)}
-                      fullWidth
-                      size="small"
-                    />
-                    <IconButton
-                      color="error"
-                      onClick={() => handleDeleteField(index)}
-                      aria-label="delete field"
-                      size="small"
-                    >
+                    <TextField label="Attribute" value={field.attribute || ""} onChange={(e) => handleFieldChange(index, "attribute", e.target.value)} fullWidth size="small" />
+                    <TextField label="Label" value={field.label || ""} onChange={(e) => handleFieldChange(index, "label", e.target.value)} fullWidth size="small" />
+                    <IconButton color="error" onClick={() => handleDeleteField(index)} aria-label="delete field" size="small">
                       <DeleteIcon />
                     </IconButton>
                   </Box>
                 ))}
 
               <Stack direction={"row"} spacing={2}>
-                <CommonButton
-                  text="Add Attribute"
-                  variant="outlined"
-                  onClick={handleAddField}
-                  sx={{ alignSelf: "flex-start" }}
-                />
-                {/* <CommonButton
-                  text="Export XLSX"
-                  variant="contained"
-                  onClick={handleExportCSV}
-                  sx={{ alignSelf: "flex-start" }}
-                  startIcon={<FileDownloadIcon />}
-                />
+                <CommonButton text="Add Attribute" variant="outlined" onClick={handleAddField} sx={{ alignSelf: "flex-start" }} />
+                <CommonButton text="Export XLSX" variant="contained" onClick={handleExportCSV} sx={{ alignSelf: "flex-start" }} startIcon={<FileDownloadIcon />} />
                 <Box>
-                  <input
-                    type="file"
-                    accept=".csv,.xlsx,.xls"
-                    onChange={handleImportCSV}
-                    style={{ display: 'none' }}
-                    id="import-csv-input"
-                  />
+                  <input type="file" accept=".csv,.xlsx,.xls" onChange={handleImportCSV} style={{ display: "none" }} id="import-csv-input" />
                   <label htmlFor="import-csv-input">
-                    <CommonButton
-                      text="Import CSV/XLSX"
-                      variant="contained"
-                      component="span"
-                      sx={{ alignSelf: "flex-start" }}
-                      startIcon={<UploadIcon />}
-                    />
+                    <CommonButton text="Import CSV/XLSX" variant="contained" component="span" sx={{ alignSelf: "flex-start" }} startIcon={<UploadIcon />} />
                   </label>
-                </Box> */}
+                </Box>
               </Stack>
             </Stack>
 
             {/* Endorsements Section */}
             <Stack spacing={2}>
-              {Array.isArray(endorsements) && endorsements.length > 0 &&
+              {Array.isArray(endorsements) &&
+                endorsements.length > 0 &&
                 endorsements.map((endorsement, index) => (
-                  <Box key={index} sx={{
-                    border: '1px solid #e0e0e0',
-                    borderRadius: 2,
-                    p: 2,
-                    backgroundColor: '#f9f9f9'
-                  }}>
+                  <Box
+                    key={index}
+                    sx={{
+                      border: "1px solid #e0e0e0",
+                      borderRadius: 2,
+                      p: 2,
+                      backgroundColor: "#f9f9f9",
+                    }}
+                  >
                     <Stack spacing={2}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <Typography variant="subtitle2" color="primary">
                           Endorsement {index + 1}
                         </Typography>
-                        <IconButton
-                          color="error"
-                          onClick={() => handleDeleteEndorsement(index)}
-                          aria-label="delete endorsement"
-                          size="small"
-                        >
+                        <IconButton color="error" onClick={() => handleDeleteEndorsement(index)} aria-label="delete endorsement" size="small">
                           <DeleteIcon />
                         </IconButton>
                       </Box>
 
-                      <TextField
-                        label="Title"
-                        value={endorsement.title || ""}
-                        onChange={(e) => handleEndorsementChange(index, "title", e.target.value)}
-                        fullWidth
-                        size="small"
-                      />
-                      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                        <TextField
-                          label="Endorsed By"
-                          value={endorsement.endorsedby_1 || ""}
-                          onChange={(e) => handleEndorsementChange(index, "endorsedby_1", e.target.value)}
-                          fullWidth
-                          size="small"
-                        />
-                        <TextField
-                          label="Endorsed Place"
-                          value={endorsement.endorsed_place || ""}
-                          onChange={(e) => handleEndorsementChange(index, "endorsed_place", e.target.value)}
-                          fullWidth
-                          size="small"
-                        />
-                        <TextField
-                          label="Issuance Date"
-                          value={endorsement.issuance_date || ""}
-                          onChange={(e) => handleEndorsementChange(index, "issuance_date", e.target.value)}
-                          fullWidth
-                          size="small"
-                        />
-                        <TextField
-                          label="Validity Date"
-                          value={endorsement.validity_date || ""}
-                          onChange={(e) => handleEndorsementChange(index, "validity_date", e.target.value)}
-                          fullWidth
-                          size="small"
-                        />
+                      <TextField label="Title" value={endorsement.title || ""} onChange={(e) => handleEndorsementChange(index, "title", e.target.value)} fullWidth size="small" />
+                      <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+                        <TextField label="Endorsed By" value={endorsement.endorsedby_1 || ""} onChange={(e) => handleEndorsementChange(index, "endorsedby_1", e.target.value)} fullWidth size="small" />
+                        <TextField label="Endorsed Place" value={endorsement.endorsed_place || ""} onChange={(e) => handleEndorsementChange(index, "endorsed_place", e.target.value)} fullWidth size="small" />
+                        <TextField label="Issuance Date" value={endorsement.issuance_date || ""} onChange={(e) => handleEndorsementChange(index, "issuance_date", e.target.value)} fullWidth size="small" />
+                        <TextField label="Validity Date" value={endorsement.validity_date || ""} onChange={(e) => handleEndorsementChange(index, "validity_date", e.target.value)} fullWidth size="small" />
+                        <TextField label="endorsement_type" value={endorsement.endorsement_type || ""} onChange={(e) => handleEndorsementChange(index, "endorsement_type", e.target.value)} fullWidth size="small" />
                       </Box>
                     </Stack>
                   </Box>
                 ))}
+              {/* <CommonButton text="Add Endorsement" variant="outlined" onClick={handleAddEndorsement} sx={{ alignSelf: "flex-start" }} /> */}
             </Stack>
 
-            <Stack
-              direction="row"
-              justifyContent="flex-end"
-              spacing={2}
-              sx={{ mt: 3 }}
-            >
-              <CommonButton
-                text="Cancel"
-                variant="outlined"
-                onClick={() => router.push("/documents")}
-              />
-              <CommonButton
-                text={getSubmitButtonText()}
-                type="submit"
-                variant="contained"
-                disabled={loading}
-              />
+            <Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mt: 3 }}>
+              <CommonButton text="Cancel" variant="outlined" onClick={() => router.push("/documents")} />
+              <CommonButton text={getSubmitButtonText()} type="submit" variant="contained" disabled={loading} />
             </Stack>
           </Stack>
         </Box>
       </CommonCard>
+
       <Dialog
         open={previewState.open}
-        onClose={() => setPreviewState({ open: false })}
+        onClose={() =>
+          setPreviewState((prev) => ({
+            ...prev,
+            open: false,
+          }))
+        }
         maxWidth="md"
         fullWidth
       >
         <DialogTitle>Document Preview</DialogTitle>
         <DialogContent>
-          <div style={{ position: 'relative', width: '100%', height: '80vh' }}>
-            {!loadingPreview ? (
-              <a
-                href={previewState.fileUrl}
-                download
-                rel="noopener noreferrer"
-                style={{
-                  position: 'absolute',
-                  top: '10px',
-                  right: '10px',
-                  zIndex: 1,
-                  backgroundColor: '#4CAF50',
-                  color: 'white',
-                  padding: '8px 12px',
-                  border: 'none',
-                  borderRadius: '4px',
-                  textDecoration: 'none',
-                  fontSize: '14px',
-                }}
-              >
-                Download
-              </a>) : (
-              <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                height="100%"
-                position="absolute"
-                top={0}
-                left={0}
-                width="100%"
-                zIndex={0}
-                sx={{ backgroundColor: "rgba(255,255,255,0.8)" }}
-              >
+          <div style={{ position: "relative", width: "100%", height: "80vh" }}>
+            {!previewState.loading ? (
+              previewState.fileUrl && (
+                <a
+                  href={previewState.fileUrl}
+                  download
+                  rel="noopener noreferrer"
+                  style={{
+                    position: "absolute",
+                    top: "10px",
+                    right: "10px",
+                    zIndex: 1,
+                    backgroundColor: "#4CAF50",
+                    color: "white",
+                    padding: "8px 12px",
+                    border: "none",
+                    borderRadius: "4px",
+                    textDecoration: "none",
+                    fontSize: "14px",
+                  }}
+                >
+                  Download
+                </a>
+              )
+            ) : (
+              <Box display="flex" justifyContent="center" alignItems="center" height="100%" position="absolute" top={0} left={0} width="100%" zIndex={0} sx={{ backgroundColor: "rgba(255,255,255,0.8)" }}>
                 <CircularProgress />
               </Box>
             )}
-            <iframe
-              src={`https://docs.google.com/gview?url=${encodeURIComponent(previewState.fileUrl)}&embedded=true`}
-              style={{ width: '100%', height: '100%', border: 'none' }}
-              title="File Preview"
-              onLoad={() => setLoadingPreview(false)}
-            />
+
+            {/* only render iframe if fileUrl exists */}
+            {previewState.fileUrl ? (
+              <iframe
+                src={`https://docs.google.com/gview?url=${encodeURIComponent(previewState.fileUrl)}&embedded=true`}
+                style={{ width: "100%", height: "100%", border: "none" }}
+                title="File Preview"
+                onLoad={() =>
+                  setPreviewState((prev) => ({
+                    ...prev,
+                    loading: false,
+                  }))
+                }
+              />
+            ) : (
+              !previewState.loading && <Box p={2}>No file to preview</Box>
+            )}
           </div>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPreviewState({ open: false })} color="primary">
+          <Button
+            onClick={() =>
+              setPreviewState((prev) => ({
+                ...prev,
+                open: false,
+              }))
+            }
+            color="primary"
+          >
             Close
           </Button>
         </DialogActions>

@@ -15,6 +15,7 @@ import { adminLogin } from "@/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useDispatch } from "react-redux";
 import { saveUserInfo } from "@/redux/slice/authSlice";
+import { toast } from "react-toastify";
 
 const MainWrapper = styled(Box)(({}) => ({
   height: "100vh",
@@ -54,15 +55,20 @@ const Login = () => {
   const onSubmit = async (data) => {
     try {
       const res = await adminLogin(data);
-      if (!res?.data?.data?.status) {
-        setSnackBar({ open: true, message: res?.response?.data?.message });
+      if (res?.data?.data?.permissionModule?.length === 0) {
+        return toast.error("You don't have access to any module");
       }
-      dispatch(saveUserInfo(res?.data?.data))
+
+      if (res?.response?.data?.status === "error") {
+        return toast.error(res?.response?.data?.message);
+      }
+
+      dispatch(saveUserInfo(res?.data?.data));
       login(res?.data?.data);
-      setSnackBar({ open: true, message: res?.data.status });
+      toast.success("login successful");
     } catch (err) {
       console.log("error", err);
-      setSnackBar({ open: true, message: response?.data?.message });
+      toast.error(err?.response?.data?.message);
     }
   };
 
@@ -81,61 +87,21 @@ const Login = () => {
           Class Software Admin
         </Typography>
 
-        <Typography
-          textAlign="center"
-          variant="body2"
-          color="textSecondary"
-          mb={3}
-        >
+        <Typography textAlign="center" variant="body2" color="textSecondary" mb={3}>
           Please enter your login credentials to continue.
         </Typography>
         <form onSubmit={handleSubmit(onSubmit)}>
           <Stack spacing={3} mt={4}>
-            <Controller
-              name="username"
-              control={control}
-              render={({ field }) => (
-                <CommonInput
-                  {...field}
-                  fullWidth
-                  label="Username"
-                  placeholder="Enter your username"
-                  error={Boolean(errors.username)}
-                  helperText={errors.username?.message}
-                />
-              )}
-            />
-            <Controller
-              name="password"
-              control={control}
-              render={({ field }) => (
-                <CommonInput
-                  {...field}
-                  fullWidth
-                  label="Password"
-                  type="password"
-                  autoComplete="off"
-                  placeholder="Enter your password"
-                  error={Boolean(errors.password)}
-                  helperText={errors.password?.message}
-                />
-              )}
-            />
+            <Controller name="username" control={control} render={({ field }) => <CommonInput {...field} fullWidth label="Username" placeholder="Enter your username" error={Boolean(errors.username)} helperText={errors.username?.message} />} />
+            <Controller name="password" control={control} render={({ field }) => <CommonInput {...field} fullWidth label="Password" type="password" autoComplete="off" placeholder="Enter your password" error={Boolean(errors.password)} helperText={errors.password?.message} />} />
           </Stack>
           <Box mt={4}>
-            <CommonButton
-              sx={{ textTransform: "uppercase" }}
-              text="login"
-              isLoading={isSubmitting}
-              variant="contained"
-              fullWidth
-              type="submit"
-            />
+            <CommonButton sx={{ textTransform: "uppercase" }} text="login" isLoading={isSubmitting} variant="contained" fullWidth type="submit" />
           </Box>
         </form>
       </StyledCard>
 
-      <Snackbar
+      {/* <Snackbar
         open={snackBar.open}
         autoHideDuration={2000}
         message={snackBar.message}
@@ -146,7 +112,7 @@ const Login = () => {
         onClose={snackbarClose}
         className="snackBarColor"
         key="snackbar"
-      />
+      /> */}
     </MainWrapper>
   );
 };

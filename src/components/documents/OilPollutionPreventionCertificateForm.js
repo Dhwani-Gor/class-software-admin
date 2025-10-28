@@ -139,7 +139,6 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
 
   const handleClose = () => {
     onClose();
-    setFormData({});
   };
 
   const extractCheckboxFields = (fields = []) => {

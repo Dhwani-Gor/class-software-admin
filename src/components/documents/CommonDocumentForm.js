@@ -31,7 +31,6 @@ export const DialogForm = ({ open, onClose, onSubmit, fields, reportDetails }) =
 
   const handleClose = () => {
     onClose();
-    setFormData({});
   };
 
   const handleGenerateClick = () => {

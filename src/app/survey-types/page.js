@@ -59,7 +59,7 @@ const SurveyTypes = () => {
           let type = "-";
           if (item.statutorySurvey) type = "Statutory";
           else if (item.classificationSurvey) type = "Classification";
-          else if (item.auditSurvey) type = "Audit";
+          else if (item.audit) type = "Audit";
           return { ...item, type };
         });
         setSurveyTypes(formatted);

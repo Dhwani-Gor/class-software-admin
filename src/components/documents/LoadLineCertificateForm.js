@@ -6,39 +6,39 @@ import { Close as CloseIcon, ExpandMore as ExpandMoreIcon, CheckCircle as CheckI
 import { formattedDate, formatDate } from "@/utils/date";
 import { getAllSystemVariables } from "@/api";
 import CommonConfirmationDialog from "../Dialogs/CommonConfirmationDialog";
-
-const applyStrikethrough = (text) =>
-  text
-    ?.split("")
-    .map((c) => c + "\u0336")
-    .join("");
+import { useCommonSubmit, useFormInitialization } from "./useSubmit";
 
 const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
-  const [formValues, setFormValues] = useState({});
   const [expandedSection, setExpandedSection] = useState("freeboard");
   const [systemVariables, setSystemVariables] = useState();
   const [isLoadingVariables, setIsLoadingVariables] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [saveData, setSaveData] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
+  const { formData, setFormData } = useFormInitialization(fields, reportDetails, open);
+  const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, saveData);
+
+  const timberImages = systemVariables?.data?.filter((item) => item.name.startsWith("timber_image")) || [];
 
   const handleImageSelect = (id) => {
     setSelectedImage(id);
   };
+
   const handleCancel = () => {
     setOpenDialog(false);
   };
 
   const handleConfirm = () => {
     setOpenDialog(false);
-    handleSubmit(formValues);
+    handleSubmit({
+      ...formData,
+      image: selectedImage,
+    });
   };
 
   const handleGenerateClick = () => {
     setOpenDialog(true);
   };
-
-  const timberImages = systemVariables?.data?.filter((item) => item.name.startsWith("timber_image")) || [];
 
   const getSystemVariables = async () => {
     try {
@@ -64,89 +64,33 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
     }
   }, [open]);
 
-  const isStrikethroughText = (text) => text?.split("").some((c) => c === "\u0336");
-
-  useEffect(() => {
-    if (fields && fields.length > 0) {
-      const initialValues = {};
-      fields.forEach((field) => {
-        if (field.attribute.startsWith("_checkbox")) {
-          if (reportDetails?.data && reportDetails?.data[field.attribute] === "\u2611") {
-            initialValues[field.attribute] = true;
-          } else {
-            initialValues[field.attribute] = false;
-          }
-        } else if (field.attribute.startsWith("_st_")) {
-          if (reportDetails && reportDetails[field.attribute]) {
-            const parts = reportDetails[field.attribute].split(" / ").map((s) => s.trim());
-
-            const cleanText = (txt) => txt.replace(/\u0336/g, "");
-
-            const selectedOptions = parts.filter((part) => !/\u0336/.test(part)).map(cleanText);
-
-            initialValues[field.attribute] = selectedOptions;
-          } else {
-            initialValues[field.attribute] = [];
-          }
-        } else {
-          if (reportDetails?.data && reportDetails?.data[field.attribute]) {
-            initialValues[field.attribute] = reportDetails?.data[field.attribute];
-          } else {
-            initialValues[field.attribute] = "";
-          }
-        }
-      });
-      setFormValues(initialValues);
-    }
-  }, [fields, open, reportDetails]);
-
   const handleClose = () => {
     onClose();
-    setFormValues({});
+    setFormData({});
   };
 
   const handleInputChange = (fieldName, value) => {
-    setFormValues((prev) => ({ ...prev, [fieldName]: value }));
+    setFormData((prev) => ({ ...prev, [fieldName]: value }));
   };
 
-  const handleSubmit = () => {
-    const filledValues = Object.entries(formValues).reduce((acc, [key, raw]) => {
-      let value = raw;
-      if (typeof value === "string" && (value.includes("undefined") || !value.trim())) {
-        value = undefined;
-      }
+  useEffect(() => {
+    if (open && reportDetails?.image) {
+      setSelectedImage(reportDetails.image);
+    }
+  }, [open, reportDetails]);
 
-      if (key.startsWith("_st_")) {
-        const [, raw] = key?.split("_st_");
-        const optionsRaw = raw.split("_");
-        const options = optionsRaw.map((opt) => opt.replace(/-/g, " "));
-
-        const selectedValues = Array.isArray(value) ? value : [];
-
-        if (selectedValues.length === 0) {
-          acc[key] = options.join(" / ");
-        } else {
-          acc[key] = options.map((opt) => (selectedValues.includes(opt) ? opt : applyStrikethrough(opt))).join(" / ");
-        }
-      } else if (typeof value === "boolean") {
-        acc[key] = value ? "\u2611" : "\u2612";
-      } else if (key?.includes("date") && value) {
-        acc[key] = formattedDate(value);
-      } else if (typeof value === "string" && value.trim()) {
-        acc[key] = value;
-      } else {
-        acc[key] = "-";
-      }
-      return acc;
-    }, {});
-
-    const finalFilledValues = {
-      ...filledValues,
-      image: selectedImage,
-      save: saveData,
-    };
-    onSubmit(finalFilledValues || {});
-  };
+  useEffect(() => {
+    if (saveData) {
+      handleSubmit(
+        {
+          ...formData,
+          image: selectedImage,
+        },
+        false
+      );
+      setSaveData(false);
+    }
+  }, [formData, saveData, selectedImage]);
 
   const categorizeFields = (fields) => {
     const categories = {
@@ -188,7 +132,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
             <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={attr}>
               <Grid2 size={{ xs: 12 }}>
                 <Box display="flex" alignItems="center">
-                  <input type="checkbox" checked={!!formValues[attr]} onChange={(e) => handleInputChange(attr, e.target.checked)} />
+                  <input type="checkbox" checked={!!formData[attr]} onChange={(e) => handleInputChange(attr, e.target.checked)} />
                   <Typography variant="body2" sx={{ ml: 1 }}>
                     {field.label}
                   </Typography>
@@ -202,7 +146,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
           const [, raw] = attr?.split("_st_");
           const optionsRaw = raw.split("_");
           const options = optionsRaw.map((opt) => opt.replace(/-/g, " "));
-          const selected = formValues[attr];
+          const selected = formData[attr];
           return (
             // eslint-disable-next-line react/jsx-key
             <Box display="flex" flexDirection="column" gap={1}>
@@ -240,14 +184,14 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
               <Typography variant="body2" sx={{ mb: 1 }}>
                 {field.label}
               </Typography>
-              <TextareaAutosize style={{ width: "100%" }} minRows={4} multiline label={field.label} value={formValues[attr] || ""} onChange={(e) => handleInputChange(attr, e.target.value)} placeholder={field.label} />
+              <TextareaAutosize style={{ width: "100%" }} minRows={4} multiline label={field.label} value={formData[attr] || ""} onChange={(e) => handleInputChange(attr, e.target.value)} placeholder={field.label} />
             </Grid2>
           );
         }
 
         return (
           <Grid2 size={{ xs: 12, sm: 12, md: 3 }} key={attr}>
-            <TextField fullWidth size="small" label={field.label} title={field.label} value={isDate ? formatDate(formValues[attr]) : formValues[attr] || ""} onChange={(e) => handleInputChange(attr, e.target.value)} type={isDate ? "date" : "text"} InputLabelProps={isDate ? { shrink: true } : undefined} />
+            <TextField fullWidth size="small" label={field.label} title={field.label} value={isDate ? formatDate(formData[attr]) : formData[attr] || ""} onChange={(e) => handleInputChange(attr, e.target.value)} type={isDate ? "date" : "text"} InputLabelProps={isDate ? { shrink: true } : undefined} />
           </Grid2>
         );
       })}
@@ -262,7 +206,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
           <Typography variant="h6">
             {title}
             <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
-              ({fieldList.filter((f) => formValues[f.attribute]?.toString().trim()).length}/{fieldList.length})
+              ({fieldList.filter((f) => formData[f.attribute]?.toString().trim()).length}/{fieldList.length})
             </Typography>
           </Typography>
         </AccordionSummary>
@@ -384,7 +328,6 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
         <Button
           onClick={() => {
             setSaveData(true);
-            handleSubmit();
           }}
           variant="outlined"
           size="large"

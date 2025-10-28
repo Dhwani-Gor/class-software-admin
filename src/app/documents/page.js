@@ -2,18 +2,17 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import CircularProgress from "@mui/material/CircularProgress";
-import Pagination from '@mui/material/Pagination';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogTitle from '@mui/material/DialogTitle';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
+import Pagination from "@mui/material/Pagination";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogTitle from "@mui/material/DialogTitle";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
 import Snackbar from "@mui/material/Snackbar";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import Chip from "@mui/material/Chip";
 import { DataGrid } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -21,57 +20,33 @@ import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import CommonInput from "@/components/CommonInput";
-import { deleteDocument, getAllDocuments, getAllSurveyStatusReport, deleteSurveyReport } from "@/api";
+import { deleteDocument, getAllDocuments } from "@/api";
 import { toast } from "react-toastify";
-import PreviewIcon from '@mui/icons-material/Visibility';
-import DialogContent from "@mui/material/DialogContent";
-import moment from "moment";
 
 const Documents = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [snackBar, setSnackBar] = useState({ open: false, message: "" });
   const [documents, setDocuments] = useState([]);
-  const [reports, setReports] = useState([]);
-  const [reportsPage, setReportsPage] = useState(Number(searchParams.get("repPage")) || 1);
   const [documentsPage, setDocumentsPage] = useState(Number(searchParams.get("docPage")) || 1);
   const [limit, setLimit] = useState(10);
   const [documentsTotalRows, setDocumentsTotalRows] = useState(0);
-  const [reportsTotalRows, setReportsTotalRows] = useState(0);
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState({ });
-  const [selectedFilter, setSelectedFilter] = useState("certificates");
-  const [previewFile, setPreviewFile] = useState(null);
-  const [openPreviewModal, setOpenPreviewModal] = useState(false);
-  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState({});
 
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 300);
+    const handler = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(handler);
   }, [search]);
 
   const fetchAllDocuments = async () => {
     try {
       setLoading(true);
-      
-      const params = {
-        page: documentsPage,
-        limit
-      };
-      
-      if (debouncedSearch) {
-        params.search = debouncedSearch;
-      }
-      
-      if (selectedFilter === "certificates") {
-        params.type = "certificate";
-      }
-      
+      const params = { page: documentsPage, limit, type: "certificate" };
+      if (debouncedSearch) params.search = debouncedSearch;
+
       const result = await getAllDocuments(params);
       if (result?.status === 200) {
         const docs = result?.data?.data;
@@ -87,79 +62,22 @@ const Documents = () => {
     }
   };
 
-  const fetchAllReports = async () => {
-    try {
-      setLoading(true);
-      
-      const params = {
-        page: reportsPage,
-        limit
-      };
-      
-      if (debouncedSearch) {
-        params.search = debouncedSearch;
-      }
-      const result = await getAllSurveyStatusReport({params});
-      if (result?.data?.status === "success") {
-        const docs = result.data.data;
-        setReports(docs);
-        setReportsTotalRows(result.data.results || docs.length);
-      } else {
-        toast.error("Something went wrong! Please try again later.");
-      }
-    } catch (error) {
-      toast.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (selectedFilter === "certificates") {
-      fetchAllDocuments();
-    }
-  }, [documentsPage, selectedFilter, debouncedSearch]);
-
-  useEffect(() => {
-    if (selectedFilter === "reports") {
-      fetchAllReports();
-    }
-  }, [reportsPage, selectedFilter, debouncedSearch]);
-
-  useEffect(() => {
-    if (selectedFilter === "certificates") {
-      fetchAllDocuments();
-    } else {
-      fetchAllReports();
-    }
-  }, []);
+    fetchAllDocuments();
+  }, [documentsPage, debouncedSearch]);
 
   const handleSearchChange = (event) => {
     setSearch(event.target.value);
     setDocumentsPage(1);
-    setReportsPage(1);
-  };
-
-  const handleFilterChange = (newFilter) => {
-    setSelectedFilter(newFilter);
-    setSearch("");
-    setDocumentsPage(1);
-    setReportsPage(1);
   };
 
   const handleConfirmDelete = async () => {
     setOpenDialog(false);
     if (!selectedDocument) return;
     try {
-      if (selectedDocument.type === "document") {
-        const res = await deleteDocument(selectedDocument.id);
-        toast.success("Document deleted successfully");
-        fetchAllDocuments();
-      } else if (selectedDocument.type === "report") {
-        await deleteSurveyReport(selectedDocument.id);
-        toast.success("Report deleted successfully");
-        fetchAllReports();
-      }
+      await deleteDocument(selectedDocument.id);
+      toast.success("Document deleted successfully");
+      fetchAllDocuments();
     } catch (e) {
       console.error("Error deleting:", e.response?.data || e.message);
       toast.error("Failed to delete.");
@@ -174,18 +92,7 @@ const Documents = () => {
   const handleDocumentsPageChange = (event, value) => {
     setDocumentsPage(value);
     const params = new URLSearchParams(searchParams);
-    params.set('docPage', value);
-    if (selectedFilter === "reports") {
-      params.set('repPage', reportsPage);
-    }
-    router.push(`/documents?${params.toString()}`);
-  };
-
-  const handleReportsPageChange = (event, value) => {
-    setReportsPage(value);
-    const params = new URLSearchParams(searchParams);
-    params.set('repPage', value);
-    params.set('docPage', documentsPage);
+    params.set("docPage", value);
     router.push(`/documents?${params.toString()}`);
   };
 
@@ -195,9 +102,7 @@ const Documents = () => {
       headerName: "No.",
       flex: 0.3,
       sortable: false,
-      renderCell: (params) => {
-        return (documentsPage - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1;
-      }
+      renderCell: (params) => (documentsPage - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1,
     },
     { field: "name", headerName: "Document Name", flex: 1.5 },
     { field: "type", headerName: "Document Type", flex: 0.5 },
@@ -208,10 +113,7 @@ const Documents = () => {
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
           <Tooltip title="Edit Document">
-            <IconButton
-              color="primary"
-              onClick={() => router.push(`/documents/${params?.id}`)}
-            >
+            <IconButton color="primary" onClick={() => router.push(`/documents/${params?.id}`)}>
               <EditIcon />
             </IconButton>
           </Tooltip>
@@ -219,70 +121,7 @@ const Documents = () => {
             <IconButton
               color="error"
               onClick={() => {
-                setSelectedDocument({ id: params?.id, type: "document" });
-                setOpenDialog(true);
-              }}
-            >
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      ),
-    },
-  ];
-
-  const surveyColumns = [
-    {
-      field: "index",
-      headerName: "No.",
-      flex: 0.8,
-      sortable: false,
-      renderCell: (params) => {
-        return (reportsPage - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1;
-      }
-    },
-    {
-      field: "shipName",
-      headerName: "Ship Name",
-      flex: 1,
-      renderCell: (params) => (<Typography variant="body2" sx={{height:"100%",display:'flex',alignItems:'center',overflow:'hidden',textOverflow:'ellipsis'}}>{params.row.client?.shipName || 'N/A'}</Typography>)
-    },
-    {
-      field: "generatedDoc",
-      headerName: "Generated Document",
-      flex: 3,
-      renderCell: (params) => (<Typography variant="body2" sx={{height:"100%",display:'flex',alignItems:'center',overflow:'hidden',textOverflow:'ellipsis'}}>{params.value}</Typography>)
-    },
-  
-    {
-        field:'createdAt',
-        headerName:'Created At',
-        flex:1,
-        renderCell: (params) => (<Typography variant="body2" sx={{height:"100%",display:'flex',alignItems:'center',overflow:'hidden'}}>{moment(params.value).format("DD-MM-YYYY")}</Typography>)
-    },
-    {
-      field: "actions",
-      headerName: "Actions",
-      width: 150,
-      renderCell: (params) => (
-        <Stack direction="row" spacing={1}>
-          <Tooltip title="Preview Report">
-            <IconButton
-              color="info"
-              onClick={() => {
-                setPreviewFile(params.row.generatedDoc);
-                setLoadingPreview(true);
-                setOpenPreviewModal(true);
-              }}
-            >
-              <PreviewIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete Report">
-            <IconButton
-              color="error"
-              onClick={() => {
-                setSelectedDocument({ id: params?.id, type: "report" });
+                setSelectedDocument({ id: params?.id });
                 setOpenDialog(true);
               }}
             >
@@ -298,157 +137,46 @@ const Documents = () => {
     <Layout>
       <CommonCard sx={{ mt: 0 }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Typography variant="h4" fontWeight={700}>Documents</Typography>
-          <CommonButton
-            sx={{ textTransform: "capitalize" }}
-            text="Add Document"
-            variant="contained"
-            onClick={() => router.push("/documents/create")}
-          />
+          <Typography variant="h4" fontWeight={700}>
+            Certificates
+          </Typography>
+          <CommonButton sx={{ textTransform: "capitalize" }} text="Add Document" variant="contained" onClick={() => router.push("/documents/create")} />
         </Stack>
       </CommonCard>
 
       <CommonCard>
-        <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-          {["certificates","reports"].map(type => (
-            <Chip
-              key={type}
-              label={type.charAt(0).toUpperCase() + type.slice(1)}
-              color={selectedFilter === type ? "primary" : "default"}
-              onClick={() => handleFilterChange(type)}
-              clickable
-              sx={{ fontWeight: selectedFilter === type ? 600 : 400, px: 2 }}
-            />
-          ))}
-        </Stack>
-
-        <CommonInput
-          placeholder="Search Documents"
-          fullWidth
-          value={search}
-          onChange={handleSearchChange}
-          sx={{ mb: 2 }}
-        />
+        <CommonInput placeholder="Search Documents" fullWidth value={search} onChange={handleSearchChange} sx={{ mb: 2 }} />
 
         <Box sx={{ width: "100%", mt: 4 }}>
           {loading ? (
             <Box display="flex" justifyContent="center" alignItems="center" height="300px">
               <CircularProgress />
             </Box>
-          ) : selectedFilter === "reports" ? (
-            <DataGrid
-              rows={reports}
-              columns={surveyColumns}
-              loading={loading}
-              pagination={false}
-              disableColumnFilter
-              disableColumnMenu
-              disableColumnSelector
-              disableDensitySelector
-              disableRowSelectionOnClick
-              hideFooter
-              sx={{ backgroundColor: "#fff", border: "none" }}
-            />
           ) : (
-            <DataGrid
-              rows={documents}
-              columns={columns}
-              pagination={false}
-              disableColumnFilter
-              disableColumnMenu
-              disableColumnSelector
-              disableDensitySelector
-              disableRowSelectionOnClick
-              hideFooter
-              sx={{ backgroundColor: "#fff", border: "none" }}
-            />
+            <DataGrid rows={documents} columns={columns} pagination={false} disableColumnFilter disableColumnMenu disableColumnSelector disableDensitySelector disableRowSelectionOnClick hideFooter sx={{ backgroundColor: "#fff", border: "none" }} />
           )}
         </Box>
 
         <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-          <Pagination
-            count={selectedFilter === "reports" ? Math.ceil(reportsTotalRows / limit) : Math.ceil(documentsTotalRows / limit)}
-            page={selectedFilter === "reports" ? reportsPage : documentsPage}
-            onChange={selectedFilter === "reports" ? handleReportsPageChange : handleDocumentsPageChange}
-            color="primary"
-            variant="outlined"
-            shape="rounded"
-          />
+          <Pagination count={Math.ceil(documentsTotalRows / limit)} page={documentsPage} onChange={handleDocumentsPageChange} color="primary" variant="outlined" shape="rounded" />
         </Box>
       </CommonCard>
 
       <Dialog open={openDialog} onClose={handleCancelDelete}>
-        <DialogTitle>
-          Are you sure you want to delete this {selectedDocument?.type === "report" ? "Report" : "Document"}?
-        </DialogTitle>
+        <DialogTitle>Are you sure you want to delete this Document?</DialogTitle>
         <DialogActions>
-          <Button onClick={handleCancelDelete} color="primary">Cancel</Button>
-          <Button
-            onClick={handleConfirmDelete}
-            sx={{ backgroundColor: "#ed2b1c", color: "white", fontWeight: "500" }}
-          >
+          <Button onClick={handleCancelDelete} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmDelete} sx={{ backgroundColor: "#ed2b1c", color: "white", fontWeight: "500" }}>
             Delete
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Snackbar
-        open={snackBar.open}
-        autoHideDuration={2000}
-        message={snackBar.message}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        onClose={() => setSnackBar({ open: false, message: "" })}
-        key="snackbar"
-      />
-
-      <Dialog
-        open={openPreviewModal}
-        onClose={() => setOpenPreviewModal(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>Document Preview</DialogTitle>
-        <DialogContent>
-          <div style={{ position: 'relative', width: '100%', height: '80vh' }}>
-            {!loadingPreview ? (
-              <a
-                href={previewFile}
-                download
-                rel="noopener noreferrer"
-                style={{
-                  position: 'absolute',
-                  top: '10px',
-                  right: '10px',
-                  backgroundColor: '#4CAF50',
-                  color: 'white',
-                  padding: '8px 12px',
-                  borderRadius: '4px',
-                  textDecoration: 'none',
-                  fontSize: '14px',
-                  zIndex:1,
-                  border:'none'
-                }}
-              >
-                Download
-              </a>
-            ) : (
-              <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-                <CircularProgress />
-              </Box>
-            )}
-            <iframe
-              src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile)}&embedded=true`}
-              style={{ width: '100%', height: '100%', border: 'none' }}
-              title="File Preview"
-              onLoad={() => setLoadingPreview(false)}
-            />
-          </div>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenPreviewModal(false)} color="primary">Close</Button>
-        </DialogActions>
-      </Dialog>
+      <Snackbar open={false} autoHideDuration={2000} message="" anchorOrigin={{ vertical: "top", horizontal: "center" }} />
     </Layout>
   );
 };
+
 export default Documents;

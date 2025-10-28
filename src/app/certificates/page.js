@@ -1,133 +1,149 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useDispatch } from "react-redux";
-import CircularProgress from "@mui/material/CircularProgress";
-import Pagination from '@mui/material/Pagination';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
-import Snackbar from "@mui/material/Snackbar";
-import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import { DataGrid } from "@mui/x-data-grid";
-
+import { Box, Stack, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Tooltip, Chip, TextField, Select, MenuItem, CircularProgress } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import DeleteIcon from "@mui/icons-material/Delete";
 import GetAppIcon from "@mui/icons-material/GetApp";
-import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
-import CommonInput from "@/components/CommonInput";
-import { getAllIssuedDocuments, getAllJournals } from "@/api";
-import { MenuItem, Select, TextField } from "@mui/material";
 import CommonButton from "@/components/CommonButton";
+import CommonInput from "@/components/CommonInput";
+import CommonConfirmationDialog from "@/components/Dialogs/CommonConfirmationDialog";
+import ShowAmdRemarksDialog from "@/components/Dialogs/ShowAmdRemarksDialog";
+import DocumentPreview from "@/components/Dialogs/DocumentPreview";
+import { toast } from "react-toastify";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
+import Layout from "@/Layout";
+import { useAuth } from "@/hooks/useAuth";
+import Pagination from "@mui/material/Pagination";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+
+import { deleteSurveyReport, deleteSurveyStatusReport, getAllIssuedDocuments, getAllReports, getJournalsList } from "@/api";
 
 const Certificates = () => {
-  const dispatch = useDispatch();
+  const { data } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [snackBar, setSnackBar] = useState({ open: false, message: "" });
+
   const [certificatesList, setCertificatesList] = useState([]);
+  const [reportsList, setReportsList] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [limit, setLimit] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [journals, setJournals] = useState([]);
+
+  const [count, setTotalCount] = useState(0);
+  const [showAll, setShowAll] = useState(false);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState("Certificates");
+  console.log(selectedFilter, "selectedfilter");
   const [selectedReportNumber, setSelectedReportNumber] = useState("");
   const [placeFilter, setPlaceFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [journals, setJournals] = useState([]);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [previewFile, setPreviewFile] = useState(null);
+  const [openPreviewModal, setOpenPreviewModal] = useState(false);
+  const [openAmdRemarks, setOpenAmdRemarks] = useState(false);
+  const [selectedReportId, setSelectedReportId] = useState(null);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
-
-  // Client-side search functionality
-
-  const filteredCertificates = certificatesList.filter(certificate => {
-    if (!search.trim()) return true;
-
-    const searchTerm = search.toLowerCase();
-    const shipName = certificate.activity?.journal?.client?.shipName?.toLowerCase() || '';
-    const journalTypeId = certificate.activity?.journal?.journalTypeId?.toLowerCase() || '';
-    const certificateType = certificate.typeOfCertificate?.toLowerCase() || '';
-    const place = certificate.place?.toLowerCase() || '';
-
-    return shipName.includes(searchTerm) ||
-      journalTypeId.includes(searchTerm) ||
-      certificateType.includes(searchTerm) ||
-      place.includes(searchTerm);
-  });
-
-  // Remove unused functions and effects
-  const handleFilterChange = (newFilter) => {
-    // Not needed anymore
+  const handleSort = (key) => {
+    setSortConfig((prev) => {
+      if (prev.key === key) {
+        // toggle direction
+        return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
+      } else {
+        return { key, direction: "asc" };
+      }
+    });
   };
 
-  const snackbarClose = () => {
-    setSnackBar({ open: false, message: "" });
+  const sortData = (data) => {
+    if (!sortConfig.key) return data;
+
+    return [...data].sort((a, b) => {
+      const aValue = getValue(a, sortConfig.key);
+      const bValue = getValue(b, sortConfig.key);
+
+      if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
   };
 
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 300);
+  // helper to safely extract nested values
+  const getValue = (obj, key) => {
+    try {
+      return key.split(".").reduce((acc, part) => acc && acc[part], obj) || "";
+    } catch {
+      return "";
+    }
+  };
 
-    return () => clearTimeout(handler);
-  }, [search]);
+  const hasArchivePermission = data?.specialPermission?.some((perm) => perm.toLowerCase() === "archivedocuments");
 
-  // Debounce search input
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 300);
+  const tabs = ["Certificates", "Archive Documents", "Reports"];
 
-    return () => clearTimeout(handler);
-  }, [search]);
+  const formatDate = (dateString) =>
+    dateString
+      ? new Date(dateString).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+        })
+      : "N/A";
+
+  const fetchJournals = async () => {
+    try {
+      const res = await getJournalsList();
+      const data = res?.data;
+      if (data?.status === "success" && Array.isArray(data?.data)) {
+        setJournals(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching journals:", error);
+    }
+  };
 
   const fetchCertificatesData = async () => {
     setLoading(true);
     try {
       const filterKeys = [];
       const filterValues = [];
-
       if (selectedReportNumber) {
         filterKeys.push("activity.journal.journalTypeId");
         filterValues.push(selectedReportNumber);
       }
-
       if (placeFilter) {
         filterKeys.push("place");
         filterValues.push(placeFilter);
       }
-
       if (statusFilter) {
         filterKeys.push("activity.status");
         filterValues.push(statusFilter);
       }
-
       const searchQuery = debouncedSearch.trim();
-
-      const res = await getAllIssuedDocuments(
-        filterKeys,
-        filterValues,
-        searchQuery,
-        page,
-        limit,
-        startDate,
-        endDate
-      );
-
+      const markAsArchive = selectedFilter === "Archive Documents";
+      const res = showAll ? await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, undefined, undefined, startDate, endDate, markAsArchive) : await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, page, limit, startDate, endDate, markAsArchive);
       const data = res?.data;
-
       if (data?.status === "success" && Array.isArray(data?.data)) {
         setCertificatesList(data.data);
-        setTotalRows(data.total || data.results || data.data.length);
+        console.log(data.data, "data");
+        setTotalRows(data.results);
+        setTotalCount(data.results);
       } else {
         setCertificatesList([]);
         setTotalRows(0);
       }
-    } catch (e) {
-      console.error("Error fetching certificates:", e);
+    } catch (error) {
+      console.error(error);
       setCertificatesList([]);
       setTotalRows(0);
     } finally {
@@ -135,146 +151,49 @@ const Certificates = () => {
     }
   };
 
-  useEffect(() => {
-    fetchCertificatesData();
-  }, [selectedReportNumber, placeFilter, statusFilter, debouncedSearch, page, limit, startDate, endDate]);
-
-  const handleSearchChange = (event) => {
-    setSearch(event.target.value);
-  };
-
-  const handlePageChange = (event, value) => {
-    setPage(value);
-    router.push(`/certificates?page=${value}&limit=${limit}`);
-  };
-
-  const handleViewDocument = (documentUrl) => {
-    if (documentUrl) {
-      window.open(documentUrl, '_blank');
-    }
-  };
-
-  const handleDownloadDocument = (documentUrl, certificateId) => {
-    if (documentUrl) {
-      const link = document.createElement('a');
-      link.href = documentUrl;
-      link.download = `certificate_${certificateId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: '2-digit'
-    });
-  };
-
-  const columns = [
-    {
-      field: "id",
-      headerName: "No.",
-      width: 80,
-      renderCell: (params) => {
-        return <Typography fontSize="14px">{(page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1}</Typography>;
-      },
-    },
-    {
-      field: "journalTypeId",
-      headerName: "Report No",
-      flex: 1,
-      renderCell: (params) => (
-        <Typography fontSize="14px">
-          {params.row.activity?.journal?.journalTypeId || 'N/A'}
-        </Typography>
-      )
-    },
-    {
-      field: "shipName",
-      headerName: "Ship Name",
-      flex: 1,
-      renderCell: (params) => (
-        <Typography fontSize="14px">
-          {params.row.activity?.journal?.client?.shipName || 'N/A'}
-        </Typography>
-      )
-    },
-    {
-      field: "typeOfCertificate",
-      headerName: "Certificate Type",
-      flex: 1,
-      renderCell: (params) => (
-        <Typography fontSize="14px" sx={{ textTransform: 'capitalize' }}>
-          {params.value?.replace('_', ' ') || 'N/A'}
-        </Typography>
-      )
-    },
-    {
-      field: "surveyType",
-      headerName: "Survey Type",
-      flex: 1,
-      renderCell: (params) => (
-        <Typography fontSize="14px"
-          sx={{
-            whiteSpace: 'normal',
-            wordBreak: 'break-word',
-            width: '120px',
-          }}
-        >
-          {params.row.activity?.surveyTypes?.name || 'N/A'}
-        </Typography>
-      )
-    },
-    {
-      field: "surveyDate",
-      headerName: "Survey Date",
-      flex: 1,
-      renderCell: (params) => (
-        <Typography fontSize="14px">{formatDate(params.value)}</Typography>
-      )
-    },
-    {
-      field: "actions",
-      headerName: "Actions",
-      width: 120,
-      renderCell: (params) => (
-        <Stack direction="row" spacing={1}>
-          <Tooltip title="View Document">
-            <IconButton
-              color="info"
-              onClick={() => handleViewDocument(params.row.generatedDoc)}
-              disabled={!params.row.generatedDoc}
-            >
-              <VisibilityIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Download Document">
-            <IconButton
-              color="success"
-              onClick={() => handleDownloadDocument(params.row.generatedDoc, params.row.id)}
-              disabled={!params.row.generatedDoc}
-            >
-              <GetAppIcon />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      ),
-    },
-  ];
-
-  const fetchJournals = async () => {
+  const handleConfirmDelete = async () => {
+    setOpenDialog(false);
+    if (!selectedDocument) return;
     try {
-      const response = await getAllJournals();
-      const data = response?.data;
+      if (selectedDocument.type === "document") {
+        const res = await deleteSurveyStatusReport(selectedDocument.id);
+        toast.success("Document deleted successfully");
+        fetchReportsData();
+      } else if (selectedDocument.type === "report") {
+        await deleteSurveyReport(selectedDocument.id);
+        toast.success("Report deleted successfully");
+        fetchReportsData();
+      }
+    } catch (e) {
+      console.error("Error deleting:", e.response?.data || e.message);
+      toast.error("Failed to delete.");
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setSelectedDocument(null);
+    setOpenDialog(false);
+  };
+
+  const fetchReportsData = async () => {
+    setLoading(true);
+    try {
+      const res = showAll ? await getAllReports("", "", search) : await getAllReports(page, limit, search);
+      const data = res?.data;
       if (data?.status === "success" && Array.isArray(data?.data)) {
-        setJournals(data.data);
+        setReportsList(data?.data);
+        setTotalRows(data?.results || data.data.length);
+        setTotalCount(data?.results || data.data.length);
+      } else {
+        setReportsList([]);
+        setTotalRows(0);
       }
     } catch (error) {
-      console.log("Error fetching journals:", error);
+      console.error(error);
+      setReportsList([]);
+      setTotalRows(0);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -282,20 +201,106 @@ const Certificates = () => {
     fetchJournals();
   }, []);
 
-  const handleClearFilter = () => {
-    setSelectedReportNumber("");
-    setPlaceFilter("");
-    setStatusFilter("");
-    setStartDate("");
-    setEndDate("");
-    setPage(1);
+  useEffect(() => {
+    if (selectedFilter === "Reports") fetchReportsData();
+    else fetchCertificatesData();
+  }, [selectedFilter, page, limit, debouncedSearch, selectedReportNumber, placeFilter, statusFilter, startDate, endDate, showAll]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  const handlePageChange = (event, value) => {
+    setPage(value);
+    router.push(`/certificates?page=${value}&limit=${limit}`);
   };
 
+  const handleViewDocument = (url) => {
+    if (!url) return;
+    const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
+    setPreviewFile(viewerUrl);
+    setOpenPreviewModal(true);
+  };
+
+  const handleDownloadDocument = async (url) => {
+    if (!url) return;
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = url.split("/").pop();
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error(error);
+      window.open(url, "_blank");
+    }
+  };
+
+  const handleBulkDownload = async () => {
+    if (!certificatesList.length) return;
+    const zip = new JSZip();
+    const folder = zip.folder(certificatesList[0]?.activity?.journal?.client?.shipName || "Certificates");
+    setLoading(true);
+    try {
+      await Promise.all(
+        certificatesList.map(async (cert) => {
+          if (!cert.generatedDoc) return;
+          const res = await fetch(cert.generatedDoc);
+          const blob = await res.blob();
+          const fileName = `${cert.generatedDoc.split("/").pop()}`;
+          folder.file(fileName, blob);
+        })
+      );
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, `${certificatesList[0]?.activity?.journal?.client?.shipName || "Certificates"}.zip`);
+      toast.success("All files downloaded successfully as a zip!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to download all files.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sortedCertificates = sortData(certificatesList);
+  const sortedReports = sortData(reportsList);
+
+  const handleBulkDownloadReports = async () => {
+    if (!reportsList.length) return;
+    const zip = new JSZip();
+    const folder = zip.folder(reportsList[0]?.client?.shipName || "Reports");
+    setLoading(true);
+    try {
+      await Promise.all(
+        reportsList.map(async (report) => {
+          if (!report.generatedDoc) return;
+          const res = await fetch(report.generatedDoc);
+          const blob = await res.blob();
+          const fileName = `${report.client?.shipName || "Report"}_${report.generatedDoc.split("/").pop()}`;
+          folder.file(fileName, blob);
+        })
+      );
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, `${reportsList[0]?.client?.shipName || "Reports"}.zip`);
+      toast.success("All reports downloaded successfully as a zip!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to download all reports.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Layout>
-      <CommonCard sx={{ mt: 0 }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
+      <CommonCard>
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Typography variant="h4" fontWeight={700}>
             Issued Certificates
           </Typography>
@@ -303,145 +308,302 @@ const Certificates = () => {
       </CommonCard>
 
       <CommonCard>
-        <CommonInput
-          placeholder="Search Certificate By Place or Type"
-          fullWidth
-          value={search}
-          onChange={handleSearchChange}
-          sx={{ marginBottom: 2 }}
-        />
-
-        <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2, mt: 2 }}>
-          <Select
-            value={selectedReportNumber}
-            onChange={(e) => { setSelectedReportNumber(e.target.value); setPage(1); }}
-            displayEmpty
-            sx={{ minWidth: 180 }}
-          >
-            <MenuItem value="">All Reports</MenuItem>
-            {journals.map((report, index) => (
-              <MenuItem key={index} value={report.journalTypeId}>
-                {report.journalTypeId}
-              </MenuItem>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+          <Stack direction="row" spacing={2}>
+            {tabs.map((tab) => (
+              <Chip key={tab} label={tab} color={selectedFilter === tab ? "primary" : "default"} onClick={() => setSelectedFilter(tab)} />
             ))}
-          </Select>
-
-          {/* <TextField
-            label="Place"
-            size="small"
-            value={placeFilter}
-            onChange={(e) => { setPlaceFilter(e.target.value); setPage(1); }}
-          />
-
-          <TextField
-            label="Activity Status"
-            size="small"
-            value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          /> */}
-          <TextField
-            label="Survey Date From"
-            type="date"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={startDate}
-            onChange={(e) => {
-              setStartDate(e.target.value);
-              setPage(1);
-            }}
-          />
-
-          <TextField
-            label="Survey Date To"
-            type="date"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={endDate}
-            onChange={(e) => {
-              setEndDate(e.target.value);
-              setPage(1);
-            }}
-          />
-
-          {(selectedReportNumber || placeFilter || statusFilter || startDate || endDate) && (
-            <CommonButton
-              variant="contained"
-              size="small"
-              sx={{ textTransform: "uppercase", padding: "12px 10px", fontSize: "14px" }}
-              text="Clear Filters"
-              onClick={() => {
-                handleClearFilter();
-              }}
-            />
+          </Stack>
+          {hasArchivePermission && (
+            <Stack>
+              <CommonButton variant="contained" onClick={selectedFilter === "Reports" ? handleBulkDownloadReports : handleBulkDownload} text="Download All">
+                Download All
+              </CommonButton>
+            </Stack>
           )}
-        </Stack>
-
-
-        <Box sx={{ width: "100%", mt: 4 }}>
+        </Box>
+        <CommonInput placeholder="Search" fullWidth value={search} onChange={(e) => setSearch(e.target.value)} sx={{ mb: 2 }} />
+        <Box sx={{ width: "100%", overflowX: "auto", height: "70vh" }}>
           {loading ? (
             <Box display="flex" justifyContent="center" alignItems="center" height="300px">
               <CircularProgress />
             </Box>
-          ) : certificatesList.length > 0 ? (
-            <DataGrid
-              rows={certificatesList}
-              columns={columns}
-              loading={loading}
-              pagination={false}
-              disableColumnFilter
-              disableColumnMenu
-              disableColumnSelector
-              disableDensitySelector
-              disableRowSelectionOnClick
-              hideFooter
-              getRowHeight={() => 70}
-              sx={{
-                backgroundColor: "#fff",
-                border: "none",
-                '& .MuiDataGrid-cell': {
-                  display: 'flex',
-                  alignItems: 'center',
-                },
-              }}
-            />
           ) : (
-            <Typography
-              variant="h6"
-              align="center"
-              sx={{ color: "gray", padding: 3 }}
-            >
-              No Certificates Found
-            </Typography>
+            <>
+              {selectedFilter === "Reports" && (
+                <TableContainer component={Paper}>
+                  <Table sx={{ marginTop: 2 }}>
+                    <TableHead>
+                      <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                        {[
+                          { label: "No.", key: null, width: "10%" },
+                          { label: "Ship Name", key: "client.shipName", width: "15%" },
+                          { label: "Document", key: "generatedDoc" },
+                          { label: "Created Date", key: "createdAt", width: "15%" },
+                          { label: "Actions", key: null },
+                        ].map((col) => (
+                          <TableCell
+                            key={col.label}
+                            sx={{
+                              cursor: col.key ? "pointer" : "default",
+                              fontWeight: 600,
+                              width: col.width || "auto",
+                              whiteSpace: "nowrap",
+                            }}
+                            onClick={() => col.key && handleSort(col.key)}
+                          >
+                            <Stack direction="row" alignItems="center" spacing={0.5}>
+                              <Typography variant="body2">{col.label}</Typography>
+                              {col.key && sortConfig.key === col.key && (sortConfig.direction === "asc" ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}
+                            </Stack>
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+
+                    <TableBody>
+                      {sortedReports.map((row, idx) => (
+                        <TableRow key={row.id}>
+                          <TableCell>{(page - 1) * limit + idx + 1}</TableCell>
+                          <TableCell>{row.client?.shipName || "N/A"}</TableCell>
+                          <TableCell>
+                            {(() => {
+                              if (!row.generatedDoc) return "N/A";
+
+                              const fileName = row.generatedDoc.split("/").pop(); // extract filename
+
+                              // Find the *last* MCB code (e.g. MCB25M002, MCB25N014)
+                              const matches = fileName.match(/MCB[A-Z0-9]+/gi);
+                              const reportNo = matches ? matches[matches.length - 1] : null;
+
+                              if (/status[_ ]?report/i.test(fileName)) {
+                                return "Survey Status Report";
+                              } else if (/survey[_ ]?report/i.test(fileName)) {
+                                return `Survey Report${reportNo ? ` - ${reportNo}` : ""}`;
+                              } else {
+                                return fileName.replace(/_/g, " ").replace(/\.[^/.]+$/, "");
+                              }
+                            })()}
+                          </TableCell>
+
+                          <TableCell>{formatDate(row.createdAt)}</TableCell>
+                          <TableCell>
+                            <Stack direction="row" spacing={1}>
+                              <Tooltip title="View Document">
+                                <IconButton color="info" onClick={() => handleViewDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
+                                  <VisibilityIcon />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Delete Report">
+                                <IconButton
+                                  color="error"
+                                  onClick={() => {
+                                    setSelectedDocument({ id: row?.id, type: "report" });
+                                    setOpenDialog(true);
+                                  }}
+                                  disabled={!row.generatedDoc}
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+
+              {selectedFilter === "Certificates" && (
+                <TableContainer component={Paper}>
+                  <Table sx={{ marginTop: 2 }}>
+                    <TableHead>
+                      <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                        {[
+                          { label: "No.", key: null, width: "100px" },
+                          { label: "Report No.", key: "activity.journal.journalTypeId", width: "15%" },
+                          { label: "Ship Name", key: "activity.journal.client.shipName", width: "15%" },
+                          { label: "Certificate Type", key: "typeOfCertificate", width: "15%" },
+                          { label: "Survey Type", key: "activity.surveyTypes.name", width: "20%" },
+                          { label: "Survey Date", key: "surveyDate", width: "15%" },
+                          { label: "Actions", key: null, width: "100px" },
+                        ].map((col) => (
+                          <TableCell
+                            key={col.label}
+                            sx={{
+                              cursor: col.key ? "pointer" : "default",
+                              fontWeight: 600,
+                              width: col.width || "auto",
+                              whiteSpace: "nowrap",
+                            }}
+                            onClick={() => col.key && handleSort(col.key)}
+                          >
+                            <Stack direction="row" alignItems="center" spacing={0.5}>
+                              <Typography variant="body2">{col.label}</Typography>
+                              {col.key && sortConfig.key === col.key && (sortConfig.direction === "asc" ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}
+                            </Stack>
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+
+                    <TableBody>
+                      {sortedCertificates.map((row, idx) => (
+                        <TableRow key={row.id}>
+                          <TableCell>{(page - 1) * limit + idx + 1}</TableCell>
+                          <TableCell>
+                            {row.amendmentVersion > 0 ? (
+                              <Typography
+                                sx={{
+                                  color: "primary.main",
+                                  textDecoration: "underline",
+                                  cursor: "pointer",
+                                  fontWeight: 500,
+                                }}
+                                onClick={() => {
+                                  setSelectedReportId(row.id);
+                                  setOpenAmdRemarks(true);
+                                }}
+                              >
+                                {row.activity?.journal?.journalTypeId || "N/A"}
+                              </Typography>
+                            ) : (
+                              row.activity?.journal?.journalTypeId || "N/A"
+                            )}
+                          </TableCell>
+                          <TableCell>{row.activity?.journal?.client?.shipName || "N/A"}</TableCell>
+                          <TableCell>{row.typeOfCertificate?.replace("_", " ") || "N/A"}</TableCell>
+                          <TableCell>{row.activity?.surveyTypes?.name || "N/A"}</TableCell>
+                          <TableCell>{formatDate(row.surveyDate)}</TableCell>
+                          <TableCell>
+                            <Stack direction="row" spacing={1}>
+                              <Tooltip title="View Document">
+                                <IconButton color="info" onClick={() => handleViewDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
+                                  <VisibilityIcon />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Download Document">
+                                <IconButton color="success" onClick={() => handleDownloadDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
+                                  <GetAppIcon />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+
+              {selectedFilter === "Archive Documents" && (
+                <TableContainer component={Paper}>
+                  <Table sx={{ marginTop: 2 }}>
+                    <TableHead>
+                      <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                        {[
+                          { label: "No.", key: null, width: "100px" },
+                          { label: "Report No.", key: "activity.journal.journalTypeId", width: "15%" },
+                          { label: "Ship Name", key: "activity.journal.client.shipName", width: "15%" },
+                          { label: "Certificate Type", key: "typeOfCertificate", width: "15%" },
+                          { label: "Survey Type", key: "activity.surveyTypes.name", width: "20%" },
+                          { label: "Survey Date", key: "surveyDate", width: "15%" },
+                          { label: "Actions", key: null, width: "100px" },
+                        ].map((col) => (
+                          <TableCell
+                            key={col.label}
+                            sx={{
+                              cursor: col.key ? "pointer" : "default",
+                              fontWeight: 600,
+                              width: col.width || "auto",
+                              whiteSpace: "nowrap",
+                            }}
+                            onClick={() => col.key && handleSort(col.key)}
+                          >
+                            <Stack direction="row" alignItems="center" spacing={0.5}>
+                              <Typography variant="body2">{col.label}</Typography>
+                              {col.key && sortConfig.key === col.key && (sortConfig.direction === "asc" ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}
+                            </Stack>
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+
+                    <TableBody>
+                      {sortedCertificates.map((row, idx) => (
+                        <TableRow key={row.id}>
+                          <TableCell>{(page - 1) * limit + idx + 1}</TableCell>
+                          <TableCell>
+                            {row.amendmentVersion > 0 ? (
+                              <Typography
+                                sx={{
+                                  color: "primary.main",
+                                  textDecoration: "underline",
+                                  cursor: "pointer",
+                                  fontWeight: 500,
+                                }}
+                                onClick={() => {
+                                  setSelectedReportId(row.id);
+                                  setOpenAmdRemarks(true);
+                                }}
+                              >
+                                {row.activity?.journal?.journalTypeId || "N/A"}
+                              </Typography>
+                            ) : (
+                              row.activity?.journal?.journalTypeId || "N/A"
+                            )}
+                          </TableCell>
+                          <TableCell>{row.activity?.journal?.client?.shipName || "N/A"}</TableCell>
+                          <TableCell>{row.typeOfCertificate?.replace("_", " ") || "N/A"}</TableCell>
+                          <TableCell>{row.activity?.surveyTypes?.name || "N/A"}</TableCell>
+                          <TableCell>{formatDate(row.surveyDate)}</TableCell>
+                          <TableCell>
+                            <Stack direction="row" spacing={1}>
+                              <Tooltip title="View Document">
+                                <IconButton color="info" onClick={() => handleViewDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
+                                  <VisibilityIcon />
+                                </IconButton>
+                              </Tooltip>
+                              {hasArchivePermission && (
+                                <Tooltip title="Download Document">
+                                  <IconButton color="success" onClick={() => handleDownloadDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
+                                    <GetAppIcon />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                            </Stack>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </>
           )}
         </Box>
-
-        {totalRows > limit && (
-          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-            <Pagination
-              count={Math.ceil(totalRows / limit)}
-              page={page}
-              onChange={handlePageChange}
-              color="primary"
+        <Stack direction="row" justifyContent="space-between" alignItems="center" mt={2}>
+          <Typography>Total Count: {count}</Typography>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <CommonButton
+              text={showAll ? "Show Paginated" : "Show All"}
               variant="outlined"
-              shape="rounded"
-              sx={{ marginTop: "10px" }}
-            />
-          </Box>
-        )}
+              size="small"
+              sx={{ textTransform: "uppercase", padding: "6px 6px", fontSize: "14px" }}
+              onClick={() => {
+                setShowAll((prev) => !prev);
+                setPage(1);
+              }}
+            />{" "}
+            {!showAll && <Pagination count={Math.ceil(totalRows / limit)} page={page} onChange={handlePageChange} color="primary" variant="outlined" shape="rounded" sx={{ marginTop: "10px" }} />}{" "}
+          </Stack>
+        </Stack>
       </CommonCard>
 
-      <Snackbar
-        open={snackBar.open}
-        autoHideDuration={2000}
-        message={snackBar.message}
-        anchorOrigin={{
-          vertical: "top",
-          horizontal: "center",
-        }}
-        onClose={snackbarClose}
-        className="snackBarColor"
-        key="snackbar"
-      />
+      <DocumentPreview open={openPreviewModal} fileUrl={previewFile} onClose={() => setOpenPreviewModal(false)} />
+      <CommonConfirmationDialog open={openDialog} onCancel={handleCancelDelete} onConfirm={handleConfirmDelete} title="Are you sure you want to delete this survey status report?" description="This action cannot be undone." />
+      <ShowAmdRemarksDialog open={openAmdRemarks} onClose={() => setOpenAmdRemarks(false)} reportDetailId={selectedReportId} hasArchivePermission={hasArchivePermission} />
     </Layout>
   );
 };
