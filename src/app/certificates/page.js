@@ -38,7 +38,7 @@ const Certificates = () => {
   const [showAll, setShowAll] = useState(false);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("certificates");
+  const [selectedFilter, setSelectedFilter] = useState("Certificates");
   console.log(selectedFilter, "selectedfilter");
   const [selectedReportNumber, setSelectedReportNumber] = useState("");
   const [placeFilter, setPlaceFilter] = useState("");
@@ -415,7 +415,7 @@ const Certificates = () => {
                 </TableContainer>
               )}
 
-              {selectedFilter === "certificates" && (
+              {selectedFilter === "Certificates" && (
                 <TableContainer component={Paper}>
                   <Table sx={{ marginTop: 2 }}>
                     <TableHead>
