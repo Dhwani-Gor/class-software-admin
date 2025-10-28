@@ -99,6 +99,7 @@ const ReportingForm = () => {
   const [archiveHistory, setArchiveHistory] = useState([]);
   const [endorsementValues, setEndorsementValues] = useState([]);
   const [endorsements, setEndorsements] = useState([]);
+  console.log(endorsements, "endorsements");
   const [surveyType, setSurveyType] = useState(false);
   console.log(surveyType, "survey type");
 
@@ -696,7 +697,7 @@ const ReportingForm = () => {
 
       setReportDetails(reportData);
       setSelectedRow(row);
-      setShowForm(true);  
+      setShowForm(true);
       clearErrors();
 
       const surveyType = row.surveyTypes?.name;
@@ -733,8 +734,8 @@ const ReportingForm = () => {
       //   surveydate: getValues("surveydate"),
       //   issuancedate: getValues("issuancedate"),
       // });
-      setEndorsements(row?.surveyTypes?.report?.endorsements);
-      console.log(row?.surveyTypes?.report?.endorsements, "endorsements");
+      console.log(row, "rows");
+      setEndorsements(reportDetails?.activity?.surveyTypes?.report?.endorsements);
       const data = extractUnderscoreFields(row);
       setUnderscoreFields(data);
       setValue("typesOfSurvey", getSurveyTitle(row.surveyTypes?.name));
