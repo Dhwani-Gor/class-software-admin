@@ -79,7 +79,7 @@ const SurveyReport = ({ id, reportNumber }) => {
     (reportDetailsInput, additionalFieldDataInput = []) => {
       if (!reportDetailsInput || !systemVariables) return "";
 
-      const formatValue = (val) => (val || val === 0 ? val : "—");
+      const formatValue = (val) => (val || val === 0 ? val : "-");
       const companyName = systemVariables?.data?.find((i) => i.name === "company_name")?.information || "-";
       const companyLogo = systemVariables?.data?.find((i) => i.name === "company_logo")?.information || "-";
       const stamp = systemVariables?.data?.find((i) => i.name === "company_stamp")?.information || "-";
@@ -97,7 +97,7 @@ const SurveyReport = ({ id, reportNumber }) => {
         if (!reportDetailsInput?.length)
           return `
     <tr>
-      <td colspan="3" style="text-align:center;padding:6px;">No classification record recommended</td>
+      <td colspan="3" style="text-align:center;padding:6px;">No Records</td>
     </tr>
   `;
 
@@ -108,7 +108,7 @@ const SurveyReport = ({ id, reportNumber }) => {
 
           
       <tr>
-        <td colspan="3" style="text-align:center;padding:6px;">No classification surveys recomended</td>
+        <td colspan="3" style="text-align:center;padding:6px;">No Records</td>
       </tr>
     `;
         }
@@ -140,7 +140,7 @@ const SurveyReport = ({ id, reportNumber }) => {
           ? rows.join("")
           : `
       <tr>
-        <td colspan="3" style="text-align:center;padding:6px;">No classification surveys recommended</td>
+        <td colspan="3" style="text-align:center;padding:6px;">No Records</td>
       </tr>
     `;
       })();
@@ -156,22 +156,29 @@ const SurveyReport = ({ id, reportNumber }) => {
 
       const latestReports = Object.values(latestReportsMap);
 
-      const surveyRows = latestReports
-        .map((cert) => {
-          const type = cert?.typeOfCertificate === "short_term" ? "ST" : cert?.typeOfCertificate === "full_term" ? "FT" : cert?.typeOfCertificate === "intrim" ? "IT" : cert?.typeOfCertificate === "extended" ? "ET" : cert?.typeOfCertificate || "[Type]";
+      const surveyRows =
+        latestReports && latestReports.length > 0
+          ? latestReports
+              .map((cert) => {
+                const type = cert?.typeOfCertificate === "short_term" ? "ST" : cert?.typeOfCertificate === "full_term" ? "FT" : cert?.typeOfCertificate === "intrim" ? "IT" : cert?.typeOfCertificate === "extended" ? "ET" : cert?.typeOfCertificate || "[Type]";
 
-          return `
-          <tr>
-            <td>${cert?.activity?.surveyTypes?.report?.name}</td>
-            <td style="text-align:center;">${type}</td>
-            <td style="text-align:center;">${cert?.endorsementDate ? moment(cert.endorsementDate).format("DD/MM/YYYY") : "-"}</td>
-            <td>${cert?.activity?.surveyTypes?.name}</td>
-            <td style="text-align:center;">${cert?.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : ""}</td>
-            <td style="text-align:center;">${cert?.validityDate ? moment(cert.validityDate).format("DD/MM/YYYY") : ""}</td>
-          </tr>
-        `;
-        })
-        .join("");
+                return `
+            <tr>
+              <td>${cert?.activity?.surveyTypes?.report?.name || "-"}</td>
+              <td style="text-align:center;">${type}</td>
+              <td style="text-align:center;">${cert?.endorsementDate ? moment(cert.endorsementDate).format("DD/MM/YYYY") : "-"}</td>
+              <td>${cert?.activity?.surveyTypes?.name || "-"}</td>
+              <td style="text-align:center;">${cert?.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : "-"}</td>
+              <td style="text-align:center;">${cert?.validityDate ? moment(cert.validityDate).format("DD/MM/YYYY") : "-"}</td>
+            </tr>
+          `;
+              })
+              .join("")
+          : `
+       <tr>
+        <td colspan="6" style="text-align:center;padding:6px;">No Records</td>
+      </tr>
+    `;
 
       const renderAdditionalFields = () => {
         if (!Array.isArray(additionalFieldDataInput) || !additionalFieldDataInput.length) return "";

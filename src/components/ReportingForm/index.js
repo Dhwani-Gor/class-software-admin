@@ -691,11 +691,11 @@ const ReportingForm = () => {
     try {
       setLoading(true);
       const result = await getSelectedActivityReportDetails(row?.id);
-      console.log(result, "result");
       const reportData = result?.data?.data[0];
       setSurveyType(result?.data?.data[0].activity?.surveyTypes?.classificationSurvey);
-
       setReportDetails(reportData);
+      // setEndorsements(reportData?.activity?.surveyTypes?.report?.endorsements);
+
       setSelectedRow(row);
       setShowForm(true);
       clearErrors();
@@ -734,8 +734,6 @@ const ReportingForm = () => {
       //   surveydate: getValues("surveydate"),
       //   issuancedate: getValues("issuancedate"),
       // });
-      console.log(row, "rows");
-      setEndorsements(reportDetails?.activity?.surveyTypes?.report?.endorsements);
       const data = extractUnderscoreFields(row);
       setUnderscoreFields(data);
       setValue("typesOfSurvey", getSurveyTitle(row.surveyTypes?.name));
