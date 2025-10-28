@@ -794,7 +794,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                     </Stack>
                   </Box>
                 ))}
-              <CommonButton text="Add Endorsement" variant="outlined" onClick={handleAddEndorsement} sx={{ alignSelf: "flex-start" }} />
+              {/* <CommonButton text="Add Endorsement" variant="outlined" onClick={handleAddEndorsement} sx={{ alignSelf: "flex-start" }} /> */}
             </Stack>
 
             <Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mt: 3 }}>
