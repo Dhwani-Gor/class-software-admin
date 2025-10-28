@@ -897,74 +897,73 @@ const ReportingForm = () => {
               </Grid2>
 
               <Grid2 item size={{ md: 3 }}>
-                {!surveyType && (
-                  <FormControl fullWidth sx={{ maxWidth: 255 }}>
-                    <Typography variant="body1" fontWeight={"500"} mb={1.5}>
-                      Type of Certificate <span style={{ color: "red" }}>*</span>
-                    </Typography>
-                    <Select value={selectCertificate} onChange={handleCertificate} displayEmpty error={!!errors.typeOfCertificate}>
-                      <MenuItem value="" disabled>
-                        Select Certificate
+                {/* {!surveyType && ( */}
+                <FormControl fullWidth sx={{ maxWidth: 255 }}>
+                  <Typography variant="body1" fontWeight={"500"} mb={1.5}>
+                    Type of Certificate <span style={{ color: "red" }}>*</span>
+                  </Typography>
+                  <Select value={selectCertificate} onChange={handleCertificate} displayEmpty error={!!errors.typeOfCertificate}>
+                    <MenuItem value="" disabled>
+                      Select Certificate
+                    </MenuItem>
+                    {certificateList.map((report) => (
+                      <MenuItem key={report.value} value={report.value}>
+                        {report.label}
                       </MenuItem>
-                      {certificateList.map((report) => (
-                        <MenuItem key={report.value} value={report.value}>
-                          {report.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    {errors.typeOfCertificate && (
-                      <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                        {errors.typeOfCertificate.message}
-                      </Typography>
-                    )}
-                  </FormControl>
-                )}
+                    ))}
+                  </Select>
+                  {errors.typeOfCertificate && (
+                    <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                      {errors.typeOfCertificate.message}
+                    </Typography>
+                  )}
+                </FormControl>
+                {/* )} */}
               </Grid2>
               <Grid2 size={{ md: 6 }} sx={{ maxWidth: 255 }}>
                 <Controller name="anniversaryDate" control={control} render={({ field }) => <CommonInput {...field} type="date" label="Anniversary Date" disabled />} />
               </Grid2>
               {/* Row 2 — All Date Fields in One Line */}
-              {!surveyType && (
+              {/* {!surveyType && ( */}
+              <Grid2 size={{ md: 3 }}>
+                <Controller
+                  name="issuancedate"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label="Issuance Date"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("issuancedate", e.target.value);
+                      }}
+                    />
+                  )}
+                />
+              </Grid2>
+              {/* )} */}
+              {!hiddenReports.includes(reportName) && (
                 <Grid2 size={{ md: 3 }}>
                   <Controller
-                    name="issuancedate"
+                    name="validitydate"
                     control={control}
                     render={({ field }) => (
                       <CommonInput
                         {...field}
                         type="date"
-                        label="Issuance Date"
+                        label="Validity Date"
+                        error={!!errors.validitydate}
+                        helperText={errors.validitydate?.message}
                         onChange={(e) => {
                           field.onChange(e);
-                          handleFieldChange("issuancedate", e.target.value);
+                          handleFieldChange("validitydate", e.target.value);
                         }}
                       />
                     )}
                   />
                 </Grid2>
               )}
-              {!hiddenReports.includes(reportName) ||
-                (surveyType && (
-                  <Grid2 size={{ md: 3 }}>
-                    <Controller
-                      name="validitydate"
-                      control={control}
-                      render={({ field }) => (
-                        <CommonInput
-                          {...field}
-                          type="date"
-                          label="Validity Date"
-                          error={!!errors.validitydate}
-                          helperText={errors.validitydate?.message}
-                          onChange={(e) => {
-                            field.onChange(e);
-                            handleFieldChange("validitydate", e.target.value);
-                          }}
-                        />
-                      )}
-                    />
-                  </Grid2>
-                ))}
 
               <Grid2 size={{ md: 3 }}>
                 <Controller
