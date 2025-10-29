@@ -912,7 +912,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                       {visitList.map((visit, index) => (
                         <TableRow key={visit.id}>
                           <TableCell>{index + 1}</TableCell>
-                          <TableCell align="right">{visit.date}</TableCell>
+                          <TableCell align="right">{moment(visit.date).format("DD-MM-YYYY")}</TableCell>
                           <TableCell align="right">{visit.timeFrom}</TableCell>
                           <TableCell align="right">{visit.timeTo}</TableCell>
                           <TableCell align="right">{visit.location}</TableCell>

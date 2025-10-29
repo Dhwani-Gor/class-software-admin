@@ -396,8 +396,8 @@ of Class recommended now or previously, being dealt with as recommended.</p>
             const visits = visitResponse?.data?.data;
             console.log(visits, "visits");
             if (visits?.length) {
-              setFirstVisit(visits[0]?.date);
-              setLastVisit(visits[visits.length - 1]?.date);
+              setLastVisit(visits[0]?.date);
+              setFirstVisit(visits[visits.length - 1]?.date);
               setNumOfVisit(visits.length);
               const places = visits.map((visit) => visit?.location?.replace(/\s*\(.*?\)\s*/g, "").trim()).filter(Boolean);
               setPlaces(places);

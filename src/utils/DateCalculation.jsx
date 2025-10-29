@@ -28,8 +28,22 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
         [normalizeName("Annual Survey (UMS)")]: normalizeName("Special Survey (UMS)"),
     };
 
+    // 🔹 Handle any survey that includes "special" or "continuous"
+    if (surveyNameNormalized.includes("special") || surveyNameNormalized.includes("continuous")) {
+        const dueDate = addYears(issuanceDateObj, 5);
+        const rangeFrom = addMonths(dueDate, -3);
+        const rangeTo = dueDate;
+        const anniversaryDate = dueDate;
+
+        return {
+            dueDate: formatDate(dueDate),
+            rangeFrom: formatDate(rangeFrom),
+            rangeTo: formatDate(rangeTo),
+            anniversaryDate: formatDate(anniversaryDate),
+        };
+    }
+
     switch (surveyNameNormalized) {
-        // 5-yearly surveys
         case normalizeName("Special Survey Hull"):
         case normalizeName("Special Survey Machinery"):
         case normalizeName("Special Survey IG System"):
@@ -37,6 +51,7 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
         case normalizeName("Special Survey (UMS)"):
         case normalizeName("Continuous Survey Hull"):
         case normalizeName("Continuous Survey Machinery"):
+
             dueDate = addYears(issuanceDateObj, 5);
             rangeFrom = addMonths(dueDate, -3); // Only minus 3 months
             rangeTo = dueDate; // Same as due date

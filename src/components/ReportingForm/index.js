@@ -349,7 +349,7 @@ const ReportingForm = () => {
         archiveRemarks: remark,
       };
 
-      if (specialPermission && data.specialPermission?.includes("archive/unarchive")) {
+      if (specialPermission && data.specialPermission?.includes("Archive/Unarchive")) {
         const result = await addUnArchiveDocument(payload);
         if (result?.data?.status === "success") {
           setShowTable(false);
@@ -826,7 +826,7 @@ const ReportingForm = () => {
 
             {selectedShip?.id && (
               <Box mt={2} width="100%" display="block">
-                {data?.specialPermission?.includes("archive/unarchive") && <FormControlLabel control={<Checkbox checked={specialPermission} onChange={handleSpecialPermission} color="primary" />} label="Show Archived Reports" sx={{ mb: 2, display: "block" }} />}
+                {data?.specialPermission?.includes("Archive/Unarchive") && <FormControlLabel control={<Checkbox checked={specialPermission} onChange={handleSpecialPermission} color="primary" />} label="Show Archived Reports" sx={{ mb: 2, display: "block" }} />}
                 <Box display="flex">
                   <FormControl fullWidth sx={{ maxWidth: 300 }}>
                     <Typography variant="body1" mb={1} display="block">
@@ -853,7 +853,7 @@ const ReportingForm = () => {
             {selectedShip.id && selectedReportNumber.journalTypeId && (
               <>
                 <CommonButton onClick={handleShowTable} sx={{ marginTop: 3 }} text="Continue" />
-                {selectedShip.id && selectedReportNumber.journalTypeId && data?.specialPermission?.includes("archive/unarchive") && <CommonButton onClick={handleContinue} sx={{ marginTop: 3, marginLeft: 2 }} disabled={!tableData?.length > 0} text={specialPermission ? "Unarchive" : "Archive"} />}
+                {selectedShip.id && selectedReportNumber.journalTypeId && data?.specialPermission?.includes("Archive/Unarchive") && <CommonButton onClick={handleContinue} sx={{ marginTop: 3, marginLeft: 2 }} disabled={!tableData?.length > 0} text={specialPermission ? "Unarchive" : "Archive"} />}
                 {archiveHistory?.length > 0 && <CommonButton onClick={() => setShowArchiveHistoryDialog(true)} sx={{ marginTop: 3, marginLeft: 2 }} text="Show Archive Remarks History" />}
               </>
             )}
