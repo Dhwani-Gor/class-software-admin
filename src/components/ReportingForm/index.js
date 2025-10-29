@@ -694,7 +694,7 @@ const ReportingForm = () => {
       const reportData = result?.data?.data[0];
       setSurveyType(result?.data?.data[0]?.activity?.surveyTypes?.classificationSurvey);
       setReportDetails(reportData);
-      // setEndorsements(reportData?.activity?.surveyTypes?.report?.endorsements);
+      setEndorsements(reportData?.activity?.surveyTypes?.report?.endorsements);
 
       setSelectedRow(row);
       setShowForm(true);
@@ -871,22 +871,7 @@ const ReportingForm = () => {
             <Grid2 container spacing={2}>
               {/* Row 1 */}
               <Grid2 item size={{ md: 3 }}>
-                <Controller
-                  name="typesOfSurvey"
-                  control={control}
-                  render={({ field }) => (
-                    <CommonInput
-                      {...field}
-                      disabled
-                      label={
-                        <>
-                          Type of Survey <span style={{ color: "red" }}>*</span>
-                        </>
-                      }
-                      placeholder="Type of Survey"
-                    />
-                  )}
-                />
+                <Controller name="typesOfSurvey" control={control} render={({ field }) => <CommonInput {...field} disabled label={<>Type of Survey {!surveyType && <span style={{ color: "red" }}>*</span>}</>} placeholder="Type of Survey" />} />
                 {errors.typesOfSurvey && (
                   <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
                     {errors.typesOfSurvey.message}
@@ -898,7 +883,7 @@ const ReportingForm = () => {
                 {/* {!surveyType && ( */}
                 <FormControl fullWidth>
                   <Typography variant="body1" fontWeight={"500"} mb={1.5}>
-                    Type of Certificate <span style={{ color: "red" }}>*</span>
+                    Type of Certificate {!surveyType && <span style={{ color: "red" }}>*</span>}
                   </Typography>
                   <Select value={selectCertificate} onChange={handleCertificate} displayEmpty error={!!errors.typeOfCertificate}>
                     <MenuItem value="" disabled>
@@ -1158,7 +1143,7 @@ const ReportingForm = () => {
                 <Grid2 item size={{ md: 3 }}>
                   <FormControl fullWidth>
                     <Typography variant="body1" mb={1.5} fontWeight={500}>
-                      Endorsed / Issued By <span style={{ color: "red" }}>*</span>
+                      Endorsed / Issued By {!surveyType && <span style={{ color: "red" }}>*</span>}
                     </Typography>
                     <Select value={selectSurveyor} onChange={handleSurveyor} displayEmpty name="issuedBy" error={!!errors.issuedBy}>
                       <MenuItem value="" disabled>
@@ -1184,11 +1169,7 @@ const ReportingForm = () => {
                     render={({ field }) => (
                       <CommonInput
                         {...field}
-                        label={
-                          <>
-                            Place of Issuance / Endorsement <span style={{ color: "red" }}>*</span>
-                          </>
-                        }
+                        label={<>Place of Issuance / Endorsement {!surveyType && <span style={{ color: "red" }}>*</span>}</>}
                         placeholder="Enter place name"
                         onChange={(e) => {
                           field.onChange(e);
