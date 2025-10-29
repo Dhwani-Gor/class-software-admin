@@ -349,7 +349,7 @@ const ReportingForm = () => {
         archiveRemarks: remark,
       };
 
-      if (specialPermission && data.specialPermission?.includes("archive/unarchive")) {
+      if (specialPermission && data.specialPermission?.includes("Archive/Unarchive")) {
         const result = await addUnArchiveDocument(payload);
         if (result?.data?.status === "success") {
           setShowTable(false);
@@ -621,7 +621,7 @@ const ReportingForm = () => {
               const reportData = reportResult?.data?.data?.[0];
               return {
                 ...activity,
-                reportDetail: reportData || null, // Add report details to activity
+                reportDetail: reportData || null,
               };
             } catch (error) {
               console.warn(`Failed to fetch report for activity ${activity.id}`, error);
@@ -692,7 +692,7 @@ const ReportingForm = () => {
       setLoading(true);
       const result = await getSelectedActivityReportDetails(row?.id);
       const reportData = result?.data?.data[0];
-      setSurveyType(result?.data?.data[0].activity?.surveyTypes?.classificationSurvey);
+      setSurveyType(result?.data?.data[0]?.activity?.surveyTypes?.classificationSurvey);
       setReportDetails(reportData);
       // setEndorsements(reportData?.activity?.surveyTypes?.report?.endorsements);
 
@@ -748,7 +748,7 @@ const ReportingForm = () => {
       setValue("rangeTo", reportData?.rangeTo ? moment(reportData.rangeTo).format("YYYY-MM-DD") : "");
       setValue("anniversaryDate", reportData?.anniversaryDate ? moment(reportData.anniversaryDate).format("YYYY-MM-DD") : "");
       setValue("postponedDate", reportData?.postponedDate ? moment(reportData.postponedDate).format("YYYY-MM-DD") : "");
-      setValue("certificateBaseDate", reportData?.certificateBaseDate ? moment(reportData.certificateBaseDate).format("YYYY-MM-DD") : "");
+      setValue("certificateBaseDate", reportData?.certificateBaseDate ? moment(reportData.certificateBaseDate).format("YYYY-MM-DD") : reportData?.surveyDate ? moment(reportData.surveyDate).format("YYYY-MM-DD") : "");
       setValue("endorsementdate", reportData?.endorsementDate ? moment(reportData.endorsementDate).format("YYYY-MM-DD") : "");
       setValue("place", reportData?.place || "");
       setValue("issuedBy", reportData?.issuedBy?.toString() || "");
@@ -826,7 +826,7 @@ const ReportingForm = () => {
 
             {selectedShip?.id && (
               <Box mt={2} width="100%" display="block">
-                {data?.specialPermission?.includes("archive/unarchive") && <FormControlLabel control={<Checkbox checked={specialPermission} onChange={handleSpecialPermission} color="primary" />} label="Show Archived Reports" sx={{ mb: 2, display: "block" }} />}
+                {data?.specialPermission?.includes("Archive/Unarchive") && <FormControlLabel control={<Checkbox checked={specialPermission} onChange={handleSpecialPermission} color="primary" />} label="Show Archived Reports" sx={{ mb: 2, display: "block" }} />}
                 <Box display="flex">
                   <FormControl fullWidth sx={{ maxWidth: 300 }}>
                     <Typography variant="body1" mb={1} display="block">
@@ -853,7 +853,7 @@ const ReportingForm = () => {
             {selectedShip.id && selectedReportNumber.journalTypeId && (
               <>
                 <CommonButton onClick={handleShowTable} sx={{ marginTop: 3 }} text="Continue" />
-                {selectedShip.id && selectedReportNumber.journalTypeId && data?.specialPermission?.includes("archive/unarchive") && <CommonButton onClick={handleContinue} sx={{ marginTop: 3, marginLeft: 2 }} disabled={!tableData?.length > 0} text={specialPermission ? "Unarchive" : "Archive"} />}
+                {selectedShip.id && selectedReportNumber.journalTypeId && data?.specialPermission?.includes("Archive/Unarchive") && <CommonButton onClick={handleContinue} sx={{ marginTop: 3, marginLeft: 2 }} disabled={!tableData?.length > 0} text={specialPermission ? "Unarchive" : "Archive"} />}
                 {archiveHistory?.length > 0 && <CommonButton onClick={() => setShowArchiveHistoryDialog(true)} sx={{ marginTop: 3, marginLeft: 2 }} text="Show Archive Remarks History" />}
               </>
             )}
@@ -896,7 +896,7 @@ const ReportingForm = () => {
 
               <Grid2 item size={{ md: 3 }}>
                 {/* {!surveyType && ( */}
-                <FormControl fullWidth sx={{ maxWidth: 255 }}>
+                <FormControl fullWidth>
                   <Typography variant="body1" fontWeight={"500"} mb={1.5}>
                     Type of Certificate <span style={{ color: "red" }}>*</span>
                   </Typography>
@@ -918,11 +918,11 @@ const ReportingForm = () => {
                 </FormControl>
                 {/* )} */}
               </Grid2>
-              <Grid2 size={{ md: 6 }} sx={{ maxWidth: 255 }}>
+              <Grid2 size={{ md: 3 }}>
                 <Controller name="anniversaryDate" control={control} render={({ field }) => <CommonInput {...field} type="date" label="Anniversary Date" disabled />} />
               </Grid2>
-              {/* Row 2 — All Date Fields in One Line */}
-              {/* {!surveyType && ( */}
+              <Grid2 size={{ md: 3 }}></Grid2>
+
               <Grid2 size={{ md: 3 }}>
                 <Controller
                   name="issuancedate"
@@ -971,11 +971,7 @@ const ReportingForm = () => {
                     <CommonInput
                       {...field}
                       type="date"
-                      label={
-                        <>
-                          Date on which certificate is based <span style={{ color: "red" }}>*</span>
-                        </>
-                      }
+                      label="Date on which certificate is based"
                       onChange={(e) => {
                         field.onChange(e);
                         handleFieldChange("basedDate", e.target.value);
@@ -1011,6 +1007,7 @@ const ReportingForm = () => {
                   </Typography>
                 )}
               </Grid2>
+              {/* Row 3 — Remaining Fields */}
 
               <Grid2 container spacing={2} sx={{ mt: 0 }}>
                 {/* Survey Date */}
@@ -1207,8 +1204,6 @@ const ReportingForm = () => {
                   )}
                 </Grid2>
               </Grid2>
-
-              {/* Row 3 — Remaining Fields */}
 
               {/* Place of Issuance */}
             </Grid2>

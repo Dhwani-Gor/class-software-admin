@@ -57,6 +57,7 @@ import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 
+
 const schema = yup.object().shape({
   shipWork: yup.string().required("Ship name is required"),
   imoNumber: yup.string().required("IMO Number is required"),
@@ -65,6 +66,7 @@ const schema = yup.object().shape({
   date: yup.date().required("Date is required").typeError("required"),
   type: yup.string().required("Type of survey must be selected"),
 });
+const generateId = () => Date.now() * 1000 + Math.floor(Math.random() * 1000);
 
 const journalTypeOptions = [
   { id: "new_entry", value: "new_entry", label: "New Entry" },
@@ -391,6 +393,7 @@ const JournalEntryForm = ({ journalId = null }) => {
           journalId: journalId,
           clientId: selectedClient.id,
           ...activityData,
+
         };
         addActivities(payload);
       }
@@ -438,7 +441,6 @@ const JournalEntryForm = ({ journalId = null }) => {
               };
             })
             .filter(Boolean);
-
           setActivitiesList([...activitiesList, ...newActivities]);
         }
       }
@@ -557,6 +559,21 @@ const JournalEntryForm = ({ journalId = null }) => {
   const showForm = () => {
     setIsShowForm(true);
   };
+
+  // const handleArchiveJournal = async () => {
+  //   let response = await addArchiveDocument(
+  //     journalId,
+
+  //   )
+  //   console.log(response, "response")
+  //   if (response?.data?.status === "success") {
+  //     toast.success("Journal archived successfully");
+  //     router.push('/journal')
+  //   } else {
+  //     toast.error("Something went wrong ! Please try again after some time");
+  //   }
+
+  // }
 
   const handleSubmitJournal = async (data, lockJournal = false) => {
     if (isJournalLocked || isJournalArchived) return;
@@ -747,6 +764,7 @@ const JournalEntryForm = ({ journalId = null }) => {
 
                 {!isJournalLocked && !isJournalArchived && (
                   <Box>
+                    {/* <CommonButton sx={{ mr: 2 }} type="button" text="Archive Journal" onClick={handleArchiveJournal} /> */}
                     <CommonButton type="submit" text={journalId ? "Update" : "Save"} />
                   </Box>
                 )}
@@ -894,7 +912,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                       {visitList.map((visit, index) => (
                         <TableRow key={visit.id}>
                           <TableCell>{index + 1}</TableCell>
-                          <TableCell align="right">{visit.date}</TableCell>
+                          <TableCell align="right">{moment(visit.date).format("DD-MM-YYYY")}</TableCell>
                           <TableCell align="right">{visit.timeFrom}</TableCell>
                           <TableCell align="right">{visit.timeTo}</TableCell>
                           <TableCell align="right">{visit.location}</TableCell>
