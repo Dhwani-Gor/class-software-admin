@@ -394,6 +394,38 @@ const Certificates = () => {
                                   <VisibilityIcon />
                                 </IconButton>
                               </Tooltip>
+
+                              <Tooltip title="Download Document">
+                                <IconButton
+                                  color="success"
+                                  onClick={() => {
+                                    if (!row.generatedDoc) return;
+
+                                    // Generate the same filename as displayed in the "Document" column
+                                    const fileName = (() => {
+                                      const file = row.generatedDoc.split("/").pop();
+                                      const matches = file.match(/MCB[A-Z0-9]+/gi);
+                                      const reportNo = matches ? matches[matches.length - 1] : null;
+
+                                      if (/status[_ ]?report/i.test(file)) return "Survey Status Report.pdf";
+                                      if (/survey[_ ]?report/i.test(file)) return `Survey Report${reportNo ? ` - ${reportNo}` : ""}.pdf`;
+                                      return file.replace(/_/g, " ").replace(/\.[^/.]+$/, "") + ".pdf";
+                                    })();
+
+                                    fetch(row.generatedDoc)
+                                      .then((res) => res.blob())
+                                      .then((blob) => saveAs(blob, fileName))
+                                      .catch((err) => {
+                                        console.error(err);
+                                        window.open(row.generatedDoc, "_blank");
+                                      });
+                                  }}
+                                  disabled={!row.generatedDoc}
+                                >
+                                  <GetAppIcon />
+                                </IconButton>
+                              </Tooltip>
+
                               <Tooltip title="Delete Report">
                                 <IconButton
                                   color="error"
