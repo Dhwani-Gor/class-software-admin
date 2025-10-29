@@ -359,6 +359,7 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
                   control={control}
                   render={({ field }) => (
                     <Autocomplete
+                      key={clientsList.length}
                       {...field}
                       multiple
                       options={clientsList}

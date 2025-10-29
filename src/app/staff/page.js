@@ -13,7 +13,7 @@ import CommonInput from "@/components/CommonInput";
 import { deleteUser, deleteVisa, getAllUsers, getVisaDetails } from "@/api";
 import { useDispatch } from "react-redux";
 
-const Countries = () => {
+const Users = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -226,4 +226,4 @@ const Countries = () => {
   );
 };
 
-export default Countries;
+export default Users;
