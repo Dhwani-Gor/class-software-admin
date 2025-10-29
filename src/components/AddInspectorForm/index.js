@@ -94,6 +94,14 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
     }
   }, [userRole, setValue]);
 
+  // Step 1: Wait for both clientsList and form data to load
+  useEffect(() => {
+    if (clientsList.length > 0 && getValues("clientIds")?.length > 0) {
+      const selected = clientsList.filter((item) => getValues("clientIds").map(String).includes(String(item.id))).map((item) => String(item.id));
+      setValue("clientIds", selected);
+    }
+  }, [clientsList, getValues, setValue]);
+
   const fetchClients = async () => {
     try {
       const result = await getAllClients();
