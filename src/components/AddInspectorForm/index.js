@@ -364,9 +364,9 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
                       multiple
                       options={clientsList}
                       getOptionLabel={(option) => option.shipName || ""}
-                      value={clientsList.filter((item) => field.value?.includes(item.id)) || []}
+                      value={clientsList.filter((item) => field.value?.map(String).includes(String(item.id))) || []}
                       onChange={(_, newValue) => {
-                        field.onChange(newValue.map((item) => item.id));
+                        field.onChange(newValue.map((item) => String(item.id)));
                       }}
                       renderInput={(params) => <TextField {...params} variant="standard" error={Boolean(errors.clientIds)} helperText={errors.clientIds?.message} fullWidth />}
                     />
