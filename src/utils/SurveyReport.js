@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 const SurveyReport = ({ id, reportNumber }) => {
   const router = useRouter();
   const [reportDetails, setReportDetails] = useState(null);
+  console.log(reportDetails, "report details");
   const [clientData, setClientData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editorContent, setEditorContent] = useState("");
@@ -23,6 +24,8 @@ const SurveyReport = ({ id, reportNumber }) => {
   const [journalId, setJournalId] = useState("");
   const [additionalFieldData, setAdditionalFieldData] = useState([]);
   const [places, setPlaces] = useState([]);
+  const [isLastVisit, setIsLastVisit] = useState(false);
+  console.log(isLastVisit, "isLastVisit");
   console.log(places, "places");
   const currentDate = new Date();
 
@@ -85,10 +88,7 @@ const SurveyReport = ({ id, reportNumber }) => {
       const stamp = systemVariables?.data?.find((i) => i.name === "company_stamp")?.information || "-";
       const issuer = reportDetailsInput?.map((i) => i?.issuer?.name);
       const portOfSurvey = reportDetailsInput?.map((i) => i?.place?.toLowerCase());
-      console.log(
-        reportDetailsInput.map((i) => i?.place?.toLowerCase()),
-        "reportDetailsInput"
-      );
+
       console.log(portOfSurvey, "port of survey");
       const uniquePorts = [...new Set(portOfSurvey)].join(",").toUpperCase();
       const uniqueSurveyors = [...new Set(issuer)].join(",").toUpperCase();
@@ -131,7 +131,10 @@ const SurveyReport = ({ id, reportNumber }) => {
         <tr>
           <td style="text-align:left;padding:6px;">${formattedName}</td>
           <td style="text-align:center;padding:6px;">${status}</td>
-          <td style="text-align:center;padding:6px;">${lastVisit ? moment(lastVisit).format("DD/MM/YYYY") : ""}</td>
+<td style="text-align:center; padding:6px;">
+  ${isLastVisit === true || isLastVisit === "true" ? moment(lastVisit).format("DD/MM/YYYY") : "-"}
+</td>
+
         </tr>
       `;
           });
@@ -286,7 +289,7 @@ const SurveyReport = ({ id, reportNumber }) => {
             <td style="padding:8px;border:1px solid #ccc;">First Visit</td>
             <td style="padding:8px;border:1px solid #ccc;">${firstVisit ? moment(firstVisit).format("DD/MM/YYYY") : "—"}</td>
             <td style="padding:8px;border:1px solid #ccc;">Last Visit</td>
-            <td style="padding:8px;border:1px solid #ccc;">${lastVisit ? moment(lastVisit).format("DD/MM/YYYY") : "—"}</td>
+            <td style="padding:8px;border:1px solid #ccc;">${isLastVisit === true || isLastVisit === "true" ? moment(lastVisit).format("DD/MM/YYYY") : "-"}</td>
           </tr>
           <tr>
             <td style="padding:8px;border:1px solid #ccc;">No. of Visits</td>
@@ -399,6 +402,7 @@ of Class recommended now or previously, being dealt with as recommended.</p>
               setLastVisit(visits[0]?.date);
               setFirstVisit(visits[visits.length - 1]?.date);
               setNumOfVisit(visits.length);
+              setIsLastVisit(visits[0].journal?.isLocked);
               const places = visits.map((visit) => visit?.location?.replace(/\s*\(.*?\)\s*/g, "").trim()).filter(Boolean);
               setPlaces(places);
             }
