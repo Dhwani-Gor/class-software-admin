@@ -931,7 +931,7 @@ const ReportingForm = () => {
                     <CommonInput
                       {...field}
                       type="date"
-                      label="Issuance Date"
+                      label={<>Issuance Date {!surveyType && <span style={{ color: "red" }}>*</span>}</>}
                       onChange={(e) => {
                         field.onChange(e);
                         handleFieldChange("issuancedate", e.target.value);
@@ -950,7 +950,7 @@ const ReportingForm = () => {
                       <CommonInput
                         {...field}
                         type="date"
-                        label="Validity Date"
+                        label={<>Validity Date {!surveyType && !hiddenReports.includes(reportName) && <span style={{ color: "red" }}>*</span>}</>}
                         error={!!errors.validitydate}
                         helperText={errors.validitydate?.message}
                         onChange={(e) => {
