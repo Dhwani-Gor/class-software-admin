@@ -39,24 +39,6 @@ import ArchiveHistoryDialog from "../Dialogs/ArchiveHistoryDialog";
 import EndorsementDialog from "../documents/EndorsementDialog";
 import { calculateDates } from "@/utils/DateCalculation";
 
-const reportSchema = yup.object().shape({
-  typesOfSurvey: yup.string().required("Type of survey is required"),
-  typeOfCertificate: yup.string().required("Type of certificate is required"),
-  issuancedate: yup.string().optional(),
-  validitydate: yup.string().optional(),
-  surveydate: yup.string().required("Survey date is required"),
-  endorsementdate: yup.string().optional(),
-  issuedBy: yup.string().required("Issued by is required"),
-  place: yup.string().required("Place is required"),
-  newValidityDate: yup.string().optional(),
-  rangeFrom: yup.string().optional(),
-  rangeTo: yup.string().optional(),
-  assignmentDate: yup.string().optional(),
-  dueDate: yup.string().optional(),
-  postponedDate: yup.string().optional(),
-  certificateBaseDate: yup.string().optional(),
-});
-
 const ReportingForm = () => {
   const router = useRouter();
   const { data } = useAuth();
@@ -99,9 +81,53 @@ const ReportingForm = () => {
   const [archiveHistory, setArchiveHistory] = useState([]);
   const [endorsementValues, setEndorsementValues] = useState([]);
   const [endorsements, setEndorsements] = useState([]);
-  console.log(endorsements, "endorsements");
   const [surveyType, setSurveyType] = useState(false);
-  console.log(surveyType, "survey type");
+
+  const reportSchema = yup.object().shape({
+    typesOfSurvey: yup.string().required("Type of survey is required"),
+
+    typeOfCertificate: yup.string().required("Type of certificate is required"),
+
+    issuancedate: yup.string().optional(),
+
+    validitydate: yup.string().when([], {
+      is: () => !surveyType && !hiddenReports.includes(reportName),
+      then: (schema) => schema.required("Validity date is required"),
+      otherwise: (schema) => schema.optional(),
+    }),
+
+    surveydate: yup.string().when([], {
+      is: () => true, // always required
+      then: (schema) => schema.required("Survey date is required"),
+    }),
+
+    endorsementdate: yup.string().optional(),
+
+    issuedBy: yup.string().when([], {
+      is: () => !surveyType,
+      then: (schema) => schema.required("Issued by is required"),
+      otherwise: (schema) => schema.optional(),
+    }),
+
+    place: yup.string().when([], {
+      is: () => !surveyType,
+      then: (schema) => schema.required("Place is required"),
+      otherwise: (schema) => schema.optional(),
+    }),
+
+    newValidityDate: yup.string().when([], {
+      is: () => showExtraEndorsementField || reportDetails?.typeOfCertificate === "extended",
+      then: (schema) => schema.required("New validity date is required"),
+      otherwise: (schema) => schema.optional(),
+    }),
+
+    rangeFrom: yup.string().optional(),
+    rangeTo: yup.string().optional(),
+    assignmentDate: yup.string().optional(),
+    dueDate: yup.string().optional(),
+    postponedDate: yup.string().optional(),
+    certificateBaseDate: yup.string().optional(),
+  });
 
   useEffect(() => {
     ``;
@@ -296,9 +322,6 @@ const ReportingForm = () => {
           rangeTo: activity.reportDetail.rangeTo,
         }));
 
-      console.log("Existing surveys for calculation:", existingSurveys);
-
-      // Recalculate dependent dates
       const { dueDate, rangeFrom, rangeTo, anniversaryDate } = calculateDates(issuanceDate, surveyType, existingSurveys);
 
       setValue("dueDate", dueDate ? moment(dueDate).format("YYYY-MM-DD") : "");
@@ -321,8 +344,6 @@ const ReportingForm = () => {
           rangeFrom: activity.reportDetail.rangeFrom,
           rangeTo: activity.reportDetail.rangeTo,
         }));
-
-      console.log("Existing surveys for calculation:", existingSurveys);
 
       const { dueDate, rangeFrom, rangeTo, anniversaryDate } = calculateDates(value, surveyType, existingSurveys);
 
@@ -443,10 +464,8 @@ const ReportingForm = () => {
   const generateReport = async (payload) => {
     try {
       setLoading(true);
-      console.log(payload, "payload");
       const result = await createReportDetail(payload);
 
-      console.log(result, "result");
       if (result?.data?.status === "success") {
         setReportDetails(result?.data?.data);
         toast.success("Report saved successfully.");
@@ -464,7 +483,6 @@ const ReportingForm = () => {
     try {
       setLoading(true);
       const result = await updateReportDetail(reportDetails?.id, payload);
-      console.log(result, "result");
       if (result?.data?.status === "success") {
         setReportDetails(result?.data?.data);
         toast.success("Report updated successfully.");
@@ -613,7 +631,6 @@ const ReportingForm = () => {
       if (result?.data?.status === "success") {
         const activities = result?.data?.data;
 
-        // Fetch report details for all activities
         const activitiesWithReports = await Promise.all(
           activities.map(async (activity) => {
             try {
@@ -634,7 +651,6 @@ const ReportingForm = () => {
         );
 
         setTableData(activitiesWithReports);
-        console.log(activitiesWithReports, "table data with reports");
         setArchiveHistory(result.data?.data[0]?.journal?.journalRemarks);
       } else {
         toast.error("Something went wrong ! Please try again after some time");
@@ -695,6 +711,7 @@ const ReportingForm = () => {
       setSurveyType(result?.data?.data[0]?.activity?.surveyTypes?.classificationSurvey);
       setReportDetails(reportData);
       setEndorsements(reportData?.activity?.surveyTypes?.report?.endorsements);
+      setReportName(row?.surveyTypes?.report?.name);
 
       setSelectedRow(row);
       setShowForm(true);
@@ -926,7 +943,7 @@ const ReportingForm = () => {
                 />
               </Grid2>
               {/* )} */}
-              {!hiddenReports.includes(reportName) && (
+              {!hiddenReports.map((r) => r?.toLowerCase()).includes(reportName?.toLowerCase()) && (
                 <Grid2 size={{ md: 3 }}>
                   <Controller
                     name="validitydate"
@@ -935,7 +952,7 @@ const ReportingForm = () => {
                       <CommonInput
                         {...field}
                         type="date"
-                        label={<>Validity Date {!surveyType && !hiddenReports.includes(reportName) && <span style={{ color: "red" }}>*</span>}</>}
+                        label={<>Validity Date {!surveyType || (!hiddenReports.includes(reportName) && <span style={{ color: "red" }}>*</span>)}</>}
                         error={!!errors.validitydate}
                         helperText={errors.validitydate?.message}
                         onChange={(e) => {
@@ -945,6 +962,11 @@ const ReportingForm = () => {
                       />
                     )}
                   />
+                  {/* {!hiddenReports.includes(reportName) && !surveyType && errors.validitydate && (
+                    <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                      {errors.validitydate.message}
+                    </Typography>
+                  )} */}
                 </Grid2>
               )}
 

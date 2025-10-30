@@ -185,7 +185,6 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
     try {
       if (userId) {
         let res = await updateInspectorDetail(userId, payload);
-        console.log(res, "res");
         if (res?.data?.status === "success") {
           toast.success(res?.data?.message);
         } else {

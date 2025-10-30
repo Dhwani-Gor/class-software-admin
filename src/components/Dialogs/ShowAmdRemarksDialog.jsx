@@ -30,7 +30,6 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId, selectedFilter, h
     const { data } = useAuth();
     const [amendments, setAmendments] = useState([]);
     const [loading, setLoading] = useState(false);
-    console.log(selectedFilter, "selected filter")
 
     // State for preview
     const [openPreviewModal, setOpenPreviewModal] = useState(false);

@@ -39,7 +39,6 @@ const Certificates = () => {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("Certificates");
-  console.log(selectedFilter, "selectedfilter");
   const [selectedReportNumber, setSelectedReportNumber] = useState("");
   const [placeFilter, setPlaceFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -135,7 +134,6 @@ const Certificates = () => {
       const data = res?.data;
       if (data?.status === "success" && Array.isArray(data?.data)) {
         setCertificatesList(data.data);
-        console.log(data.data, "data");
         setTotalRows(data.results);
         setTotalCount(data.results);
       } else {

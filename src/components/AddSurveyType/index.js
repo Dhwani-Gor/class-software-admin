@@ -1,25 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
-import {
-  createSurveyType,
-  updateSurveyType,
-  getSurveyTypeDetails,
-  getReports,
-} from "@/api";
-import {
-  CircularProgress,
-  FormControl,
-  FormLabel,
-  Grid2,
-  Paper,
-  Stack,
-  Typography,
-  Chip,
-  TextField,
-  Autocomplete,
-  FormControlLabel,
-  Checkbox,
-} from "@mui/material";
+import { createSurveyType, updateSurveyType, getSurveyTypeDetails, getReports } from "@/api";
+import { CircularProgress, FormControl, FormLabel, Grid2, Paper, Stack, Typography, Chip, TextField, Autocomplete, FormControlLabel, Checkbox } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import CommonInput from "../CommonInput";
 import CommonButton from "../CommonButton";
@@ -36,11 +18,7 @@ const schema = yup.object().shape({
   surveyCategory: yup.string().required("Please select a survey category"),
 });
 
-const SurveyTypeForm = ({
-  mode = "create",
-  surveyTypeId = null,
-  defaultValues = {},
-}) => {
+const SurveyTypeForm = ({ mode = "create", surveyTypeId = null, defaultValues = {} }) => {
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reports, setReports] = useState([]);
@@ -67,10 +45,6 @@ const SurveyTypeForm = ({
   });
 
   const watchedReportIds = watch("reportId");
-
-  useEffect(() => {
-    console.log("Current reportIds in form:", watchedReportIds);
-  }, [watchedReportIds]);
 
   const fetchReports = async () => {
     try {
@@ -153,15 +127,13 @@ const SurveyTypeForm = ({
         if (res?.data?.status === "success") {
           toast.success("Survey type updated successfully");
           setTimeout(() => router.push("/survey-types"), 2000);
-        } else
-          throw new Error(res?.data?.message || "Failed to update survey type");
+        } else throw new Error(res?.data?.message || "Failed to update survey type");
       } else {
         res = await createSurveyType(payload);
         if (res?.data?.status === "success") {
           toast.success("Survey type created successfully");
           router.push("/survey-types");
-        } else
-          throw new Error(res?.data?.message || "Failed to create survey type");
+        } else throw new Error(res?.data?.message || "Failed to create survey type");
       }
     } catch (error) {
       console.error("Error:", error);
@@ -179,12 +151,7 @@ const SurveyTypeForm = ({
   return (
     <Box>
       {isDataLoading ? (
-        <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          sx={{ height: 300 }}
-        >
+        <Box display="flex" justifyContent="center" alignItems="center" sx={{ height: 300 }}>
           <CircularProgress />
         </Box>
       ) : (
@@ -233,8 +200,7 @@ const SurveyTypeForm = ({
                           variant="standard"
                           label={
                             <span>
-                              Abbreviation{" "}
-                              <span style={{ color: "red" }}>*</span>
+                              Abbreviation <span style={{ color: "red" }}>*</span>
                             </span>
                           }
                           placeholder="Enter abbreviation"
@@ -249,11 +215,7 @@ const SurveyTypeForm = ({
                   </Grid2>
 
                   <Grid2 size={{ xs: 12 }}>
-                    <FormControl
-                      fullWidth
-                      variant="standard"
-                      error={Boolean(errors.reportId)}
-                    >
+                    <FormControl fullWidth variant="standard" error={Boolean(errors.reportId)}>
                       <FormLabel component="legend" sx={{ mb: 1 }}>
                         <Typography color="#000000DE" fontWeight={"500"}>
                           Reports
@@ -267,35 +229,14 @@ const SurveyTypeForm = ({
                             id="report-autocomplete"
                             options={reports}
                             loading={loadingReports}
-                            getOptionLabel={(option) =>
-                              typeof option === "object"
-                                ? option.name
-                                : getReportById(option)?.name || ""
-                            }
-                            isOptionEqualToValue={(option, value) =>
-                              option.id ===
-                              (typeof value === "object" ? value.id : value)
-                            }
+                            getOptionLabel={(option) => (typeof option === "object" ? option.name : getReportById(option)?.name || "")}
+                            isOptionEqualToValue={(option, value) => option.id === (typeof value === "object" ? value.id : value)}
                             value={getReportById(field.value)}
                             onChange={(event, newValue) => {
                               field.onChange(newValue?.id || null);
                             }}
-                            filterOptions={(options, { inputValue }) =>
-                              options.filter((option) =>
-                                option.name
-                                  .toLowerCase()
-                                  .includes(inputValue.toLowerCase())
-                              )
-                            }
-                            renderTags={(tagValue, getTagProps) =>
-                              tagValue.map((option, index) => (
-                                <Chip
-                                  key={option.id}
-                                  label={option.name}
-                                  {...getTagProps({ index })}
-                                />
-                              ))
-                            }
+                            filterOptions={(options, { inputValue }) => options.filter((option) => option.name.toLowerCase().includes(inputValue.toLowerCase()))}
+                            renderTags={(tagValue, getTagProps) => tagValue.map((option, index) => <Chip key={option.id} label={option.name} {...getTagProps({ index })} />)}
                             renderInput={(params) => (
                               <TextField
                                 {...params}
@@ -305,12 +246,7 @@ const SurveyTypeForm = ({
                                   ...params.InputProps,
                                   endAdornment: (
                                     <>
-                                      {loadingReports ? (
-                                        <CircularProgress
-                                          color="inherit"
-                                          size={20}
-                                        />
-                                      ) : null}
+                                      {loadingReports ? <CircularProgress color="inherit" size={20} /> : null}
                                       {params.InputProps.endAdornment}
                                     </>
                                   ),
@@ -324,10 +260,7 @@ const SurveyTypeForm = ({
                   </Grid2>
 
                   <Grid2 size={{ xs: 12 }}>
-                    <FormControl
-                      component="fieldset"
-                      error={Boolean(errors.surveyCategory)}
-                    >
+                    <FormControl component="fieldset" error={Boolean(errors.surveyCategory)}>
                       {/* <FormLabel component="legend" sx={{ mb: 1 }}>
                         <Typography color="#000000DE" fontWeight={"500"}>
                           Survey Category{" "}
@@ -390,11 +323,7 @@ const SurveyTypeForm = ({
                         />
                       </Box>
                       {errors.surveyCategory && (
-                        <Typography
-                          variant="caption"
-                          color="error"
-                          sx={{ mt: 1 }}
-                        >
+                        <Typography variant="caption" color="error" sx={{ mt: 1 }}>
                           {errors.surveyCategory.message}
                         </Typography>
                       )}
@@ -402,24 +331,9 @@ const SurveyTypeForm = ({
                   </Grid2>
                 </Grid2>
 
-                <Stack
-                  mt={4}
-                  spacing={2}
-                  direction="row"
-                  justifyContent="flex-start"
-                >
-                  <CommonButton
-                    type="submit"
-                    variant="contained"
-                    text={isUpdate ? "UPDATE" : "SAVE"}
-                    disabled={isSubmitting}
-                  />
-                  <CommonButton
-                    onClick={cancelBtn}
-                    variant="contained"
-                    text="Cancel"
-                    disabled={isSubmitting}
-                  />
+                <Stack mt={4} spacing={2} direction="row" justifyContent="flex-start">
+                  <CommonButton type="submit" variant="contained" text={isUpdate ? "UPDATE" : "SAVE"} disabled={isSubmitting} />
+                  <CommonButton onClick={cancelBtn} variant="contained" text="Cancel" disabled={isSubmitting} />
                 </Stack>
               </form>
             </Paper>
