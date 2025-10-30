@@ -392,21 +392,26 @@ const Certificates = () => {
                                   <VisibilityIcon />
                                 </IconButton>
                               </Tooltip>
-
                               <Tooltip title="Download Document">
                                 <IconButton
                                   color="success"
                                   onClick={() => {
                                     if (!row.generatedDoc) return;
 
-                                    // Generate the same filename as displayed in the "Document" column
-                                    const fileName = (() => {
-                                      const file = row.generatedDoc.split("/").pop();
-                                      const matches = file.match(/MCB[A-Z0-9]+/gi);
-                                      const reportNo = matches ? matches[matches.length - 1] : null;
+                                    const file = row.generatedDoc.split("/").pop();
+                                    console.log(row, "row");
+                                    const matches = file.match(/MCB[A-Z0-9]+/gi);
+                                    const reportNo = matches ? matches[matches.length - 1] : null;
+                                    const shipName = row.client?.shipName || row.ship?.name || "Unknown Ship";
 
-                                      if (/status[_ ]?report/i.test(file)) return "Survey Status Report.pdf";
-                                      if (/survey[_ ]?report/i.test(file)) return `Survey Report${reportNo ? ` - ${reportNo}` : ""}.pdf`;
+                                    // Determine proper filename format
+                                    const fileName = (() => {
+                                      if (/status[_ ]?report/i.test(file)) {
+                                        return `MCBG Survey Status - ${shipName}.pdf`;
+                                      }
+                                      if (/survey[_ ]?report/i.test(file)) {
+                                        return `Survey Report${reportNo ? ` - ${reportNo}` : ""} - ${shipName}.pdf`;
+                                      }
                                       return file.replace(/_/g, " ").replace(/\.[^/.]+$/, "") + ".pdf";
                                     })();
 
