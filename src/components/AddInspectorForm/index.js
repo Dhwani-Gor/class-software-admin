@@ -88,12 +88,6 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
     fetchClients();
   }, []);
 
-  useEffect(() => {
-    if (userRole !== "agent") {
-      setValue("clientIds", []);
-    }
-  }, [userRole, setValue]);
-
   const fetchClients = async () => {
     try {
       const result = await getAllClients();
