@@ -1060,7 +1060,7 @@ ${classificationRows}
     };
 
     const statutorySurveyTableHtml = buildSurveyTable(statutoryData, "Statutory Surveys");
-    const auditSurveyTableHtml = buildSurveyTable(auditsData, "Audit Surveys");
+    const auditSurveyTableHtml = buildSurveyTable(auditsData, "Audit / Inspections");
 
     const htmlString = `
 <div class="page">
