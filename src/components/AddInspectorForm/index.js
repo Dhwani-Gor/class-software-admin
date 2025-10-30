@@ -107,6 +107,13 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
     }
   };
 
+  useEffect(() => {
+    if (clientsList.length > 0 && userId && isFormReady) {
+      const currentClientIds = getValues("clientIds");
+      setValue("clientIds", currentClientIds);
+    }
+  }, [clientsList]);
+
   const fetchUserDetails = async () => {
     if (!userId || permissionData.length === 0) return;
 
@@ -144,6 +151,7 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
         journalUnlockRights: data.journalUnlockRights || false,
         permissionModule: mappedPermissions,
         specialPermission: mappedSpecial,
+        clientIds: data.clients?.map((c) => c.id) || [], // ✅ Add this line
       });
 
       setIsFormReady(true);

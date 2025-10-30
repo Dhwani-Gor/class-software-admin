@@ -67,7 +67,6 @@ const UpdateCountry = ({ params }) => {
         <AddInspectorForm
           mode="update"
           userId={params?.update}
-          role="inspector"
           permissionData={permissionData}
           specialPermissionData={specialPermissionData}
         />
