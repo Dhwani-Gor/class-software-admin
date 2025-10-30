@@ -350,25 +350,28 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
                 />
               </Grid2>
               <Grid2 size={{ xs: 12 }}>
-                <Typography>
-                  Select the Ship <span style={{ color: "red" }}>*</span>
-                </Typography>
+                <Typography>Select the Ship</Typography>
                 <Controller
                   name="clientIds"
                   control={control}
-                  render={({ field }) => (
-                    <Autocomplete
-                      {...field}
-                      multiple
-                      options={clientsList}
-                      getOptionLabel={(option) => option.shipName || ""}
-                      value={clientsList.filter((item) => field.value?.includes(item.id)) || []}
-                      onChange={(_, newValue) => {
-                        field.onChange(newValue.map((item) => item.id));
-                      }}
-                      renderInput={(params) => <TextField {...params} variant="standard" error={Boolean(errors.clientIds)} helperText={errors.clientIds?.message} fullWidth />}
-                    />
-                  )}
+                  render={({ field }) => {
+                    // Derive the value dynamically every time clientsList or field.value changes
+                    const selectedClients = clientsList?.length > 0 && field.value?.length > 0 ? clientsList.filter((item) => field.value.includes(item.id)) : [];
+
+                    return (
+                      <Autocomplete
+                        multiple
+                        options={clientsList || []}
+                        getOptionLabel={(option) => option.shipName || ""}
+                        value={selectedClients}
+                        isOptionEqualToValue={(option, value) => option.id === value.id} // important for SSR consistency
+                        onChange={(_, newValue) => {
+                          field.onChange(newValue.map((item) => item.id));
+                        }}
+                        renderInput={(params) => <TextField {...params} variant="standard" error={Boolean(errors.clientIds)} helperText={errors.clientIds?.message} fullWidth />}
+                      />
+                    );
+                  }}
                 />
               </Grid2>
             </Grid2>
