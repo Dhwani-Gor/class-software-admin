@@ -65,25 +65,32 @@ const TextEditor = ({ id }) => {
       return "Class";
     }
 
-    // Find the relevant classHistory entry
     for (const history of clientData.classHistory) {
       const shipStatus = history.shipStatus?.toLowerCase();
       const fromDate = history.from_date ? new Date(history.from_date) : null;
       const toDate = history.to_date ? new Date(history.to_date) : null;
 
-      if (shipStatus === "withdrawn") {
-        // Case: no dates
-        if (!fromDate && !toDate) return "Class";
+      if (!fromDate) continue; // Skip invalid entries
 
-        // Case: current date between from and to
-        if (fromDate && toDate && today >= fromDate && today <= toDate) return "Withdrawn";
+      const isWithinRange = !toDate ? today >= fromDate : today >= fromDate && today <= toDate;
 
-        // Case: toDate not there
-        if (!toDate) return "Class";
+      // 🔹 In Class
+      if (shipStatus === "in class" && isWithinRange) {
+        return "In Operation, Class Valid";
+      }
+
+      // 🔹 Withdrawn
+      if (shipStatus === "withdrawn" && isWithinRange) {
+        return "Withdrawn";
+      }
+
+      // 🔹 Re-Classed
+      if (shipStatus === "re-classed" && isWithinRange) {
+        return "In Operation, Class Valid";
       }
     }
 
-    // Default: Class
+    // Default
     return "Class";
   };
 
@@ -798,8 +805,11 @@ const TextEditor = ({ id }) => {
       return acc;
     }, {});
 
-    return Object.values(latestByName);
+    // ✅ Step 4: Sort by latest surveyDate (descending)
+    return Object.values(latestByName).sort((a, b) => new Date(b.surveyDate) - new Date(a.surveyDate));
   }
+
+  console.log(reportDetails, "reportDetailsList");
 
   // Usage example
   const finalClassificationData = mergeClassificationSurveys(classificationData, reportDetails);
