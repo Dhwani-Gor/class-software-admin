@@ -180,7 +180,7 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
     const payload = {
       ...data,
       roleId,
-      ...(data.role === "agent" ? {} : { clientIds: [] }),
+      clientIds: data.clientIds?.length ? data.clientIds : [],
     };
 
     try {
@@ -350,30 +350,28 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
                   )}
                 />
               </Grid2>
-              {userRole === "agent" && (
-                <Grid2 size={{ xs: 12 }}>
-                  <Typography>
-                    Select the Ship <span style={{ color: "red" }}>*</span>
-                  </Typography>
-                  <Controller
-                    name="clientIds"
-                    control={control}
-                    render={({ field }) => (
-                      <Autocomplete
-                        {...field}
-                        multiple
-                        options={clientsList}
-                        getOptionLabel={(option) => option.shipName || ""}
-                        value={clientsList.filter((item) => field.value?.includes(item.id)) || []}
-                        onChange={(_, newValue) => {
-                          field.onChange(newValue.map((item) => item.id));
-                        }}
-                        renderInput={(params) => <TextField {...params} variant="standard" error={Boolean(errors.clientIds)} helperText={errors.clientIds?.message} fullWidth />}
-                      />
-                    )}
-                  />
-                </Grid2>
-              )}
+              <Grid2 size={{ xs: 12 }}>
+                <Typography>
+                  Select the Ship <span style={{ color: "red" }}>*</span>
+                </Typography>
+                <Controller
+                  name="clientIds"
+                  control={control}
+                  render={({ field }) => (
+                    <Autocomplete
+                      {...field}
+                      multiple
+                      options={clientsList}
+                      getOptionLabel={(option) => option.shipName || ""}
+                      value={clientsList.filter((item) => field.value?.includes(item.id)) || []}
+                      onChange={(_, newValue) => {
+                        field.onChange(newValue.map((item) => item.id));
+                      }}
+                      renderInput={(params) => <TextField {...params} variant="standard" error={Boolean(errors.clientIds)} helperText={errors.clientIds?.message} fullWidth />}
+                    />
+                  )}
+                />
+              </Grid2>
             </Grid2>
 
             <Box>
