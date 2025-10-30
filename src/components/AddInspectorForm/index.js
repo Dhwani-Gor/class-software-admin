@@ -45,6 +45,11 @@ const schema = yup.object().shape({
     otherwise: (schema) => schema.notRequired(),
   }),
   role: yup.string().required("Role is required"),
+  clientIds: yup.array().when("$isUpdate", {
+    is: false,
+    then: (schema) => schema.required("Client is required"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
 });
 
 const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, permissionData = [], specialPermissionData = [] }) => {
@@ -116,11 +121,9 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
       const data = res?.data?.data;
       if (!data) return;
 
-      // Map backend permission names/descriptions to form values
       const mappedPermissions =
         data.permissionModule
           ?.map((backendValue) => {
-            // Try matching with both 'name' (value) and 'description' (label)
             const match = permissionData.find((m) => m.value === backendValue || m.label === backendValue);
             return match?.value;
           })
@@ -134,7 +137,6 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
           })
           .filter(Boolean) || [];
 
-      // Reset form with all data including mapped permissions
       reset({
         name: data.name || "",
         username: data.username || "",
@@ -156,7 +158,6 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
     }
   };
 
-  // Fetch user details only after permission data is loaded
   useEffect(() => {
     if (mode === "update" && userId && permissionData.length > 0 && specialPermissionData.length > 0) {
       fetchUserDetails();
@@ -180,6 +181,7 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
     const payload = {
       ...data,
       roleId,
+      ...(data.role === "agent" || data.role === "inspector" || data.role === "staff" ? {} : { clientIds: [] }),
     };
 
     try {
@@ -354,24 +356,19 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
                 <Controller
                   name="clientIds"
                   control={control}
-                  render={({ field }) => {
-                    // Derive the value dynamically every time clientsList or field.value changes
-                    const selectedClients = clientsList?.length > 0 && field.value?.length > 0 ? clientsList.filter((item) => field.value.includes(item.id)) : [];
-
-                    return (
-                      <Autocomplete
-                        multiple
-                        options={clientsList || []}
-                        getOptionLabel={(option) => option.shipName || ""}
-                        value={selectedClients}
-                        isOptionEqualToValue={(option, value) => option.id === value.id} // important for SSR consistency
-                        onChange={(_, newValue) => {
-                          field.onChange(newValue.map((item) => item.id));
-                        }}
-                        renderInput={(params) => <TextField {...params} variant="standard" error={Boolean(errors.clientIds)} helperText={errors.clientIds?.message} fullWidth />}
-                      />
-                    );
-                  }}
+                  render={({ field }) => (
+                    <Autocomplete
+                      {...field}
+                      multiple
+                      options={clientsList}
+                      getOptionLabel={(option) => option.shipName || ""}
+                      value={clientsList.filter((item) => field.value?.includes(item.id)) || []}
+                      onChange={(_, newValue) => {
+                        field.onChange(newValue.map((item) => item.id));
+                      }}
+                      renderInput={(params) => <TextField {...params} variant="standard" error={Boolean(errors.clientIds)} helperText={errors.clientIds?.message} fullWidth />}
+                    />
+                  )}
                 />
               </Grid2>
             </Grid2>
