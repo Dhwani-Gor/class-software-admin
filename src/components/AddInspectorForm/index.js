@@ -45,11 +45,6 @@ const schema = yup.object().shape({
     otherwise: (schema) => schema.notRequired(),
   }),
   role: yup.string().required("Role is required"),
-  clientIds: yup.array().when("$isUpdate", {
-    is: false,
-    then: (schema) => schema.required("Client is required"),
-    otherwise: (schema) => schema.notRequired(),
-  }),
 });
 
 const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, permissionData = [], specialPermissionData = [] }) => {
@@ -121,9 +116,11 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
       const data = res?.data?.data;
       if (!data) return;
 
+      // Map backend permission names/descriptions to form values
       const mappedPermissions =
         data.permissionModule
           ?.map((backendValue) => {
+            // Try matching with both 'name' (value) and 'description' (label)
             const match = permissionData.find((m) => m.value === backendValue || m.label === backendValue);
             return match?.value;
           })
@@ -137,6 +134,7 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
           })
           .filter(Boolean) || [];
 
+      // Reset form with all data including mapped permissions
       reset({
         name: data.name || "",
         username: data.username || "",
@@ -158,6 +156,7 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
     }
   };
 
+  // Fetch user details only after permission data is loaded
   useEffect(() => {
     if (mode === "update" && userId && permissionData.length > 0 && specialPermissionData.length > 0) {
       fetchUserDetails();
@@ -181,7 +180,7 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
     const payload = {
       ...data,
       roleId,
-      ...(data.role === "agent" || data.role === "inspector" || data.role === "staff" ? {} : { clientIds: [] }),
+      clientIds: data.clientIds && data.clientIds.length > 0 ? data.clientIds : [],
     };
 
     try {
