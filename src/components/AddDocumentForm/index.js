@@ -776,25 +776,16 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                   border: "1px solid #e0e0e0",
                   borderRadius: 2,
                   p: 2,
-                  backgroundColor: "#f9f9f9",
                 }}
               >
                 {/* Endorsements Section */}
-                <Typography variant="h6" sx={{ mt: 2 }}>
+                <Typography variant="h6" sx={{ mb: 2 }}>
                   Endorsements
                 </Typography>
 
                 <Stack spacing={3}>
                   {endorsementGroups.map((group, gIndex) => (
-                    <Box
-                      key={gIndex}
-                      sx={{
-                        border: "2px solid #90caf9",
-                        borderRadius: 2,
-                        p: 2,
-                        backgroundColor: "#f0f7ff",
-                      }}
-                    >
+                    <Box key={gIndex} sx={{}}>
                       {/* Section Header with Main Title */}
                       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
                         <TextField
@@ -920,7 +911,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
 
                       {/* Add Inner Endorsement Button */}
                       <CommonButton
-                        text="Add Endorsement Entry"
+                        text="Add Endorsement"
                         variant="outlined"
                         onClick={() => {
                           const updated = [...endorsementGroups];
@@ -938,7 +929,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                   ))}
 
                   {/* ✅ Add Main Section Button — shown once */}
-                  <CommonButton text="Add Endorsement Section" variant="outlined" onClick={() => setEndorsementGroups((prev) => [...prev, { mainTitle: "", items: [] }])} />
+                  <CommonButton sx={{ width: "30%" }} text="Add Endorsement Section" variant="outlined" onClick={() => setEndorsementGroups((prev) => [...prev, { mainTitle: "", items: [] }])} />
                 </Stack>
               </Box>
             </Stack>
