@@ -107,14 +107,6 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
     }
   };
 
-  useEffect(() => {
-    if (clients.length && data.clients?.length) {
-      reset({
-        clientIds: data.clients.map((c) => c.id),
-      });
-    }
-  }, [clients, data]);
-
   const fetchUserDetails = async () => {
     if (!userId || permissionData.length === 0) return;
 
