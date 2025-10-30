@@ -180,7 +180,6 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
     const payload = {
       ...data,
       roleId,
-      ...(data.clientIds?.length ? { clientIds: data.clientIds } : {}),
     };
 
     try {
