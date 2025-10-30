@@ -97,7 +97,6 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
   useEffect(() => {
     if (!isFormReady) return;
 
-    // Save the last selected ships for the previous role
     const currentRole = userRole;
     const currentShips = getValues("clientIds");
 
@@ -105,12 +104,10 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
       ...prev,
       [currentRole]: currentShips,
     }));
-  }, [watch("clientIds")]); // runs whenever ship selection changes
+  }, [watch("clientIds")]);
 
   useEffect(() => {
     if (!isFormReady) return;
-
-    // Load the ships corresponding to the selected role
     const savedShips = roleShipMap[userRole] || [];
     setValue("clientIds", savedShips);
   }, [userRole, isFormReady]);
@@ -144,11 +141,9 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
       const data = res?.data?.data;
       if (!data) return;
 
-      // Map backend permission names/descriptions to form values
       const mappedPermissions =
         data.permissionModule
           ?.map((backendValue) => {
-            // Try matching with both 'name' (value) and 'description' (label)
             const match = permissionData.find((m) => m.value === backendValue || m.label === backendValue);
             return match?.value;
           })
@@ -162,7 +157,8 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
           })
           .filter(Boolean) || [];
 
-      // Reset form with all data including mapped permissions
+      const clientIds = data.clients?.map((c) => c.id) || [];
+
       reset({
         name: data.name || "",
         username: data.username || "",
@@ -172,8 +168,15 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
         journalUnlockRights: data.journalUnlockRights || false,
         permissionModule: mappedPermissions,
         specialPermission: mappedSpecial,
-        clientIds: data.clients?.map((c) => c.id) || [], // ✅ Add this line
+        clientIds: clientIds,
       });
+
+      if (data.role) {
+        setRoleShipMap((prev) => ({
+          ...prev,
+          [data.role]: clientIds,
+        }));
+      }
 
       setIsFormReady(true);
     } catch (error) {
@@ -184,7 +187,6 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
     }
   };
 
-  // Fetch user details only after permission data is loaded
   useEffect(() => {
     if (mode === "update" && userId && permissionData.length > 0 && specialPermissionData.length > 0) {
       fetchUserDetails();

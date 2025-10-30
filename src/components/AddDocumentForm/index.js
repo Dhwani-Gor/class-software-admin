@@ -60,6 +60,9 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
   const [endorsements, setEndorsements] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+  const [endorsementGroups, setEndorsementGroups] = useState([]);
+  const [openTitleDialog, setOpenTitleDialog] = useState(false);
+  const [newMainTitle, setNewMainTitle] = useState("");
   const [previewState, setPreviewState] = useState({
     open: false,
     loading: false,
@@ -96,7 +99,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
       if (result?.status === 200) {
         const documentData = result.data.data;
 
-        // Set file preview and form values
+        // ✅ Set file preview and form values
         setPreviewState((prev) => ({
           ...prev,
           open: false,
@@ -122,13 +125,30 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
         if (!Array.isArray(parsedFields)) parsedFields = [parsedFields];
         setAdditionalFields(parsedFields);
 
-        // ✅ Handle endorsements (fix)
+        // ✅ Handle endorsements (nested grouped format)
         let parsedEndorsements = [];
         if (documentData.endorsements) {
           parsedEndorsements = typeof documentData.endorsements === "string" ? JSON.parse(documentData.endorsements) : documentData.endorsements;
         }
         if (!Array.isArray(parsedEndorsements)) parsedEndorsements = [parsedEndorsements];
-        setEndorsements(parsedEndorsements);
+
+        // Convert nested structure into UI format
+        const groups = parsedEndorsements.map((group) => ({
+          mainTitle: group.groupTitle || "",
+          items: Array.isArray(group.endorsements)
+            ? group.endorsements.map((item) => ({
+                title: item.title || "",
+                endorsed_place: item.endorsed_place || "",
+                issuance_date: item.issuance_date || "",
+                validity_date: item.validity_date || "",
+                endorsement_type: item.endorsement_type || "",
+                endorsedby_1: item.endorsedby_1 || "",
+              }))
+            : [],
+        }));
+
+        // ✅ Update state for rendering
+        setEndorsementGroups(groups);
       } else {
         toast.error("Error fetching document details");
       }
@@ -299,41 +319,44 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
       setLoading(true);
       let response;
 
-      // Filter out valid additional fields and endorsements
+      // Filter out valid additional fields
       const validFields = (additionalFields || []).filter((field) => field.attribute?.toString().trim() && field.label?.toString().trim());
-      const validEndorsements = (endorsements || []).filter((endorsement) => endorsement.title?.toString().trim() || endorsement.endorsedby_1?.toString().trim() || endorsement.endorsed_place?.toString().trim() || endorsement.issuance_date?.toString().trim() || endorsement.validity_date?.toString().trim());
+
+      // ✅ Convert grouped endorsements to nested structure
+      const validEndorsements = endorsementGroups
+        .filter((group) => group.mainTitle?.trim() || (group.items || []).some((item) => item.title?.trim() || item.endorsedby_1?.trim() || item.endorsed_place?.trim() || item.issuance_date?.trim() || item.validity_date?.trim()))
+        .map((group) => ({
+          groupTitle: group.mainTitle || "",
+          endorsements: (group.items || []).map((item) => ({
+            title: item.title || "",
+            endorsed_place: item.endorsed_place || "",
+            issuance_date: item.issuance_date || "",
+            validity_date: item.validity_date || "",
+            endorsement_type: item.endorsement_type || "",
+            endorsedby_1: item.endorsedby_1 || "",
+            endorsedby_2: item.endorsedby_2 || "",
+            endorsedby_3: item.endorsedby_3 || "",
+          })),
+        }));
 
       // ---------- CREATE / DUPLICATE DOCUMENT ----------
       if (mode === "create" || mode === "duplicate") {
         const formData = new FormData();
 
-        // Append basic document fields
-        formData.append("name", formValues.name); // For duplicate, name is usually appended with (Copy)
+        formData.append("name", formValues.name);
         formData.append("type", formValues.type);
         formData.append("abbreviation", formValues.abbreviation);
 
-        // Append document files if provided
-        if (formValues.fullTermDocument instanceof File) {
-          formData.append("fullTermDocument", formValues.fullTermDocument);
-        }
-        if (formValues.shortTermDocument instanceof File) {
-          formData.append("shortTermDocument", formValues.shortTermDocument);
-        }
-        if (formValues.interimDocument instanceof File) {
-          formData.append("interimDocument", formValues.interimDocument);
-        }
+        // Append files
+        if (formValues.fullTermDocument instanceof File) formData.append("fullTermDocument", formValues.fullTermDocument);
+        if (formValues.shortTermDocument instanceof File) formData.append("shortTermDocument", formValues.shortTermDocument);
+        if (formValues.interimDocument instanceof File) formData.append("interimDocument", formValues.interimDocument);
 
-        // Append additional fields and endorsements separately
-        if (validFields.length > 0) {
-          formData.append("fields", JSON.stringify(validFields));
-        }
-        if (validEndorsements.length > 0) {
-          formData.append("endorsements", JSON.stringify(validEndorsements));
-        } else {
-          formData.append("endorsements", JSON.stringify([]));
-        }
+        // Append fields and endorsements
+        if (validFields.length > 0) formData.append("fields", JSON.stringify(validFields));
 
-        // API call to create a new document (used for both new and duplicate)
+        formData.append("endorsements", JSON.stringify(validEndorsements.length > 0 ? validEndorsements : []));
+
         response = await createDocument(formData);
       } else {
         // ---------- UPDATE DOCUMENT ----------
@@ -345,30 +368,19 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           formData.append("type", formValues.type);
           formData.append("abbreviation", formValues.abbreviation);
 
-          if (formValues.fullTermDocument instanceof File) {
-            formData.append("fullTermDocument", formValues.fullTermDocument);
-          }
-          if (formValues.shortTermDocument instanceof File) {
-            formData.append("shortTermDocument", formValues.shortTermDocument);
-          }
-          if (formValues.interimDocument instanceof File) {
-            formData.append("interimDocument", formValues.interimDocument);
-          }
+          if (formValues.fullTermDocument instanceof File) formData.append("fullTermDocument", formValues.fullTermDocument);
+          if (formValues.shortTermDocument instanceof File) formData.append("shortTermDocument", formValues.shortTermDocument);
+          if (formValues.interimDocument instanceof File) formData.append("interimDocument", formValues.interimDocument);
 
           if (editReason) formData.append("reason", editReason);
 
-          if (validFields.length > 0) {
-            formData.append("fields", JSON.stringify(validFields));
-          }
-          if (validEndorsements.length > 0) {
-            formData.append("endorsements", JSON.stringify(validEndorsements));
-          } else {
-            formData.append("endorsements", JSON.stringify([]));
-          }
+          if (validFields.length > 0) formData.append("fields", JSON.stringify(validFields));
+
+          formData.append("endorsements", JSON.stringify(validEndorsements.length > 0 ? validEndorsements : []));
 
           response = await updateDocument(documentId, formData);
         } else {
-          // Update without file uploads (JSON payload)
+          // Update without file uploads
           const payload = {
             name: formValues.name,
             type: formValues.type,
@@ -376,22 +388,12 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
             ...(editReason && { reason: editReason }),
           };
 
-          if (formValues.fullTermDocument && typeof formValues.fullTermDocument === "string") {
-            payload.fullTermDocument = formValues.fullTermDocument;
-          }
-          if (formValues.shortTermDocument && typeof formValues.shortTermDocument === "string") {
-            payload.shortTermDocument = formValues.shortTermDocument;
-          }
-          if (formValues.interimDocument && typeof formValues.interimDocument === "string") {
-            payload.interimDocument = formValues.interimDocument;
-          }
+          if (formValues.fullTermDocument && typeof formValues.fullTermDocument === "string") payload.fullTermDocument = formValues.fullTermDocument;
+          if (formValues.shortTermDocument && typeof formValues.shortTermDocument === "string") payload.shortTermDocument = formValues.shortTermDocument;
+          if (formValues.interimDocument && typeof formValues.interimDocument === "string") payload.interimDocument = formValues.interimDocument;
 
-          if (validFields.length > 0) {
-            payload.fields = JSON.stringify(validFields);
-          }
-          if (validEndorsements.length > 0) {
-            payload.endorsements = JSON.stringify(validEndorsements);
-          }
+          if (validFields.length > 0) payload.fields = JSON.stringify(validFields);
+          payload.endorsements = JSON.stringify(validEndorsements);
 
           response = await updateDocument(documentId, payload);
         }
@@ -399,13 +401,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
 
       // ---------- HANDLE SUCCESS / ERROR ----------
       if (response?.status === 200 || response?.status === 201) {
-        toast.success(
-          mode === "duplicate"
-            ? "Document duplicated successfully" // Specific message for duplicate
-            : mode === "update"
-            ? "Document updated successfully"
-            : "Document created successfully"
-        );
+        toast.success(mode === "duplicate" ? "Document duplicated successfully" : mode === "update" ? "Document updated successfully" : "Document created successfully");
         router.push("/documents");
       } else {
         toast.error(response?.response?.data?.message || "Something went wrong! Please try again.");
@@ -516,22 +512,36 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
   };
 
   const handleAddEndorsement = () => {
-    const lastEndorsement = endorsements[endorsements.length - 1];
-    if (!endorsements.length || (lastEndorsement && (lastEndorsement.title?.trim() || lastEndorsement.endorsedby_1?.trim() || lastEndorsement.endorsed_place?.trim() || lastEndorsement.issuance_date?.trim()))) {
-      setEndorsements((prev) => [
-        ...prev,
-        {
-          title: "",
-          endorsedby_1: "",
-          endorsed_place: "",
-          issuance_date: "",
-          validity_date: "",
-          endorsement_type: "",
-        },
-      ]);
-    } else {
-      toast.error("Please fill at least one field in the current endorsement before adding another.");
-    }
+    setNewMainTitle("");
+    setOpenTitleDialog(true);
+  };
+
+  const handleAddEndorsementItem = (groupIndex) => {
+    const updated = [...endorsementGroups];
+    updated[groupIndex].items.push({
+      title: "",
+      endorsedby_1: "",
+      endorsed_place: "",
+      issuance_date: "",
+      validity_date: "",
+      endorsement_type: "",
+    });
+    setEndorsementGroups(updated);
+  };
+  const handleHeaderChange = (index, value) => {
+    const updatedEndorsements = [...endorsements];
+    updatedEndorsements[index].headerText = value;
+    setEndorsements(updatedEndorsements);
+  };
+
+  const handleAddSectionHeader = () => {
+    setEndorsements((prev) => [
+      ...prev,
+      {
+        type: "header",
+        headerText: "",
+      },
+    ]);
   };
 
   const handleDeleteEndorsement = (index) => {
@@ -760,41 +770,168 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
             </Stack>
 
             {/* Endorsements Section */}
-            <Stack spacing={2}>
-              {Array.isArray(endorsements) &&
-                endorsements.length > 0 &&
-                endorsements.map((endorsement, index) => (
-                  <Box
-                    key={index}
-                    sx={{
-                      border: "1px solid #e0e0e0",
-                      borderRadius: 2,
-                      p: 2,
-                      backgroundColor: "#f9f9f9",
-                    }}
-                  >
-                    <Stack spacing={2}>
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <Typography variant="subtitle2" color="primary">
-                          Endorsement {index + 1}
-                        </Typography>
-                        <IconButton color="error" onClick={() => handleDeleteEndorsement(index)} aria-label="delete endorsement" size="small">
+            <Stack spacing={3}>
+              <Box
+                sx={{
+                  border: "1px solid #e0e0e0",
+                  borderRadius: 2,
+                  p: 2,
+                }}
+              >
+                {/* Endorsements Section */}
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                  Endorsements
+                </Typography>
+
+                <Stack spacing={3}>
+                  {endorsementGroups.map((group, gIndex) => (
+                    <Box key={gIndex} sx={{}}>
+                      {/* Section Header with Main Title */}
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+                        <TextField
+                          label="Main Title"
+                          value={group.mainTitle}
+                          onChange={(e) => {
+                            const updated = [...endorsementGroups];
+                            updated[gIndex].mainTitle = e.target.value;
+                            setEndorsementGroups(updated);
+                          }}
+                          size="small"
+                          sx={{ flex: 1, mr: 2 }}
+                        />
+                        <IconButton
+                          color="error"
+                          onClick={() => {
+                            const updated = [...endorsementGroups];
+                            updated.splice(gIndex, 1);
+                            setEndorsementGroups(updated);
+                            toast.success("Section removed successfully");
+                          }}
+                        >
                           <DeleteIcon />
                         </IconButton>
                       </Box>
 
-                      <TextField label="Title" value={endorsement.title || ""} onChange={(e) => handleEndorsementChange(index, "title", e.target.value)} fullWidth size="small" />
-                      <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
-                        <TextField label="Endorsed By" value={endorsement.endorsedby_1 || ""} onChange={(e) => handleEndorsementChange(index, "endorsedby_1", e.target.value)} fullWidth size="small" />
-                        <TextField label="Endorsed Place" value={endorsement.endorsed_place || ""} onChange={(e) => handleEndorsementChange(index, "endorsed_place", e.target.value)} fullWidth size="small" />
-                        <TextField label="Issuance Date" value={endorsement.issuance_date || ""} onChange={(e) => handleEndorsementChange(index, "issuance_date", e.target.value)} fullWidth size="small" />
-                        <TextField label="Validity Date" value={endorsement.validity_date || ""} onChange={(e) => handleEndorsementChange(index, "validity_date", e.target.value)} fullWidth size="small" />
-                        <TextField label="endorsement_type" value={endorsement.endorsement_type || ""} onChange={(e) => handleEndorsementChange(index, "endorsement_type", e.target.value)} fullWidth size="small" />
-                      </Box>
-                    </Stack>
-                  </Box>
-                ))}
-              <CommonButton text="Add Endorsement" variant="outlined" onClick={handleAddEndorsement} sx={{ alignSelf: "flex-start" }} />
+                      {/* Inner Endorsement Items */}
+                      {group.items.map((item, iIndex) => (
+                        <Box
+                          key={iIndex}
+                          sx={{
+                            border: "1px solid #e0e0e0",
+                            borderRadius: 2,
+                            p: 2,
+                            mb: 2,
+                            backgroundColor: "#fff",
+                          }}
+                        >
+                          <Stack spacing={2}>
+                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <Typography variant="subtitle2" color="primary">
+                                Endorsement {iIndex + 1}
+                              </Typography>
+                              <IconButton
+                                color="error"
+                                onClick={() => {
+                                  const updated = [...endorsementGroups];
+                                  updated[gIndex].items.splice(iIndex, 1);
+                                  setEndorsementGroups(updated);
+                                }}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </Box>
+
+                            <TextField
+                              label="Title"
+                              value={item.title}
+                              onChange={(e) => {
+                                const updated = [...endorsementGroups];
+                                updated[gIndex].items[iIndex].title = e.target.value;
+                                setEndorsementGroups(updated);
+                              }}
+                              size="small"
+                              fullWidth
+                            />
+
+                            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+                              <TextField
+                                label="Endorsed By"
+                                value={item.endorsedby_1}
+                                onChange={(e) => {
+                                  const updated = [...endorsementGroups];
+                                  updated[gIndex].items[iIndex].endorsedby_1 = e.target.value;
+                                  setEndorsementGroups(updated);
+                                }}
+                                size="small"
+                              />
+                              <TextField
+                                label="Endorsed Place"
+                                value={item.endorsed_place}
+                                onChange={(e) => {
+                                  const updated = [...endorsementGroups];
+                                  updated[gIndex].items[iIndex].endorsed_place = e.target.value;
+                                  setEndorsementGroups(updated);
+                                }}
+                                size="small"
+                              />
+                              <TextField
+                                label="Issuance Date"
+                                value={item.issuance_date}
+                                onChange={(e) => {
+                                  const updated = [...endorsementGroups];
+                                  updated[gIndex].items[iIndex].issuance_date = e.target.value;
+                                  setEndorsementGroups(updated);
+                                }}
+                                size="small"
+                              />
+                              <TextField
+                                label="Validity Date"
+                                value={item.validity_date}
+                                onChange={(e) => {
+                                  const updated = [...endorsementGroups];
+                                  updated[gIndex].items[iIndex].validity_date = e.target.value;
+                                  setEndorsementGroups(updated);
+                                }}
+                                size="small"
+                              />
+                              <TextField
+                                label="Endorsement Type"
+                                value={item.endorsement_type}
+                                onChange={(e) => {
+                                  const updated = [...endorsementGroups];
+                                  updated[gIndex].items[iIndex].endorsement_type = e.target.value;
+                                  setEndorsementGroups(updated);
+                                }}
+                                size="small"
+                              />
+                            </Box>
+                          </Stack>
+                        </Box>
+                      ))}
+
+                      {/* Add Inner Endorsement Button */}
+                      <CommonButton
+                        text="Add Endorsement"
+                        variant="outlined"
+                        onClick={() => {
+                          const updated = [...endorsementGroups];
+                          updated[gIndex].items.push({
+                            title: "",
+                            endorsed_place: "",
+                            issuance_date: "",
+                            validity_date: "",
+                            endorsement_type: "",
+                          });
+                          setEndorsementGroups(updated);
+                        }}
+                      />
+                    </Box>
+                  ))}
+
+                  {/* ✅ Add Main Section Button — shown once */}
+                  <CommonButton sx={{ width: "30%" }} text="Add Endorsement Section" variant="outlined" onClick={() => setEndorsementGroups((prev) => [...prev, { mainTitle: "", items: [] }])} />
+                </Stack>
+              </Box>
             </Stack>
 
             <Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mt: 3 }}>

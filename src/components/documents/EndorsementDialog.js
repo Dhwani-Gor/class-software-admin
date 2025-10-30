@@ -7,7 +7,7 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
   const [selectedEndorsement, setSelectedEndorsement] = useState(null);
   const [reportDetails, setReportDetails] = useState({});
   const [radioValues, setRadioValues] = useState({});
-
+  console.log(reportDetails.data, "data");
   const fetchReportDetails = async () => {
     if (!reportDetailsId) return;
     try {
@@ -19,8 +19,9 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
   };
 
   useEffect(() => {
+    fetchReportDetails(reportDetailsId);
+
     if (open) {
-      fetchReportDetails();
       setSelectedEndorsement(null);
       setRadioValues({});
     }
@@ -43,6 +44,30 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
     const date = new Date(dateStr);
     return isNaN(date) ? "" : date.toLocaleDateString("en-GB");
   };
+
+  const isEndorsementDisabled = (item) => {
+    if (!reportDetails || Object.keys(reportDetails).length === 0 || !item?.title) return false;
+
+    // Extract endorsement number from title (like "1st", "2nd", etc.)
+    const numberMatch = item.title.match(/\d+/);
+    if (!numberMatch) return false;
+
+    const num = numberMatch[0];
+    const fieldsToCheck = [`endorsed_by_${num}`, `issuance_place_${num}`, `issuance_date_${num}`];
+
+    // Check if ANY of the fields have a value (not all need to be filled)
+    return fieldsToCheck.some((field) => {
+      const val = reportDetails?.data?.[field];
+      return val !== undefined && val !== null && val !== "" && val !== "-";
+    });
+  };
+
+  useEffect(() => {
+    if (open) {
+      setSelectedEndorsement(null);
+      setRadioValues({});
+    }
+  }, [open, reportDetails]);
 
   const applyStrikethrough = (text) =>
     text
@@ -140,20 +165,23 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
               if (item) handleEndorsementSelect(item);
             }}
           >
-            {endorsementList.map((item, idx) => (
-              <Box key={idx} sx={{ mb: 2 }}>
-                <FormControlLabel
-                  value={item.title}
-                  control={<Radio />}
-                  label={
-                    <Typography variant="body1" fontWeight={500}>
-                      {item.title}
-                    </Typography>
-                  }
-                />
-                {selectedEndorsement?.title === item.title && renderEndorsementFields(item)}
-              </Box>
-            ))}
+            {endorsementList.map((item, idx) => {
+              const disabled = isEndorsementDisabled(item);
+              return (
+                <Box key={idx} sx={{ mb: 2, opacity: disabled ? 0.6 : 1 }}>
+                  <FormControlLabel
+                    value={item.title}
+                    control={<Radio disabled={disabled} />}
+                    label={
+                      <Typography variant="body1" fontWeight={500}>
+                        {item.title}
+                      </Typography>
+                    }
+                  />
+                  {selectedEndorsement?.title === item.title && !disabled && renderEndorsementFields(item)}
+                </Box>
+              );
+            })}
           </MuiRadioGroup>
         ) : (
           <Typography variant="body2" color="text.secondary">
