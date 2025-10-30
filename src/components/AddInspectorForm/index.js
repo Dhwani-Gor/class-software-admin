@@ -54,6 +54,12 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [isFormReady, setIsFormReady] = useState(false);
   const dispatch = useDispatch();
+  const [roleShipMap, setRoleShipMap] = useState({
+    agent: [],
+    inspector: [],
+    staff: [],
+  });
+
   const router = useRouter();
   const isUpdate = !!userId;
 
@@ -87,6 +93,27 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
   useEffect(() => {
     fetchClients();
   }, []);
+
+  useEffect(() => {
+    if (!isFormReady) return;
+
+    // Save the last selected ships for the previous role
+    const currentRole = userRole;
+    const currentShips = getValues("clientIds");
+
+    setRoleShipMap((prev) => ({
+      ...prev,
+      [currentRole]: currentShips,
+    }));
+  }, [watch("clientIds")]); // runs whenever ship selection changes
+
+  useEffect(() => {
+    if (!isFormReady) return;
+
+    // Load the ships corresponding to the selected role
+    const savedShips = roleShipMap[userRole] || [];
+    setValue("clientIds", savedShips);
+  }, [userRole, isFormReady]);
 
   const fetchClients = async () => {
     try {
