@@ -13,7 +13,6 @@ import { useRouter } from "next/navigation";
 const SurveyReport = ({ id, reportNumber }) => {
   const router = useRouter();
   const [reportDetails, setReportDetails] = useState(null);
-  console.log(reportDetails, "report details");
   const [clientData, setClientData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editorContent, setEditorContent] = useState("");
@@ -25,8 +24,6 @@ const SurveyReport = ({ id, reportNumber }) => {
   const [additionalFieldData, setAdditionalFieldData] = useState([]);
   const [places, setPlaces] = useState([]);
   const [isLastVisit, setIsLastVisit] = useState(false);
-  console.log(isLastVisit, "isLastVisit");
-  console.log(places, "places");
   const currentDate = new Date();
 
   const formatSurveyName = (name) => {
@@ -89,7 +86,6 @@ const SurveyReport = ({ id, reportNumber }) => {
       const issuer = reportDetailsInput?.map((i) => i?.issuer?.name);
       const portOfSurvey = reportDetailsInput?.map((i) => i?.place?.toLowerCase());
 
-      console.log(portOfSurvey, "port of survey");
       const uniquePorts = [...new Set(portOfSurvey)].join(",").toUpperCase();
       const uniqueSurveyors = [...new Set(issuer)].join(",").toUpperCase();
 
@@ -397,7 +393,6 @@ of Class recommended now or previously, being dealt with as recommended.</p>
             setJournalId(uniqueJournalId);
             const visitResponse = await getVisitDetails("journalId", uniqueJournalId);
             const visits = visitResponse?.data?.data;
-            console.log(visits, "visits");
             if (visits?.length) {
               setLastVisit(visits[0]?.date);
               setFirstVisit(visits[visits.length - 1]?.date);

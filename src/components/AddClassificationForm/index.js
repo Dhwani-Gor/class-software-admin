@@ -120,34 +120,9 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
     const updatedRows = [...classificationRows];
     updatedRows[index][field] = value;
 
+    // Show warnings for dependencies
     if (field === "surveyName") {
       checkAndShowSSHWarning(value);
-    }
-
-    if (field === "surveyDate") {
-      updatedRows[index].issuanceDate = value;
-
-      if (updatedRows[index].surveyName) {
-        const { dueDate, rangeFrom, rangeTo } = calculateDates(value || new Date().toISOString().split("T")[0], updatedRows[index].surveyName, existingSurveys);
-        updatedRows[index].dueDate = dueDate;
-        updatedRows[index].rangeFrom = rangeFrom;
-        updatedRows[index].rangeTo = rangeTo;
-      }
-    } else if (field === "issuanceDate") {
-      if (updatedRows[index].surveyName) {
-        const { dueDate, rangeFrom, rangeTo } = calculateDates(value || new Date().toISOString().split("T")[0], updatedRows[index].surveyName, existingSurveys);
-        updatedRows[index].dueDate = dueDate;
-        updatedRows[index].rangeFrom = rangeFrom;
-        updatedRows[index].rangeTo = rangeTo;
-      }
-    } else if (field === "surveyName") {
-      const dateToUse = updatedRows[index].issuanceDate || updatedRows[index].surveyDate;
-      if (dateToUse) {
-        const { dueDate, rangeFrom, rangeTo } = calculateDates(dateToUse, value, existingSurveys);
-        updatedRows[index].dueDate = dueDate;
-        updatedRows[index].rangeFrom = rangeFrom;
-        updatedRows[index].rangeTo = rangeTo;
-      }
     }
 
     setClassificationRows(updatedRows);
@@ -276,6 +251,27 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
       setClassificationRows([createEmptyRow()]);
     }
   }, [selectedShip, selectedShip?.id]);
+
+  useEffect(() => {
+    // Run date calculations whenever surveyName/date changes OR existingSurveys update
+    const updatedRows = classificationRows.map((row) => {
+      if (row.surveyName && (row.surveyDate || row.issuanceDate)) {
+        const dateToUse = row.issuanceDate || row.surveyDate;
+        const { dueDate, rangeFrom, rangeTo } = calculateDates(dateToUse, row.surveyName, existingSurveys);
+
+        return {
+          ...row,
+          dueDate,
+          rangeFrom,
+          rangeTo,
+        };
+      }
+      return row;
+    });
+
+    setClassificationRows(updatedRows);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classificationRows.map((r) => `${r.surveyName}-${r.surveyDate}-${r.issuanceDate}`).join(), existingSurveys]);
 
   return (
     <Box spacing={2} sx={{ marginTop: "2rem", width: "100%" }}>

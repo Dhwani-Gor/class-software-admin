@@ -21,15 +21,12 @@ const Sidebar = styled(Drawer)(({ theme }) => ({
 }));
 
 const SidebarComponent = ({ isSidebarOpen }) => {
-  const { roleId, permissions } = useAuth(); // Get permissions from context
-  console.log("=>permissions", permissions)
+  const { roleId, permissions } = useAuth();
   const pathName = usePathname();
   const [activeTab, setActiveTab] = useState(pathName);
 
-  // Get user data from localStorage
   const userData = JSON.parse(localStorage.getItem("data") || "{}");
 
-  // Module to menu item mapping
   const moduleMenuMapping = {
     "Clients": "Clients",
     "Users": "Users",

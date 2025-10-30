@@ -16,7 +16,6 @@ const currentDate = new Date();
 const TextEditor = ({ id }) => {
   const router = useRouter();
   const [reportDetails, setReportDetails] = useState([]);
-  console.log(reportDetails, "report details");
   const [clientData, setClientData] = useState();
   const [loading, setLoading] = useState(true);
   const [editorContent, setEditorContent] = useState("");
@@ -24,7 +23,6 @@ const TextEditor = ({ id }) => {
   const [additionalFieldData, setAdditionalFieldData] = useState([]);
   const [statutoryData, setStatutoryData] = useState([]);
   const [auditsData, setAuditsData] = useState([]);
-  console.log(statutoryData, "statutory date");
   const [systemVariables, setSystemVariables] = useState();
   const today = moment();
   const companyName = systemVariables?.data?.find((item) => item.name === "company_name")?.information || "-";
