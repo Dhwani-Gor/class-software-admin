@@ -82,6 +82,13 @@ const ReportingForm = () => {
   const [endorsementValues, setEndorsementValues] = useState([]);
   const [endorsements, setEndorsements] = useState([]);
   const [surveyType, setSurveyType] = useState(false);
+  const [endorsementDate, setEndorsementDate] = useState(null);
+
+  useEffect(() => {
+    if (reportDetails) {
+      setEndorsementDate(reportDetails.endorsementDate);
+    }
+  }, [reportDetails]);
 
   const reportSchema = yup.object().shape({
     typesOfSurvey: yup.string().required("Type of survey is required"),
@@ -497,12 +504,12 @@ const ReportingForm = () => {
   };
 
   const handleFullReportGeneration = async () => {
-    if (endorsements?.length > 0 && reportDetails.endorsementDate !== null) {
+    if (endorsements?.length > 0 && endorsementDate !== null) {
       setEndorsementTitle(endorsements);
       setOpenEndrosemet(true);
     } else {
       await fetchReportDetails(reportDetails?.id);
-      if (reportDetails.lastUnarchivedAt !== null && !reportDetails?.endorsementDate) {
+      if (reportDetails.lastUnarchivedAt !== null && endorsementDate == null) {
         setShowAmendmentDialog(true);
       } else {
         setOpen(true);
@@ -1214,7 +1221,7 @@ const ReportingForm = () => {
             {/* Action Buttons */}
             <Stack direction="row" gap={"20px"}>
               <CommonButton onClick={handleGenerateReport} sx={{ marginTop: 3 }} text="Save" isLoading={loading} />
-              {selectedRow?.status === "Completed" && <CommonButton onClick={handleFullReportGeneration} sx={{ marginTop: 3 }} text="Generate Certificate" isLoading={loading} disabled={!reportDetails || surveyType} />}
+              {selectedRow?.status === "Completed" && <CommonButton onClick={handleFullReportGeneration} sx={{ marginTop: 3 }} text="Generate Certificate" isLoading={loading} disabled={!reportDetails} />}
             </Stack>
           </CommonCard>
         </Box>
