@@ -10,6 +10,7 @@ import { addAdditionalFields, updateAdditionalFields, fetchAdditionalDetails, fe
 import CommonButton from "@/components/CommonButton";
 import { toast } from "react-toastify";
 import moment from "moment";
+import JournalConfirmationDialog from "@/components/Dialogs/JournalConfirmationDialog";
 
 const sections = [
   { key: "coc", label: "Condition of Class", options: ["Hull", "Machinery"] },
@@ -40,6 +41,12 @@ const AdditionalFieldsList = () => {
   const [editingRows, setEditingRows] = useState({});
   const [errorMsg, setErrorMsg] = useState({ client: "", section: "" });
 
+  const [showJournalDialog, setShowJournalDialog] = useState(false);
+  const [dialogData, setDialogData] = useState({ oldJournal: "", newJournal: "", sectionKey: "" });
+  const [journalChoice, setJournalChoice] = useState("correct"); // or "followup"
+  const [originalRows, setOriginalRows] = useState({});
+
+  const [isHistory, setIsHistory] = useState(false);
   // Fetch Clients
   useEffect(() => {
     const fetchClients = async () => {
@@ -66,6 +73,12 @@ const AdditionalFieldsList = () => {
     };
     fetchJournals();
   }, [selectedClient]);
+
+
+  useEffect(() => {
+    console.log('79===>', showJournalDialog)
+  }, [showJournalDialog]);
+
 
   // Fetch Additional Details
   useEffect(() => {
@@ -103,7 +116,25 @@ const AdditionalFieldsList = () => {
   const handleEditRow = (sectionKey, row) => {
     setSelectedSectionKey(sectionKey);
     setEditingRows((prev) => ({ ...prev, [sectionKey]: row }));
+
+    // store the current row for editing
+    setEditingRows((prev) => ({ ...prev, [sectionKey]: { ...row } }));
+
+    // store the original row for comparison
+    setOriginalRows((prev) => ({ ...prev, [sectionKey]: { ...row } }));
   };
+
+  const saveOrUpdate = async (sectionKey, row, isHistory) => {
+    const payload = {
+      sectionKey,
+      clientId: selectedClient,
+      data: { ...row, referenceId: row.referenceNo, isHistory },
+    };
+
+    const res = await updateAdditionalFields(row.id, payload);
+    if (res?.data?.message) toast.success(res.data.message);
+  };
+
 
   const handleCancelEdit = (sectionKey) => {
     setEditingRows((prev) => ({ ...prev, [sectionKey]: null }));
@@ -119,9 +150,28 @@ const AdditionalFieldsList = () => {
     }));
   };
 
+
+
   const handleAddOrUpdate = async (sectionKey) => {
     const row = editingRows[sectionKey];
+    const original = originalRows[sectionKey]; // stored when edit starts
+
     if (!row || !selectedClient) return;
+
+    const changedFields = Object.keys(row).filter((key) => row[key] !== original?.[key]);
+
+    const bothChanged =
+      changedFields.includes("referenceNo") && changedFields.includes("action");
+
+    if (bothChanged) {
+      setDialogData({
+        oldJournal: original?.referenceNo || "",
+        newJournal: row?.referenceNo || "",
+        sectionKey,
+      });
+      setShowJournalDialog(true);
+      return; // stop here, dialog will handle confirm
+    }
 
     const payload = {
       sectionKey,
@@ -189,205 +239,224 @@ const AdditionalFieldsList = () => {
     { field: "action", headerName: "Action", flex: 1 },
     editable
       ? {
-          field: "actions",
-          headerName: "Actions",
-          flex: 1,
-          renderCell: (params) => (
-            <Box sx={{ display: "flex", gap: 1, mt: 0.5 }}>
-              <IconButton color="primary" onClick={() => handleEditRow(sectionKey, params.row)}>
-                <EditIcon fontSize="small" />
-              </IconButton>
-              <IconButton color="error" onClick={() => deleteRow(sectionKey, params.row.id)}>
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Box>
-          ),
-        }
+        field: "actions",
+        headerName: "Actions",
+        flex: 1,
+        renderCell: (params) => (
+          <Box sx={{ display: "flex", gap: 1, mt: 0.5 }}>
+            <IconButton color="primary" onClick={() => handleEditRow(sectionKey, params.row)}>
+              <EditIcon fontSize="small" />
+            </IconButton>
+            <IconButton color="error" onClick={() => deleteRow(sectionKey, params.row.id)}>
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        ),
+      }
       : {},
   ];
 
   return (
-    <Box sx={{ p: 3, bgcolor: "white", borderRadius: 2, boxShadow: 1, mt: 2 }}>
-      {/* Client Dropdown */}
-      <FormControl fullWidth sx={{ maxWidth: 300 }}>
-        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, fontSize: 16 }}>
-          Select Ship
-        </Typography>
-        <Select value={selectedClient} onChange={handleClientChange} displayEmpty>
-          <MenuItem value="">
-            <em>Select Ship</em>
-          </MenuItem>
-          {clientsList.map((c) => (
-            <MenuItem key={c.id} value={c.id}>
-              {c.shipName}
-            </MenuItem>
-          ))}
-        </Select>
-        {errorMsg.client && (
-          <Typography variant="caption" color="error">
-            {errorMsg.client}
+    <>
+      <Box sx={{ p: 3, bgcolor: "white", borderRadius: 2, boxShadow: 1, mt: 2 }}>
+        {/* Client Dropdown */}
+        <FormControl fullWidth sx={{ maxWidth: 300 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, fontSize: 16 }}>
+            Select Ship
           </Typography>
-        )}
-      </FormControl>
-
-      {/* Section Dropdown */}
-      <Box sx={{ mt: 3 }} fullWidth maxWidth={300}>
-        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, fontSize: 16 }}>
-          Select Section
-        </Typography>
-        <Select value={selectedSectionKey} onChange={(e) => setSelectedSectionKey(e.target.value)} fullWidth size="small">
-          {sections.map((s) => (
-            <MenuItem key={s.key} value={s.key}>
-              {s.label}
+          <Select value={selectedClient} onChange={handleClientChange} displayEmpty>
+            <MenuItem value="">
+              <em>Select Ship</em>
             </MenuItem>
-          ))}
-        </Select>
-      </Box>
+            {clientsList.map((c) => (
+              <MenuItem key={c.id} value={c.id}>
+                {c.shipName}
+              </MenuItem>
+            ))}
+          </Select>
+          {errorMsg.client && (
+            <Typography variant="caption" color="error">
+              {errorMsg.client}
+            </Typography>
+          )}
+        </FormControl>
 
-      {section && (
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "primary.main" }}>
-            {section.label}
+        {/* Section Dropdown */}
+        <Box sx={{ mt: 3 }} fullWidth maxWidth={300}>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, fontSize: 16 }}>
+            Select Section
           </Typography>
+          <Select value={selectedSectionKey} onChange={(e) => setSelectedSectionKey(e.target.value)} fullWidth size="small">
+            {sections.map((s) => (
+              <MenuItem key={s.key} value={s.key}>
+                {s.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
 
-          <Box sx={{ mb: 3, p: 3, border: "1px solid #e0e0e0", borderRadius: 2, bgcolor: "#f9f9f9" }}>
-            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
-              <TextField
-                value={editingRow?.type || ""}
-                onChange={(e) => handleTypeChange(section.key, e.target.value)}
-                select
-                fullWidth
-                size="small"
-                label={
-                  <span>
-                    Type <span style={{ color: "red" }}>*</span>
-                  </span>
-                }
-              >
-                {section.options.map((opt) => (
-                  <MenuItem key={opt} value={opt}>
-                    {opt}
-                  </MenuItem>
-                ))}
-              </TextField>{" "}
-              <TextField label="Code" value={editingRow?.code || ""} disabled fullWidth size="small" />
-              <TextField
-                label="Reference No"
-                value={editingRow?.referenceNo || ""}
-                onChange={(e) =>
-                  setEditingRows((prev) => ({
-                    ...prev,
-                    [section.key]: { ...prev[section.key], referenceNo: e.target.value },
-                  }))
-                }
-                select
-                fullWidth
-                size="small"
-              >
-                {/* Option to select nothing */}
-                <MenuItem value="">&nbsp;</MenuItem>
+        {section && (
+          <Box sx={{ mt: 4 }}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "primary.main" }}>
+              {section.label}
+            </Typography>
 
-                {journalList.length > 0 ? (
-                  journalList.map((journal) => (
-                    <MenuItem key={journal.id} value={journal.id}>
-                      {journal.journalTypeId}
+            <Box sx={{ mb: 3, p: 3, border: "1px solid #e0e0e0", borderRadius: 2, bgcolor: "#f9f9f9" }}>
+              <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 2 }}>
+                <TextField
+                  value={editingRow?.type || ""}
+                  onChange={(e) => handleTypeChange(section.key, e.target.value)}
+                  select
+                  fullWidth
+                  size="small"
+                  label={
+                    <span>
+                      Type <span style={{ color: "red" }}>*</span>
+                    </span>
+                  }
+                >
+                  {section.options.map((opt) => (
+                    <MenuItem key={opt} value={opt}>
+                      {opt}
                     </MenuItem>
-                  ))
-                ) : (
-                  <MenuItem disabled>No Journals Found</MenuItem>
-                )}
-              </TextField>
-              <TextField label="Action" value={editingRow?.action || ""} onChange={(e) => setEditingRows((prev) => ({ ...prev, [section.key]: { ...prev[section.key], action: e.target.value } }))} select fullWidth size="small">
-                <MenuItem value="">&nbsp;</MenuItem>
-                {actions.map((a) => (
-                  <MenuItem key={a} value={a}>
-                    {a}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <>
-                <TextField label="Due Date" type="date" value={editingRow?.dueDate || ""} onChange={(e) => setEditingRows((prev) => ({ ...prev, [section.key]: { ...prev[section.key], dueDate: e.target.value } }))} fullWidth size="small" InputLabelProps={{ shrink: true }} />
-              </>
-            </Box>
+                  ))}
+                </TextField>{" "}
+                <TextField label="Code" value={editingRow?.code || ""} disabled fullWidth size="small" />
+                <TextField
+                  label="Reference No"
+                  value={editingRow?.referenceNo || ""}
+                  onChange={(e) =>
+                    setEditingRows((prev) => ({
+                      ...prev,
+                      [section.key]: { ...prev[section.key], referenceNo: e.target.value },
+                    }))
+                  }
+                  select
+                  fullWidth
+                  size="small"
+                >
+                  {/* Option to select nothing */}
+                  <MenuItem value="">&nbsp;</MenuItem>
 
-            {/* Description */}
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
-                Description <span style={{ color: "red" }}>*</span>
-              </Typography>
-              <TextareaAutosize minRows={3} value={editingRow?.description || ""} onChange={(e) => setEditingRows((prev) => ({ ...prev, [section.key]: { ...prev[section.key], description: e.target.value } }))} style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "14px", fontFamily: "inherit", resize: "vertical" }} />
-            </Box>
+                  {journalList.length > 0 ? (
+                    journalList.map((journal) => (
+                      <MenuItem key={journal.id} value={journal.id}>
+                        {journal.journalTypeId}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem disabled>No Journals Found</MenuItem>
+                  )}
+                </TextField>
+                <TextField label="Action" value={editingRow?.action || ""} onChange={(e) => setEditingRows((prev) => ({ ...prev, [section.key]: { ...prev[section.key], action: e.target.value } }))} select fullWidth size="small">
+                  <MenuItem value="">&nbsp;</MenuItem>
+                  {actions.map((a) => (
+                    <MenuItem key={a} value={a}>
+                      {a}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <>
+                  <TextField label="Due Date" type="date" value={editingRow?.dueDate || ""} onChange={(e) => setEditingRows((prev) => ({ ...prev, [section.key]: { ...prev[section.key], dueDate: e.target.value } }))} fullWidth size="small" InputLabelProps={{ shrink: true }} />
+                </>
+              </Box>
 
-            {/* Remarks */}
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
-                Remarks
-              </Typography>
-              <TextareaAutosize minRows={3} value={editingRow?.remarks || ""} onChange={(e) => setEditingRows((prev) => ({ ...prev, [section.key]: { ...prev[section.key], remarks: e.target.value } }))} style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "14px", fontFamily: "inherit", resize: "vertical" }} />
-            </Box>
+              {/* Description */}
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
+                  Description <span style={{ color: "red" }}>*</span>
+                </Typography>
+                <TextareaAutosize minRows={3} value={editingRow?.description || ""} onChange={(e) => setEditingRows((prev) => ({ ...prev, [section.key]: { ...prev[section.key], description: e.target.value } }))} style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "14px", fontFamily: "inherit", resize: "vertical" }} />
+              </Box>
 
-            {/* Save / Cancel */}
-            <Box sx={{ mt: 2, display: "flex", gap: 1, justifyContent: "flex-end" }}>
-              <CommonButton variant="contained" disabled={!selectedClient || !editingRow?.type || !editingRow?.description} onClick={() => handleAddOrUpdate(section.key)} text={editingRow?.id ? "Update" : "Save"} />
-              <CommonButton variant="outlined" onClick={() => handleCancelEdit(section.key)} text="Cancel" />
+              {/* Remarks */}
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
+                  Remarks
+                </Typography>
+                <TextareaAutosize minRows={3} value={editingRow?.remarks || ""} onChange={(e) => setEditingRows((prev) => ({ ...prev, [section.key]: { ...prev[section.key], remarks: e.target.value } }))} style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "14px", fontFamily: "inherit", resize: "vertical" }} />
+              </Box>
+
+              {/* Save / Cancel */}
+              <Box sx={{ mt: 2, display: "flex", gap: 1, justifyContent: "flex-end" }}>
+                <CommonButton variant="contained" disabled={!selectedClient || !editingRow?.type || !editingRow?.description} onClick={() => handleAddOrUpdate(section.key)} text={editingRow?.id ? "Update" : "Save"} />
+                <CommonButton variant="outlined" onClick={() => handleCancelEdit(section.key)} text="Cancel" />
+              </Box>
             </Box>
           </Box>
-        </Box>
-      )}
+        )}
 
-      {/* All Sections Listing */}
-      {selectedClient && (
-        <Box sx={{ mt: 6 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "primary.main" }}>
-            All Sections
-          </Typography>
+        {/* All Sections Listing */}
+        {selectedClient && (
+          <Box sx={{ mt: 6 }}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "primary.main" }}>
+              All Sections
+            </Typography>
 
-          {sections.map((s) => {
-            const rows = sectionsData[s.key] || [];
-            return (
-              <Box key={s.key} sx={{ mb: 4 }}>
-                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
-                  {s.label}
-                </Typography>
+            {sections.map((s) => {
+              const rows = sectionsData[s.key] || [];
+              return (
+                <Box key={s.key} sx={{ mb: 4 }}>
+                  <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
+                    {s.label}
+                  </Typography>
 
-                <DataGrid
-                  rows={rows}
-                  columns={commonColumns(s.key, journalList)}
-                  getRowId={(row) => row.id || Math.random()}
-                  pageSize={10}
-                  rowsPerPageOptions={[10]}
-                  hideFooter
-                  sx={{
-                    bgcolor: "white",
-                    borderRadius: 2,
-                    maxHeight: 400,
-                    overflow: "auto",
-                  }}
-                  slots={{
-                    noRowsOverlay: () => (
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          color: "text.secondary",
-                          fontSize: 14,
-                          fontWeight: 500,
-                          mt: 2,
-                        }}
-                      >
-                        No {s.label} Recommended
-                      </Box>
-                    ),
-                  }}
-                />
-              </Box>
-            );
-          })}
-        </Box>
-      )}
-    </Box>
+                  <DataGrid
+                    rows={rows}
+                    columns={commonColumns(s.key, journalList)}
+                    getRowId={(row) => row.id || Math.random()}
+                    pageSize={10}
+                    rowsPerPageOptions={[10]}
+                    hideFooter
+                    sx={{
+                      bgcolor: "white",
+                      borderRadius: 2,
+                      maxHeight: 400,
+                      overflow: "auto",
+                    }}
+                    slots={{
+                      noRowsOverlay: () => (
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "text.secondary",
+                            fontSize: 14,
+                            fontWeight: 500,
+                            mt: 2,
+                          }}
+                        >
+                          No {s.label} Recommended
+                        </Box>
+                      ),
+                    }}
+                  />
+                </Box>
+              );
+            })}
+          </Box>
+        )}
+      </Box>
+
+      {showJournalDialog && <JournalConfirmationDialog
+        open={showJournalDialog}
+        oldJournal={dialogData.oldJournal}
+        newJournal={dialogData.newJournal}
+        journalChoice={journalChoice}
+        onChoiceChange={setJournalChoice}
+        onCancel={() => setShowJournalDialog(false)}
+        setIsHistory={setIsHistory}
+        onClick={async () => {
+          const row = editingRows[dialogData.sectionKey];
+          await saveOrUpdate(dialogData.sectionKey, row, isHistory);
+          setShowJournalDialog(false)
+        }}
+      />}
+    </>
   );
 };
+
+
 
 export default AdditionalFieldsList;
