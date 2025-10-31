@@ -523,6 +523,7 @@ const ReportingForm = () => {
       const isArrayData = Array.isArray(extraFieldsOrEndorsements);
 
       const { endorsementValues: _, ...cleanReportData } = reportDetails.data || {};
+      const isEndorsement = !isArrayData && extraFieldsOrEndorsements?.isEndorsement === true;
 
       const payload = {
         reportDetailId: reportDetails?.id,
@@ -534,6 +535,7 @@ const ReportingForm = () => {
           amdRemarks,
           stamp: 6,
           companyText: 8,
+          isEndorsement: isEndorsement ? true : false,
           ...(reportName.toLocaleLowerCase() === "certificate of class" && {
             logo: 7,
           }),
@@ -1172,7 +1174,7 @@ const ReportingForm = () => {
                 <Grid2 item size={{ md: 3 }}>
                   <FormControl fullWidth>
                     <Typography variant="body1" mb={1.5} fontWeight={500}>
-                      Endorsed / Issued By {!surveyType && <span style={{ color: "red" }}>*</span>}
+                      Issued By {!surveyType && <span style={{ color: "red" }}>*</span>}
                     </Typography>
                     <Select value={selectSurveyor} onChange={handleSurveyor} displayEmpty name="issuedBy" error={!!errors.issuedBy}>
                       <MenuItem value="" disabled>

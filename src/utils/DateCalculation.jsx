@@ -32,7 +32,7 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
     if (surveyNameNormalized.includes("special") || surveyNameNormalized.includes("continuous")) {
         const dueDate = addYears(issuanceDateObj, 5);
         const rangeFrom = addMonths(dueDate, -3);
-        const rangeTo = dueDate;
+        const rangeTo = addMonths(dueDate, 3);
         const anniversaryDate = dueDate;
 
         return {
