@@ -118,13 +118,26 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
   };
   const handleChange = (section, index, field, value) => {
     const updatedRows = [...classificationRows];
-    updatedRows[index][field] = value;
+    const currentRow = { ...updatedRows[index] };
+
+    // Auto-set Assignment Date when Survey Date changes
+    if (field === "surveyDate") {
+      currentRow.surveyDate = value;
+
+      // Only auto-update issuanceDate if it was empty or same as previous surveyDate
+      if (!currentRow.issuanceDate || currentRow.issuanceDate === classificationRows[index].surveyDate) {
+        currentRow.issuanceDate = value;
+      }
+    } else {
+      currentRow[field] = value;
+    }
 
     // Show warnings for dependencies
     if (field === "surveyName") {
       checkAndShowSSHWarning(value);
     }
 
+    updatedRows[index] = currentRow;
     setClassificationRows(updatedRows);
   };
 
