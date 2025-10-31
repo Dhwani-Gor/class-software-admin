@@ -895,7 +895,7 @@ const ReportingForm = () => {
 
             <Grid2 container spacing={2}>
               {/* Row 1 */}
-              <Grid2 item size={{ md: 3 }}>
+              <Grid2 item size={{ xs: 12, sm: 6, md: 3 }}>
                 <Controller name="typesOfSurvey" control={control} render={({ field }) => <CommonInput {...field} disabled label={<>Type of Survey {!surveyType && <span style={{ color: "red" }}>*</span>}</>} placeholder="Type of Survey" />} />
                 {errors.typesOfSurvey && (
                   <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
@@ -904,7 +904,7 @@ const ReportingForm = () => {
                 )}
               </Grid2>
 
-              <Grid2 item size={{ md: 3 }}>
+              <Grid2 item size={{ xs: 12, sm: 6, md: 3 }}>
                 {/* {!surveyType && ( */}
                 <FormControl fullWidth>
                   <Typography variant="body1" fontWeight={"500"} mb={1.5}>
@@ -928,12 +928,12 @@ const ReportingForm = () => {
                 </FormControl>
                 {/* )} */}
               </Grid2>
-              <Grid2 size={{ md: 3 }}>
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
                 <Controller name="anniversaryDate" control={control} render={({ field }) => <CommonInput {...field} type="date" label="Anniversary Date" disabled />} />
               </Grid2>
-              <Grid2 size={{ md: 3 }}></Grid2>
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}></Grid2>
 
-              <Grid2 size={{ md: 3 }}>
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
                 <Controller
                   name="issuancedate"
                   control={control}
@@ -952,7 +952,7 @@ const ReportingForm = () => {
               </Grid2>
               {/* )} */}
               {!hiddenReports.map((r) => r?.toLowerCase()).includes(reportName?.toLowerCase()) && (
-                <Grid2 size={{ md: 3 }}>
+                <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
                   <Controller
                     name="validitydate"
                     control={control}
@@ -978,7 +978,7 @@ const ReportingForm = () => {
                 </Grid2>
               )}
 
-              <Grid2 size={{ md: 3 }}>
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
                 <Controller
                   name="certificateBaseDate"
                   control={control}
@@ -996,7 +996,7 @@ const ReportingForm = () => {
                 />
               </Grid2>
 
-              <Grid2 size={{ md: 3 }}>
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
                 <Controller
                   name="surveydate"
                   control={control}
@@ -1020,184 +1020,182 @@ const ReportingForm = () => {
               </Grid2>
               {/* Row 3 — Remaining Fields */}
 
-              <Grid2 container spacing={2} sx={{ mt: 0 }}>
-                {/* Survey Date */}
+              {/* Survey Date */}
 
-                {/* Assignment Date */}
-                <Grid2 size={{ md: 3 }}>
-                  <Controller
-                    name="assignmentDate"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        type="date"
-                        label="Assignment Date"
-                        onChange={(e) => {
-                          field.onChange(e);
-                          handleFieldChange("assignmentDate", e.target.value);
-                        }}
-                      />
-                    )}
-                  />
-                </Grid2>
-
-                {/* Due Date */}
-                <Grid2 size={{ md: 3 }}>
-                  <Controller
-                    name="dueDate"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        type="date"
-                        label="Due Date"
-                        onChange={(e) => {
-                          field.onChange(e);
-                          handleFieldChange("dueDate", e.target.value);
-                        }}
-                      />
-                    )}
-                  />
-                </Grid2>
-
-                {/* Range From */}
-                <Grid2 size={{ md: 3 }}>
-                  <Controller
-                    name="rangeFrom"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        type="date"
-                        label="Range From"
-                        onChange={(e) => {
-                          field.onChange(e);
-                          handleFieldChange("rangeFrom", e.target.value);
-                        }}
-                      />
-                    )}
-                  />
-                </Grid2>
-
-                {/* Range To */}
-                <Grid2 size={{ md: 3 }}>
-                  <Controller
-                    name="rangeTo"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        type="date"
-                        label="Range To"
-                        onChange={(e) => {
-                          field.onChange(e);
-                          handleFieldChange("rangeTo", e.target.value);
-                        }}
-                      />
-                    )}
-                  />
-                </Grid2>
-
-                {/* Postponed Date */}
-                <Grid2 size={{ md: 3 }}>
-                  <Controller
-                    name="postponedDate"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        type="date"
-                        label="Postponed Date"
-                        onChange={(e) => {
-                          field.onChange(e);
-                          handleFieldChange("postponedDate", e.target.value);
-                        }}
-                      />
-                    )}
-                  />
-                </Grid2>
-                {(showExtraEndorsementField || reportDetails?.typeOfCertificate === "extended") && (
-                  <Grid2 size={{ md: 3 }}>
-                    <Controller
-                      name="newValidityDate"
-                      control={control}
-                      render={({ field }) => (
-                        <CommonInput
-                          {...field}
-                          type="date"
-                          label={
-                            <>
-                              New Validity Date <span style={{ color: "red" }}>*</span>
-                            </>
-                          }
-                          onChange={(e) => {
-                            field.onChange(e);
-                            handleFieldChange("newValidityDate", e.target.value);
-                          }}
-                        />
-                      )}
+              {/* Assignment Date */}
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
+                <Controller
+                  name="assignmentDate"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label="Assignment Date"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("assignmentDate", e.target.value);
+                      }}
                     />
-                    {errors.newValidityDate && (
-                      <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                        {errors.newValidityDate.message}
-                      </Typography>
-                    )}
-                  </Grid2>
-                )}
+                  )}
+                />
+              </Grid2>
 
-                {/* Endorsed / Issued By */}
-                <Grid2 item size={{ md: 3 }}>
-                  <FormControl fullWidth>
-                    <Typography variant="body1" mb={1.5} fontWeight={500}>
-                      Issued By {!surveyType && <span style={{ color: "red" }}>*</span>}
-                    </Typography>
-                    <Select value={selectSurveyor} onChange={handleSurveyor} displayEmpty name="issuedBy" error={!!errors.issuedBy}>
-                      <MenuItem value="" disabled>
-                        Select Endorsed / Issued By
-                      </MenuItem>
-                      {surveyorOptions.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    {errors.issuedBy && (
-                      <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                        {errors.issuedBy.message}
-                      </Typography>
-                    )}
-                  </FormControl>
-                </Grid2>
-                <Grid2 item size={{ md: 3 }}>
+              {/* Due Date */}
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
+                <Controller
+                  name="dueDate"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label="Due Date"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("dueDate", e.target.value);
+                      }}
+                    />
+                  )}
+                />
+              </Grid2>
+
+              {/* Range From */}
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
+                <Controller
+                  name="rangeFrom"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label="Range From"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("rangeFrom", e.target.value);
+                      }}
+                    />
+                  )}
+                />
+              </Grid2>
+
+              {/* Range To */}
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
+                <Controller
+                  name="rangeTo"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label="Range To"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("rangeTo", e.target.value);
+                      }}
+                    />
+                  )}
+                />
+              </Grid2>
+
+              {/* Postponed Date */}
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
+                <Controller
+                  name="postponedDate"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label="Postponed Date"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("postponedDate", e.target.value);
+                      }}
+                    />
+                  )}
+                />
+              </Grid2>
+              {(showExtraEndorsementField || reportDetails?.typeOfCertificate === "extended") && (
+                <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
                   <Controller
-                    name="place"
+                    name="newValidityDate"
                     control={control}
                     render={({ field }) => (
                       <CommonInput
                         {...field}
-                        label={<>Place of Issuance {!surveyType && <span style={{ color: "red" }}>*</span>}</>}
-                        placeholder="Enter place name"
+                        type="date"
+                        label={
+                          <>
+                            New Validity Date <span style={{ color: "red" }}>*</span>
+                          </>
+                        }
                         onChange={(e) => {
                           field.onChange(e);
-                          handleFieldChange("place", e.target.value);
+                          handleFieldChange("newValidityDate", e.target.value);
                         }}
                       />
                     )}
                   />
-                  {errors.place && (
+                  {errors.newValidityDate && (
                     <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                      {errors.place.message}
+                      {errors.newValidityDate.message}
                     </Typography>
                   )}
                 </Grid2>
-              </Grid2>
-              <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 3 }}>
-                <FormControlLabel control={<Checkbox checked={doingEndorsement} onChange={(e) => setDoingEndorsement(e.target.checked)} />} label="Endorse Certificate" />
-              </Stack>
+              )}
 
-              {/* Place of Issuance */}
+              {/* Endorsed / Issued By */}
+              <Grid2 item size={{ xs: 12, sm: 6, md: 3 }}>
+                <FormControl fullWidth>
+                  <Typography variant="body1" mb={1.5} fontWeight={500}>
+                    Issued By {!surveyType && <span style={{ color: "red" }}>*</span>}
+                  </Typography>
+                  <Select value={selectSurveyor} onChange={handleSurveyor} displayEmpty name="issuedBy" error={!!errors.issuedBy}>
+                    <MenuItem value="" disabled>
+                      Select Endorsed / Issued By
+                    </MenuItem>
+                    {surveyorOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {errors.issuedBy && (
+                    <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                      {errors.issuedBy.message}
+                    </Typography>
+                  )}
+                </FormControl>
+              </Grid2>
+              <Grid2 item size={{ xs: 12, sm: 6, md: 3 }}>
+                <Controller
+                  name="place"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      label={<>Place of Issuance {!surveyType && <span style={{ color: "red" }}>*</span>}</>}
+                      placeholder="Enter place name"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("place", e.target.value);
+                      }}
+                    />
+                  )}
+                />
+                {errors.place && (
+                  <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                    {errors.place.message}
+                  </Typography>
+                )}
+              </Grid2>
             </Grid2>
+            <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 3 }}>
+              <FormControlLabel control={<Checkbox checked={doingEndorsement} onChange={(e) => setDoingEndorsement(e.target.checked)} />} label="Endorse Certificate" />
+            </Stack>
+
+            {/* Place of Issuance */}
 
             {/* Action Buttons */}
             <Stack direction="row" gap={"20px"}>
