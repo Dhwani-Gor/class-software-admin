@@ -649,7 +649,7 @@ of Class recommended now or previously, being dealt with as recommended.</p>
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `MCBG Survey Report - ${clientData?.imoNumber}-${clientData?.shipName}-${reportDetails[0]?.activity?.journal?.journalTypeId}-${moment(currentDate).format("DD-MM-YYYY")}.pdf`;
+      link.download = `Survey Report-${reportDetails[0]?.activity?.journal?.journalTypeId}-${clientData?.shipName}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

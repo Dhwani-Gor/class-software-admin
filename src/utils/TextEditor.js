@@ -444,7 +444,7 @@ const TextEditor = ({ id }) => {
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes], { type: "application/pdf" });
 
-      const fileName = `MCBG Survey Status Report - ${clientData?.imoNumber}-${clientData?.shipName}-${moment().format("DD-MM-YYYY")}.pdf`;
+      const fileName = `MCBG Survey Status-${clientData?.shipName}.pdf`;
       const file = new File([blob], fileName, { type: "application/pdf" });
 
       const formData = new FormData();
@@ -1060,7 +1060,7 @@ ${classificationRows}
     };
 
     const statutorySurveyTableHtml = buildSurveyTable(statutoryData, "Statutory Surveys");
-    const auditSurveyTableHtml = buildSurveyTable(auditsData, "Audit / Inspections");
+    const auditSurveyTableHtml = buildSurveyTable(auditsData, "Audits / Inspections");
 
     const htmlString = `
 <div class="page">

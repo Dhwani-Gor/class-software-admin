@@ -333,13 +333,7 @@ const Certificates = () => {
                   <Table sx={{ marginTop: 2 }}>
                     <TableHead>
                       <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                        {[
-                          { label: "No.", key: null, width: "10%" },
-                          { label: "Ship Name", key: "client.shipName", width: "15%" },
-                          { label: "Document", key: "generatedDoc" },
-                          { label: "Created Date", key: "createdAt", width: "15%" },
-                          { label: "Actions", key: null },
-                        ].map((col) => (
+                        {[{ label: "No.", key: null, width: "10%" }, { label: "Ship Name", key: "client.shipName", width: "22%" }, { label: "Document", key: "generatedDoc", width: "35%" }, { label: "Created Date", key: "createdAt", width: "15%" }, { label: "Actions" }].map((col) => (
                           <TableCell
                             key={col.label}
                             sx={{
@@ -619,7 +613,7 @@ const Certificates = () => {
           )}
         </Box>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mt={2}>
-          <Typography>Total Count: {count}</Typography>
+          <Typography sx={{ fontWeight: "bold" }}>Total Count: {count}</Typography>
           <Stack direction="row" spacing={2} alignItems="center">
             <CommonButton
               text={showAll ? "Show Paginated" : "Show All"}
