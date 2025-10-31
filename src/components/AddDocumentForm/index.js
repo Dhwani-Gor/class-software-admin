@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
@@ -24,15 +24,8 @@ import CommonButton from "@/components/CommonButton";
 import { createDocument, getDocumentDetails, updateDocument } from "@/api";
 import UploadIcon from "@mui/icons-material/Upload";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import { Chip } from "@mui/material";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import * as XLSX from "xlsx";
-
-const documentValidityType = [
-  { value: "interim", label: "Interim" },
-  { value: "short_term", label: "Short Term" },
-  { value: "full_term", label: "Full Term" },
-];
 
 const documentType = [
   { value: "certificate", label: "certificate" },
@@ -57,18 +50,24 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
     fields: false,
   });
   const [additionalFields, setAdditionalFields] = useState([]);
-  const [endorsements, setEndorsements] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const [endorsementGroups, setEndorsementGroups] = useState([]);
-  const [openTitleDialog, setOpenTitleDialog] = useState(false);
-  const [newMainTitle, setNewMainTitle] = useState("");
   const [previewState, setPreviewState] = useState({
     open: false,
     loading: false,
     fileUrl: null,
     title: "",
   });
+  const loadingTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSelectChange = (e) => {
     const { name, value } = e.target;
@@ -89,7 +88,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
     if (documentId) {
       fetchDocumentDetails();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentId]);
 
   const fetchDocumentDetails = async () => {
@@ -256,11 +254,9 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           return;
         }
 
-        // Check if there are actual changes (order-independent comparison)
         const hasChanges = () => {
           if (additionalFields.length !== importedFields.length) return true;
 
-          // Create normalized versions for comparison (sorted by attribute+label)
           const normalizeFields = (fields) => {
             return fields
               .map((field) => ({
@@ -277,7 +273,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           const normalizedExisting = normalizeFields(additionalFields);
           const normalizedImported = normalizeFields(importedFields);
 
-          // Compare each field
           return !normalizedExisting.every((existingField, index) => {
             const importedField = normalizedImported[index];
             return existingField.attribute === importedField.attribute && existingField.label === importedField.label;
@@ -309,7 +304,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate form before submission
     if (!validateForm()) {
       toast.error("Please fill all required fields");
       return;
@@ -319,10 +313,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
       setLoading(true);
       let response;
 
-      // Filter out valid additional fields
       const validFields = (additionalFields || []).filter((field) => field.attribute?.toString().trim() && field.label?.toString().trim());
-
-      // ✅ Convert grouped endorsements to nested structure
       const validEndorsements = endorsementGroups
         .filter((group) => group.mainTitle?.trim() || (group.items || []).some((item) => item.title?.trim() || item.endorsedby_1?.trim() || item.endorsed_place?.trim() || item.issuance_date?.trim() || item.validity_date?.trim()))
         .map((group) => ({
@@ -339,7 +330,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           })),
         }));
 
-      // ---------- CREATE / DUPLICATE DOCUMENT ----------
       if (mode === "create" || mode === "duplicate") {
         const formData = new FormData();
 
@@ -352,14 +342,12 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
         if (formValues.shortTermDocument instanceof File) formData.append("shortTermDocument", formValues.shortTermDocument);
         if (formValues.interimDocument instanceof File) formData.append("interimDocument", formValues.interimDocument);
 
-        // Append fields and endorsements
         if (validFields.length > 0) formData.append("fields", JSON.stringify(validFields));
 
         formData.append("endorsements", JSON.stringify(validEndorsements.length > 0 ? validEndorsements : []));
 
         response = await createDocument(formData);
       } else {
-        // ---------- UPDATE DOCUMENT ----------
         const hasFiles = formValues.fullTermDocument instanceof File || formValues.shortTermDocument instanceof File || formValues.interimDocument instanceof File;
 
         if (hasFiles) {
@@ -380,7 +368,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
 
           response = await updateDocument(documentId, formData);
         } else {
-          // Update without file uploads
           const payload = {
             name: formValues.name,
             type: formValues.type,
@@ -399,7 +386,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
         }
       }
 
-      // ---------- HANDLE SUCCESS / ERROR ----------
       if (response?.status === 200 || response?.status === 201) {
         toast.success(mode === "duplicate" ? "Document duplicated successfully" : mode === "update" ? "Document updated successfully" : "Document created successfully");
         router.push("/documents");
@@ -454,16 +440,12 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
     toast.success("Field removed successfully");
   };
 
-  // Drag and drop handlers for additional fields
   const handleDragStart = (e, index) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = "move";
-    // store the index as string
     try {
       e.dataTransfer.setData("text/plain", String(index));
-    } catch (err) {
-      // ignore if not allowed
-    }
+    } catch (err) {}
   };
 
   const handleDragEnd = () => {
@@ -483,72 +465,19 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
 
   const handleDrop = (e, dropIndex) => {
     e.preventDefault();
-    // If dataTransfer had index, it can be used; but we rely on draggedIndex state
     if (draggedIndex === null || draggedIndex === dropIndex) return;
 
     const updatedFields = [...additionalFields];
     const draggedItem = updatedFields[draggedIndex];
 
-    // Remove the dragged item
     updatedFields.splice(draggedIndex, 1);
 
-    // Insert at new position
     const newIndex = draggedIndex < dropIndex ? dropIndex - 1 : dropIndex;
     updatedFields.splice(newIndex, 0, draggedItem);
 
     setAdditionalFields(updatedFields);
     setDraggedIndex(null);
     setDragOverIndex(null);
-  };
-
-  // Endorsement handlers
-  const handleEndorsementChange = (index, field, value) => {
-    const updatedEndorsements = [...endorsements];
-    updatedEndorsements[index] = {
-      ...updatedEndorsements[index],
-      [field]: value,
-    };
-    setEndorsements(updatedEndorsements);
-  };
-
-  const handleAddEndorsement = () => {
-    setNewMainTitle("");
-    setOpenTitleDialog(true);
-  };
-
-  const handleAddEndorsementItem = (groupIndex) => {
-    const updated = [...endorsementGroups];
-    updated[groupIndex].items.push({
-      title: "",
-      endorsedby_1: "",
-      endorsed_place: "",
-      issuance_date: "",
-      validity_date: "",
-      endorsement_type: "",
-    });
-    setEndorsementGroups(updated);
-  };
-  const handleHeaderChange = (index, value) => {
-    const updatedEndorsements = [...endorsements];
-    updatedEndorsements[index].headerText = value;
-    setEndorsements(updatedEndorsements);
-  };
-
-  const handleAddSectionHeader = () => {
-    setEndorsements((prev) => [
-      ...prev,
-      {
-        type: "header",
-        headerText: "",
-      },
-    ]);
-  };
-
-  const handleDeleteEndorsement = (index) => {
-    const updatedEndorsements = [...endorsements];
-    updatedEndorsements.splice(index, 1);
-    setEndorsements(updatedEndorsements);
-    toast.success("Endorsement removed successfully");
   };
 
   const getSubmitButtonText = () => {
@@ -568,7 +497,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           {label}
         </Typography>
         <FormControl fullWidth>
-          {/* outer container is a div (Box) not a label to avoid nested label issues */}
           <Box
             sx={{
               display: "flex",
@@ -640,7 +568,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                     if (file) {
                       handleFileChange(documentTypeKey, file);
                     }
-                    // clear input value so same file can be reselected if needed
                     e.currentTarget.value = "";
                   }}
                 />
@@ -705,7 +632,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
               )}
             </FormControl>
 
-            {/* Document Upload Sections */}
             <Typography variant="h6" sx={{ mt: 2 }}>
               Document Uploads
             </Typography>
@@ -769,7 +695,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
               </Stack>
             </Stack>
 
-            {/* Endorsements Section */}
             <Stack spacing={3}>
               <Box
                 sx={{
@@ -778,7 +703,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                   p: 2,
                 }}
               >
-                {/* Endorsements Section */}
                 <Typography variant="h6" sx={{ mb: 2 }}>
                   Endorsements
                 </Typography>
@@ -786,7 +710,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                 <Stack spacing={3}>
                   {endorsementGroups.map((group, gIndex) => (
                     <Box key={gIndex} sx={{}}>
-                      {/* Section Header with Main Title */}
                       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
                         <TextField
                           label="Main Title"
@@ -812,7 +735,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                         </IconButton>
                       </Box>
 
-                      {/* Inner Endorsement Items */}
                       {group.items.map((item, iIndex) => (
                         <Box
                           key={iIndex}
@@ -909,7 +831,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                         </Box>
                       ))}
 
-                      {/* Add Inner Endorsement Button */}
                       <CommonButton
                         text="Add Endorsement"
                         variant="outlined"
@@ -928,7 +849,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                     </Box>
                   ))}
 
-                  {/* ✅ Add Main Section Button — shown once */}
                   <CommonButton sx={{ width: "30%" }} text="Add Endorsement Section" variant="outlined" onClick={() => setEndorsementGroups((prev) => [...prev, { mainTitle: "", items: [] }])} />
                 </Stack>
               </Box>
@@ -985,7 +905,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
               </Box>
             )}
 
-            {/* only render iframe if fileUrl exists */}
             {previewState.fileUrl ? (
               <iframe
                 src={`https://docs.google.com/gview?url=${encodeURIComponent(previewState.fileUrl)}&embedded=true`}
