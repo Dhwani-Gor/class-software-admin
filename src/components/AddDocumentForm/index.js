@@ -97,7 +97,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
       if (result?.status === 200) {
         const documentData = result.data.data;
 
-        // ✅ Set file preview and form values
         setPreviewState((prev) => ({
           ...prev,
           open: false,
@@ -115,7 +114,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           interimDocument: mode === "duplicate" ? null : documentData.interimFilePath || null,
         });
 
-        // ✅ Handle additional fields
         let parsedFields = [];
         if (documentData.fields) {
           parsedFields = typeof documentData.fields === "string" ? JSON.parse(documentData.fields) : documentData.fields;
@@ -123,14 +121,12 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
         if (!Array.isArray(parsedFields)) parsedFields = [parsedFields];
         setAdditionalFields(parsedFields);
 
-        // ✅ Handle endorsements (nested grouped format)
         let parsedEndorsements = [];
         if (documentData.endorsements) {
           parsedEndorsements = typeof documentData.endorsements === "string" ? JSON.parse(documentData.endorsements) : documentData.endorsements;
         }
         if (!Array.isArray(parsedEndorsements)) parsedEndorsements = [parsedEndorsements];
 
-        // Convert nested structure into UI format
         const groups = parsedEndorsements.map((group) => ({
           mainTitle: group.groupTitle || "",
           items: Array.isArray(group.endorsements)
@@ -140,12 +136,11 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                 issuance_date: item.issuance_date || "",
                 validity_date: item.validity_date || "",
                 endorsement_type: item.endorsement_type || "",
-                endorsedby_1: item.endorsedby_1 || "",
+                endorsed_by: item.endorsed_by || "",
               }))
             : [],
         }));
 
-        // ✅ Update state for rendering
         setEndorsementGroups(groups);
       } else {
         toast.error("Error fetching document details");
@@ -315,18 +310,16 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
 
       const validFields = (additionalFields || []).filter((field) => field.attribute?.toString().trim() && field.label?.toString().trim());
       const validEndorsements = endorsementGroups
-        .filter((group) => group.mainTitle?.trim() || (group.items || []).some((item) => item.title?.trim() || item.endorsedby_1?.trim() || item.endorsed_place?.trim() || item.issuance_date?.trim() || item.validity_date?.trim()))
+        .filter((group) => group.mainTitle?.trim() || (group.items || []).some((item) => item.title?.trim() || item.endorsed_by?.trim() || item.endorsed_place?.trim() || item.issuance_date?.trim() || item.validity_date?.trim()))
         .map((group) => ({
           groupTitle: group.mainTitle || "",
           endorsements: (group.items || []).map((item) => ({
             title: item.title || "",
             endorsed_place: item.endorsed_place || "",
+            endorsed_by: item.endorsed_by || "",
             issuance_date: item.issuance_date || "",
             validity_date: item.validity_date || "",
             endorsement_type: item.endorsement_type || "",
-            endorsedby_1: item.endorsedby_1 || "",
-            endorsedby_2: item.endorsedby_2 || "",
-            endorsedby_3: item.endorsedby_3 || "",
           })),
         }));
 
@@ -778,10 +771,10 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                             <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
                               <TextField
                                 label="Endorsed By"
-                                value={item.endorsedby_1}
+                                value={item.endorsed_by}
                                 onChange={(e) => {
                                   const updated = [...endorsementGroups];
-                                  updated[gIndex].items[iIndex].endorsedby_1 = e.target.value;
+                                  updated[gIndex].items[iIndex].endorsed_by = e.target.value;
                                   setEndorsementGroups(updated);
                                 }}
                                 size="small"
@@ -839,6 +832,7 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                           updated[gIndex].items.push({
                             title: "",
                             endorsed_place: "",
+                            endorsed_by: "",
                             issuance_date: "",
                             validity_date: "",
                             endorsement_type: "",

@@ -14,6 +14,7 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
   const [cancelled, setCancelled] = useState(false);
   const [surveyTypes, setSurveyTypes] = useState([]);
   const [existingSurveys, setExistingSurveys] = useState([]);
+  
   const [showSSHWarning, setShowSSHWarning] = useState({
     show: false,
     surveyType: "",

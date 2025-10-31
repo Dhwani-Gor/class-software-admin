@@ -52,6 +52,7 @@ const ReportingForm = () => {
   const [filteredJournals, setFilteredJournals] = useState([]);
   const [showButton, setShowButton] = useState(true);
   const [openEndrosemet, setOpenEndrosemet] = useState(false);
+  console.log("openEndrosemet", openEndrosemet);
   const [endorsementTitle, setEndorsementTitle] = useState([]);
   const [selectedReportNumber, setSelectedReportNumber] = useState({
     journalTypeId: "",
@@ -81,8 +82,11 @@ const ReportingForm = () => {
   const [archiveHistory, setArchiveHistory] = useState([]);
   const [endorsementValues, setEndorsementValues] = useState([]);
   const [endorsements, setEndorsements] = useState([]);
+  console.log("endorsements", endorsements);
   const [surveyType, setSurveyType] = useState(false);
   const [endorsementDate, setEndorsementDate] = useState(null);
+  const [doingEndorsement, setDoingEndorsement] = useState(false);
+  console.log("doingEndorsement", doingEndorsement);
 
   useEffect(() => {
     if (reportDetails) {
@@ -504,16 +508,12 @@ const ReportingForm = () => {
   };
 
   const handleFullReportGeneration = async () => {
-    if (endorsements?.length > 0 && endorsementDate !== null) {
-      setEndorsementTitle(endorsements);
-      setOpenEndrosemet(true);
+    setEndorsementTitle(endorsements);
+    await fetchReportDetails(reportDetails?.id);
+    if (reportDetails.lastUnarchivedAt !== null && endorsementDate == null) {
+      setShowAmendmentDialog(true);
     } else {
-      await fetchReportDetails(reportDetails?.id);
-      if (reportDetails.lastUnarchivedAt !== null && endorsementDate == null) {
-        setShowAmendmentDialog(true);
-      } else {
-        setOpen(true);
-      }
+      setOpen(true);
     }
   };
 
@@ -535,7 +535,6 @@ const ReportingForm = () => {
           amdRemarks,
           stamp: 6,
           companyText: 8,
-          isEndorsement: isEndorsement ? true : false,
           ...(reportName.toLocaleLowerCase() === "certificate of class" && {
             logo: 7,
           }),
@@ -1005,11 +1004,7 @@ const ReportingForm = () => {
                     <CommonInput
                       {...field}
                       type="date"
-                      label={
-                        <>
-                          Survey Date <span style={{ color: "red" }}>*</span>
-                        </>
-                      }
+                      label={<>Survey Date {!surveyType && <span style={{ color: "red" }}>*</span>}</>}
                       onChange={(e) => {
                         field.onChange(e);
                         handleFieldChange("surveydate", e.target.value);
@@ -1122,25 +1117,6 @@ const ReportingForm = () => {
                     )}
                   />
                 </Grid2>
-                {showEndorsementField && (
-                  <Grid2 size={{ md: 3 }}>
-                    <Controller
-                      name="endorsementdate"
-                      control={control}
-                      render={({ field }) => (
-                        <CommonInput
-                          {...field}
-                          type="date"
-                          label="Endorsement Date"
-                          onChange={(e) => {
-                            field.onChange(e);
-                            handleFieldChange("endorsementdate", e.target.value);
-                          }}
-                        />
-                      )}
-                    />
-                  </Grid2>
-                )}
                 {(showExtraEndorsementField || reportDetails?.typeOfCertificate === "extended") && (
                   <Grid2 size={{ md: 3 }}>
                     <Controller
@@ -1200,7 +1176,7 @@ const ReportingForm = () => {
                     render={({ field }) => (
                       <CommonInput
                         {...field}
-                        label={<>Place of Issuance / Endorsement {!surveyType && <span style={{ color: "red" }}>*</span>}</>}
+                        label={<>Place of Issuance {!surveyType && <span style={{ color: "red" }}>*</span>}</>}
                         placeholder="Enter place name"
                         onChange={(e) => {
                           field.onChange(e);
@@ -1216,6 +1192,9 @@ const ReportingForm = () => {
                   )}
                 </Grid2>
               </Grid2>
+              <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 3 }}>
+                <FormControlLabel control={<Checkbox checked={doingEndorsement} onChange={(e) => setDoingEndorsement(e.target.checked)} />} label="Endorse Certificate" />
+              </Stack>
 
               {/* Place of Issuance */}
             </Grid2>
@@ -1223,7 +1202,24 @@ const ReportingForm = () => {
             {/* Action Buttons */}
             <Stack direction="row" gap={"20px"}>
               <CommonButton onClick={handleGenerateReport} sx={{ marginTop: 3 }} text="Save" isLoading={loading} />
-              {selectedRow?.status === "Completed" && <CommonButton onClick={handleFullReportGeneration} sx={{ marginTop: 3 }} text="Generate Certificate" isLoading={loading} disabled={!reportDetails} />}
+
+              {selectedRow?.status === "Completed" && (
+                <CommonButton
+                  onClick={() => {
+                    console.log("doingEndorsement in if", doingEndorsement);
+                    if (doingEndorsement) {
+                      setEndorsementTitle(endorsements);
+                      setOpenEndrosemet(true);
+                    } else {
+                      handleFullReportGeneration();
+                    }
+                  }}
+                  sx={{ marginTop: 3 }}
+                  text="Generate Certificate"
+                  isLoading={loading}
+                  disabled={!reportDetails}
+                />
+              )}
             </Stack>
           </CommonCard>
         </Box>
@@ -1268,7 +1264,7 @@ const ReportingForm = () => {
         }}
         title={fullScreenRemarksVisible && typeof fullScreenRemarksVisible === "object" ? `Remarks for ${fullScreenRemarksVisible.surveyTypes?.name}` : "Remarks"}
       />
-      {reportDetails?.typeOfCertificate === "full_term" && openEndrosemet && !!reportDetails?.endorsementDate && (
+      {reportDetails?.typeOfCertificate === "full_term" && openEndrosemet && (
         <EndorsementDialog
           open={openEndrosemet}
           onClose={() => setOpenEndrosemet(false)}
@@ -1279,37 +1275,10 @@ const ReportingForm = () => {
           endorsementList={endorsementTitle}
           reportDetailsId={reportDetails?.id}
           endorsedIssuedBy={surveyorOptions}
+          surveyorOptions={surveyorOptions}
         />
       )}
       <AmendmentRemarksDialog open={showAmendmentDialog} onClose={() => setShowAmendmentDialog(false)} onSubmit={handleAmendmentSubmit} isLoading={continueBtnLoading} />
-      {/* <Dialog open={showArchiveHistoryDialog} onClose={() => setShowArchiveHistoryDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Archive Remarks History</DialogTitle>
-        <DialogContent dividers>
-          {archiveHistory.length > 0 ? (
-            archiveHistory.map((remark, index) => (
-              <Box key={remark.id || index} mb={2}>
-                <Typography variant="body1">
-                  <b>Remark {index + 1}:</b> {remark.remark || "-"}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {remark.journalTypeId}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {moment(remark.createdAt).format("DD MMM YYYY, HH:mm")}
-                </Typography>
-                {index < archiveHistory.length - 1 && <Divider sx={{ my: 1 }} />}
-              </Box>
-            ))
-          ) : (
-            <Typography variant="body2" color="text.secondary">
-              No remarks history found.
-            </Typography>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowArchiveHistoryDialog(false)}>Close</Button>
-        </DialogActions>
-      </Dialog> */}
       <ArchiveHistoryDialog open={showArchiveHistoryDialog} archiveHistory={archiveHistory} onClose={() => setShowArchiveHistoryDialog(false)} shipName={shipName} />
     </Box>
   );
