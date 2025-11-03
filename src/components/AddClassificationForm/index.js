@@ -14,7 +14,7 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
   const [cancelled, setCancelled] = useState(false);
   const [surveyTypes, setSurveyTypes] = useState([]);
   const [existingSurveys, setExistingSurveys] = useState([]);
-  
+
   const [showSSHWarning, setShowSSHWarning] = useState({
     show: false,
     surveyType: "",
@@ -129,7 +129,37 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
       if (!currentRow.issuanceDate || currentRow.issuanceDate === classificationRows[index].surveyDate) {
         currentRow.issuanceDate = value;
       }
-    } else {
+    }
+
+    // Auto-update rangeFrom & rangeTo when Due Date changes
+    else if (field === "dueDate") {
+      currentRow.dueDate = value;
+
+      const surveyName = currentRow.surveyName?.trim().toLowerCase();
+
+      const noRangeSurveys = ["docking survey", "main boiler survey", "auxiliary boiler survey", "thermal oil heating systems survey", "exhaust gas steam generators and economisers survey"];
+
+      // ✅ Tailshaft Condition Monitoring Annual Survey → always 3 months ± range
+      if (surveyName === "tailshaft condition monitoring annual survey") {
+        currentRow.rangeFrom = moment(value).subtract(3, "months").format("YYYY-MM-DD");
+        currentRow.rangeTo = moment(value).add(3, "months").format("YYYY-MM-DD");
+      }
+
+      // ✅ For all other surveys (except excluded ones)
+      else if (surveyName && !noRangeSurveys.includes(surveyName)) {
+        currentRow.rangeFrom = moment(value).subtract(3, "months").format("YYYY-MM-DD");
+        currentRow.rangeTo = moment(value).add(3, "months").format("YYYY-MM-DD");
+      }
+
+      // 🚫 For excluded surveys → clear range
+      else {
+        currentRow.rangeFrom = "";
+        currentRow.rangeTo = "";
+      }
+    }
+
+    // Generic case for other fields
+    else {
       currentRow[field] = value;
     }
 
