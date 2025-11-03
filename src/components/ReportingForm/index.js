@@ -11,8 +11,7 @@ import CommonButton from "@/components/CommonButton";
 import CommonCard from "@/components/CommonCard";
 import Grid2 from "@mui/material/Grid2";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
-import { useRouter } from "next/navigation";
-import { createReportDetail, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument, addUnArchiveDocument, addAmdRemarks, updateActivityDetails } from "@/api";
+import { createReportDetail, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument, addUnArchiveDocument, updateActivityDetails } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { getAllActivities } from "@/api";
@@ -34,13 +33,11 @@ import CommonInput from "@/components/CommonInput";
 import ActivityTable from "./ActivityTable";
 import AmendmentRemarksDialog from "./AmendmentRemarksDialog";
 import EditingReasonDialog from "../Dialogs/EditingReasonDialog";
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider } from "@mui/material";
 import ArchiveHistoryDialog from "../Dialogs/ArchiveHistoryDialog";
 import EndorsementDialog from "../documents/EndorsementDialog";
 import { calculateDates } from "@/utils/DateCalculation";
 
 const ReportingForm = () => {
-  const router = useRouter();
   const { data } = useAuth();
   const [loading, setLoading] = useState(false);
   const [clientsList, setClientsList] = useState([]);
@@ -50,9 +47,7 @@ const ReportingForm = () => {
   const [selectedShip, setSelectedShip] = useState({ id: "", shipName: "" });
   const [specialPermission, setSpecialPermission] = useState(false);
   const [filteredJournals, setFilteredJournals] = useState([]);
-  const [showButton, setShowButton] = useState(true);
   const [openEndrosemet, setOpenEndrosemet] = useState(false);
-  console.log("openEndrosemet", openEndrosemet);
   const [endorsementTitle, setEndorsementTitle] = useState([]);
   const [selectedReportNumber, setSelectedReportNumber] = useState({
     journalTypeId: "",
@@ -70,7 +65,6 @@ const ReportingForm = () => {
   const [open, setOpen] = useState();
   const [underscoreFields, setUnderscoreFields] = useState([]);
   const [reportName, setReportName] = useState("");
-  const [showEndorsementField, setShowEndorsementField] = useState(false);
   const [showExtraEndorsementField, setShowExtraEndorsementField] = useState(false);
   const [loadingReport, setLoadingReport] = useState(false);
   const [isOpenArchiveModal, setIsOpenArchiveModal] = useState(false);
@@ -80,13 +74,10 @@ const ReportingForm = () => {
   const [amdRemarks, setAmdRemarks] = useState("");
   const [showArchiveHistoryDialog, setShowArchiveHistoryDialog] = useState(false);
   const [archiveHistory, setArchiveHistory] = useState([]);
-  const [endorsementValues, setEndorsementValues] = useState([]);
   const [endorsements, setEndorsements] = useState([]);
-  console.log("endorsements", endorsements);
   const [surveyType, setSurveyType] = useState(false);
   const [endorsementDate, setEndorsementDate] = useState(null);
   const [doingEndorsement, setDoingEndorsement] = useState(false);
-  console.log("doingEndorsement", doingEndorsement);
 
   useEffect(() => {
     if (reportDetails) {
@@ -108,7 +99,7 @@ const ReportingForm = () => {
     }),
 
     surveydate: yup.string().when([], {
-      is: () => true, // always required
+      is: () => true,
       then: (schema) => schema.required("Survey date is required"),
     }),
 
@@ -143,16 +134,12 @@ const ReportingForm = () => {
   useEffect(() => {
     ``;
     if (selectCertificate === "full_term") {
-      setShowEndorsementField(true);
       setShowExtraEndorsementField(false);
     } else if (selectCertificate === "short_term" || selectCertificate === "interim") {
-      setShowEndorsementField(false);
       setShowExtraEndorsementField(false);
     } else if (selectCertificate === "extended") {
-      setShowEndorsementField(true);
       setShowExtraEndorsementField(true);
     } else {
-      setShowEndorsementField(false);
       setShowExtraEndorsementField(false);
     }
   }, [selectCertificate]);
@@ -203,7 +190,6 @@ const ReportingForm = () => {
 
   const {
     control,
-    handleSubmit,
     getValues,
     setValue,
     trigger,
@@ -270,7 +256,6 @@ const ReportingForm = () => {
     setSelectCertificate("");
     setSelectSurveyor("");
     setReportName("");
-    setShowEndorsementField(false);
     setShowExtraEndorsementField(false);
 
     // Reset form values
@@ -367,7 +352,6 @@ const ReportingForm = () => {
 
   const handleShowTable = () => {
     setShowTable(true);
-    setShowButton(true);
     getAllActivity(journalId);
   };
 
@@ -385,7 +369,6 @@ const ReportingForm = () => {
         const result = await addUnArchiveDocument(payload);
         if (result?.data?.status === "success") {
           setShowTable(false);
-          setShowButton(false);
           fetchAllJournals();
           setIsOpenConfirmModal(false);
           setSelectedReportNumber({});
@@ -396,7 +379,6 @@ const ReportingForm = () => {
       } else {
         const result = await addArchiveDocument(payload);
         if (result?.data?.status === "success") {
-          setShowButton(false);
           setIsOpenConfirmModal(false);
           setShowTable(false);
           fetchAllJournals();
@@ -1191,9 +1173,11 @@ const ReportingForm = () => {
                 )}
               </Grid2>
             </Grid2>
-            <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 3 }}>
-              <FormControlLabel control={<Checkbox checked={doingEndorsement} onChange={(e) => setDoingEndorsement(e.target.checked)} />} label="Endorse Certificate" />
-            </Stack>
+            {selectCertificate === "full_term" && (
+              <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 3 }}>
+                <FormControlLabel control={<Checkbox checked={doingEndorsement} onChange={(e) => setDoingEndorsement(e.target.checked)} />} label="Endorse Certificate" />
+              </Stack>
+            )}
 
             {/* Place of Issuance */}
 
@@ -1204,7 +1188,6 @@ const ReportingForm = () => {
               {selectedRow?.status === "Completed" && (
                 <CommonButton
                   onClick={() => {
-                    console.log("doingEndorsement in if", doingEndorsement);
                     if (doingEndorsement) {
                       setEndorsementTitle(endorsements);
                       setOpenEndrosemet(true);
@@ -1267,7 +1250,6 @@ const ReportingForm = () => {
           open={openEndrosemet}
           onClose={() => setOpenEndrosemet(false)}
           onSubmit={(values) => {
-            setEndorsementValues(values);
             handleSubmitReport(values);
           }}
           endorsementList={endorsementTitle}
