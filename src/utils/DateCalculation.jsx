@@ -51,8 +51,8 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
         case normalizeName("Continuous Survey Hull"):
         case normalizeName("Continuous Survey Machinery"):
             dueDate = addYears(issuanceDateObj, 5);
-            rangeFrom = addMonths(dueDate, -3);
-            rangeTo = addMonths(dueDate, 3); // ✅ 3 months before and after
+            rangeFrom = addMonths(dueDate, +3);
+            rangeTo = addMonths(dueDate, -3); // ✅ 3 months before and after
             anniversaryDate = dueDate;
             break;
 
@@ -64,7 +64,6 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
             const relatedSpecialSurveyName = dependencyMap[surveyNameNormalized];
             const relatedSpecialSurvey = findSurveyByName(relatedSpecialSurveyName);
 
-            // ✅ Use SSH dueDate as base (anniversary logic)
             let baseDate = relatedSpecialSurvey?.dueDate
                 ? moment(relatedSpecialSurvey.dueDate)
                 : relatedSpecialSurvey?.surveyDate
@@ -85,8 +84,8 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
                 dueDate = addYears(baseDate, 1);
             }
 
-            rangeFrom = addMonths(dueDate, -3);
-            rangeTo = addMonths(dueDate, 3);
+            rangeFrom = addMonths(dueDate, +3);
+            rangeTo = addMonths(dueDate, -3);
             anniversaryDate = dueDate;
             break;
         }
@@ -156,8 +155,8 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
             if (dueDate.isAfter(sshDueDate)) dueDate = addMonths(sshDueDate, -3);
 
             // ✅ Tailshaft Annual gets ±3 months range
-            rangeFrom = addMonths(dueDate, -3);
-            rangeTo = addMonths(dueDate, 3);
+            rangeFrom = addMonths(dueDate, +3);
+            rangeTo = addMonths(dueDate, -3);
             anniversaryDate = dueDate;
             break;
         }
@@ -193,8 +192,8 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
                 }
 
                 if (dueDate) {
-                    rangeFrom = addMonths(dueDate, -3);
-                    rangeTo = addMonths(dueDate, 3);
+                    rangeFrom = addMonths(dueDate, +3);
+                    rangeTo = addMonths(dueDate, -3);
                 }
             } else {
                 dueDate = "";

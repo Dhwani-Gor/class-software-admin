@@ -147,8 +147,8 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
 
       // ✅ For all other surveys (except excluded ones)
       else if (surveyName && !noRangeSurveys.includes(surveyName)) {
-        currentRow.rangeFrom = moment(value).subtract(3, "months").format("YYYY-MM-DD");
-        currentRow.rangeTo = moment(value).add(3, "months").format("YYYY-MM-DD");
+        currentRow.rangeFrom = moment(value).add(3, "months").format("YYYY-MM-DD");
+        currentRow.rangeTo = moment(value).subtract(3, "months").format("YYYY-MM-DD");
       }
 
       // 🚫 For excluded surveys → clear range
