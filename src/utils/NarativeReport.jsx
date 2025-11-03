@@ -29,6 +29,7 @@ const NarrativeReport = ({ id, reportNumber }) => {
     const [places, setPlaces] = useState([]);
     const [isLastVisit, setIsLastVisit] = useState(false);
     const currentDate = new Date();
+    const stamp = systemVariables?.data?.find((i) => i.name === "company_stamp")?.information || "-";
 
     // Fetch all required data
     useEffect(() => {
@@ -103,69 +104,98 @@ const NarrativeReport = ({ id, reportNumber }) => {
                             item?.remarks ||
                             "-";
                         return `
-                <div style="margin-bottom:16px;">
-                  <div style="font-weight:700;margin-bottom:6px;">${idx + 1}. ${name}</div>
-                  <div style="margin-left:12px;">${remarks}</div>
+                <div style="margin-bottom:20px;page-break-inside:avoid;">
+                  <div style="font-weight:700;color:#1a5490;font-size:15px;margin-bottom:8px;border-bottom:2px solid #e0e0e0;padding-bottom:4px;">
+                    ${idx + 1}. ${name}
+                  </div>
+                  <div style="margin-left:20px;line-height:1.8;text-align:justify;color:#333;">
+                    ${remarks}
+                  </div>
                 </div>
               `;
                     })
                     .join("")
-                : `<p>No narrative activities available.</p>`;
+                : `<p style="color:#666;text-align:center;padding:40px 0;">No narrative activities available.</p>`;
 
         const signaturesHtml = `
-      <div style="display:flex;justify-content:space-between;margin-top:60px;">
+      <div style="display:flex;justify-content:space-between;margin-top:80px;padding-top:30px;border-top:2px solid #1a5490;page-break-inside:avoid;">
         <div style="width:45%;">
-          <div style="font-weight:700;margin-bottom:8px;">Signatures</div>
-          <div>Surveyors</div>
-          <div style="margin-top:16px;">Port: ${places?.join(", ") || "-"}</div>
-          <div>Date: ${moment(lastVisit).format("DD/MM/YYYY") || "-"}</div>
+                    <div class="stamp">${stamp ? `<img src="${stamp}" width="100" height="100" alt="Stamp" />` : ""}</div>
+
+          <div style="font-weight:800;font-size:15px;color:#1a5490;margin-bottom:12px;text-decoration:underline;"><strong>Signatures</strong></div>
+
+          <div style="margin-bottom:8px;color:#333;">Surveyors</div>
+          <div style="margin-top:24px;line-height:1.8;">
+            <div style="margin-bottom:6px;"><strong>Port:</strong> ${places?.join(", ") || "-"}</div>
+            <div><strong>Date:</strong> ${lastVisit ? moment(lastVisit).format("DD/MM/YYYY") : "-"}</div>
+          </div>
         </div>
 
         <div style="width:45%;text-align:right;">
-          <div style="font-weight:700;margin-bottom:8px;">This Report is Reviewed and Authorized by:</div>
-          <div>Reviewed On: ${moment(currentDate).format("DD/MM/YYYY")}</div>
+          <div style="font-weight:700;font-size:15px;color:#1a5490;margin-bottom:12px;text-decoration:underline;">
+            This Report is Reviewed and Authorized by:
+          </div>
+          <div style="margin-top:24px;line-height:1.8;">
+            <div><strong>Reviewed On:</strong> ${moment(currentDate).format("DD/MM/YYYY")}</div>
+          </div>
         </div>
       </div>
     `;
 
         return `
-      <div class="page" style="font-family:'Times New Roman',serif;background:#fff;padding:28px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #003366;padding-bottom:10px;margin-bottom:18px;">
+      <div class="page" style="font-family:'Times New Roman',serif;background:#fff;padding:50px;max-width:1200px;margin:0 auto;">
+        
+        <!-- Header Section -->
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #1a5490;padding-bottom:20px;margin-bottom:30px;">
           <div style="flex:1;">
-            ${companyLogo ? `<img src="${companyLogo}" alt="Logo" style="max-width:150px;height:auto;" />` : ""}
+            ${companyLogo ? `<img src="${companyLogo}" alt="Company Logo" style="max-width:180px;height:auto;" />` : ""}
           </div>
-          <div style="flex:1;text-align:center;">
-            <div style="font-weight:700;color:#003366;font-size:18px;text-transform:uppercase;">${companyName}</div>
-            <div style="font-weight:600;margin-top:4px;">Narrative Report</div>
+          <div style="flex:2;text-align:center;">
+            <div style="font-weight:700;color:#1a5490;font-size:24px;text-transform:uppercase;letter-spacing:1px;">
+              ${companyName}
+            </div>
+            <div style="font-weight:600;margin-top:8px;font-size:18px;color:#333;border-top:2px solid #ddd;border-bottom:2px solid #ddd;padding:8px 0;margin-top:12px;">
+              NARRATIVE REPORT
+            </div>
           </div>
           <div style="flex:1;"></div>
         </div>
 
-        <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:20px;">
-          <tr>
-            <td style="padding:6px;width:25%;font-weight:700;">Ship's Name:</td>
-            <td style="padding:6px;">${shipName}</td>
-            <td style="padding:6px;width:20%;font-weight:700;">Report No:</td>
-            <td style="padding:6px;">${reportNo}</td>
+        <!-- Information Table -->
+        <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:35px;background:#f8f9fa;">
+          <tr style="background:#1a5490;color:#fff;">
+            <td style="padding:12px;font-weight:700;border:1px solid #ddd;">Ship's Name:</td>
+            <td style="padding:12px;border:1px solid #ddd;background:#fff;color:#333;">${shipName}</td>
+            <td style="padding:12px;font-weight:700;border:1px solid #ddd;">Report No:</td>
+            <td style="padding:12px;border:1px solid #ddd;background:#fff;color:#333;">${reportNo}</td>
           </tr>
           <tr>
-            <td style="padding:6px;font-weight:700;">IMO Number:</td>
-            <td style="padding:6px;">${imo}</td>
-            <td style="padding:6px;font-weight:700;">No. of Visits:</td>
-            <td style="padding:6px;">${numOfVisit || "-"}</td>
+            <td style="padding:12px;font-weight:700;border:1px solid #ddd;background:#e9ecef;">IMO Number:</td>
+            <td style="padding:12px;border:1px solid #ddd;background:#fff;">${imo}</td>
+            <td style="padding:12px;font-weight:700;border:1px solid #ddd;background:#e9ecef;">No. of Visits:</td>
+            <td style="padding:12px;border:1px solid #ddd;background:#fff;">${numOfVisit || "-"}</td>
           </tr>
           <tr>
-            <td style="padding:6px;font-weight:700;">First Visit:</td>
-            <td style="padding:6px;">${firstVisit ? moment(firstVisit).format("DD/MM/YYYY") : "-"}</td>
-            <td style="padding:6px;font-weight:700;">Last Visit:</td>
-            <td style="padding:6px;">${lastVisit ? moment(lastVisit).format("DD/MM/YYYY") : "-"}</td>
+            <td style="padding:12px;font-weight:700;border:1px solid #ddd;background:#e9ecef;">First Visit:</td>
+            <td style="padding:12px;border:1px solid #ddd;background:#fff;">${firstVisit ? moment(firstVisit).format("DD/MM/YYYY") : "-"}</td>
+            <td style="padding:12px;font-weight:700;border:1px solid #ddd;background:#e9ecef;">Last Visit:</td>
+            <td style="padding:12px;border:1px solid #ddd;background:#fff;">${lastVisit ? moment(lastVisit).format("DD/MM/YYYY") : "-"}</td>
           </tr>
         </table>
 
-        <div>${activityHtml}</div>
+        <!-- Activities Section -->
+        <div style="margin-bottom:40px;">
+          <div style="font-weight:700;font-size:18px;color:#1a5490;margin-bottom:20px;border-bottom:3px solid #1a5490;padding-bottom:8px;text-transform:uppercase;">
+            Activities
+          </div>
+          ${activityHtml}
+        </div>
+
+        <!-- Signatures Section -->
         ${signaturesHtml}
 
-        <div style="margin-top:24px;text-align:center;font-size:12px;color:#666;">
+        <!-- Footer -->
+        <div style="margin-top:50px;text-align:center;font-size:12px;color:#666;padding-top:20px;border-top:1px solid #ddd;">
           © ${companyName} | Generated on ${moment(currentDate).format("DD-MM-YYYY")}
         </div>
       </div>
@@ -185,7 +215,11 @@ const NarrativeReport = ({ id, reportNumber }) => {
             const element = document.createElement("div");
             element.innerHTML = editorContent;
             document.body.appendChild(element);
-            const canvas = await html2canvas(element);
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+            });
             const imgData = canvas.toDataURL("image/png");
             const pdf = await PDFDocument.create();
             const page = pdf.addPage([canvas.width, canvas.height]);
@@ -196,12 +230,14 @@ const NarrativeReport = ({ id, reportNumber }) => {
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.download = `Narrative Report - ${clientData?.shipName || "Report"}.pdf`;
+            link.download = `Narrative_Report_${clientData?.shipName || "Report"}_${moment(currentDate).format("DDMMYYYY")}.pdf`;
             link.click();
             URL.revokeObjectURL(url);
             document.body.removeChild(element);
+            toast.success("PDF downloaded successfully!");
         } catch (err) {
             toast.error("Failed to generate PDF");
+            console.error(err);
         }
     };
 
@@ -219,30 +255,33 @@ const NarrativeReport = ({ id, reportNumber }) => {
                 value={editorContent}
                 onEditorChange={setEditorContent}
                 init={{
-                    height: 800,
+                    height: 900,
                     menubar: true,
-                    plugins: ["advlist", "autolink", "lists", "link", "image", "charmap", "print", "preview", "code", "fullscreen"],
-                    toolbar: "undo redo | bold italic underline | alignleft aligncenter alignright | bullist numlist | code fullscreen",
+                    plugins: [
+                        "advlist", "autolink", "lists", "link", "image", "charmap",
+                        "print", "preview", "code", "fullscreen", "table", "textcolor"
+                    ],
+                    toolbar: "undo redo | formatselect | bold italic underline forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | table | code fullscreen",
                     content_style: `
             body {
               font-family: 'Times New Roman', serif;
-              font-size: 13px;
-              background-color: #fdfcf7;
+              font-size: 14px;
+              background-color: #f5f5f5;
               padding: 40px;
               color: #1a1a1a;
+              line-height: 1.6;
             }
             .page {
-              border: 6px double #1a1a1a;
-              padding: 40px;
               background: #fff;
               margin: auto;
-              box-shadow: 0 0 10px rgba(0,0,0,0.1);
+              box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+              border-radius: 8px;
             }
           `,
                 }}
             />
 
-            <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
                 <CommonButton onClick={() => router.push(`/clients/${id}`)} text="Back" />
                 <CommonButton onClick={downloadEditorContentAsPdf} text="Download PDF" />
             </Box>

@@ -243,7 +243,8 @@ const Certificates = () => {
   const handleBulkDownload = async () => {
     if (!certificatesList.length) return;
     const zip = new JSZip();
-    const folder = zip.folder(certificatesList[0]?.activity?.journal?.client?.shipName || "Certificates");
+    const folderName = "MCBG Certificates";
+    const folder = zip.folder(folderName);
     setLoading(true);
     try {
       await Promise.all(
@@ -256,7 +257,7 @@ const Certificates = () => {
         })
       );
       const content = await zip.generateAsync({ type: "blob" });
-      saveAs(content, `${certificatesList[0]?.activity?.journal?.client?.shipName || "Certificates"}.zip`);
+      saveAs(content, `${folderName}.zip`);
       toast.success("All files downloaded successfully as a zip!");
     } catch (error) {
       console.error(error);
@@ -265,14 +266,13 @@ const Certificates = () => {
       setLoading(false);
     }
   };
-
   const sortedCertificates = sortData(certificatesList);
   const sortedReports = sortData(reportsList);
 
   const handleBulkDownloadReports = async () => {
     if (!reportsList.length) return;
     const zip = new JSZip();
-    const folder = zip.folder(reportsList[0]?.client?.shipName || "Reports");
+    const folder = zip.folder("MCBG Reports");
     setLoading(true);
     try {
       await Promise.all(
@@ -280,12 +280,28 @@ const Certificates = () => {
           if (!report.generatedDoc) return;
           const res = await fetch(report.generatedDoc);
           const blob = await res.blob();
-          const fileName = `${report.client?.shipName || "Report"}_${report.generatedDoc.split("/").pop()}`;
+
+          const file = report.generatedDoc.split("/").pop();
+          const matches = file.match(/MCB[A-Z0-9]+/gi);
+          const reportNo = matches ? matches[matches.length - 1] : null;
+          const shipName = report.client?.shipName || report.ship?.name || "Unknown Ship";
+
+          // Determine proper filename format (same as individual download)
+          const fileName = (() => {
+            if (/status[_ ]?report/i.test(file)) {
+              return `MCBG Survey Status - ${shipName}.pdf`;
+            }
+            if (/survey[_ ]?report/i.test(file)) {
+              return `Survey Report${reportNo ? ` - ${reportNo}` : ""} - ${shipName}.pdf`;
+            }
+            return file.replace(/_/g, " ").replace(/\.[^/.]+$/, "") + ".pdf";
+          })();
+
           folder.file(fileName, blob);
         })
       );
       const content = await zip.generateAsync({ type: "blob" });
-      saveAs(content, `${reportsList[0]?.client?.shipName || "Reports"}.zip`);
+      saveAs(content, "MCBG Reports.zip");
       toast.success("All reports downloaded successfully as a zip!");
     } catch (error) {
       console.error(error);
