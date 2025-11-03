@@ -34,6 +34,7 @@ const roles = [
 const schema = yup.object().shape({
   name: yup.string().required("Name is required"),
   username: yup.string().required("User Name is required"),
+  email: yup.string().required("Email is required"),
   password: yup.string().when("$isUpdate", {
     is: false,
     then: (schema) => schema.required("Password is required"),
@@ -77,6 +78,7 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
       name: "",
       username: "",
       password: "",
+      email: "",
       confirmPassword: "",
       role: "",
       reportingRights: false,
@@ -162,6 +164,7 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
       reset({
         name: data.name || "",
         username: data.username || "",
+        email: data.email || "",
         role: data.role || "",
         reportingRights: data.reportingRights || false,
         dataEntryRights: data.dataEntryRights || false,
@@ -301,6 +304,31 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
                 />
               </Grid2>
 
+              <Grid2 size={{ xs: 12 }}>
+                <Controller
+                  name="email"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      fullWidth
+                      variant="standard"
+                      label={
+                        <span>
+                          Email <span style={{ color: "red" }}>*</span>
+                        </span>
+                      }
+                      placeholder="Enter Email"
+                      error={Boolean(errors.email)}
+                      helperText={errors.email?.message}
+                      autoComplete="off"
+                      InputProps={{
+                        style: { color: "black" },
+                      }}
+                    />
+                  )}
+                />
+              </Grid2>
               {!userId && (
                 <>
                   <Grid2 size={{ xs: 12 }}>

@@ -1053,3 +1053,23 @@ export const deleteAdditionalField = async (id) => {
   }
   return result;
 };
+
+export const forgotPassword = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`users/forgotPassword`, payload);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const resetPassword = async (token, data) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`users/resetPassword/${token}`, data);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
