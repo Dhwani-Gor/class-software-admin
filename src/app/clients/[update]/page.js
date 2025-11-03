@@ -5,7 +5,7 @@ import Layout from "@/Layout";
 import Stack from "@mui/material/Stack";
 import CommonCard from "@/components/CommonCard";
 import AddClientForm from "@/components/AddClientForm";
-import { Autocomplete, Box, Dialog, IconButton, MenuItem, TextField } from "@mui/material";
+import { Autocomplete, Box, Dialog, IconButton, TextField } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import CommonButton from "@/components/CommonButton";
@@ -30,6 +30,9 @@ const UpdateClient = ({ params }) => {
   const [journalData, setJournalData] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedJournal, setSelectedJournal] = useState("");
+
+  // 👇 NEW STATE to know which report type was triggered
+  const [reportType, setReportType] = useState("");
 
   const fetchClientsHistory = async () => {
     try {
@@ -76,17 +79,25 @@ const UpdateClient = ({ params }) => {
     getClient();
   }, [update]);
 
-  const handleSurveyReport = () => {
+  // 👇 Common function to open dialog for either report type
+  const openReportDialog = (type) => {
+    setReportType(type);
     setOpenDialog(true);
-    // router.push(`/survey-report/${update}`);
   };
 
-  const handleSaveJournal = () => {
+  // 👇 Handles redirect based on selected report type
+  const handleSaveReport = () => {
     if (!selectedJournal) {
       toast.error("Please select a journal");
       return;
     }
-    router.push(`/survey-report/${update}?journalId=${selectedJournal}`);
+
+    if (reportType === "survey") {
+      router.push(`/survey-report/${update}?journalId=${selectedJournal}`);
+    } else if (reportType === "narrative") {
+      router.push(`/narative-report/${update}?journalId=${selectedJournal}`);
+    }
+
     setOpenDialog(false);
   };
 
@@ -116,7 +127,8 @@ const UpdateClient = ({ params }) => {
                 </>
               )}
               <CommonButton variant="contained" fontWeight={700} onClick={handleSurveyStatusReport} text="GENERATE SURVEY STATUS" />
-              <CommonButton variant="contained" fontWeight={700} onClick={handleSurveyReport} text="GENERATE SURVEY REPORT" />
+              <CommonButton variant="contained" fontWeight={700} onClick={() => openReportDialog("survey")} text="GENERATE SURVEY REPORT" />
+              {/* <CommonButton variant="contained" fontWeight={700} onClick={() => openReportDialog("narrative")} text="GENERATE NARRATIVE REPORT" /> */}
             </Stack>
           )}
         </Stack>
@@ -141,8 +153,9 @@ const UpdateClient = ({ params }) => {
 
       {editHistoryDialog && <EditHistoryDialog open={editHistoryDialog} changeHistory={changeHistory} onCancel={() => setEditHistoryDialog(false)} />}
 
+      {/* Common Dialog for both report types */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm">
-        {journalData?.length > 0 && (
+        {journalData?.length > 0 ? (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2, p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Select Report Number
@@ -150,14 +163,12 @@ const UpdateClient = ({ params }) => {
 
             <Autocomplete options={journalData} getOptionLabel={(option) => option.journalTypeId || ""} value={journalData.find((j) => j.id === selectedJournal) || null} onChange={(event, newValue) => setSelectedJournal(newValue?.id || "")} renderInput={(params) => <TextField {...params} label="Report No" fullWidth />} isOptionEqualToValue={(option, value) => option.id === value.id} />
 
-            {/* Action buttons */}
             <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}>
               <CommonButton variant="outlined" color="secondary" text="Cancel" onClick={() => setOpenDialog(false)} />
-              <CommonButton text="Ok" variant="contained" onClick={handleSaveJournal} />
+              <CommonButton text="Ok" variant="contained" onClick={handleSaveReport} />
             </Box>
           </Box>
-        )}
-        {journalData?.length === 0 && (
+        ) : (
           <Box sx={{ p: 3 }}>
             <Typography>No Journals Found</Typography>
             <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>

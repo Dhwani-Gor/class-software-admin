@@ -21,7 +21,7 @@ const AuthProvider = ({ children }) => {
     Clients: ["/clients"],
     Users: ["/staff"],
     Journals: ["/journal"],
-    Reporting: ["/reporting", "/survey-report", "/survey-status-report"],
+    Reporting: ["/reporting", "/survey-report", "/survey-status-report", "/narative-report"],
     IssuedDocument: ["/certificates"],
     SurveyType: ["/survey-types"],
     Documents: ["/documents"],
@@ -32,8 +32,8 @@ const AuthProvider = ({ children }) => {
   };
 
   // Base role routes (fallback)
-  const allowedRoutesRole1 = ["/clients", "/staff", "/journal", "/reporting", "/certificates", "/survey-types", "/documents", "/system-variables", "/settings", "/survey-report", "/classification", "/survey-status-report"];
-  const allowedRoutesRole2 = ["/journal", "/reporting", "/certificates", "/settings", "/clients", "/system-variables", "/survey-types", "/documents", "/classification", "/survey-status-report", "/survey-report"];
+  const allowedRoutesRole1 = ["/clients", "/staff", "/journal", "/reporting", "/certificates", "/survey-types", "/documents", "/system-variables", "/settings", "/survey-report", "/classification", "/survey-status-report", "/narative-report"];
+  const allowedRoutesRole2 = ["/journal", "/reporting", "/certificates", "/settings", "/clients", "/system-variables", "/survey-types", "/documents", "/classification", "/survey-status-report", "/survey-report", "/narative-report"];
   const allowedRoutesRole3 = ["/reporting", "/certificates", "/settings"];
 
   const publicRoutes = ["/login", "/digital-document"];
