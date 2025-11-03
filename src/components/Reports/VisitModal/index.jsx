@@ -99,7 +99,7 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
       const res = await getAllUsers();
       if (res?.data?.data) {
         const flattenedData = res?.data?.data?.filter(
-          (item) => item?.roleId === "2"
+          (item) => item?.role.name === "inspector"
         );
         const sortedData = flattenedData?.sort((a, b) => a?.id - b?.id);
         setSurveyors(sortedData);

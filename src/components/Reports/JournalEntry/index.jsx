@@ -492,17 +492,22 @@ const JournalEntryForm = ({ journalId = null }) => {
   const fetchSurveyors = async () => {
     try {
       const res = await getAllUsers();
-      if (res?.data?.data) {
-        const flattenedData = res?.data?.data?.filter(
-          (item) => item?.roleId === "2"
-        );
-        const sortedData = flattenedData?.sort((a, b) => a?.id - b?.id);
-        setSurveyors(sortedData);
-      }
+      const users = res?.data?.data || [];
+
+      // ✅ Filter only "inspector" roles
+      const inspectors = users.filter(
+        (user) => user?.role?.name?.toLowerCase() === "inspector"
+      );
+
+      // ✅ Sort by ID (optional)
+      const sortedInspectors = inspectors.sort((a, b) => Number(a.id) - Number(b.id));
+
+      setSurveyors(sortedInspectors);
     } catch (error) {
       console.error("Error fetching Surveyors:", error);
     }
   };
+
 
   const fetchJournal = async () => {
     try {
