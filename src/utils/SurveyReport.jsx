@@ -158,10 +158,10 @@ const SurveyReport = ({ id, reportNumber }) => {
       const surveyRows =
         latestReports && latestReports.length > 0
           ? latestReports
-              .map((cert) => {
-                const type = cert?.typeOfCertificate === "short_term" ? "ST" : cert?.typeOfCertificate === "full_term" ? "FT" : cert?.typeOfCertificate === "intrim" ? "IT" : cert?.typeOfCertificate === "extended" ? "ET" : cert?.typeOfCertificate || "[Type]";
+            .map((cert) => {
+              const type = cert?.typeOfCertificate === "short_term" ? "ST" : cert?.typeOfCertificate === "full_term" ? "FT" : cert?.typeOfCertificate === "intrim" ? "IT" : cert?.typeOfCertificate === "extended" ? "ET" : cert?.typeOfCertificate || "[Type]";
 
-                return `
+              return `
             <tr>
               <td>${cert?.activity?.surveyTypes?.report?.name || "-"}</td>
               <td style="text-align:center;">${type}</td>
@@ -171,8 +171,8 @@ const SurveyReport = ({ id, reportNumber }) => {
               <td style="text-align:center;">${cert?.validityDate ? moment(cert.validityDate).format("DD/MM/YYYY") : "-"}</td>
             </tr>
           `;
-              })
-              .join("")
+            })
+            .join("")
           : `
        <tr>
         <td colspan="6" style="text-align:center;padding:6px;">No Records</td>
@@ -189,21 +189,14 @@ const SurveyReport = ({ id, reportNumber }) => {
           const key = k.toLowerCase();
 
           switch (key) {
-            case "coc":
-              return "Condition of Class";
-            case "statutory":
-              return "Statutory";
-            case "memoranda":
-              return "Memoranda";
-            case "additional":
-              return "Additional Information";
-            case "compliance":
-              return "Compliance to New Regulations";
+            case "coc": return "Condition of Class";
+            case "statutory": return "Statutory";
+            case "memoranda": return "Memoranda";
+            case "additional": return "Additional Information";
+            case "compliance": return "Compliance to New Regulations";
             case "pcsfsi":
-            case "psc/fsi":
-              return "PSC / FSI Deficiency";
-            default:
-              return k.toUpperCase();
+            case "psc/fsi": return "PSC / FSI Deficiency";
+            default: return k.toUpperCase();
           }
         };
 
@@ -217,49 +210,77 @@ const SurveyReport = ({ id, reportNumber }) => {
           return idxA - idxB;
         });
 
-        const sectionsHtml = sortedSections
-          .map((section) => {
-            const rows = Array.isArray(section.data) ? section.data : section.data || [];
-            const matchedRows = rows.filter((r) => matchesReportNumber(r, reportNumber));
+        const sectionsHtml = sortedSections.map((section) => {
+          const allEntries = [];
 
-            if (!matchedRows.length) return "";
+          // Combine main entries and their histories into one list
+          section.data?.forEach((entry) => {
+            const combined = [entry, ...(entry.history || [])].map((e) => ({
+              ...e,
+              parentCode: entry.code, // for grouping
+              parentJournal: entry.journalTypeId || null,
+              createdAt: e.createdAt || entry.createdAt || null,
+            }));
+            allEntries.push(...combined);
+          });
 
-            const rowsHtml = matchedRows
-              .map((r) => {
-                const due = r?.dueDate ? moment(r.dueDate).format("DD/MM/YYYY") : "-";
-                const status = r?.action || "-";
-                return `
-            <tr>
-              <td style="padding:8px;border:1px solid #ccc;text-align:left;">${formatValue(r?.code)}</td>
-              <td style="padding:8px;border:1px solid #ccc;text-align:left;">${formatValue(r?.description)}</td>
-              <td style="padding:8px;border:1px solid #ccc;text-align:center;">${status}</td>
-              <td style="padding:8px;border:1px solid #ccc;text-align:center;">${due}</td>
-            </tr>
-          `;
-              })
-              .join("");
+          // Group by code (since multiple history items can exist for same code)
+          const latestByCode = Object.values(
+            allEntries.reduce((acc, curr) => {
+              const key = curr.parentCode || curr.code;
+              const existing = acc[key];
+              const currDate = new Date(curr.createdAt || curr.updatedAt || 0);
+              const existingDate = existing ? new Date(existing.createdAt || existing.updatedAt || 0) : 0;
 
-            return `
-        <h3 style="margin-top:18px;margin-bottom:8px;font-size:16px;color:#003366;">
-          ${titleForKey(section.sectionKey)}
-        </h3>
-        <table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:13px;">
-          <thead>
-            <tr>
-              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:left;width:10%;">Code</th>
-              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:left;width:60%">Description</th>
-              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:15%">Status</th>
-              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:25%">Due Date</th>
-            </tr>
-          </thead>
-          <tbody>${rowsHtml}</tbody>
-        </table>
-      `;
-          })
-          .join("");
+              if (!existing || currDate > existingDate) {
+                acc[key] = curr;
+              }
+              return acc;
+            }, {})
+          );
+
+          // Filter latest records matching the current report number
+          const matchedRows = latestByCode.filter((r) => matchesReportNumber(r, reportNumber));
+
+          if (!matchedRows.length) return "";
+
+          // Generate HTML for each record
+          const rowsHtml = matchedRows
+            .map((r) => {
+              const due = r?.dueDate ? moment(r.dueDate).format("DD/MM/YYYY") : "-";
+              const status = r?.action || "-";
+              return `
+          <tr>
+            <td style="padding:8px;border:1px solid #ccc;text-align:left;">${formatValue(r?.code)}</td>
+            <td style="padding:8px;border:1px solid #ccc;text-align:left;">${formatValue(r?.description)}</td>
+            <td style="padding:8px;border:1px solid #ccc;text-align:center;">${status}</td>
+            <td style="padding:8px;border:1px solid #ccc;text-align:center;">${due}</td>
+          </tr>
+        `;
+            })
+            .join("");
+
+          return `
+      <h3 style="margin-top:18px;margin-bottom:8px;font-size:16px;color:#003366;">
+        ${titleForKey(section.sectionKey)}
+      </h3>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:13px;">
+        <thead>
+          <tr>
+            <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:left;width:10%;">Code</th>
+            <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:left;width:60%">Description</th>
+            <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:15%">Status</th>
+            <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:25%">Due Date</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    `;
+        }).join("");
 
         return sectionsHtml;
       };
+
 
       const mainDetailsHtml = `
         <table style="border-collapse:collapse;width:100%;margin-bottom:12px;font-size:14px;">
