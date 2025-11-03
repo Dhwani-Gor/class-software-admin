@@ -15,6 +15,10 @@ import { fetchJournalList, getClientHistory, getSpecificClient } from "@/api";
 import { toast } from "react-toastify";
 import { transformData } from "@/utils/helper";
 import { useAuth } from "@/hooks/useAuth";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Divider from "@mui/material/Divider";
 
 const UpdateClient = ({ params }) => {
   const { update } = use(params);
@@ -30,6 +34,16 @@ const UpdateClient = ({ params }) => {
   const [journalData, setJournalData] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedJournal, setSelectedJournal] = useState("");
+  const [anchorEl, setAnchorEl] = useState(null);
+  const openMenu = Boolean(anchorEl);
+
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
 
   // 👇 NEW STATE to know which report type was triggered
   const [reportType, setReportType] = useState("");
@@ -119,20 +133,130 @@ const UpdateClient = ({ params }) => {
           </Stack>
 
           {reportDetails && (
-            <Stack direction="row" spacing={2}>
-              {data?.specialPermission?.includes("DataEntryRights(Clients)") && (
-                <>
-                  <CommonButton variant="outlined" text="Edit History" onClick={() => setEditHistoryDialog(true)} />
-                  <CommonButton text="Edit" variant="outlined" color="secondary" onClick={() => setIsEditDialogVisible(true)} />
-                </>
-              )}
-              <CommonButton variant="contained" fontWeight={700} onClick={handleSurveyStatusReport} text="GENERATE SURVEY STATUS" />
-              <CommonButton variant="contained" fontWeight={700} onClick={() => openReportDialog("survey")} text="GENERATE SURVEY REPORT" />
-              {/* <CommonButton variant="contained" fontWeight={700} onClick={() => openReportDialog("narrative")} text="GENERATE NARRATIVE REPORT" /> */}
-            </Stack>
+            <IconButton onClick={handleMenuOpen}>
+              <MoreVertIcon />
+            </IconButton>
           )}
         </Stack>
       </CommonCard>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={openMenu}
+        onClose={handleMenuClose}
+        PaperProps={{
+          elevation: 3,
+          sx: { borderRadius: 2, mt: 1 },
+        }}
+      >
+        {data?.specialPermission?.includes("DataEntryRights(Clients)") && (
+          <>
+            <MenuItem
+              onClick={() => {
+                handleMenuClose();
+                setEditHistoryDialog(true);
+              }}
+            >
+              Edit History
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                handleMenuClose();
+                setIsEditDialogVisible(true);
+              }}
+            >
+              Edit Client
+            </MenuItem>
+            <Divider />
+          </>
+        )}
+
+        <MenuItem
+          onClick={() => {
+            handleMenuClose();
+            handleSurveyStatusReport();
+          }}
+        >
+          Generate Survey Status Report
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            handleMenuClose();
+            openReportDialog("survey");
+          }}
+        >
+          Generate Survey Report
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            handleMenuClose();
+            openReportDialog("narrative");
+          }}
+        >
+          Generate Narrative Report
+        </MenuItem>
+      </Menu>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={openMenu}
+        onClose={handleMenuClose}
+        PaperProps={{
+          elevation: 3,
+          sx: { borderRadius: 2, mt: 1 },
+        }}
+      >
+        {data?.specialPermission?.includes("DataEntryRights(Clients)") && (
+          <>
+            <MenuItem
+              onClick={() => {
+                handleMenuClose();
+                setEditHistoryDialog(true);
+              }}
+            >
+              Edit History
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                handleMenuClose();
+                setIsEditDialogVisible(true);
+              }}
+            >
+              Edit Client
+            </MenuItem>
+            <Divider />
+          </>
+        )}
+
+        <MenuItem
+          onClick={() => {
+            handleMenuClose();
+            handleSurveyStatusReport();
+          }}
+        >
+          Generate Survey Status Report
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            handleMenuClose();
+            openReportDialog("survey");
+          }}
+        >
+          Generate Survey Report
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            handleMenuClose();
+            openReportDialog("narrative");
+          }}
+        >
+          Generate Narrative Report
+        </MenuItem>
+      </Menu>
 
       <Stack>
         <AddClientForm editReason={editReason} editingAllowed={editingAllowed} mode="update" clientId={update} role="client" />
