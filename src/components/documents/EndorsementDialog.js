@@ -122,7 +122,10 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
       if (typeof value === "string" && value.startsWith("_st_") && key !== "title") {
         const [, raw] = value.split("_st_");
         const optionsRaw = raw.split("_");
-        const options = optionsRaw.map((opt) => opt.replace(/-/g, " "));
+        const options = optionsRaw.map((opt) => {
+          const displayLabel = opt.replace(/-/g, " ").replace(/\d+$/, "");
+          return { raw: opt, label: displayLabel };
+        });
 
         radioFields.push({
           key,
@@ -144,7 +147,7 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
             </Typography>
             <MuiRadioGroup row value={radioValues[field.value] || ""} onChange={(e) => handleRadioChange(field.value, e.target.value)}>
               {field.options.map((opt) => (
-                <FormControlLabel key={opt} value={opt} control={<Radio size="small" />} label={opt} />
+                <FormControlLabel key={opt.raw} value={opt.raw} control={<Radio size="small" />} label={opt.label} />
               ))}
             </MuiRadioGroup>
           </Box>
@@ -163,20 +166,43 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
     Object.entries(selectedEndorsement).forEach(([key, value]) => {
       if (key === "title") return;
 
-      let finalValue = endorsementInputs[key] ?? value ?? "";
-
+      // Handle _st_ fields (radio-type fields)
       if (typeof value === "string" && value.startsWith("_st_")) {
         const [, raw] = value.split("_st_");
         const optionsRaw = raw.split("_");
-        const options = optionsRaw.map((opt) => opt.replace(/-/g, " "));
 
+        // Clean option labels (remove digits, replace dashes)
+        const options = optionsRaw.map((opt) => opt.replace(/-/g, " ").replace(/\d+$/, ""));
         const selectedOption = radioValues[value];
-        const formattedValue = options.map((opt) => (selectedOption === opt ? opt : applyStrikethrough(opt))).join(" / ");
+        let formattedValue;
+
+        if (!selectedOption) {
+          // If no option selected, show clean joined text
+          formattedValue = options.join(" / ");
+        } else {
+          const selectedClean = selectedOption.replace(/\d+$/, "");
+          formattedValue = options.map((opt) => (opt === selectedClean ? opt : applyStrikethrough(opt))).join(" / ");
+        }
 
         flattenedData[value] = formattedValue;
         return;
       }
 
+      // Handle normal fields (text/date/place)
+      let finalValue = endorsementInputs[key] ?? value ?? "";
+
+      // Convert date fields to DD/MM/YYYY format
+      if (key.toLowerCase().includes("date") && finalValue) {
+        const date = new Date(finalValue);
+        if (!isNaN(date)) {
+          const day = String(date.getDate()).padStart(2, "0");
+          const month = String(date.getMonth() + 1).padStart(2, "0");
+          const year = date.getFullYear();
+          finalValue = `${day}/${month}/${year}`;
+        }
+      }
+
+      // Map to correct backend keys
       let newKey = key;
       if (key === "endorsed_place") newKey = `issuance_place_${num}`;
       else if (key === "issuance_date") newKey = `issuance_date_${num}`;
@@ -186,12 +212,13 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
       flattenedData[newKey] = finalValue;
     });
 
-    flattenedData.isEndorsement = true;
-
+    // Add issuedBy if selected
     if (issuedBy) {
       const selectedSurveyor = surveyorOptions.find((s) => s.value === issuedBy);
       flattenedData[`endorsed_by_${num}`] = selectedSurveyor?.label || "";
     }
+
+    flattenedData.isEndorsement = true;
 
     onSubmit(flattenedData);
     onClose();
@@ -202,7 +229,7 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
       <DialogTitle sx={{ fontWeight: 600 }}>Choose Endorsement / Extension</DialogTitle>
       <DialogContent dividers>
         {endorsementList?.length > 0 ? (
-          endorsementList?.map((group, gIdx) => (
+          endorsementList.map((group, gIdx) => (
             <Box key={gIdx} sx={{ mb: 3 }}>
               <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1, color: "primary.main" }}>
                 {group.groupTitle}
