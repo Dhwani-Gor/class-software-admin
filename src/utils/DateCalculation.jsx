@@ -5,22 +5,24 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
 
     const issuanceDateObj = moment(issuanceDate);
 
-    const addYears = (date, years) => date ? moment(date).add(years, "years") : null;
-    const addMonths = (date, months) => date ? moment(date).add(months, "months") : null;
-    const formatDate = (date) => date && moment(date).isValid() ? moment(date).format("YYYY-MM-DD") : "";
+    const addYears = (date, years) => (date ? moment(date).add(years, "years") : null);
+    const addMonths = (date, months) => (date ? moment(date).add(months, "months") : null);
+    const formatDate = (date) =>
+        date && moment(date).isValid() ? moment(date).format("YYYY-MM-DD") : "";
 
-    // Normalize names: trims, lowercase, single space
     const normalizeName = (name) => name?.trim().toLowerCase().replace(/\s+/g, " ");
 
-    const findSurveyByName = (name) => existingSurveys.find(
-        (s) => normalizeName(s.surveyName) === normalizeName(name) && (s.surveyDate || s.issuanceDate)
-    );
+    const findSurveyByName = (name) =>
+        existingSurveys.find(
+            (s) =>
+                normalizeName(s.surveyName) === normalizeName(name) &&
+                (s.surveyDate || s.issuanceDate)
+        );
 
     let dueDate, rangeFrom, rangeTo, anniversaryDate;
 
     const surveyNameNormalized = normalizeName(surveyName);
 
-    // Robust dependency map for annual surveys
     const dependencyMap = {
         [normalizeName("Annual Survey")]: normalizeName("Special Survey Hull"),
         [normalizeName("Annual Survey IG System")]: normalizeName("Special Survey IG System"),
@@ -28,22 +30,19 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
         [normalizeName("Annual Survey (UMS)")]: normalizeName("Special Survey (UMS)"),
     };
 
-    // 🔹 Handle any survey that includes "special" or "continuous"
+    // 🔹 Handle "special" or "continuous" surveys
     if (surveyNameNormalized.includes("special") || surveyNameNormalized.includes("continuous")) {
-        const dueDate = addYears(issuanceDateObj, 5);
-        const rangeFrom = addMonths(dueDate, -3);
-        const rangeTo = addMonths(dueDate, 3);
-        const anniversaryDate = dueDate;
-
+        const due = addYears(issuanceDateObj, 5);
         return {
-            dueDate: formatDate(dueDate),
-            rangeFrom: formatDate(rangeFrom),
-            rangeTo: formatDate(rangeTo),
-            anniversaryDate: formatDate(anniversaryDate),
+            dueDate: formatDate(due),
+            rangeFrom: formatDate(addMonths(due, -3)),
+            rangeTo: formatDate(addMonths(due, 3)),
+            anniversaryDate: formatDate(due),
         };
     }
 
     switch (surveyNameNormalized) {
+        // 🔹 Special & Continuous Surveys
         case normalizeName("Special Survey Hull"):
         case normalizeName("Special Survey Machinery"):
         case normalizeName("Special Survey IG System"):
@@ -51,14 +50,13 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
         case normalizeName("Special Survey (UMS)"):
         case normalizeName("Continuous Survey Hull"):
         case normalizeName("Continuous Survey Machinery"):
-
             dueDate = addYears(issuanceDateObj, 5);
-            rangeFrom = addMonths(dueDate, -3); // Only minus 3 months
-            rangeTo = dueDate; // Same as due date
+            rangeFrom = addMonths(dueDate, -3);
+            rangeTo = addMonths(dueDate, 3); // ✅ 3 months before and after
             anniversaryDate = dueDate;
             break;
 
-        // Annual surveys
+        // 🔹 Annual Surveys (fixes SSH dependency & range)
         case normalizeName("Annual Survey"):
         case normalizeName("Annual Survey IG System"):
         case normalizeName("Annual Survey ( Fi-Fi)"):
@@ -66,37 +64,49 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
             const relatedSpecialSurveyName = dependencyMap[surveyNameNormalized];
             const relatedSpecialSurvey = findSurveyByName(relatedSpecialSurveyName);
 
-            let baseDate = relatedSpecialSurvey?.surveyDate
-                ? moment(relatedSpecialSurvey.surveyDate)
-                : relatedSpecialSurvey?.issuanceDate
-                    ? moment(relatedSpecialSurvey.issuanceDate)
-                    : issuanceDateObj;
+            // ✅ Use SSH dueDate as base (anniversary logic)
+            let baseDate = relatedSpecialSurvey?.dueDate
+                ? moment(relatedSpecialSurvey.dueDate)
+                : relatedSpecialSurvey?.surveyDate
+                    ? moment(relatedSpecialSurvey.surveyDate)
+                    : relatedSpecialSurvey?.issuanceDate
+                        ? moment(relatedSpecialSurvey.issuanceDate)
+                        : issuanceDateObj;
 
-            // Check for previous annual survey
             const lastAnnual = existingSurveys
                 .filter((s) => normalizeName(s.surveyName) === surveyNameNormalized && s.dueDate)
                 .sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate))[0];
 
-            dueDate = lastAnnual ? addYears(moment(lastAnnual.dueDate), 1) : addYears(baseDate, 1);
+            if (lastAnnual) {
+                dueDate = addYears(moment(lastAnnual.dueDate), 1);
+            } else if (relatedSpecialSurvey?.dueDate) {
+                dueDate = addYears(moment(relatedSpecialSurvey.dueDate), -4);
+            } else {
+                dueDate = addYears(baseDate, 1);
+            }
+
             rangeFrom = addMonths(dueDate, -3);
-            rangeTo = dueDate;
+            rangeTo = addMonths(dueDate, 3);
             anniversaryDate = dueDate;
             break;
         }
 
-        // Docking / boiler / tailshaft surveys
         case normalizeName("Docking Survey"):
         case normalizeName("Main Boiler Survey"):
         case normalizeName("Auxiliary Boiler Survey"):
         case normalizeName("Thermal Oil Heating Systems Survey"):
-        case normalizeName("Exhaust Gas Steam Generators and Economisers Survey"):
-        case normalizeName("Tailshaft Condition Monitoring Annual Survey"): {
+        case normalizeName("Exhaust Gas Steam Generators and Economisers Survey"): {
             const specialSurveyHull = findSurveyByName("special survey hull");
-            const baseDate = specialSurveyHull?.surveyDate || specialSurveyHull?.issuanceDate || issuanceDateObj;
+            const baseDate =
+                specialSurveyHull?.surveyDate ||
+                specialSurveyHull?.issuanceDate ||
+                issuanceDateObj;
             const sshDueDate = addYears(baseDate, 5);
 
             const existingCurrentSurveys = existingSurveys
-                .filter((s) => normalizeName(s.surveyName) === surveyNameNormalized && s.dueDate)
+                .filter(
+                    (s) => normalizeName(s.surveyName) === surveyNameNormalized && s.dueDate
+                )
                 .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
             if (!existingCurrentSurveys.length) {
@@ -110,70 +120,81 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
             }
 
             if (dueDate.isAfter(sshDueDate)) dueDate = addMonths(sshDueDate, -3);
-            rangeFrom = addMonths(dueDate, -3);
-            rangeTo = dueDate;
+
+            // 🚫 No range for Docking/Boiler
+            rangeFrom = "";
+            rangeTo = "";
             anniversaryDate = dueDate;
             break;
         }
 
-        // Intermediate surveys - Auto-calculate both surveys in 5-year span
+        // 🔹 Tailshaft Condition Monitoring Annual Survey — 3 months ± range
+        case normalizeName("Tailshaft Condition Monitoring Annual Survey"): {
+            const specialSurveyHull = findSurveyByName("special survey hull");
+            const baseDate =
+                specialSurveyHull?.surveyDate ||
+                specialSurveyHull?.issuanceDate ||
+                issuanceDateObj;
+            const sshDueDate = addYears(baseDate, 5);
+
+            const existingCurrentSurveys = existingSurveys
+                .filter(
+                    (s) => normalizeName(s.surveyName) === surveyNameNormalized && s.dueDate
+                )
+                .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+            if (!existingCurrentSurveys.length) {
+                dueDate = addYears(baseDate, 3);
+            } else if (existingCurrentSurveys.length === 1) {
+                let nextDue = addYears(moment(existingCurrentSurveys[0].dueDate), 2);
+                if (nextDue.isAfter(sshDueDate)) nextDue = addMonths(sshDueDate, -3);
+                dueDate = nextDue;
+            } else {
+                dueDate = addYears(issuanceDateObj, 2);
+            }
+
+            if (dueDate.isAfter(sshDueDate)) dueDate = addMonths(sshDueDate, -3);
+
+            // ✅ Tailshaft Annual gets ±3 months range
+            rangeFrom = addMonths(dueDate, -3);
+            rangeTo = addMonths(dueDate, 3);
+            anniversaryDate = dueDate;
+            break;
+        }
+
         case normalizeName("Intermediate Survey"): {
             const specialSurveyHull = findSurveyByName("special survey hull");
             if (specialSurveyHull) {
-                const sshDate = moment(specialSurveyHull.surveyDate || specialSurveyHull.issuanceDate);
+                const sshDate = moment(
+                    specialSurveyHull.surveyDate || specialSurveyHull.issuanceDate
+                );
                 const sshDueDate = addYears(sshDate, 5);
 
-                // Find existing intermediate surveys in this cycle
                 const existingIntermediates = existingSurveys
-                    .filter((s) =>
-                        normalizeName(s.surveyName) === surveyNameNormalized &&
-                        s.dueDate &&
-                        moment(s.dueDate).isAfter(sshDate) &&
-                        moment(s.dueDate).isBefore(sshDueDate)
+                    .filter(
+                        (s) =>
+                            normalizeName(s.surveyName) === surveyNameNormalized &&
+                            s.dueDate &&
+                            moment(s.dueDate).isAfter(sshDate) &&
+                            moment(s.dueDate).isBefore(sshDueDate)
                     )
                     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
-                // Calculate based on number of existing intermediates
                 if (existingIntermediates.length === 0) {
-                    // First intermediate: around year 2.5 (closer to year 2 or 3)
-                    const candidate2 = addYears(sshDate, 2);
-                    const candidate3 = addYears(sshDate, 3);
-                    const target = addMonths(sshDate, 30); // 2.5 years
-                    dueDate = Math.abs(candidate2 - target) < Math.abs(candidate3 - target) ? candidate2 : candidate3;
+                    dueDate = addMonths(sshDate, 30); // around 2.5 years
                 } else if (existingIntermediates.length === 1) {
-                    // Second intermediate: schedule at the alternate year (2 or 3)
                     const firstIntermediateDue = moment(existingIntermediates[0].dueDate);
-                    const sshYear = sshDate.year();
-                    const firstYear = firstIntermediateDue.year();
-                    const yearsDiff = firstYear - sshYear;
-
-                    // If first was closer to year 2, make second at year 3, and vice versa
-                    if (yearsDiff <= 2) {
-                        dueDate = addYears(sshDate, 3);
-                    } else {
-                        dueDate = addYears(sshDate, 2);
-                    }
+                    const yearsDiff = firstIntermediateDue.diff(sshDate, "years");
+                    dueDate = yearsDiff <= 2 ? addYears(sshDate, 3) : addYears(sshDate, 2);
                 } else if (existingIntermediates.length >= 2) {
-                    // Already have 2 or more intermediates - check if we need another based on spacing
                     const lastIntermediate = existingIntermediates[existingIntermediates.length - 1];
-                    const lastIntermediateDue = moment(lastIntermediate.dueDate);
-
-                    // Calculate next due (2 years from last)
-                    const nextDue = addYears(lastIntermediateDue, 2);
-
-                    // Only schedule if it's before SSH due date
-                    if (nextDue.isBefore(sshDueDate)) {
-                        dueDate = nextDue;
-                    } else {
-                        dueDate = "";
-                        rangeFrom = "";
-                        rangeTo = "";
-                    }
+                    const nextDue = addYears(moment(lastIntermediate.dueDate), 2);
+                    dueDate = nextDue.isBefore(sshDueDate) ? nextDue : "";
                 }
 
                 if (dueDate) {
-                    rangeFrom = addMonths(dueDate, -3); // Only minus 3 months
-                    rangeTo = dueDate; // Same as due date
+                    rangeFrom = addMonths(dueDate, -3);
+                    rangeTo = addMonths(dueDate, 3);
                 }
             } else {
                 dueDate = "";
@@ -184,7 +205,7 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
             break;
         }
 
-        // In-water surveys
+        // 🔹 In-water Survey
         case normalizeName("In Water Survey"):
             dueDate = addYears(issuanceDateObj, 3);
             rangeFrom = "";
@@ -192,7 +213,7 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
             anniversaryDate = dueDate;
             break;
 
-        // Tailshaft surveys
+        // 🔹 Tailshaft Surveys
         case normalizeName("Tailshaft Initial Survey"):
         case normalizeName("Tailshaft Periodical Survey"):
         case normalizeName("Tailshaft Renewal Survey"):
