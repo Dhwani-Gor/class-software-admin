@@ -201,8 +201,8 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ fontWeight: 600 }}>Choose Endorsement / Extension</DialogTitle>
       <DialogContent dividers>
-        {endorsementList.length > 0 ? (
-          endorsementList.map((group, gIdx) => (
+        {endorsementList?.length > 0 ? (
+          endorsementList?.map((group, gIdx) => (
             <Box key={gIdx} sx={{ mb: 3 }}>
               <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1, color: "primary.main" }}>
                 {group.groupTitle}
