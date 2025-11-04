@@ -9,101 +9,104 @@ import { toast } from "react-toastify";
 import CommonButton from "@/components/CommonButton";
 import Loader from "@/components/Loader";
 import {
-    getSpecificClient,
-    getAllSystemVariables,
-    getSurveyReportDataByJournalId,
-    getVisitDetails,
+  getSpecificClient,
+  getAllSystemVariables,
+  getSurveyReportDataByJournalId,
+  getVisitDetails,
+  uploadSurveyReport,
 } from "@/api";
 import { useRouter } from "next/navigation";
 
 const NarrativeReport = ({ id, reportNumber }) => {
-    const router = useRouter();
-    const [loading, setLoading] = useState(true);
-    const [clientData, setClientData] = useState(null);
-    const [reportDetails, setReportDetails] = useState([]);
-    const [systemVariables, setSystemVariables] = useState(null);
-    const [editorContent, setEditorContent] = useState("");
-    const [firstVisit, setFirstVisit] = useState(null);
-    const [lastVisit, setLastVisit] = useState(null);
-    const [numOfVisit, setNumOfVisit] = useState(null);
-    const [places, setPlaces] = useState([]);
-    const [isLastVisit, setIsLastVisit] = useState(false);
-    const currentDate = new Date();
-    const stamp = systemVariables?.data?.find((i) => i.name === "company_stamp")?.information || "-";
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [clientData, setClientData] = useState(null);
+  const [reportDetails, setReportDetails] = useState([]);
+  const [systemVariables, setSystemVariables] = useState(null);
+  const [editorContent, setEditorContent] = useState("");
+  const [firstVisit, setFirstVisit] = useState(null);
+  const [lastVisit, setLastVisit] = useState(null);
+  const [numOfVisit, setNumOfVisit] = useState(null);
+  const [places, setPlaces] = useState([]);
+  const [isLastVisit, setIsLastVisit] = useState(false);
+  const currentDate = new Date();
+  const stamp = systemVariables?.data?.find((i) => i.name === "company_stamp")?.information || "-";
 
-    // Fetch all required data
-    useEffect(() => {
-        if (!id) return;
-        const loadAllData = async () => {
-            try {
-                setLoading(true);
-                const [clientResult, reportResult, sysVarsResult] = await Promise.all([
-                    getSpecificClient(id),
-                    getSurveyReportDataByJournalId(id, reportNumber),
-                    getAllSystemVariables(),
-                ]);
+  // Fetch all required data
+  useEffect(() => {
+    if (!id) return;
+    const loadAllData = async () => {
+      try {
+        setLoading(true);
+        const [clientResult, reportResult, sysVarsResult] = await Promise.all([
+          getSpecificClient(id),
+          getSurveyReportDataByJournalId(id, reportNumber),
+          getAllSystemVariables(),
+        ]);
 
-                if (clientResult?.status === 200) setClientData(clientResult.data.data);
-                if (reportResult?.status === 200) setReportDetails(reportResult.data.data || []);
-                if (sysVarsResult?.status === 200) setSystemVariables(sysVarsResult.data);
+        if (clientResult?.status === 200) setClientData(clientResult.data.data);
+        if (reportResult?.status === 200) setReportDetails(reportResult.data.data || []);
+        if (sysVarsResult?.status === 200) setSystemVariables(sysVarsResult.data);
 
-                const journalIds = reportResult?.data?.data
-                    ?.map((i) => i?.activity?.journal?.id)
-                    .filter(Boolean);
+        const journalIds = reportResult?.data?.data
+          ?.map((i) => i?.activity?.journal?.id)
+          .filter(Boolean);
 
-                const uniqueJournalId = [...new Set(journalIds)][0];
-                if (uniqueJournalId) {
-                    const visitResponse = await getVisitDetails("journalId", uniqueJournalId);
-                    const visits = visitResponse?.data?.data;
-                    if (visits?.length) {
-                        setLastVisit(visits[0]?.date);
-                        setFirstVisit(visits[visits.length - 1]?.date);
-                        setNumOfVisit(visits.length);
-                        setIsLastVisit(visits[0].journal?.isLocked);
-                        const placesList = visits
-                            .map((visit) => visit?.location?.replace(/\s*\(.*?\)\s*/g, "").trim())
-                            .filter(Boolean);
-                        setPlaces(placesList);
-                    }
-                }
-            } catch (error) {
-                toast.error("Failed to load narrative report data");
-            } finally {
-                setLoading(false);
-            }
-        };
-        loadAllData();
-    }, [id, reportNumber]);
+        const uniqueJournalId = [...new Set(journalIds)][0];
+        if (uniqueJournalId) {
+          const visitResponse = await getVisitDetails("journalId", uniqueJournalId);
+          const visits = visitResponse?.data?.data;
+          if (visits?.length) {
+            setLastVisit(visits[0]?.date);
+            setFirstVisit(visits[visits.length - 1]?.date);
+            setNumOfVisit(visits.length);
+            setIsLastVisit(visits[0].journal?.isLocked);
+            const placesList = visits
+              .map((visit) => visit?.location?.replace(/\s*\(.*?\)\s*/g, "").trim())
+              .filter(Boolean);
+            setPlaces(placesList);
+          }
+        }
+      } catch (error) {
+        toast.error("Failed to load narrative report data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadAllData();
+  }, [id, reportNumber]);
 
-    // Generate HTML layout for narrative report
-    const generateHtml = useCallback(() => {
-        if (!clientData || !reportDetails || !systemVariables) return "";
+  // Generate HTML layout for narrative report
+  const generateHtml = useCallback(() => {
+    if (!clientData || !reportDetails || !systemVariables) return "";
 
-        const companyName =
-            systemVariables?.data?.find((i) => i.name === "company_name")?.information || "";
-        const companyLogo =
-            systemVariables?.data?.find((i) => i.name === "company_logo")?.information || "";
+    const companyName =
+      systemVariables?.data?.find((i) => i.name === "company_name")?.information || "";
+    const companyLogo =
+      systemVariables?.data?.find((i) => i.name === "company_logo")?.information || "";
 
-        const shipName = clientData?.shipName || "-";
-        const imo = clientData?.imoNumber || "-";
-        const reportNo =
-            reportDetails[0]?.activity?.journal?.journalTypeId || reportNumber || "-";
+    const shipName = clientData?.shipName || "-";
+    const imo = clientData?.imoNumber || "-";
+    const reportNo =
+      reportDetails[0]?.activity?.journal?.journalTypeId || reportNumber || "-";
+    const issuer = reportDetails?.map((i) => i?.issuer?.name);
+    const uniqueSurveyors = [...new Set(issuer)].join(",").toUpperCase();
 
-        const activityHtml =
-            reportDetails && reportDetails.length
-                ? reportDetails
-                    .map((item, idx) => {
-                        const name =
-                            item?.activity?.surveyTypes?.name ||
-                            item?.activity?.name ||
-                            item?.activity?.typeOfSurvey ||
-                            "-";
-                        const remarks =
-                            item?.activity?.remarks ||
-                            item?.activity?.surveyRemarks ||
-                            item?.remarks ||
-                            "-";
-                        return `
+    const activityHtml =
+      reportDetails && reportDetails.length
+        ? reportDetails
+          .map((item, idx) => {
+            const name =
+              item?.activity?.surveyTypes?.name ||
+              item?.activity?.name ||
+              item?.activity?.typeOfSurvey ||
+              "-";
+            const remarks =
+              item?.activity?.remarks ||
+              item?.activity?.surveyRemarks ||
+              item?.remarks ||
+              "-";
+            return `
                 <div style="margin-bottom:20px;page-break-inside:avoid;">
                   <div style="font-weight:700;color:#1a5490;font-size:15px;margin-bottom:8px;border-bottom:2px solid #e0e0e0;padding-bottom:4px;">
                     ${idx + 1}. ${name}
@@ -113,21 +116,21 @@ const NarrativeReport = ({ id, reportNumber }) => {
                   </div>
                 </div>
               `;
-                    })
-                    .join("")
-                : `<p style="color:#666;text-align:center;padding:40px 0;">No narrative activities available.</p>`;
+          })
+          .join("")
+        : `<p style="color:#666;text-align:center;padding:40px 0;">No narrative activities available.</p>`;
 
-        const signaturesHtml = `
+    const signaturesHtml = `
       <div style="display:flex;justify-content:space-between;margin-top:80px;padding-top:30px;border-top:2px solid #1a5490;page-break-inside:avoid;">
         <div style="width:45%;">
                     <div class="stamp">${stamp ? `<img src="${stamp}" width="100" height="100" alt="Stamp" />` : ""}</div>
 
           <div style="font-weight:800;font-size:15px;color:#1a5490;margin-bottom:12px;text-decoration:underline;"><strong>Signatures</strong></div>
 
-          <div style="margin-bottom:8px;color:#333;">Surveyors</div>
+          <div style="margin-bottom:8px;color:#333;"><strong>Surveyors:</strong> ${uniqueSurveyors || "-"}</div>
           <div style="margin-top:24px;line-height:1.8;">
             <div style="margin-bottom:6px;"><strong>Port:</strong> ${places?.join(", ") || "-"}</div>
-            <div><strong>Date:</strong> ${lastVisit ? moment(lastVisit).format("DD/MM/YYYY") : "-"}</div>
+            <div><strong>Date:</strong> ${isLastVisit === true || isLastVisit === "true" ? moment(lastVisit).format("DD/MM/YYYY") : "-"}</div>
           </div>
         </div>
 
@@ -142,7 +145,7 @@ const NarrativeReport = ({ id, reportNumber }) => {
       </div>
     `;
 
-        return `
+    return `
       <div class="page" style="font-family:'Times New Roman',serif;background:#fff;padding:50px;max-width:1200px;margin:0 auto;">
         
         <!-- Header Section -->
@@ -154,7 +157,7 @@ const NarrativeReport = ({ id, reportNumber }) => {
             <div style="font-weight:700;color:#1a5490;font-size:24px;text-transform:uppercase;letter-spacing:1px;">
               ${companyName}
             </div>
-            <div style="font-weight:600;margin-top:8px;font-size:18px;color:#333;border-top:2px solid #ddd;border-bottom:2px solid #ddd;padding:8px 0;margin-top:12px;">
+            <div style="font-weight:600;margin-top:8px;font-size:18px;color:#333;padding:8px 0;margin-top:12px;">
               NARRATIVE REPORT
             </div>
           </div>
@@ -163,7 +166,7 @@ const NarrativeReport = ({ id, reportNumber }) => {
 
         <!-- Information Table -->
         <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:35px;background:#f8f9fa;">
-          <tr style="background:#1a5490;color:#fff;">
+          <tr style="color:#000;">
             <td style="padding:12px;font-weight:700;border:1px solid #ddd;">Ship's Name:</td>
             <td style="padding:12px;border:1px solid #ddd;background:#fff;color:#333;">${shipName}</td>
             <td style="padding:12px;font-weight:700;border:1px solid #ddd;">Report No:</td>
@@ -172,14 +175,6 @@ const NarrativeReport = ({ id, reportNumber }) => {
           <tr>
             <td style="padding:12px;font-weight:700;border:1px solid #ddd;background:#e9ecef;">IMO Number:</td>
             <td style="padding:12px;border:1px solid #ddd;background:#fff;">${imo}</td>
-            <td style="padding:12px;font-weight:700;border:1px solid #ddd;background:#e9ecef;">No. of Visits:</td>
-            <td style="padding:12px;border:1px solid #ddd;background:#fff;">${numOfVisit || "-"}</td>
-          </tr>
-          <tr>
-            <td style="padding:12px;font-weight:700;border:1px solid #ddd;background:#e9ecef;">First Visit:</td>
-            <td style="padding:12px;border:1px solid #ddd;background:#fff;">${firstVisit ? moment(firstVisit).format("DD/MM/YYYY") : "-"}</td>
-            <td style="padding:12px;font-weight:700;border:1px solid #ddd;background:#e9ecef;">Last Visit:</td>
-            <td style="padding:12px;border:1px solid #ddd;background:#fff;">${lastVisit ? moment(lastVisit).format("DD/MM/YYYY") : "-"}</td>
           </tr>
         </table>
 
@@ -200,69 +195,88 @@ const NarrativeReport = ({ id, reportNumber }) => {
         </div>
       </div>
     `;
-    }, [clientData, reportDetails, systemVariables, firstVisit, lastVisit, numOfVisit, places, currentDate, reportNumber]);
+  }, [clientData, reportDetails, systemVariables, firstVisit, lastVisit, numOfVisit, places, currentDate, reportNumber]);
 
-    useEffect(() => {
-        if (!loading && clientData && reportDetails && systemVariables) {
-            const html = generateHtml();
-            setEditorContent(html);
-        }
-    }, [loading, clientData, reportDetails, systemVariables, generateHtml]);
+  useEffect(() => {
+    if (!loading && clientData && reportDetails && systemVariables) {
+      const html = generateHtml();
+      setEditorContent(html);
+    }
+  }, [loading, clientData, reportDetails, systemVariables, generateHtml]);
 
-    // Download as PDF
-    const downloadEditorContentAsPdf = async () => {
-        try {
-            const element = document.createElement("div");
-            element.innerHTML = editorContent;
-            document.body.appendChild(element);
-            const canvas = await html2canvas(element, {
-                scale: 2,
-                useCORS: true,
-                logging: false,
-            });
-            const imgData = canvas.toDataURL("image/png");
-            const pdf = await PDFDocument.create();
-            const page = pdf.addPage([canvas.width, canvas.height]);
-            const image = await pdf.embedPng(imgData);
-            page.drawImage(image, { x: 0, y: 0, width: canvas.width, height: canvas.height });
-            const pdfBytes = await pdf.save();
-            const blob = new Blob([pdfBytes], { type: "application/pdf" });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `Narrative_Report_${clientData?.shipName || "Report"}_${moment(currentDate).format("DDMMYYYY")}.pdf`;
-            link.click();
-            URL.revokeObjectURL(url);
-            document.body.removeChild(element);
-            toast.success("PDF downloaded successfully!");
-        } catch (err) {
-            toast.error("Failed to generate PDF");
-            console.error(err);
-        }
-    };
+  // Download as PDF
+  const downloadEditorContentAsPdf = async () => {
+    try {
+      const element = document.createElement("div");
+      element.innerHTML = editorContent;
+      document.body.appendChild(element);
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = await PDFDocument.create();
+      const page = pdf.addPage([canvas.width, canvas.height]);
+      const image = await pdf.embedPng(imgData);
+      page.drawImage(image, { x: 0, y: 0, width: canvas.width, height: canvas.height });
+      const pdfBytes = await pdf.save();
+      const blob = new Blob([pdfBytes], { type: "application/pdf" });
 
-    if (loading)
-        return (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-                <Loader />
-            </Box>
-        );
+      // Create file object
+      const file = new File(
+        [blob],
+        `Narrative_Report_${clientData?.shipName || "Report"}_${moment(currentDate).format("DDMMYYYY")}.pdf`,
+        { type: "application/pdf" }
+      );
 
+      // Prepare form data for API
+      const formData = new FormData();
+      formData.append("clientId", id);
+      formData.append("reportNumber", reportDetails[0]?.activity?.journal?.journalTypeId);
+      formData.append("surveyType", reportDetails[0]?.activity?.surveyTypes?.name);
+      formData.append("generatedDoc", file);
+
+      const res = await uploadSurveyReport(formData);
+      if (res) {
+        toast.success("Narrative Report uploaded successfully");
+      }
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Narrative Report-${reportDetails[0]?.activity?.journal?.journalTypeId}-${clientData?.shipName}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error("Failed to generate Narrative Report");
+      console.error(err);
+    }
+  };
+
+  if (loading)
     return (
-        <>
-            <Editor
-                apiKey="p9j94lg0okz82u9rr4v3zhap0pimbq1hob48rzesv3c5dylj"
-                value={editorContent}
-                onEditorChange={setEditorContent}
-                init={{
-                    height: 900,
-                    menubar: true,
-                    plugins: [
-                        "advlist", "autolink", "lists", "link", "image", "charmap",
-                        "print", "preview", "code", "fullscreen", "table", "textcolor"
-                    ],
-                    toolbar: "undo redo | formatselect | bold italic underline forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | table | code fullscreen",
-                    content_style: `
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <Loader />
+      </Box>
+    );
+
+  return (
+    <>
+      <Editor
+        apiKey="p9j94lg0okz82u9rr4v3zhap0pimbq1hob48rzesv3c5dylj"
+        value={editorContent}
+        onEditorChange={setEditorContent}
+        init={{
+          height: 900,
+          menubar: true,
+          plugins: [
+            "advlist", "autolink", "lists", "link", "image", "charmap",
+            "print", "preview", "code", "fullscreen", "table", "textcolor"
+          ],
+          toolbar: "undo redo | formatselect | bold italic underline forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | table | code fullscreen",
+          content_style: `
             body {
               font-family: 'Times New Roman', serif;
               font-size: 14px;
@@ -278,15 +292,15 @@ const NarrativeReport = ({ id, reportNumber }) => {
               border-radius: 8px;
             }
           `,
-                }}
-            />
+        }}
+      />
 
-            <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
-                <CommonButton onClick={() => router.push(`/clients/${id}`)} text="Back" />
-                <CommonButton onClick={downloadEditorContentAsPdf} text="Download PDF" />
-            </Box>
-        </>
-    );
+      <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
+        <CommonButton onClick={() => router.push(`/clients/${id}`)} text="Back" />
+        <CommonButton onClick={downloadEditorContentAsPdf} text="Download PDF" />
+      </Box>
+    </>
+  );
 };
 
 export default NarrativeReport;
