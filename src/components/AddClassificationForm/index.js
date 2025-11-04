@@ -9,7 +9,8 @@ import CommonButton from "../CommonButton";
 import { toast } from "react-toastify";
 import { calculateDates } from "@/utils/DateCalculation";
 
-const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, onSuccess }) => {
+const ClassificationForm = ({ mode, variableId, selectedShip, onSuccess }) => {
+  console.log(mode, variableId, selectedShip, onSuccess, "classification");
   const [classificationRows, setClassificationRows] = useState([]);
   const [cancelled, setCancelled] = useState(false);
   const [surveyTypes, setSurveyTypes] = useState([]);
@@ -54,6 +55,15 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
     postponed: "",
   });
 
+  useEffect(() => {
+    if (selectedShip?.id && mode === "create") {
+      setExistingSurveys([]);
+      setClassificationRows([createEmptyRow()]);
+
+      getAllClassification();
+    }
+  }, [selectedShip?.id]);
+
   const checkAndShowSSHWarning = (surveyName) => {
     if (!surveyName) return;
 
@@ -89,6 +99,45 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
     }
   };
 
+  // const getAllClassification = async () => {
+  //   try {
+  //     if (!selectedShip.id) return;
+
+  //     const result = await getAllClassificationSurveys({
+  //       clientId: selectedShip.id,
+  //       page: 1,
+  //       limit: 100,
+  //     });
+
+  //     if (result?.status === 200) {
+  //       const data = result.data.data;
+  //       setExistingSurveys(data);
+
+  //       if (classificationRows.length > 0 && classificationRows[0].surveyName) {
+  //         const updatedRows = classificationRows.map((row) => {
+  //           if (row.surveyName && (row.surveyDate || row.issuanceDate)) {
+  //             const dateToUse = row.issuanceDate || row.surveyDate;
+  //             const { anniversaryDate } = calculateDates(dateToUse, row.surveyName, data);
+
+  //             return {
+  //               ...row,
+  //               anniversaryDate,
+  //               anniversaryDateDisplay: anniversaryDate ? moment(anniversaryDate).format("DD MMM") : "",
+  //             };
+  //           }
+  //           return row;
+  //         });
+  //         setClassificationRows(updatedRows);
+  //       }
+  //     } else {
+  //       toast.error("Something went wrong! Please try again later");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching classification data:", error);
+  //     toast.error(error.message || "Error fetching classification data");
+  //   }
+  // };
+
   const getAllClassification = async () => {
     try {
       if (!selectedShip.id) return;
@@ -103,8 +152,9 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
         const data = result.data.data;
         setExistingSurveys(data);
 
-        // If we have rows, recalculate their anniversary dates with fresh data
-        if (classificationRows.length > 0 && classificationRows[0].surveyName) {
+        // Only update rows if we're in update mode and have a variableId
+        // For create mode, let the useEffect handle row initialization
+        if (mode === "update" && variableId && classificationRows.length > 0 && classificationRows[0].surveyName) {
           const updatedRows = classificationRows.map((row) => {
             if (row.surveyName && (row.surveyDate || row.issuanceDate)) {
               const dateToUse = row.issuanceDate || row.surveyDate;
@@ -128,9 +178,10 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
       toast.error(error.message || "Error fetching classification data");
     }
   };
-
   useEffect(() => {
-    getAllClassification();
+    if (selectedShip?.id) {
+      getAllClassification();
+    }
   }, [selectedShip?.id]);
 
   const fetchAllSurveyTypes = async () => {
@@ -162,7 +213,6 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
         currentRow.issuanceDate = value;
       }
 
-      // Calculate dates immediately when surveyDate or issuanceDate changes
       if (currentRow.surveyName && value) {
         const { dueDate, rangeFrom, rangeTo, anniversaryDate } = calculateDates(value, currentRow.surveyName, existingSurveys);
         currentRow.dueDate = dueDate;
@@ -174,7 +224,6 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
     } else if (field === "issuanceDate") {
       currentRow.issuanceDate = value;
 
-      // Calculate dates immediately when issuanceDate changes
       if (currentRow.surveyName && value) {
         const { dueDate, rangeFrom, rangeTo, anniversaryDate } = calculateDates(value, currentRow.surveyName, existingSurveys);
         currentRow.dueDate = dueDate;
@@ -191,11 +240,11 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
       const noRangeSurveys = ["docking survey", "main boiler survey", "auxiliary boiler survey", "thermal oil heating systems survey", "exhaust gas steam generators and economisers survey"];
 
       if (surveyName === "tailshaft condition monitoring annual survey") {
-        currentRow.rangeFrom = moment(value).add(3, "months").format("YYYY-MM-DD");
-        currentRow.rangeTo = moment(value).subtract(3, "months").format("YYYY-MM-DD");
+        currentRow.rangeFrom = moment(value).subtract(3, "months").format("YYYY-MM-DD");
+        currentRow.rangeTo = moment(value).add(3, "months").format("YYYY-MM-DD");
       } else if (surveyName && !noRangeSurveys.includes(surveyName)) {
-        currentRow.rangeFrom = moment(value).add(3, "months").format("YYYY-MM-DD");
-        currentRow.rangeTo = moment(value).subtract(3, "months").format("YYYY-MM-DD");
+        currentRow.rangeFrom = moment(value).subtract(3, "months").format("YYYY-MM-DD");
+        currentRow.rangeTo = moment(value).add(3, "months").format("YYYY-MM-DD");
       } else {
         currentRow.rangeFrom = "";
         currentRow.rangeTo = "";
@@ -262,15 +311,15 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
 
         const formattedRow = {
           id: data.id,
-          surveyName: data.surveyName,
-          surveyDate: data.surveyDate ? data.surveyDate : "",
-          issuanceDate: data.issuanceDate,
-          dueDate: calculatedData.dueDate || data.dueDate,
-          rangeFrom: data.rangeFrom ? data.rangeFrom : "",
-          rangeTo: data.rangeTo ? data.rangeTo : "",
-          postponed: data.postponed ? data.postponed : "",
-          anniversaryDate: calculatedData.anniversaryDate,
-          anniversaryDateDisplay: calculatedData.anniversaryDate ? moment(calculatedData.anniversaryDate).format("DD MMM") : "",
+          surveyName: data.surveyName || "",
+          surveyDate: data.surveyDate || "",
+          issuanceDate: data.issuanceDate || "",
+          dueDate: data.dueDate || "",
+          rangeFrom: data.rangeFrom || "",
+          rangeTo: data.rangeTo || "",
+          postponed: data.postponed || "",
+          anniversaryDate: data.anniversaryDate || "",
+          anniversaryDateDisplay: data.anniversaryDate ? moment(data.anniversaryDate).format("DD MMM") : "",
         };
 
         setClassificationRows([formattedRow]);
@@ -282,7 +331,7 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
 
   const handleAddClassification = async () => {
     try {
-      if (mode === "update" && variableId) {
+      if (mode == "update" && variableId) {
         const updatedData = {
           ...classificationRows[0],
           clientId: Number(selectedShip.id),

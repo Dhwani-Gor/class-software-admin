@@ -36,7 +36,7 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
         return {
             dueDate: formatDate(due),
             rangeFrom: formatDate(addMonths(due, -3)),
-            rangeTo: formatDate(addMonths(due, 3)),
+            rangeTo: formatDate(due),
             anniversaryDate: formatDate(due),
         };
     }
@@ -155,8 +155,8 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
             if (dueDate.isAfter(sshDueDate)) dueDate = addMonths(sshDueDate, -3);
 
             // ✅ Tailshaft Annual gets ±3 months range
-            rangeFrom = addMonths(dueDate, +3);
-            rangeTo = addMonths(dueDate, -3);
+            rangeFrom = addMonths(dueDate, -3);
+            rangeTo = addMonths(dueDate, +3);
             anniversaryDate = dueDate;
             break;
         }

@@ -120,6 +120,7 @@ const Classifications = () => {
   const handleClientChange = (event) => {
     const selectedId = event.target.value;
     const selectedClient = clientsList.find((client) => client.id === selectedId);
+    setEditRowId(null);
     setSelectedShip({
       id: selectedId,
       shipName: selectedClient ? selectedClient.shipName : "",
