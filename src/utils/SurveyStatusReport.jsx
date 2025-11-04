@@ -817,14 +817,14 @@ const TextEditor = ({ id }) => {
   const classificationRows =
     finalClassificationData.length > 0
       ? finalClassificationData
-          .map((row) => {
-            const rangeFrom = row.rangeFrom ? moment(row.rangeFrom).format("DD/MM/YYYY") : "";
-            const rangeTo = row.rangeTo ? moment(row.rangeTo).format("DD/MM/YYYY") : "";
-            const dueDate = row.dueDate ? moment(row.dueDate).format("DD/MM/YYYY") : "-";
-            const surveyDate = row.surveyDate ? moment(row.surveyDate).format("DD/MM/YYYY") : "-";
-            const postponed = row.postponed ? moment(row.postponed).format("DD/MM/YYYY") : "-";
+        .map((row) => {
+          const rangeFrom = row.rangeFrom ? moment(row.rangeFrom).format("DD/MM/YYYY") : "";
+          const rangeTo = row.rangeTo ? moment(row.rangeTo).format("DD/MM/YYYY") : "";
+          const dueDate = row.dueDate ? moment(row.dueDate).format("DD/MM/YYYY") : "-";
+          const surveyDate = row.surveyDate ? moment(row.surveyDate).format("DD/MM/YYYY") : "-";
+          const postponed = row.postponed ? moment(row.postponed).format("DD/MM/YYYY") : "-";
 
-            return `
+          return `
 <tr>
 <td>${row.name}</td>
 <td>${surveyDate}</td>
@@ -833,8 +833,8 @@ const TextEditor = ({ id }) => {
 <td>${postponed}</td>
 </tr>
 `;
-          })
-          .join("")
+        })
+        .join("")
       : `<tr><td colspan="5">No classification surveys available</td></tr>`;
 
   const classificationSurveyTableHtml = `
@@ -850,6 +850,13 @@ const TextEditor = ({ id }) => {
 ${classificationRows}
 </table>
 `;
+
+  const disclaimer = `
+    <div class="section-title" style="margin-top: 20px; font-size: 16px; font-weight: bold;">Disclaimer :-</div>
+  <p style="font-style: italic; color: #555;">
+Information provided in ship survey status by MCBG Class is solely provided for the convenience of Owners or Managers as a guide to their ship's survey status and in no way substitute for advice from MCBG Class. Neither MCBG Class, nor any of its employees, assures any responsibility for the accuracy or legal liability for any loss or damage that may be sustained as a result of using their services.</p>
+    `;
+
 
   const sectionOrder = ["coc", "statutory", "memoranda", "additional", "compliance", "pcsFsi"];
 
@@ -906,8 +913,7 @@ ${classificationRows}
             <td>${item.journalTypeId || "-"}</td>
             <td>${item.dueDate || "-"}</td>
           </tr>
-          ${
-            item.description
+          ${item.description
               ? `<tr>
                   <td colspan="4" style="
                     padding: 6px 8px;
@@ -919,7 +925,7 @@ ${classificationRows}
                   </td>
                 </tr>`
               : ""
-          }
+            }
         `
         )
         .join("");
@@ -1228,19 +1234,19 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   </thead>
   <tbody>
     ${(() => {
-      const defaultRows = [{ shipStatus: "Class" }, { shipStatus: "Withdrawn" }, { shipStatus: "Re-classed" }];
+        const defaultRows = [{ shipStatus: "Class" }, { shipStatus: "Withdrawn" }, { shipStatus: "Re-classed" }];
 
-      // Merge response data with defaults
-      const data = defaultRows.map((def) => {
-        const found = clientData?.classHistory?.find((item) => item.shipStatus?.toLowerCase() === def.shipStatus.toLowerCase());
-        return { ...def, ...found };
-      });
+        // Merge response data with defaults
+        const data = defaultRows.map((def) => {
+          const found = clientData?.classHistory?.find((item) => item.shipStatus?.toLowerCase() === def.shipStatus.toLowerCase());
+          return { ...def, ...found };
+        });
 
-      // Generate table rows
-      return (
-        data
-          ?.map(
-            (history) => `
+        // Generate table rows
+        return (
+          data
+            ?.map(
+              (history) => `
             <tr>
               <td style="padding:6px; border:1px solid #ddd;">${history.shipStatus || "-"}</td>
               <td style="padding:6px; border:1px solid #ddd;">${history.reason || "-"}</td>
@@ -1253,10 +1259,10 @@ This may not indicate certificates issued, surveys carried out or conditions of 
               <td style="padding:6px; border:1px solid #ddd;">${history.remarks || "-"}</td>
             </tr>
           `
-          )
-          .join("") || `<tr><td colspan="5" style="padding:6px; border:1px solid #ddd;">-</td></tr>`
-      );
-    })()}
+            )
+            .join("") || `<tr><td colspan="5" style="padding:6px; border:1px solid #ddd;">-</td></tr>`
+        );
+      })()}
   </tbody>
 </table>
 
@@ -1398,6 +1404,7 @@ ${auditSurveyTableHtml}
 <h2 style="margin-top: 10px; color:black">Additional Notes</h2>
 
 ${additionalFieldsHtml}
+${disclaimer}
 </div>
 
 `;
