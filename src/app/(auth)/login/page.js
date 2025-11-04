@@ -162,10 +162,10 @@ const Login = () => {
         </DialogTitle>
         <DialogContent dividers>
           <Typography variant="body2" color="textSecondary" mb={2}>
-            Enter your username or registered email address. We’ll send you a password reset link.
+            Enter your registered email address. We’ll send you a password reset link.
           </Typography>
           <form id="forgotForm" onSubmit={handleForgotSubmit(onForgotSubmit)}>
-            <Controller name="usernameOrEmail" control={forgotControl} render={({ field }) => <CommonInput {...field} fullWidth label="Username or Email" placeholder="Enter your username or email" error={Boolean(forgotErrors.usernameOrEmail)} helperText={forgotErrors.usernameOrEmail?.message} />} />
+            <Controller name="usernameOrEmail" control={forgotControl} render={({ field }) => <CommonInput {...field} fullWidth label="Email" placeholder="Enter your email" error={Boolean(forgotErrors.usernameOrEmail)} helperText={forgotErrors.usernameOrEmail?.message} />} />
           </form>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>

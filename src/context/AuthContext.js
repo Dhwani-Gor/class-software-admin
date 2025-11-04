@@ -31,42 +31,29 @@ const AuthProvider = ({ children }) => {
     AdditionalFields: ["/additional-fields"],
   };
 
-  // Base role routes (fallback)
-  const allowedRoutesRole1 = ["/clients", "/staff", "/journal", "/reporting", "/certificates", "/survey-types", "/documents", "/system-variables", "/settings", "/survey-report", "/classification", "/survey-status-report", "/narative-report", "/reset-password"];
-  const allowedRoutesRole2 = ["/journal", "/reporting", "/certificates", "/settings", "/clients", "/system-variables", "/survey-types", "/documents", "/classification", "/survey-status-report", "/survey-report", "/narative-report", "/reset-password"];
-  const allowedRoutesRole3 = ["/reporting", "/certificates", "/settings", "/reset-password"];
-
   const publicRoutes = ["/login", "/digital-document", "/reset-password", "/forgot-password"];
 
-  // Get allowed routes based on permissions
   const getAllowedRoutes = (userPermissions, userData) => {
     let allowedRoutes = [];
 
-    // Add routes based on permission modules ONLY
     userPermissions.forEach((module) => {
       if (moduleRouteMapping[module]) {
         allowedRoutes = [...allowedRoutes, ...moduleRouteMapping[module]];
       }
     });
 
-    // Add Clients route only if user has both Clients permission AND dataEntryRights
     if (userPermissions.includes("Clients") && userData?.dataEntryRights) {
       if (!allowedRoutes.includes("/clients")) {
         allowedRoutes.push("/clients");
       }
     }
 
-    // Always allow settings
-    // allowedRoutes.push("/settings");
-
-    // Remove duplicates
     return [...new Set(allowedRoutes)];
   };
 
   const getDefaultRouteForUser = (userPermissions, userData) => {
     const allowedRoutes = getAllowedRoutes(userPermissions, userData);
 
-    // Priority order for default route
     const routePriority = ["/clients", "/journal", "/reporting", "/certificates", "/settings"];
 
     for (const route of routePriority) {
@@ -75,7 +62,6 @@ const AuthProvider = ({ children }) => {
       }
     }
 
-    // If no priority route found, return first allowed route
     return allowedRoutes[0] || "/login";
   };
 
@@ -113,7 +99,6 @@ const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    // Check if current route is public
     const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
     if (!isAuthenticated && !isLoading && !isPublicRoute) {
@@ -122,10 +107,8 @@ const AuthProvider = ({ children }) => {
   }, [isAuthenticated, isLoading, pathname, router]);
 
   useEffect(() => {
-    // Check if current route is public
     const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
-    // Only apply permission-based routing for authenticated users on non-public routes
     if (isAuthenticated && permissions.length > 0 && !isPublicRoute) {
       const userData = JSON.parse(localStorage.getItem("data") || "{}");
       const allowedRoutes = getAllowedRoutes(permissions, userData);
@@ -147,7 +130,6 @@ const AuthProvider = ({ children }) => {
     setRoleId(data?.roleId);
     setPermissions(data?.permissionModule || []);
 
-    // Redirect to appropriate route based on permissions
     const defaultRoute = getDefaultRouteForUser(data?.permissionModule || [], data);
     router.replace(defaultRoute);
   };
