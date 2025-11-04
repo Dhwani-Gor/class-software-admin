@@ -163,6 +163,7 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
 
         case normalizeName("Intermediate Survey"): {
             const specialSurveyHull = findSurveyByName("special survey hull");
+
             if (specialSurveyHull) {
                 const sshDate = moment(
                     specialSurveyHull.surveyDate || specialSurveyHull.issuanceDate
@@ -179,30 +180,68 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
                     )
                     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
-                if (existingIntermediates.length === 0) {
+                const currentSurvey = existingSurveys.find(
+                    (s) => normalizeName(s.surveyName) === surveyNameNormalized
+                );
+
+                // ✅ NEW LOGIC START
+                const currentSurveyDate = currentSurvey?.surveyDate
+                    ? moment(currentSurvey.surveyDate)
+                    : issuanceDateObj;
+
+                // If the Intermediate survey was done on the same date as SSH → allow next due
+                const sameAsSSH = currentSurveyDate.isSame(sshDate, "day");
+
+                if (!sameAsSSH && existingIntermediates.length >= 1) {
+                    // If already done once between 5 years, no next due date
+                    dueDate = "";
+                    rangeFrom = "";
+                    rangeTo = "";
+                    anniversaryDate = "";
+                } else if (sameAsSSH) {
+                    // If done same day as SSH → next due 2 and 3 years later options
+                    const due2 = addYears(sshDate, 2);
+                    const due3 = addYears(sshDate, 3);
+
+                    // By default, set dueDate to 2 years later (you can pick which to display)
+                    dueDate = due2;
+                    rangeFrom = addMonths(dueDate, -3);
+                    rangeTo = addMonths(dueDate, 3);
+                    anniversaryDate = dueDate;
+
+                    // If you want to provide both 2-year and 3-year options later in UI,
+                    // you can store both in a separate variable for frontend dropdown
+                } else if (existingIntermediates.length === 0) {
                     dueDate = addMonths(sshDate, 30); // around 2.5 years
+                    rangeFrom = addMonths(dueDate, -3);
+                    rangeTo = addMonths(dueDate, 3);
                 } else if (existingIntermediates.length === 1) {
                     const firstIntermediateDue = moment(existingIntermediates[0].dueDate);
                     const yearsDiff = firstIntermediateDue.diff(sshDate, "years");
                     dueDate = yearsDiff <= 2 ? addYears(sshDate, 3) : addYears(sshDate, 2);
+                    rangeFrom = addMonths(dueDate, -3);
+                    rangeTo = addMonths(dueDate, 3);
                 } else if (existingIntermediates.length >= 2) {
-                    const lastIntermediate = existingIntermediates[existingIntermediates.length - 1];
+                    const lastIntermediate =
+                        existingIntermediates[existingIntermediates.length - 1];
                     const nextDue = addYears(moment(lastIntermediate.dueDate), 2);
                     dueDate = nextDue.isBefore(sshDueDate) ? nextDue : "";
+                    if (dueDate) {
+                        rangeFrom = addMonths(dueDate, -3);
+                        rangeTo = addMonths(dueDate, 3);
+                    }
                 }
-
-                if (dueDate) {
-                    rangeFrom = addMonths(dueDate, +3);
-                    rangeTo = addMonths(dueDate, -3);
-                }
+                // ✅ NEW LOGIC END
             } else {
                 dueDate = "";
                 rangeFrom = "";
                 rangeTo = "";
             }
+
             anniversaryDate = dueDate;
             break;
         }
+
 
         // 🔹 In-water Survey
         case normalizeName("In Water Survey"):
