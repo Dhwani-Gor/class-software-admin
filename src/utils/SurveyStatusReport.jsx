@@ -572,6 +572,7 @@ const TextEditor = ({ id }) => {
       const issuanceDate = survey.issuanceDate ? format(new Date(survey.issuanceDate), "yyyy-MM-dd") : "";
       const typeOfCertificate = survey.typeOfCertificate || "";
       const isAudit = survey.activity?.surveyTypes?.audit === true;
+      const surveyTypeName = survey?.activity?.surveyTypes?.name?.toLowerCase() || "";
 
       let dueDate = "";
       let rangeFrom = "";
@@ -586,6 +587,7 @@ const TextEditor = ({ id }) => {
 
       const surveyRow = {
         surveyName,
+        surveyTypeName,
         surveyDate,
         validityDate,
         dueDate,
@@ -809,8 +811,6 @@ const TextEditor = ({ id }) => {
     return Object.values(latestByName).sort((a, b) => new Date(b.surveyDate) - new Date(a.surveyDate));
   }
 
-  console.log(reportDetails, "reportDetailsList");
-
   // Usage example
   const finalClassificationData = mergeClassificationSurveys(classificationData, reportDetails);
 
@@ -883,10 +883,8 @@ Information provided in ship survey status by MCBG Class is solely provided for 
       `;
       }
 
-      // Filter out rows with action: "Deleted"
       const filteredData = section?.data?.filter((item) => item.action !== "Deleted");
 
-      // If all rows were deleted, show "No recommendation" message
       if (filteredData?.length === 0) {
         return `
         <h4 class="no-break" style="
@@ -969,12 +967,35 @@ Information provided in ship survey status by MCBG Class is solely provided for 
   `;
 
   const generateHtmlContent = useCallback(() => {
-    const certificateOfClassRow = reportDetails?.find((cert) => cert?.activity?.surveyTypes?.report?.name?.toLowerCase() === "certificate of class");
+    // ✅ Step 1: Find Certificate of Class
+    const certificateOfClassRow = reportDetails
+      ?.filter((cert) => cert?.activity?.surveyTypes?.report?.name?.toLowerCase() === "certificate of class")
+      ?.sort((a, b) => new Date(b.issuanceDate || b.validityDate) - new Date(a.issuanceDate || a.validityDate))?.[0];
 
-    const otherCertificates = reportDetails?.filter((cert) => cert?.activity?.surveyTypes?.report?.name && cert?.activity?.surveyTypes?.report?.name?.toLowerCase() !== "certificate of class");
+    // ✅ Step 2: Filter out Certificate of Class for others
+    const otherCertificatesRaw = reportDetails?.filter(
+      (cert) =>
+        cert?.activity?.surveyTypes?.report?.name &&
+        cert?.activity?.surveyTypes?.report?.name?.toLowerCase() !== "certificate of class"
+    );
 
+    // ✅ Step 3: Remove duplicates, keep latest by issuanceDate or validityDate
+    const uniqueCertificatesMap = new Map();
+    otherCertificatesRaw?.forEach((cert) => {
+      const name = cert.activity.surveyTypes.report.name?.toLowerCase();
+      const existing = uniqueCertificatesMap.get(name);
+      if (
+        !existing ||
+        new Date(cert.issuanceDate || cert.validityDate) > new Date(existing.issuanceDate || existing.validityDate)
+      ) {
+        uniqueCertificatesMap.set(name, cert);
+      }
+    });
+
+    const otherCertificates = Array.from(uniqueCertificatesMap.values());
+
+    // ✅ Step 4: Formatter function
     const formatCertificateRow = (cert) => {
-      // ✅ Skip if report is missing
       if (!cert?.activity?.surveyTypes?.report?.name) return "";
 
       const name = cert.activity.surveyTypes.report.name;
@@ -982,7 +1003,16 @@ Information provided in ship survey status by MCBG Class is solely provided for 
       const expiry = cert.validityDate;
       const expiryFormatted = expiry ? moment(expiry).format("YYYY-MM-DD") : null;
 
-      const type = cert.typeOfCertificate === "short_term" ? "ST" : cert.typeOfCertificate === "full_term" ? "FT" : cert.typeOfCertificate === "intrim" ? "IT" : cert.typeOfCertificate === "extended" ? "ET" : cert.typeOfCertificate || "-";
+      const type =
+        cert.typeOfCertificate === "short_term"
+          ? "ST"
+          : cert.typeOfCertificate === "full_term"
+            ? "FT"
+            : cert.typeOfCertificate === "intrim"
+              ? "IT"
+              : cert.typeOfCertificate === "extended"
+                ? "ET"
+                : cert.typeOfCertificate || "-";
 
       const status = "";
       const currentDate = new Date().toISOString().split("T")[0];
@@ -999,8 +1029,13 @@ Information provided in ship survey status by MCBG Class is solely provided for 
 </tr>`;
     };
 
-    // ✅ Build table rows (filter out skipped entries)
-    const certificateRows = [certificateOfClassRow ? formatCertificateRow(certificateOfClassRow) : "", ...(otherCertificates?.map(formatCertificateRow) || [])].filter((row) => row && row.trim() !== "").join("");
+    // ✅ Step 5: Combine all certificate rows
+    const certificateRows = [
+      certificateOfClassRow ? formatCertificateRow(certificateOfClassRow) : "",
+      ...otherCertificates.map(formatCertificateRow),
+    ]
+      .filter((row) => row && row.trim() !== "")
+      .join("");
 
     const certificatesTableHtml = `
 <h4 class="no-break" style="margin-top: -100px; color:white; background: linear-gradient(to right, #9013fe, #4a90e2);">
@@ -1031,39 +1066,54 @@ Information provided in ship survey status by MCBG Class is solely provided for 
 
     const buildSurveyTable = (data, title) => {
       if (!data?.length) return "";
+      const getSurveyDisplayName = (row) => {
+        const certName = row.surveyName || "-";
+        const surveyTypeName = row.surveyTypeName?.toLowerCase() || "";
+
+        let keyword = "";
+
+        if (surveyTypeName.includes("intermediate")) keyword = "Intermediate Survey";
+        else if (surveyTypeName.includes("annual")) keyword = "Annual Survey";
+        else if (surveyTypeName.includes("periodical")) keyword = "Periodical Survey";
+        else if (surveyTypeName.includes("renewal")) keyword = "Renewal Survey";
+
+        return keyword ? `${certName} - ${keyword}` : certName;
+      };
 
       const rows = data
         .filter((row) => row.surveyName.toLowerCase() !== "certificate of class")
         .map((row) => {
           const currentDate = new Date().toISOString().split("T")[0];
           const dueDate = row.dueDate || row.validityDate;
+
           return `
-        <tr>
-          <td>${row.surveyName}</td>
-          <td>${getClassRangeIcon(currentDate, row.rangeFrom, row.rangeTo) ? `<span class="${getClassRangeIcon(currentDate, row.rangeFrom, row.rangeTo)}">C</span>` : ""}</td>
-          <td>${row.surveyDate ? moment(row.surveyDate).format("DD/MM/YYYY") : ""}</td>
-          <td>${row.typeOfCertificate === "full_term" ? (dueDate ? moment(dueDate).format("DD/MM/YYYY") : "") : row.validityDate ? moment(row.validityDate).format("DD/MM/YYYY") : ""}</td>
-          <td>${row.typeOfCertificate === "full_term" ? `${row.rangeFrom ? moment(row.rangeFrom).format("DD/MM/YYYY") : ""} - ${row.rangeTo ? moment(row.rangeTo).format("DD/MM/YYYY") : ""}` : ""}</td>
-          <td>${row.postponedDate}</td>
-        </tr>`;
+      <tr>
+        <td>${getSurveyDisplayName(row)}</td>
+        <td>${getClassRangeIcon(currentDate, row.rangeFrom, row.rangeTo) ? `<span class="${getClassRangeIcon(currentDate, row.rangeFrom, row.rangeTo)}">C</span>` : ""}</td>
+        <td>${row.surveyDate ? moment(row.surveyDate).format("DD/MM/YYYY") : ""}</td>
+        <td>${row.typeOfCertificate === "full_term" ? (dueDate ? moment(dueDate).format("DD/MM/YYYY") : "") : row.validityDate ? moment(row.validityDate).format("DD/MM/YYYY") : ""}</td>
+        <td>${row.typeOfCertificate === "full_term" ? `${row.rangeFrom ? moment(row.rangeFrom).format("DD/MM/YYYY") : ""} - ${row.rangeTo ? moment(row.rangeTo).format("DD/MM/YYYY") : ""}` : ""}</td>
+        <td>${row.postponedDate || ""}</td>
+      </tr>`;
         })
         .join("");
 
       return `
-    <div class="section-title" style="margin-top: 20px; font-size: 16px; font-weight: bold;">${title}</div>
-    <table>
-      <tr>
-        <th>Survey Name</th>
-        <th></th>
-        <th>Survey Date</th>
-        <th>Due Date</th>
-        <th>Range (from, to)</th>
-        <th>Postponed</th>
-      </tr>
-      ${rows}
-    </table>
+  <div class="section-title" style="margin-top: 20px; font-size: 16px; font-weight: bold;">${title}</div>
+  <table>
+    <tr>
+      <th>Survey Name</th>
+      <th></th>
+      <th>Survey Date</th>
+      <th>Due Date</th>
+      <th>Range (from, to)</th>
+      <th>Postponed</th>
+    </tr>
+    ${rows}
+  </table>
   `;
     };
+
 
     const statutorySurveyTableHtml = buildSurveyTable(statutoryData, "Statutory Surveys");
     const auditSurveyTableHtml = buildSurveyTable(auditsData, "Audits / Inspections");

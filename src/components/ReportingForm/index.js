@@ -621,26 +621,7 @@ const ReportingForm = () => {
       if (result?.data?.status === "success") {
         const activities = result?.data?.data;
 
-        const activitiesWithReports = await Promise.all(
-          activities.map(async (activity) => {
-            try {
-              const reportResult = await getSelectedActivityReportDetails(activity.id);
-              const reportData = reportResult?.data?.data?.[0];
-              return {
-                ...activity,
-                reportDetail: reportData || null,
-              };
-            } catch (error) {
-              console.warn(`Failed to fetch report for activity ${activity.id}`, error);
-              return {
-                ...activity,
-                reportDetail: null,
-              };
-            }
-          })
-        );
-
-        setTableData(activitiesWithReports);
+        setTableData(activities);
         setArchiveHistory(result.data?.data[0]?.journal?.journalRemarks);
       } else {
         toast.error("Something went wrong ! Please try again after some time");

@@ -6,7 +6,7 @@ import { addAdditionalFields } from "@/api";
 import { toast } from "react-toastify";
 
 const sectionOptions = ["coc", "statutory", "memoranda", "additional", "compliance", "pcs_fsi_deficiency"];
-const actionsList = ["Recommended", "Deleted", "Amended", "Extended"];
+const actionsList = ["Recommended", "Deleted", "Amended", "Extended", "Retained"];
 
 const sectionsConfig = {
   coc: ["Hull", "Machinery"],
