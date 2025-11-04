@@ -20,7 +20,7 @@ const sections = [
   { key: "compliance", label: "Compliance to New Regulations", options: ["Hull", "Machinery"] },
   { key: "pcsFsi", label: "PSC/FSI Deficiency", options: ["Hull", "Machinery"] },
 ];
-const actions = ["Recommended", "Deleted", "Amended", "Extended"];
+const actions = ["Recommended", "Deleted", "Amended", "Extended", "Retained"];
 
 const codePrefixes = {
   coc: { Hull: "H", Machinery: "M" },
