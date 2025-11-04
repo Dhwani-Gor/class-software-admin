@@ -14,6 +14,7 @@ import {
   getSurveyReportDataByJournalId,
   getVisitDetails,
   uploadSurveyReport,
+  fetchAdditionalDetails
 } from "@/api";
 import { useRouter } from "next/navigation";
 
@@ -29,6 +30,8 @@ const NarrativeReport = ({ id, reportNumber }) => {
   const [numOfVisit, setNumOfVisit] = useState(null);
   const [places, setPlaces] = useState([]);
   const [isLastVisit, setIsLastVisit] = useState(false);
+  const [additionalDetails, setAdditionalDetails] = useState([]);
+  console.log(additionalDetails, "additionalDetails");
   const currentDate = new Date();
   const stamp = systemVariables?.data?.find((i) => i.name === "company_stamp")?.information || "-";
 
@@ -38,12 +41,16 @@ const NarrativeReport = ({ id, reportNumber }) => {
     const loadAllData = async () => {
       try {
         setLoading(true);
-        const [clientResult, reportResult, sysVarsResult] = await Promise.all([
+        const [clientResult, reportResult, sysVarsResult, additionalResult] = await Promise.all([
           getSpecificClient(id),
           getSurveyReportDataByJournalId(id, reportNumber),
           getAllSystemVariables(),
+          fetchAdditionalDetails(id),
         ]);
 
+        console.log(additionalResult, "additionalResult");
+
+        if (additionalResult?.status === 200) setAdditionalDetails(additionalResult.data.data);
         if (clientResult?.status === 200) setClientData(clientResult.data.data);
         if (reportResult?.status === 200) setReportDetails(reportResult.data.data || []);
         if (sysVarsResult?.status === 200) setSystemVariables(sysVarsResult.data);
@@ -76,6 +83,15 @@ const NarrativeReport = ({ id, reportNumber }) => {
     loadAllData();
   }, [id, reportNumber]);
 
+  const sectionNames = {
+    coc: "Condition of Class",
+    statutory: "Statutory",
+    memoranda: "Memoranda",
+    additional: "Additional Information",
+    compliance: "Compliance to New Regulations",
+    pcsfsi: "PSC / FSI Deficiency",
+    "psc/fsi": "PSC / FSI Deficiency",
+  };
   // Generate HTML layout for narrative report
   const generateHtml = useCallback(() => {
     if (!clientData || !reportDetails || !systemVariables) return "";
@@ -120,6 +136,37 @@ const NarrativeReport = ({ id, reportNumber }) => {
           .join("")
         : `<p style="color:#666;text-align:center;padding:40px 0;">No narrative activities available.</p>`;
 
+    const sectionHtml = Object.entries(sectionNames)
+      .map(([key, label]) => {
+        const sectionData = additionalDetails?.[key] || []; // adjust as per your backend structure
+        if (sectionData && sectionData.length > 0) {
+          return `
+            <div style="margin-bottom:30px;">
+              <div style="font-weight:700;color:#1a5490;font-size:16px;margin-bottom:10px;border-bottom:2px solid #1a5490;padding-bottom:4px;">
+                ${label}
+              </div>
+              ${sectionData
+              .map(
+                (item, idx) => `
+                  <div style="margin-left:20px;line-height:1.8;color:#333;">
+                    ${idx + 1}. ${item?.remarks || item?.text || "-"}
+                  </div>`
+              )
+              .join("")}
+            </div>
+          `;
+        } else {
+          return `
+            <div style="margin-bottom:20px;">
+              <div style="font-weight:700;color:#1a5490;font-size:16px;margin-bottom:6px;">
+                ${label}
+              </div>
+              <p style="margin-left:20px;color:#666;">No ${label} recommended.</p>
+            </div>
+          `;
+        }
+      })
+      .join("");
     const signaturesHtml = `
       <div style="display:flex;justify-content:space-between;margin-top:80px;padding-top:30px;border-top:2px solid #1a5490;page-break-inside:avoid;">
         <div style="width:45%;">
@@ -187,6 +234,7 @@ const NarrativeReport = ({ id, reportNumber }) => {
         </div>
 
         <!-- Signatures Section -->
+          ${sectionHtml}
         ${signaturesHtml}
 
         <!-- Footer -->
