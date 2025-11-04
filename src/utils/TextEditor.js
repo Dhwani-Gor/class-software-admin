@@ -16,7 +16,6 @@ const currentDate = new Date();
 const TextEditor = ({ id }) => {
   const router = useRouter();
   const [reportDetails, setReportDetails] = useState([]);
-  console.log(reportDetails, "report details");
   const [clientData, setClientData] = useState();
   const [loading, setLoading] = useState(true);
   const [editorContent, setEditorContent] = useState("");
@@ -24,7 +23,6 @@ const TextEditor = ({ id }) => {
   const [additionalFieldData, setAdditionalFieldData] = useState([]);
   const [statutoryData, setStatutoryData] = useState([]);
   const [auditsData, setAuditsData] = useState([]);
-  console.log(statutoryData, "statutory date");
   const [systemVariables, setSystemVariables] = useState();
   const today = moment();
   const companyName = systemVariables?.data?.find((item) => item.name === "company_name")?.information || "-";
@@ -941,6 +939,11 @@ ${classificationRows}
     })
     .join("");
 
+  const disclaimer = `
+    <div class="section-title" style="margin-top: 20px; font-size: 16px; font-weight: bold;">Disclaimer</div>
+  <p style="font-style: italic; color: #555;">
+Information provided in ship survey status by MCBG Class is solely provided for the convenience of Owners or Managers as a guide to their ship's survey status and in no way substitute for advice from MCBG Class. Neither Indian Register of Shipping, nor any of its employees, assures any responsibility for the accuracy or legal liability for any loss or damage that may be sustained as a result of using their services.</p>
+    `;
   // Final HTML
   const finalHtml = `
     <div>
@@ -952,6 +955,7 @@ ${classificationRows}
     </div>
 
     ${additionalFieldsHtml}
+    ${disclaimer}
   `;
 
   const generateHtmlContent = useCallback(() => {
@@ -1390,6 +1394,7 @@ ${auditSurveyTableHtml}
 <h2 style="margin-top: 10px; color:black">Additional Notes</h2>
 
 ${additionalFieldsHtml}
+${disclaimer}
 </div>
 
 `;
@@ -1657,6 +1662,15 @@ font-style: italic;
 p.subtitle {
 font-size: 13px;
 text-align: center;
+margin: 10px 0 25px 0;
+color: #666;
+line-height: 1.6;
+font-style: italic;
+}
+
+p.disclaimer {
+font-size: 13px;
+text-align: left;
 margin: 10px 0 25px 0;
 color: #666;
 line-height: 1.6;
