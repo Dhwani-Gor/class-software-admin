@@ -105,7 +105,9 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
   const [shipName, setShipName] = useState("");
 
   // Class History State
-  const [classHistory, setClassHistory] = useState([{ shipStatus: "", reason: "", remarks: "", from_date: "", to_date: "" }]);
+  const [classHistory, setClassHistory] = useState(() => {
+    return [{ shipStatus: "", reason: "", remarks: "", from_date: "", to_date: "" }];
+  });
 
   // Machine List State
   const [machineList, setMachineList] = useState({
@@ -353,14 +355,19 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
         setValue("invoicingDetails.nameOfCompany", normalizedData.invoicingDetails.nameOfCompany);
 
         if (result.data.data.classHistory && Array.isArray(result.data.data.classHistory)) {
-          const loadedHistory = result.data.data.classHistory.map((item) => ({
-            shipStatus: normalizeValue(item.shipStatus),
-            reason: normalizeValue(item.reason),
-            remarks: normalizeValue(item.remarks),
-            from_date: normalizeValue(item.from_date),
-            to_date: normalizeValue(item.to_date),
-          }));
+          const loadedHistory =
+            result.data.data.classHistory && result.data.data.classHistory.length
+              ? result.data.data.classHistory.map((item) => ({
+                  shipStatus: normalizeValue(item.shipStatus),
+                  reason: normalizeValue(item.reason),
+                  remarks: normalizeValue(item.remarks),
+                  from_date: normalizeValue(item.from_date),
+                  to_date: normalizeValue(item.to_date),
+                }))
+              : [{ shipStatus: "", reason: "", remarks: "", from_date: "", to_date: "" }];
+
           setClassHistory(loadedHistory);
+
           // const defaultStatuses = ["Class", "Withdrawn", "Re-classed"];
           // const mergedHistory = defaultStatuses.map((status, index) => {
           //   const existing = loadedHistory.find((h) => h.shipStatus === status);
@@ -1187,7 +1194,7 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
                     </TableCell>
 
                     <TableCell sx={{ width: "5%", textAlign: "center" }}>
-                      {editingAllowed && (
+                      {editingAllowed && classHistory.length > 1 && (
                         <IconButton onClick={() => handleDeleteRow(index)} color="error">
                           <DeleteIcon />
                         </IconButton>

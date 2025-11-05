@@ -62,6 +62,7 @@ const ReportingForm = () => {
   const [journalId, setjournalId] = useState(null);
   const [endorsedIssuedBy, setEndorsedIssuedBy] = useState([]);
   const [selectSurveyor, setSelectSurveyor] = useState("");
+  console.log(selectSurveyor, "selectSurveyor");
   const [open, setOpen] = useState();
   const [underscoreFields, setUnderscoreFields] = useState([]);
   const [reportName, setReportName] = useState("");
@@ -672,6 +673,7 @@ const ReportingForm = () => {
     label: surveyor.name,
     value: surveyor.id,
   }));
+  console.log(surveyorOptions, "surveyorOptions");
 
   // STEP 3: Update handleReportClick to use the new structure
   const handleReportClick = async (row) => {
