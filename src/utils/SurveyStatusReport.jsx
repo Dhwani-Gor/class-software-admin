@@ -11,8 +11,6 @@ import Loader from "@/components/Loader";
 import { addYears, subMonths, format } from "date-fns";
 import { useRouter } from "next/navigation";
 
-const currentDate = new Date();
-
 const TextEditor = ({ id }) => {
   const router = useRouter();
   const [reportDetails, setReportDetails] = useState([]);
@@ -24,7 +22,6 @@ const TextEditor = ({ id }) => {
   const [statutoryData, setStatutoryData] = useState([]);
   const [auditsData, setAuditsData] = useState([]);
   const [systemVariables, setSystemVariables] = useState();
-  const today = moment();
   const companyName = systemVariables?.data?.find((item) => item.name === "company_name")?.information || "-";
   const companyLogo = systemVariables?.data?.find((item) => item.name === "company_logo")?.information || "-";
 
@@ -61,38 +58,41 @@ const TextEditor = ({ id }) => {
   const getCurrentShipStatus = () => {
     const today = new Date();
 
-    if (!clientData?.classHistory || clientData.classHistory.length === 0) {
+    const historyList = clientData?.classHistory;
+    if (!Array.isArray(historyList) || historyList.length === 0) {
       return "Class";
     }
 
-    for (const history of clientData.classHistory) {
+    // Sort latest first by from_date
+    const sortedHistory = [...historyList].sort(
+      (a, b) => new Date(b.from_date) - new Date(a.from_date)
+    );
+
+    for (const history of sortedHistory) {
       const shipStatus = history.shipStatus?.toLowerCase();
       const fromDate = history.from_date ? new Date(history.from_date) : null;
       const toDate = history.to_date ? new Date(history.to_date) : null;
 
-      if (!fromDate) continue; // Skip invalid entries
+      if (!fromDate) continue;
 
-      const isWithinRange = !toDate ? today >= fromDate : today >= fromDate && today <= toDate;
+      const isWithinRange = !toDate
+        ? today >= fromDate
+        : today >= fromDate && today <= toDate;
 
-      // 🔹 In Class
-      if (shipStatus === "in class" && isWithinRange) {
+      if (!isWithinRange) continue;
+
+      if (shipStatus === "in class" || shipStatus === "re-classed") {
         return "In Operation, Class Valid";
       }
 
-      // 🔹 Withdrawn
-      if (shipStatus === "withdrawn" && isWithinRange) {
+      if (shipStatus === "withdrawn") {
         return "Withdrawn";
-      }
-
-      // 🔹 Re-Classed
-      if (shipStatus === "re-classed" && isWithinRange) {
-        return "In Operation, Class Valid";
       }
     }
 
-    // Default
     return "Class";
   };
+
 
   const currentStatus = getCurrentShipStatus();
 
@@ -132,7 +132,7 @@ const TextEditor = ({ id }) => {
 
       h1 { font-size: 28px !important; font-weight: bold !important; color: black !important; }
       h2 { font-size: 22px !important; font-weight: 600 !important; letter-spacing: 0.5px !important; }
-  h4 { 
+      h4 { 
         font-size: 15px !important; 
         font-weight: 600 !important; 
         letter-spacing: 0.3px !important; 
@@ -362,7 +362,9 @@ const TextEditor = ({ id }) => {
 
       const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
       const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const italic = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
 
+      // Main page generation loop
       while (currentY < imgHeight) {
         const maxSliceHeight = Math.min(baseSliceHeight, imgHeight - currentY);
         const sliceHeight = getOptimalSliceHeight(currentY, maxSliceHeight);
@@ -441,6 +443,64 @@ const TextEditor = ({ id }) => {
         pageIndex++;
       }
 
+      if (pageIndex > 1) {
+        const lastPage = pdfDoc.getPage(pageIndex - 1);
+
+        const disclaimerTitle = "Disclaimer :-";
+        const disclaimerText =
+          "Information provided in ship survey status by MCBG Class is solely provided for the convenience of Owners or Managers as a guide to their ship's survey status and in no way substitute for advice from MCBG Class. Neither MCBG Class, nor any of its employees, assures any responsibility for the accuracy or legal liability for any loss or damage that may be sustained as a result of using their services.";
+
+        const textX = 50;
+        const footerGap = 60;
+        let textY = footerHeight + footerGap;
+
+        // Title
+        lastPage.drawText(disclaimerTitle, {
+          x: textX,
+          y: textY + 14,
+          size: 10,
+          color: rgb(0.15, 0.15, 0.15),
+          font: fontBold,
+        });
+
+        // Word wrapping for disclaimer paragraph
+        const maxWidth = 480;
+        const words = disclaimerText.split(" ");
+        let line = "";
+        let lineHeight = 10;
+
+        for (const word of words) {
+          const testLine = line + word + " ";
+          const lineWidth = fontRegular.widthOfTextAtSize(testLine, 9);
+
+          if (lineWidth > maxWidth) {
+            lastPage.drawText(line.trim(), {
+              x: textX + 10,
+              y: textY,
+              size: 9,
+              color: rgb(0.5, 0.5, 0.5),
+              font: italic,
+              fontWeight: 100,
+            });
+            line = word + " ";
+            textY -= lineHeight;
+          } else {
+            line = testLine;
+          }
+        }
+
+        if (line.trim().length > 0) {
+          lastPage.drawText(line.trim(), {
+            x: textX + 10,
+            y: textY,
+            size: 9,
+            color: rgb(0.5, 0.5, 0.5),
+            font: italic,
+            fontWeight: 100,
+          });
+        }
+      }
+
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes], { type: "application/pdf" });
 
@@ -450,6 +510,7 @@ const TextEditor = ({ id }) => {
       const formData = new FormData();
       formData.append("clientId", id);
       formData.append("generatedDoc", file);
+      formData.append("type", "survey-status");
 
       const res = await uploadSurveyReport(formData);
       if (res) {
@@ -639,7 +700,7 @@ const TextEditor = ({ id }) => {
       const date = parseDate(dateStr);
       if (!date) return "status-icon expiring3m";
 
-      const daysDiff = date.diff(currentToday, "days");
+      const daysDiff = moment.isMoment(date) ? date.diff(currentToday, "days") : 0;
 
       if (daysDiff < 0) {
         return "status-icon expired";
@@ -657,7 +718,7 @@ const TextEditor = ({ id }) => {
       const date = parseDate(dateStr);
       if (!date) return "";
 
-      const daysDiff = date.diff(currentToday, "days");
+      const daysDiff = moment.isMoment(date) ? date.diff(currentToday, "days") : 0;
 
       if (daysDiff < 0) {
         return "";
@@ -723,15 +784,6 @@ const TextEditor = ({ id }) => {
     });
   };
 
-  const formatSurveyName = (name) => {
-    if (!name) return "";
-    return name
-      .replace(/_/g, " ")
-      .toLowerCase()
-      .replace(/\b\w/g, (c) => c.toUpperCase());
-  };
-
-  // Generate table rows for each section
   const getSectionTitle = (key) => {
     switch (key) {
       case "coc":
@@ -753,7 +805,6 @@ const TextEditor = ({ id }) => {
   function mergeClassificationSurveys(classificationData, reportDetailsList) {
     const combined = [];
 
-    // Step 1: Extract from classificationData
     if (classificationData?.length) {
       classificationData.forEach((row) => {
         combined.push({
@@ -769,7 +820,6 @@ const TextEditor = ({ id }) => {
       });
     }
 
-    // Step 2: Extract from reportDetails (only valid classification survey types with non-null report)
     if (reportDetailsList?.length) {
       reportDetailsList.forEach((r) => {
         const surveyType = r?.activity?.surveyTypes;
@@ -791,7 +841,6 @@ const TextEditor = ({ id }) => {
       });
     }
 
-    // Step 3: Remove duplicates — keep latest by surveyDate
     const latestByName = combined.reduce((acc, curr) => {
       const existing = acc[curr.name];
       if (!existing) {
@@ -801,17 +850,15 @@ const TextEditor = ({ id }) => {
         const currentDate = new Date(curr.surveyDate);
 
         if (currentDate > existingDate) {
-          acc[curr.name] = curr; // keep latest record
+          acc[curr.name] = curr;
         }
       }
       return acc;
     }, {});
 
-    // ✅ Step 4: Sort by latest surveyDate (descending)
     return Object.values(latestByName).sort((a, b) => new Date(b.surveyDate) - new Date(a.surveyDate));
   }
 
-  // Usage example
   const finalClassificationData = mergeClassificationSurveys(classificationData, reportDetails);
 
   const classificationRows =
@@ -850,12 +897,6 @@ const TextEditor = ({ id }) => {
 ${classificationRows}
 </table>
 `;
-
-  const disclaimer = `
-    <div class="section-title" style="margin-top: 20px; font-size: 16px; font-weight: bold;">Disclaimer :-</div>
-  <p style="font-style: italic; color: #555;">
-Information provided in ship survey status by MCBG Class is solely provided for the convenience of Owners or Managers as a guide to their ship's survey status and in no way substitute for advice from MCBG Class. Neither MCBG Class, nor any of its employees, assures any responsibility for the accuracy or legal liability for any loss or damage that may be sustained as a result of using their services.</p>
-    `;
 
 
   const sectionOrder = ["coc", "statutory", "memoranda", "additional", "compliance", "pcsFsi"];
@@ -1333,23 +1374,23 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 <tbody>
 <tr>
 <td><em><strong>Gross Tonnage:</strong></em> ${clientData?.grossTonnage || "-"}</td>
-<td><strong>Ship Builder:</strong> ${clientData?.shipBuilder || "-"}</td>
+<td><em><strong>Ship Builder:</strong></em> ${clientData?.shipBuilder || "-"}</td>
 </tr>
 <tr>
 <td><em><strong>Net Tonnage:</strong></em> ${clientData?.netTonnage || "-"}</td>
-<td><strong>Country of build:</strong> ${clientData?.countryOfBuild || "-"}</td>
+<td><em><strong>Country of build:</strong></em> ${clientData?.countryOfBuild || "-"}</td>
 </tr>
 <tr>
 <td><em><strong>Deadweight:</strong></em> ${clientData?.deadweight || "-"}</td>
-<td><strong>Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : "-"}</td>
+<td><em><strong>Date of build:</strong></em> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : "-"}</td>
 </tr>
 <tr>
-<td><strong>Keel Laid Date:</strong> ${clientData?.keelLaidDate ? moment(clientData?.keelLaidDate).format("DD/MM/YYYY") : "-"}</td>
-<td><strong>Date of building contract:</strong> ${clientData?.dateOfBuildingContract ? moment(clientData?.dateOfBuildingContract).format("DD/MM/YYYY") : "-"}</td>
+<td><em><strong>Keel Laid Date:</strong></em> ${clientData?.keelLaidDate ? moment(clientData?.keelLaidDate).format("DD/MM/YYYY") : "-"}</td>
+<td><em><strong>Date of building contract:</strong></em> ${clientData?.dateOfBuildingContract ? moment(clientData?.dateOfBuildingContract).format("DD/MM/YYYY") : "-"}</td>
 </tr>
 <tr>
 <td><em><strong>Length of ship:</strong></em> ${clientData?.lengthOfShip || "-"}</td>
-<td><strong>Area of operation:</strong> ${clientData?.areaOfOperation || "-"}</td>
+<td><em><strong>Area of operation:</strong></em> ${clientData?.areaOfOperation || "-"}</td>
 </tr>
 <tr>
 <td><em><strong>Date of delivery:</strong></em> ${clientData?.dateOfDelivery ? moment(clientData?.dateOfDelivery).format("DD/MM/YYYY") : "-"}</td>
@@ -1377,7 +1418,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
       </tr>
     <tr>
       <td><em><strong>No of Engines:</strong></em> ${clientData?.machineList.no_of_engines || "-"}</td>
-      <td><strong>Engine Built:</strong> ${clientData?.machineList.engine_built ? moment(clientData?.machineList.engine_built).format("DD/MM/YYYY") : "-"}</td>
+      <td><em><strong>Engine Built:</strong></em> ${clientData?.machineList.engine_built ? moment(clientData?.machineList.engine_built).format("DD/MM/YYYY") : "-"}</td>
     </tr>
     
     <tr>
@@ -1385,8 +1426,8 @@ This may not indicate certificates issued, surveys carried out or conditions of 
       <td colspan="2" style="width:50%;"><em><strong>Electrical Installation:</strong></em> ${clientData?.machineList.electrical_installation || "-"}</td>
     </tr>
     <tr>
-      <td><strong>Engine Builder:</strong> ${clientData?.machineList.engine_builder || "-"}</td>
-      <td><strong>Boiler:</strong> ${clientData?.machineList.boilers || "-"}</td>
+      <td><em><strong>Engine Builder:</strong></em> ${clientData?.machineList.engine_builder || "-"}</td>
+      <td><em><strong>Boiler:</strong></em> ${clientData?.machineList.boilers || "-"}</td>
     </tr>
     <tr>
 <td>
@@ -1454,7 +1495,6 @@ ${auditSurveyTableHtml}
 <h2 style="margin-top: 10px; color:black">Additional Notes</h2>
 
 ${additionalFieldsHtml}
-${disclaimer}
 </div>
 
 `;
