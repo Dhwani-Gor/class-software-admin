@@ -14,7 +14,8 @@ import {
   getSurveyReportDataByJournalId,
   getVisitDetails,
   uploadSurveyReport,
-  fetchAdditionalDetails
+  fetchAdditionalDetails,
+  fetchJournalList
 } from "@/api";
 import { useRouter } from "next/navigation";
 
@@ -31,29 +32,29 @@ const NarrativeReport = ({ id, reportNumber }) => {
   const [places, setPlaces] = useState([]);
   const [isLastVisit, setIsLastVisit] = useState(false);
   const [additionalDetails, setAdditionalDetails] = useState([]);
-  console.log(additionalDetails, "additionalDetails");
+  const [journalList, setJournalList] = useState([]);
+
   const currentDate = new Date();
   const stamp = systemVariables?.data?.find((i) => i.name === "company_stamp")?.information || "-";
 
-  // Fetch all required data
   useEffect(() => {
     if (!id) return;
     const loadAllData = async () => {
       try {
         setLoading(true);
-        const [clientResult, reportResult, sysVarsResult, additionalResult] = await Promise.all([
+        const [clientResult, reportResult, sysVarsResult, additionalResult, journalList] = await Promise.all([
           getSpecificClient(id),
           getSurveyReportDataByJournalId(id, reportNumber),
           getAllSystemVariables(),
           fetchAdditionalDetails(id),
+          fetchJournalList(id)
         ]);
-
-        console.log(additionalResult, "additionalResult");
 
         if (additionalResult?.status === 200) setAdditionalDetails(additionalResult.data.data);
         if (clientResult?.status === 200) setClientData(clientResult.data.data);
         if (reportResult?.status === 200) setReportDetails(reportResult.data.data || []);
         if (sysVarsResult?.status === 200) setSystemVariables(sysVarsResult.data);
+        if (journalList?.status === 200) setJournalList(journalList.data.data);
 
         const journalIds = reportResult?.data?.data
           ?.map((i) => i?.activity?.journal?.id)
@@ -103,8 +104,7 @@ const NarrativeReport = ({ id, reportNumber }) => {
 
     const shipName = clientData?.shipName || "-";
     const imo = clientData?.imoNumber || "-";
-    const reportNo =
-      reportDetails[0]?.activity?.journal?.journalTypeId || reportNumber || "-";
+    const reportNo = reportDetails[0]?.activity?.journal?.journalTypeId || journalList.filter((i) => i.id === reportNumber)[0]?.journalTypeId;
     const issuer = reportDetails?.map((i) => i?.issuer?.name);
     const uniqueSurveyors = [...new Set(issuer)].join(",").toUpperCase();
 
@@ -138,7 +138,7 @@ const NarrativeReport = ({ id, reportNumber }) => {
 
     const sectionHtml = Object.entries(sectionNames)
       .map(([key, label]) => {
-        const sectionData = additionalDetails?.[key] || []; // adjust as per your backend structure
+        const sectionData = additionalDetails?.[key] || [];
         if (sectionData && sectionData.length > 0) {
           return `
             <div style="margin-bottom:30px;">
@@ -217,7 +217,7 @@ const NarrativeReport = ({ id, reportNumber }) => {
             <td style="padding:12px;font-weight:700;border:1px solid #ddd;">Ship's Name:</td>
             <td style="padding:12px;border:1px solid #ddd;background:#fff;color:#333;">${shipName}</td>
             <td style="padding:12px;font-weight:700;border:1px solid #ddd;">Report No:</td>
-            <td style="padding:12px;border:1px solid #ddd;background:#fff;color:#333;">${reportNo}</td>
+            <td style="padding:12px;border:1px solid #ddd;background:#fff;color:#333;">${reportNo ? reportNo : reportNumber}</td>
           </tr>
           <tr>
             <td style="padding:12px;font-weight:700;border:1px solid #ddd;background:#e9ecef;">IMO Number:</td>
@@ -227,13 +227,16 @@ const NarrativeReport = ({ id, reportNumber }) => {
 
         <!-- Activities Section -->
         <div style="margin-bottom:40px;">
-          <div style="font-weight:700;font-size:18px;color:#1a5490;margin-bottom:20px;border-bottom:3px solid #1a5490;padding-bottom:8px;text-transform:uppercase;">
+          <div style="font-weight:700;font-size:18px;color:#000;margin-bottom:20px;border-bottom:3px solid #1a5490;padding-bottom:8px;text-transform:uppercase;">
             Activities
           </div>
           ${activityHtml}
         </div>
 
         <!-- Signatures Section -->
+        <div style="font-weight:700;font-size:18px;color:#000;margin-bottom:20px;border-bottom:3px solid #1a5490;padding-bottom:8px;text-transform:uppercase;">
+            Additional Notes
+          </div>
           ${sectionHtml}
         ${signaturesHtml}
 
