@@ -1073,3 +1073,13 @@ export const resetPassword = async (token, data) => {
   }
   return result;
 };
+
+export const uploadNarrativeReports = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/narrativeReport`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};

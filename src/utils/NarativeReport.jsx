@@ -15,7 +15,8 @@ import {
   getVisitDetails,
   uploadSurveyReport,
   fetchAdditionalDetails,
-  fetchJournalList
+  fetchJournalList,
+  uploadNarrativeReports
 } from "@/api";
 import { useRouter } from "next/navigation";
 
@@ -151,47 +152,14 @@ const NarrativeReport = ({ id, reportNumber }) => {
           .join("")
         : `<p style="color:#666;text-align:center;padding:40px 0;">No narrative activities available.</p>`;
 
-    // const sectionHtml = Object.entries(sectionNames)
-    //   .map(([key, label]) => {
-    //     const sectionData = additionalDetails?.[key] || [];
-    //     if (sectionData && sectionData.length > 0) {
-    //       return `
-    //         <div style="margin-bottom:30px;">
-    //           <div style="font-weight:700;color:#1a5490;font-size:16px;margin-bottom:10px;border-bottom:2px solid #1a5490;padding-bottom:4px;">
-    //             ${label}
-    //           </div>
-    //           ${sectionData
-    //           .map(
-    //             (item, idx) => `
-    //               <div style="margin-left:20px;line-height:1.8;color:#333;">
-    //                 ${idx + 1}. ${item?.remarks || item?.text || "-"}
-    //               </div>`
-    //           )
-    //           .join("")}
-    //         </div>
-    //       `;
-    //     } else {
-    //       return `
-    //         <div style="margin-bottom:20px;">
-    //           <div style="font-weight:700;color:#1a5490;font-size:16px;margin-bottom:6px;">
-    //             ${label}
-    //           </div>
-    //           <p style="margin-left:20px;color:#666;">No ${label} recommended.</p>
-    //         </div>
-    //       `;
-    //     }
-    //   })
-    //   .join("");
-
     const renderAdditionalFields = () => {
-      if (!Array.isArray(additionalDetails) || !additionalDetails.length) return "";
+      if (!Array.isArray(additionalDetails)) return "";
 
       const sectionOrder = ["coc", "statutory", "memoranda", "additional", "compliance", "pcsfsi", "psc/fsi"];
 
       const titleForKey = (k) => {
         if (!k) return "Other";
         const key = k.toLowerCase();
-
         switch (key) {
           case "coc": return "Condition of Class";
           case "statutory": return "Statutory";
@@ -204,95 +172,82 @@ const NarrativeReport = ({ id, reportNumber }) => {
         }
       };
 
-      // Sort sections based on defined order
-      const sortedSections = [...additionalDetails].sort((a, b) => {
-        const idxA = sectionOrder.indexOf(a.sectionKey?.toLowerCase());
-        const idxB = sectionOrder.indexOf(b.sectionKey?.toLowerCase());
-        if (idxA === -1 && idxB === -1) return 0;
-        if (idxA === -1) return 1;
-        if (idxB === -1) return -1;
-        return idxA - idxB;
-      });
+      // Build a map for existing data
+      const sectionMap = additionalDetails.reduce((acc, section) => {
+        acc[section.sectionKey?.toLowerCase()] = section;
+        return acc;
+      }, {});
 
-      const sectionsHtml = sortedSections.map((section) => {
+      const sectionsHtml = sectionOrder.map((sectionKey) => {
+        const section = sectionMap[sectionKey] || { sectionKey, data: [] };
         const allEntries = [];
 
-        // Combine main entries and their histories into one list
+        // Combine entries + history
         section.data?.forEach((entry) => {
           const combined = [entry, ...(entry.history || [])].map((e) => ({
             ...e,
-            parentCode: entry.code, // for grouping
+            parentCode: entry.code,
             parentJournal: entry.journalTypeId || null,
             createdAt: e.createdAt || entry.createdAt || null,
           }));
           allEntries.push(...combined);
         });
 
-        // Group by code (since multiple history items can exist for same code)
         const latestByCode = Object.values(
           allEntries.reduce((acc, curr) => {
             const key = curr.parentCode || curr.code;
             const existing = acc[key];
             const currDate = new Date(curr.createdAt || curr.updatedAt || 0);
             const existingDate = existing ? new Date(existing.createdAt || existing.updatedAt || 0) : 0;
-
-            if (!existing || currDate > existingDate) {
-              acc[key] = curr;
-            }
+            if (!existing || currDate > existingDate) acc[key] = curr;
             return acc;
           }, {})
         );
 
-        // Filter latest records matching the current report number
         const matchedRows = latestByCode.filter((r) => matchesReportNumber(r, reportNumber));
-        console.log(matchedRows, "matchedRows")
-        if (!matchedRows.length) return "";
 
-        // Generate HTML for each record
-        const rowsHtml = matchedRows
-          .map((r) => {
-            return `
-              <tr>
-                <td style="padding:8px;border:1px solid #ccc;text-align:center;">${r?.code}</td>
-                <td style="padding:8px;border:1px solid #ccc;text-align:center;">${r?.journalTypeId}</td>
-                <td style="padding:8px;border:1px solid #ccc;text-align:center;">${r?.action}</td>
-                <td style="padding:8px;border:1px solid #ccc;text-align:center;">${r?.remarks}</td>
-              </tr>
-            `;
-          })
-          .join("");
+        // ✅ If no data found → show “No [Section Name] Recommended”
+        const rowsHtml =
+          matchedRows.length > 0
+            ? matchedRows
+              .map(
+                (r) => `
+            <tr>
+              <td style="padding:8px;border:1px solid #ccc;text-align:center;">${r?.code || "-"}</td>
+              <td style="padding:8px;border:1px solid #ccc;text-align:center;">${r?.journalTypeId || "-"}</td>
+              <td style="padding:8px;border:1px solid #ccc;text-align:center;">${r?.action || "-"}</td>
+              <td style="padding:8px;border:1px solid #ccc;text-align:center;white-space:normal;word-wrap:break-word;word-break:break-word;">${r?.remarks || "-"}</td>
+            </tr>`
+              )
+              .join("")
+            : `
+            <tr>
+              <td colspan="4" style="padding:10px;border:1px solid #ccc;text-align:center;color:#666;">
+                No ${titleForKey(sectionKey)} Recommended
+              </td>
+            </tr>`;
 
         return `
-    <div style="font-weight:700;color:#1a5490;font-size:16px;margin-bottom:10px;padding-bottom:4px;">
-               ${titleForKey(section.sectionKey)}
-          </div>
-          <table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:13px;">
-            <thead>
-              <tr>
-                <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:10%;">Code</th>
-                <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:10%">Refrence No</th>
-                <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:10%">Action</th>
-<th style="
-  padding:8px;
-  border:1px solid #ccc;
-  background:#f3f3f3;
-  text-align:center;
-  width:25%;
-  white-space:normal;
-  word-wrap:break-word;
-  word-break:break-word;
-">
-  Remarks
-</th>
-              </tr>
-            </thead>
-            <tbody>${rowsHtml}</tbody>
-          </table>
-        `;
+      <div style="font-weight:700;color:#1a5490;font-size:16px;margin-bottom:10px;padding-bottom:4px;">
+        ${titleForKey(sectionKey)}
+      </div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:13px;">
+        <thead>
+          <tr>
+            <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:10%;">Code</th>
+            <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:10%">Reference No</th>
+            <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:10%">Action</th>
+            <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:25%;white-space:normal;word-wrap:break-word;word-break:break-word;">Remarks</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    `;
       }).join("");
 
       return sectionsHtml;
     };
+
 
     const signaturesHtml = `
       <div style="display:flex;justify-content:space-between;margin-top:80px;padding-top:30px;border-top:2px solid #1a5490;page-break-inside:avoid;">
@@ -415,7 +370,7 @@ const NarrativeReport = ({ id, reportNumber }) => {
       formData.append("surveyType", reportDetails[0]?.activity?.surveyTypes?.name);
       formData.append("generatedDoc", file);
 
-      const res = await uploadSurveyReport(formData);
+      const res = await uploadNarrativeReports(formData);
       if (res) {
         toast.success("Narrative Report uploaded successfully");
       }
