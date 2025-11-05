@@ -155,7 +155,7 @@ const NarrativeReport = ({ id, reportNumber }) => {
     const renderAdditionalFields = () => {
       if (!Array.isArray(additionalDetails)) return "";
 
-      const sectionOrder = ["coc", "statutory", "memoranda", "additional", "compliance", "pcsfsi", "psc/fsi"];
+      const sectionOrder = ["coc", "statutory", "memoranda", "additional", "compliance", "pcsfsi"];
 
       const titleForKey = (k) => {
         if (!k) return "Other";
@@ -166,13 +166,11 @@ const NarrativeReport = ({ id, reportNumber }) => {
           case "memoranda": return "Memoranda";
           case "additional": return "Additional Information";
           case "compliance": return "Compliance to New Regulations";
-          case "pcsfsi":
-          case "psc/fsi": return "PSC / FSI Deficiency";
+          case "pcsfsi": return "PSC / FSI Deficiency";
           default: return k.toUpperCase();
         }
       };
 
-      // Build a map for existing data
       const sectionMap = additionalDetails.reduce((acc, section) => {
         acc[section.sectionKey?.toLowerCase()] = section;
         return acc;
@@ -182,19 +180,30 @@ const NarrativeReport = ({ id, reportNumber }) => {
         const section = sectionMap[sectionKey] || { sectionKey, data: [] };
         const allEntries = [];
 
-        // Combine entries + history
+        // ✅ Combine current + history entries
         section.data?.forEach((entry) => {
           const combined = [entry, ...(entry.history || [])].map((e) => ({
             ...e,
             parentCode: entry.code,
-            parentJournal: entry.journalTypeId || null,
             createdAt: e.createdAt || entry.createdAt || null,
+            journalTypeId: e.journalTypeId || entry.journalTypeId || null,
           }));
           allEntries.push(...combined);
         });
 
+        // ✅ Filter only entries related to current reportNumber
+        const relatedEntries = allEntries.filter((r) => {
+          return (
+            r.journalTypeId === reportNumber ||
+            r.referenceNo === reportNumber ||
+            (reportDetails?.[0]?.activity?.journal?.journalTypeId &&
+              r.journalTypeId === reportDetails[0].activity.journal.journalTypeId)
+          );
+        });
+
+        // ✅ Pick the latest entry per code for this section
         const latestByCode = Object.values(
-          allEntries.reduce((acc, curr) => {
+          relatedEntries.reduce((acc, curr) => {
             const key = curr.parentCode || curr.code;
             const existing = acc[key];
             const currDate = new Date(curr.createdAt || curr.updatedAt || 0);
@@ -204,44 +213,35 @@ const NarrativeReport = ({ id, reportNumber }) => {
           }, {})
         );
 
-        const matchedRows = latestByCode.filter((r) => matchesReportNumber(r, reportNumber));
+        console.log("latestByCode:", latestByCode);
 
-        // ✅ If no data found → show “No [Section Name] Recommended”
         const rowsHtml =
-          matchedRows.length > 0
-            ? matchedRows
+          latestByCode.length > 0
+            ? latestByCode
               .map(
                 (r) => `
-            <tr>
-              <td style="padding:8px;border:1px solid #ccc;text-align:center;">${r?.code || "-"}</td>
-              <td style="padding:8px;border:1px solid #ccc;text-align:center;">${r?.journalTypeId || "-"}</td>
-              <td style="padding:8px;border:1px solid #ccc;text-align:center;">${r?.action || "-"}</td>
-              <td style="padding:8px;border:1px solid #ccc;text-align:center;white-space:normal;word-wrap:break-word;word-break:break-word;">${r?.remarks || "-"}</td>
-            </tr>`
+        <div style="margin-bottom:8px;font-size:13px;">
+          <div style="display:flex;justify-content:space-between;background:#f9f9f9;padding:6px 10px;border-bottom:1px solid #ddd;">
+            <div><strong>Code:</strong> ${r?.code || "-"}</div>
+            <div><strong>Ref No:</strong> ${r?.journalTypeId || "-"}</div>
+            <div><strong>Action:</strong> ${r?.action || "-"}</div>
+          </div>
+          <div style="padding:8px 10px;white-space:normal;word-wrap:break-word;word-break:break-word;">
+            <strong>Remarks:</strong> ${r?.remarks || "-"}
+          </div>
+        </div>`
               )
               .join("")
             : `
-            <tr>
-              <td colspan="4" style="padding:10px;border:1px solid #ccc;text-align:center;color:#666;">
-                No ${titleForKey(sectionKey)} Recommended
-              </td>
-            </tr>`;
+        <div style="padding:10px;text-align:left;color:#666;margin-bottom:10px;">
+          No ${titleForKey(sectionKey)} Recommended
+        </div>`;
 
         return `
-      <div style="font-weight:700;color:#1a5490;font-size:16px;margin-bottom:10px;padding-bottom:4px;">
+      <div style="font-weight:700;color:#1a5490;font-size:16px;margin:16px 0 8px;">
         ${titleForKey(sectionKey)}
       </div>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:13px;">
-        <thead>
-          <tr>
-            <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:10%;">Code</th>
-            <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:10%">Reference No</th>
-            <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:10%">Action</th>
-            <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:25%;white-space:normal;word-wrap:break-word;word-break:break-word;">Remarks</th>
-          </tr>
-        </thead>
-        <tbody>${rowsHtml}</tbody>
-      </table>
+      ${rowsHtml}
     `;
       }).join("");
 
@@ -367,10 +367,10 @@ const NarrativeReport = ({ id, reportNumber }) => {
       const formData = new FormData();
       formData.append("clientId", id);
       formData.append("reportNumber", reportDetails[0]?.activity?.journal?.journalTypeId);
-      formData.append("surveyType", reportDetails[0]?.activity?.surveyTypes?.name);
+      formData.append("type", "narrative-report");
       formData.append("generatedDoc", file);
 
-      const res = await uploadNarrativeReports(formData);
+      const res = await uploadSurveyReport(formData);
       if (res) {
         toast.success("Narrative Report uploaded successfully");
       }

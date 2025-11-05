@@ -196,25 +196,8 @@ const SurveyReport = ({ id, reportNumber }) => {
       const renderAdditionalFields = () => {
         if (!Array.isArray(additionalFieldDataInput) || !additionalFieldDataInput.length) return "";
 
-        const sectionOrder = ["coc", "statutory", "memoranda", "additional", "compliance", "pcsfsi", "psc/fsi"];
+        const sectionOrder = ["coc", "statutory", "memoranda", "additional", "compliance", "pcsfsi"];
 
-        const titleForKey = (k) => {
-          if (!k) return "Other";
-          const key = k.toLowerCase();
-
-          switch (key) {
-            case "coc": return "Condition of Class";
-            case "statutory": return "Statutory";
-            case "memoranda": return "Memoranda";
-            case "additional": return "Additional Information";
-            case "compliance": return "Compliance to New Regulations";
-            case "pcsfsi":
-            case "psc/fsi": return "PSC / FSI Deficiency";
-            default: return k.toUpperCase();
-          }
-        };
-
-        // Sort sections based on defined order
         const sortedSections = [...additionalFieldDataInput].sort((a, b) => {
           const idxA = sectionOrder.indexOf(a.sectionKey?.toLowerCase());
           const idxB = sectionOrder.indexOf(b.sectionKey?.toLowerCase());
@@ -224,42 +207,60 @@ const SurveyReport = ({ id, reportNumber }) => {
           return idxA - idxB;
         });
 
+        const titleForKey = (k) => {
+          if (!k) return "Other";
+          const key = k.toLowerCase();
+          switch (key) {
+            case "coc": return "Condition of Class";
+            case "statutory": return "Statutory";
+            case "memoranda": return "Memoranda";
+            case "additional": return "Additional Information";
+            case "compliance": return "Compliance to New Regulations";
+            case "pcsfsi": return "PSC / FSI Deficiency";
+            default: return k.toUpperCase();
+          }
+        };
+
         const sectionsHtml = sortedSections.map((section) => {
           const allEntries = [];
 
-          // Combine main entries and their histories into one list
+          // ✅ Combine current + history entries
           section.data?.forEach((entry) => {
             const combined = [entry, ...(entry.history || [])].map((e) => ({
               ...e,
-              parentCode: entry.code, // for grouping
-              parentJournal: entry.journalTypeId || null,
+              parentCode: entry.code,
               createdAt: e.createdAt || entry.createdAt || null,
+              journalTypeId: e.journalTypeId || entry.journalTypeId || null,
             }));
             allEntries.push(...combined);
           });
 
-          // Group by code (since multiple history items can exist for same code)
+          // ✅ Filter only entries related to current reportNumber
+          const relatedEntries = allEntries.filter((r) => {
+            return (
+              r.journalTypeId === reportNumber ||
+              r.referenceNo === reportNumber ||
+              (reportDetails?.[0]?.activity?.journal?.journalTypeId &&
+                r.journalTypeId === reportDetails[0].activity.journal.journalTypeId)
+            );
+          });
+
+          // ✅ Pick the latest entry per code for this section
           const latestByCode = Object.values(
-            allEntries.reduce((acc, curr) => {
+            relatedEntries.reduce((acc, curr) => {
               const key = curr.parentCode || curr.code;
               const existing = acc[key];
               const currDate = new Date(curr.createdAt || curr.updatedAt || 0);
               const existingDate = existing ? new Date(existing.createdAt || existing.updatedAt || 0) : 0;
-
-              if (!existing || currDate > existingDate) {
-                acc[key] = curr;
-              }
+              if (!existing || currDate > existingDate) acc[key] = curr;
               return acc;
             }, {})
           );
 
-          // Filter latest records matching the current report number
-          const matchedRows = latestByCode.filter((r) => matchesReportNumber(r, reportNumber));
+          if (!latestByCode.length) return "";
 
-          if (!matchedRows.length) return "";
-
-          // Generate HTML for each record
-          const rowsHtml = matchedRows
+          // ✅ Generate HTML for each record
+          const rowsHtml = latestByCode
             .map((r) => {
               const due = r?.dueDate ? moment(r.dueDate).format("DD/MM/YYYY") : "-";
               const status = r?.action || "-";
@@ -294,6 +295,7 @@ const SurveyReport = ({ id, reportNumber }) => {
 
         return sectionsHtml;
       };
+
 
 
       const mainDetailsHtml = `

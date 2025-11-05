@@ -294,6 +294,9 @@ const Certificates = () => {
             if (/survey[_ ]?report/i.test(file)) {
               return `Survey Report${reportNo ? ` - ${reportNo}` : ""} - ${shipName}.pdf`;
             }
+            if (/narrative[_ ]?report/i.test(file)) {
+              return `Narrative Report${reportNo ? ` - ${reportNo}` : ""} - ${shipName}.pdf`;
+            }
             return file.replace(/_/g, " ").replace(/\.[^/.]+$/, "") + ".pdf";
           })();
 
@@ -381,13 +384,15 @@ const Certificates = () => {
                               const fileName = row.generatedDoc.split("/").pop(); // extract filename
 
                               // Find the *last* MCB code (e.g. MCB25M002, MCB25N014)
-                              const matches = fileName.match(/MCB[A-Z0-9]+/gi);
+                              const matches = fileName.match(/MCBG?[A-Z0-9]+/gi);
                               const reportNo = matches ? matches[matches.length - 1] : null;
 
                               if (/status[_ ]?report/i.test(fileName)) {
                                 return "Survey Status Report";
                               } else if (/survey[_ ]?report/i.test(fileName)) {
                                 return `Survey Report${reportNo ? ` - ${reportNo}` : ""}`;
+                              } else if (/narrative[_ ]?report/i.test(fileName)) {
+                                return `Narrative Report${reportNo ? ` - ${reportNo}` : ""}`;
                               } else {
                                 return fileName.replace(/_/g, " ").replace(/\.[^/.]+$/, "");
                               }

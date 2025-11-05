@@ -18,9 +18,10 @@ import TextField from "@mui/material/TextField";
 import CommonInput from "../CommonInput";
 import CommonButton from "../CommonButton";
 import { createClient, getSpecificClient, searchinvoicing_detail, searchmanager_detail, searchowner_detail, updateClient } from "@/api";
-import { Accordion, AccordionDetails, AccordionSummary, Typography, IconButton, TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Typography, IconButton, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, MenuItem } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DeleteIcon from "@mui/icons-material/Delete";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 
 const requiredFields = ["shipName", "imoNumber", "classId", "flag", "portOfRegistry", "grossTonnage", "netTonnage", "lengthOfShip", "shipBuilder", "countryOfBuild", "dateOfBuild", "callSign", "officialNo", "deadweight", "typeOfShip", "dateOfDelivery"];
 
@@ -104,11 +105,7 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
   const [shipName, setShipName] = useState("");
 
   // Class History State
-  const [classHistory, setClassHistory] = useState([
-    { shipStatus: "Class", reason: "", remarks: "", from_date: "", to_date: "" },
-    { shipStatus: "Withdrawn", reason: "", remarks: "", from_date: "", to_date: "" },
-    { shipStatus: "Re-classed", reason: "", remarks: "", from_date: "", to_date: "" },
-  ]);
+  const [classHistory, setClassHistory] = useState([{ shipStatus: "", reason: "", remarks: "", from_date: "", to_date: "" }]);
 
   // Machine List State
   const [machineList, setMachineList] = useState({
@@ -180,11 +177,7 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
         speed_knots: null,
         rpm: null,
       },
-      classHistory: [
-        { shipStatus: "Class", reason: "", remarks: "", from_date: "", to_date: "" },
-        { shipStatus: "Withdrawn", reason: "", remarks: "", from_date: "", to_date: "" },
-        { shipStatus: "Re-classed", reason: "", remarks: "", from_date: "", to_date: "" },
-      ],
+      classHistory: [{ shipStatus: "", reason: "", remarks: "", from_date: "", to_date: "" }],
       ownerDetails: {
         nameOfCompany: "",
         companyAddress: "",
@@ -210,7 +203,13 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
     },
   });
 
-  const formatFieldText = (field) => field.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase());
+  const handleAddRow = () => {
+    setClassHistory([...classHistory, { shipStatus: "", reason: "", remarks: "", from_date: "", to_date: "" }]);
+  };
+
+  const handleDeleteRow = (index) => {
+    setClassHistory(classHistory.filter((_, i) => i !== index));
+  };
 
   useEffect(() => {
     const ownerDetails = getValues("ownerDetails");
@@ -361,20 +360,21 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
             from_date: normalizeValue(item.from_date),
             to_date: normalizeValue(item.to_date),
           }));
-          const defaultStatuses = ["Class", "Withdrawn", "Re-classed"];
-          const mergedHistory = defaultStatuses.map((status, index) => {
-            const existing = loadedHistory.find((h) => h.shipStatus === status);
-            return (
-              existing || {
-                shipStatus: status,
-                reason: "",
-                remarks: "",
-                from_date: "",
-                to_date: "",
-              }
-            );
-          });
-          setClassHistory(mergedHistory);
+          setClassHistory(loadedHistory);
+          // const defaultStatuses = ["Class", "Withdrawn", "Re-classed"];
+          // const mergedHistory = defaultStatuses.map((status, index) => {
+          //   const existing = loadedHistory.find((h) => h.shipStatus === status);
+          //   return (
+          //     existing || {
+          //       shipStatus: status,
+          //       reason: "",
+          //       remarks: "",
+          //       from_date: "",
+          //       to_date: "",
+          //     }
+          //   );
+          // });
+          // setClassHistory(mergedHistory);
         }
 
         if (result.data.data.machineList) {
@@ -1120,6 +1120,7 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
 
   const renderClassHistorySection = () => {
     const [expanded, setExpanded] = useState(false);
+    const shipStatusOptions = ["Class", "Withdrawn", "Re-classed", "Suspended"];
 
     return (
       <Accordion
@@ -1152,6 +1153,7 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
                   <TableCell sx={{ fontWeight: 600 }}>Remarks</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>From Date</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>To Date</TableCell>
+                  <TableCell></TableCell>
                 </TableRow>
               </TableHead>
 
@@ -1159,16 +1161,13 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
                 {classHistory.map((item, index) => (
                   <TableRow key={index} sx={{ verticalAlign: "top" }}>
                     <TableCell sx={{ width: "20%" }}>
-                      <CommonInput
-                        fullWidth
-                        variant="standard"
-                        value={item.shipStatus || ""}
-                        disabled
-                        inputProps={{
-                          readOnly: true,
-                          style: { color: "#000" },
-                        }}
-                      />
+                      <CommonInput select fullWidth variant="standard" value={item.shipStatus || ""} onChange={(e) => handleClassHistoryChange(index, "shipStatus", e.target.value)} disabled={!editingAllowed}>
+                        {shipStatusOptions.map((status) => (
+                          <MenuItem key={status} value={status}>
+                            {status}
+                          </MenuItem>
+                        ))}
+                      </CommonInput>
                     </TableCell>
 
                     <TableCell sx={{ width: "20%" }}>
@@ -1186,11 +1185,27 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
                     <TableCell sx={{ width: "17.5%" }}>
                       <CommonInput fullWidth variant="standard" type="date" value={item.to_date || ""} disabled={!editingAllowed} onChange={(e) => handleClassHistoryChange(index, "to_date", e.target.value)} InputLabelProps={{ shrink: true }} />
                     </TableCell>
+
+                    <TableCell sx={{ width: "5%", textAlign: "center" }}>
+                      {editingAllowed && (
+                        <IconButton onClick={() => handleDeleteRow(index)} color="error">
+                          <DeleteIcon />
+                        </IconButton>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </TableContainer>
+
+          {editingAllowed && (
+            <Box display="flex" justifyContent="flex-end" mt={2}>
+              <IconButton color="primary" onClick={handleAddRow}>
+                <AddCircleOutlineIcon />
+              </IconButton>
+            </Box>
+          )}
         </AccordionDetails>
       </Accordion>
     );
