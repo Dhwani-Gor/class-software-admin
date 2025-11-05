@@ -1,6 +1,6 @@
 import { Editor } from "@tinymce/tinymce-react";
 import { useEffect, useState, useCallback } from "react";
-import { fetchAdditionalDetails, getAllSystemVariables, getSpecificClient, getSurveyReportDataByJournalId, getVisitDetails, uploadSurveyReport } from "../api";
+import { fetchAdditionalDetails, fetchJournalList, getAllSystemVariables, getSpecificClient, getSurveyReportDataByJournalId, getVisitDetails, uploadSurveyReport } from "../api";
 import { toast } from "react-toastify";
 import { PDFDocument } from "pdf-lib";
 import html2canvas from "html2canvas";
@@ -24,6 +24,8 @@ const SurveyReport = ({ id, reportNumber }) => {
   const [additionalFieldData, setAdditionalFieldData] = useState([]);
   const [places, setPlaces] = useState([]);
   const [isLastVisit, setIsLastVisit] = useState(false);
+  const [journalList, setJournalList] = useState([]);
+  console.log(journalList, "journalList")
   const currentDate = new Date();
 
   const formatSurveyName = (name) => {
@@ -43,22 +45,33 @@ const SurveyReport = ({ id, reportNumber }) => {
     }
   };
 
+  const getSystemVariables = async () => {
+    try {
+      const response = await getAllSystemVariables();
+      if (response?.status === 200) {
+        setSystemVariables(response?.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   useEffect(() => {
     getAdditionalFields();
-    const getSystemVariables = async () => {
-      try {
-        const response = await getAllSystemVariables();
-        if (response?.status === 200) {
-          setSystemVariables(response?.data);
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
     getSystemVariables();
+    getAllJournals();
   }, [id]);
 
+  const getAllJournals = async () => {
+    try {
+      const response = await fetchJournalList(id);
+      if (response?.status === 200) {
+        setJournalList(response?.data?.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
   const matchesReportNumber = (item, reportNumber) => {
     if (!reportNumber) return true;
     const ref = item?.referenceNo?.toString() || "";
@@ -289,7 +302,7 @@ const SurveyReport = ({ id, reportNumber }) => {
             <td style="padding:8px;border:1px solid #ccc;width:30%;">Ship's Name</td>
             <td style="padding:8px;border:1px solid #ccc;">${formatValue(clientData?.shipName)}</td>
             <td style="padding:8px;border:1px solid #ccc;width:15%;">Report No</td>
-            <td style="padding:8px;border:1px solid #ccc;">${reportDetailsInput[0]?.activity?.journal?.journalTypeId || "—"}</td>
+            <td style="padding:8px;border:1px solid #ccc;">${reportDetailsInput[0]?.activity?.journal?.journalTypeId || journalList.filter((i) => i.id === reportNumber)[0]?.journalTypeId}</td>
           </tr>
           <tr>
             <td style="padding:8px;border:1px solid #ccc;">Date of Build</td>
