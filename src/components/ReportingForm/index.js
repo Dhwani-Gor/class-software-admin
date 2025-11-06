@@ -676,7 +676,6 @@ const ReportingForm = () => {
   }));
   console.log(surveyorOptions, "surveyorOptions");
 
-  // STEP 3: Update handleReportClick to use the new structure
   const handleReportClick = async (row) => {
     try {
       setLoading(true);
