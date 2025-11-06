@@ -1,7 +1,7 @@
 "use client";
 
 import { addClassificationSurvey, deleteClassificationSurvey, getAllClassificationSurveys, getAllClassificationSurveyType, getAllClients, getSingleClassificationSurveyDetails, getSurveyReportData, updateClassificationSurvey } from "@/api";
-import { Box, DialogActions, FormControl, Grid2, IconButton, InputLabel, MenuItem, Select, TextField, Typography, Alert } from "@mui/material";
+import { Box, DialogActions, FormControl, Grid2, IconButton, InputLabel, MenuItem, Select, TextField, Typography, Alert, Autocomplete } from "@mui/material";
 import { useEffect, useState, useMemo } from "react";
 import DeleteIcon from "@mui/icons-material/Delete";
 import moment from "moment";
@@ -22,16 +22,13 @@ const ClassificationForm = ({ mode, variableId, selectedShip, onSuccess }) => {
     requiredSurvey: "",
   });
 
-  // Calculate the ship's anniversary date from existing surveys
   const shipAnniversaryDate = useMemo(() => {
     if (!existingSurveys.length) return null;
 
-    // Find the most recent Annual Survey or Special Survey Hull
     const annualSurvey = existingSurveys.find((s) => s.surveyName?.toLowerCase().includes("annual survey") && s.dueDate);
 
     const specialSurveyHull = existingSurveys.find((s) => s.surveyName?.toLowerCase() === "special survey hull" && s.dueDate);
 
-    // Use Annual Survey's due date if available, otherwise Special Survey Hull
     const referenceDate = annualSurvey?.dueDate || specialSurveyHull?.dueDate;
 
     return referenceDate ? moment(referenceDate) : null;
@@ -444,16 +441,18 @@ const ClassificationForm = ({ mode, variableId, selectedShip, onSuccess }) => {
               >
                 <Grid2 container spacing={0.5} marginTop={2.5} alignItems="center">
                   {/* Survey Type */}
-                  <Grid2 size={{ xs: 12, md: 1.6 }}>
+                  <Grid2 size={{ xs: 12, md: 1.8 }}>
                     <FormControl fullWidth>
-                      <InputLabel id={`survey-type-label-${index}`}>Survey Type</InputLabel>
-                      <Select labelId={`survey-type-label-${index}`} id={`survey-type-${index}`} value={row.surveyName || ""} label="Survey Type" onChange={(e) => handleChange("classification", index, "surveyName", e.target.value)}>
-                        {surveyTypes.map((type) => (
-                          <MenuItem key={type.value} value={type.label}>
-                            {type.label}
-                          </MenuItem>
-                        ))}
-                      </Select>
+                      <Autocomplete
+                        options={surveyTypes.slice().sort((a, b) => a.label.localeCompare(b.label))} // Alphabetical order
+                        getOptionLabel={(option) => option.label || ""}
+                        value={surveyTypes.find((type) => type.label === row.surveyName) || null}
+                        onChange={(event, newValue) => {
+                          handleChange("classification", index, "surveyName", newValue ? newValue.label : "");
+                        }}
+                        renderInput={(params) => <TextField {...params} label="Survey Type" variant="outlined" />}
+                        size="small"
+                      />
                     </FormControl>
                   </Grid2>
 

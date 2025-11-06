@@ -19,21 +19,18 @@ import { useAuth } from "@/hooks/useAuth";
 import Pagination from "@mui/material/Pagination";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-
 import { deleteSurveyReport, deleteSurveyStatusReport, getAllIssuedDocuments, getAllReports, getJournalsList } from "@/api";
 
 const Certificates = () => {
   const { data } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-
   const [certificatesList, setCertificatesList] = useState([]);
   const [reportsList, setReportsList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [limit, setLimit] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
-
   const [count, setTotalCount] = useState(0);
   const [showAll, setShowAll] = useState(false);
   const [search, setSearch] = useState("");
@@ -56,7 +53,6 @@ const Certificates = () => {
   const handleSort = (key) => {
     setSortConfig((prev) => {
       if (prev.key === key) {
-        // toggle direction
         return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
       } else {
         return { key, direction: "asc" };
@@ -77,7 +73,6 @@ const Certificates = () => {
     });
   };
 
-  // helper to safely extract nested values
   const getValue = (obj, key) => {
     try {
       return key.split(".").reduce((acc, part) => acc && acc[part], obj) || "";
@@ -328,7 +323,15 @@ const Certificates = () => {
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
           <Stack direction="row" spacing={2}>
             {tabs.map((tab) => (
-              <Chip key={tab} label={tab} color={selectedFilter === tab ? "primary" : "default"} onClick={() => setSelectedFilter(tab)} />
+              <Chip
+                key={tab}
+                label={tab}
+                color={selectedFilter === tab ? "primary" : "default"}
+                onClick={() => {
+                  setSelectedFilter(tab);
+                  setPage(1);
+                }}
+              />
             ))}
           </Stack>
           {hasArchivePermission && (
