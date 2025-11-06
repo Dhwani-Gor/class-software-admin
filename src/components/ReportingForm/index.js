@@ -89,7 +89,7 @@ const ReportingForm = () => {
   const reportSchema = yup.object().shape({
     typesOfSurvey: yup.string().required("Type of survey is required"),
 
-    typeOfCertificate: yup.string().required("Type of certificate is required"),
+    typeOfCertificate: yup.string(),
 
     issuancedate: yup.string().optional(),
 
@@ -433,6 +433,7 @@ const ReportingForm = () => {
       surveyDate: values.surveydate ? formatDate(values.surveydate) : null,
       issuedBy: Number(values.issuedBy) || null,
       place: values.place || "",
+      isEndorsement: doingEndorsement ? true : false,
       validityDate: hiddenReports?.includes(reportName) ? "" : values.validitydate ? formatDate(values.validitydate) : "",
       ...((selectCertificate === "full_term" || selectCertificate === "extended") && {
         endorsementDate: values.endorsementdate ? formatDate(values.endorsementdate) : null,
@@ -876,9 +877,7 @@ const ReportingForm = () => {
                     Type of Certificate {!surveyType && <span style={{ color: "red" }}>*</span>}
                   </Typography>
                   <Select value={selectCertificate} onChange={handleCertificate} displayEmpty error={!!errors.typeOfCertificate}>
-                    <MenuItem value="" disabled>
-                      Select Certificate
-                    </MenuItem>
+                    <MenuItem value="">&nbsp;</MenuItem>
                     {certificateList.map((report) => (
                       <MenuItem key={report.value} value={report.value}>
                         {report.label}
@@ -925,7 +924,7 @@ const ReportingForm = () => {
                       <CommonInput
                         {...field}
                         type="date"
-                        label={<>Validity Date {!surveyType || (!hiddenReports.includes(reportName) && <span style={{ color: "red" }}>*</span>)}</>}
+                        label={<>Validity Date {!surveyType && <span style={{ color: "red" }}>*</span>}</>}
                         error={!!errors.validitydate}
                         helperText={errors.validitydate?.message}
                         onChange={(e) => {
@@ -1117,9 +1116,7 @@ const ReportingForm = () => {
                     Issued By {!surveyType && <span style={{ color: "red" }}>*</span>}
                   </Typography>
                   <Select value={selectSurveyor} onChange={handleSurveyor} displayEmpty name="issuedBy" error={!!errors.issuedBy}>
-                    <MenuItem value="" disabled>
-                      Select Endorsed / Issued By
-                    </MenuItem>
+                    <MenuItem value="">&nbsp;</MenuItem>
                     {surveyorOptions.map((option) => (
                       <MenuItem key={option.value} value={option.value}>
                         {option.label}
