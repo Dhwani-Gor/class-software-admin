@@ -384,9 +384,8 @@ const Certificates = () => {
                             {(() => {
                               if (!row.generatedDoc) return "N/A";
 
-                              const fileName = row.generatedDoc.split("/").pop(); // extract filename
+                              const fileName = row.generatedDoc.split("/").pop();
 
-                              // Find the *last* MCB code (e.g. MCB25M002, MCB25N014)
                               const matches = fileName.match(/MCBG?[A-Z0-9]+/gi);
                               const reportNo = matches ? matches[matches.length - 1] : null;
 

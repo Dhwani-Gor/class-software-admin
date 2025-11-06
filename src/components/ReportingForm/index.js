@@ -480,7 +480,7 @@ const ReportingForm = () => {
       const result = await updateReportDetail(reportDetails?.id, payload);
       if (result?.data?.status === "success") {
         setReportDetails(result?.data?.data);
-        toast.success("Report updated successfully.");
+        toast.success(result.data.message);
       } else {
         toast.error(result?.response?.data?.message);
       }
