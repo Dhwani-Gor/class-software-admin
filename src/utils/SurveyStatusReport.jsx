@@ -601,71 +601,87 @@ const TextEditor = ({ id }) => {
   };
 
   const populateSurveyRows = (surveyDataList) => {
-    if (!surveyDataList || surveyDataList.length === 0) return { statutory: [], audits: [] };
+    if (!surveyDataList || surveyDataList.length === 0)
+      return { statutory: [], audits: [] };
 
-    const surveyMap = {};
+    const result = { statutory: [], audits: [] };
 
     surveyDataList.forEach((survey) => {
-      const surveyName = survey.activity?.surveyTypes?.report?.name || "";
-      if (!surveyName) return;
+      if (!survey.activity?.surveyTypes) return;
 
-      if (!surveyMap[surveyName]) {
-        surveyMap[surveyName] = survey;
-      } else {
-        const existing = surveyMap[surveyName];
-        const existingDate = new Date(existing.updatedAt);
-        const currentDate = new Date(survey.updatedAt);
-        if (currentDate > existingDate) surveyMap[surveyName] = survey;
-      }
-    });
+      const certificateName = survey.activity.surveyTypes.report?.name || "";
+      const surveyTypeRaw = survey.activity.surveyTypes.name || "";  // ✅ real survey type (e.g. IOPP annual survey)
 
-    const uniqueSurveys = Object.values(surveyMap);
+      const surveyDate = survey.surveyDate
+        ? format(new Date(survey.surveyDate), "yyyy-MM-dd")
+        : "";
 
-    const result = {
-      statutory: [],
-      audits: [],
-    };
+      const validityDate = survey.validityDate
+        ? format(new Date(survey.validityDate), "yyyy-MM-dd")
+        : "";
 
-    uniqueSurveys.forEach((survey) => {
-      const surveyName = survey.activity?.surveyTypes?.report?.name || "";
-      const surveyDate = survey.surveyDate ? format(new Date(survey.surveyDate), "yyyy-MM-dd") : "";
-      const validityDate = survey.validityDate ? format(new Date(survey.validityDate), "yyyy-MM-dd") : "";
-      const issuanceDate = survey.issuanceDate ? format(new Date(survey.issuanceDate), "yyyy-MM-dd") : "";
-      const typeOfCertificate = survey.typeOfCertificate || "";
-      const isAudit = survey.activity?.surveyTypes?.audit === true;
-      const surveyTypeName = survey?.activity?.surveyTypes?.name?.toLowerCase() || "";
+      const issuanceDate = survey.issuanceDate
+        ? format(new Date(survey.issuanceDate), "yyyy-MM-dd")
+        : "";
 
       let dueDate = "";
       let rangeFrom = "";
       let rangeTo = "";
 
       if (issuanceDate) {
-        const { dueDate: d, rangeFrom: r, rangeTo: t } = calculateDates(issuanceDate);
-        dueDate = d;
-        rangeFrom = r;
-        rangeTo = t;
+        const dates = calculateDates(issuanceDate);
+        dueDate = dates.dueDate;
+        rangeFrom = dates.rangeFrom;
+        rangeTo = dates.rangeTo;
       }
 
-      const surveyRow = {
-        surveyName,
-        surveyTypeName,
+      const row = {
+        surveyName: certificateName,   // ✅ main certificate name
+        surveyTypeName: surveyTypeRaw, // ✅ real survey type (Annual, General Examination, COFS, etc.)
         surveyDate,
         validityDate,
         dueDate,
         rangeFrom,
         rangeTo,
         postponedDate: "",
-        typeOfCertificate,
+        typeOfCertificate: survey.typeOfCertificate || "",
       };
 
-      if (isAudit) {
-        result.audits.push(surveyRow);
-      } else {
-        result.statutory.push(surveyRow);
-      }
+      const isAudit = survey.activity.surveyTypes.audit === true;
+
+      if (isAudit) result.audits.push(row);
+      else result.statutory.push(row);
     });
 
     return result;
+  };
+
+
+  const groupByReportName = (details) => {
+    const groups = {};
+
+    details.forEach(cert => {
+      const name = cert.activity?.surveyTypes?.report?.name?.toLowerCase();
+      if (!name) return;
+
+      if (!groups[name]) groups[name] = [];
+
+      // ✅ push the raw certificate as-is
+      groups[name].push(cert);
+    });
+
+    return groups;
+  };
+
+  const pickLatestCertificate = (list) => {
+    return list.reduce((latest, cert) => {
+      if (!latest) return cert;
+
+      const d1 = new Date(cert.issuanceDate || cert.validityDate);
+      const d2 = new Date(latest.issuanceDate || latest.validityDate);
+
+      return d1 > d2 ? cert : latest;
+    }, null);
   };
 
   useEffect(() => {
@@ -1008,67 +1024,101 @@ ${classificationRows}
   `;
 
   const generateHtmlContent = useCallback(() => {
-    // ✅ Step 1: Find Certificate of Class
     const certificateOfClassRow = reportDetails
       ?.filter((cert) => cert?.activity?.surveyTypes?.report?.name?.toLowerCase() === "certificate of class")
       ?.sort((a, b) => new Date(b.issuanceDate || b.validityDate) - new Date(a.issuanceDate || a.validityDate))?.[0];
 
-    // ✅ Step 2: Filter out Certificate of Class for others
     const otherCertificatesRaw = reportDetails?.filter(
       (cert) =>
         cert?.activity?.surveyTypes?.report?.name &&
         cert?.activity?.surveyTypes?.report?.name?.toLowerCase() !== "certificate of class"
     );
 
-    // ✅ Step 3: Remove duplicates, keep latest by issuanceDate or validityDate
     const uniqueCertificatesMap = new Map();
     otherCertificatesRaw?.forEach((cert) => {
       const name = cert.activity.surveyTypes.report.name?.toLowerCase();
       const existing = uniqueCertificatesMap.get(name);
-      if (
-        !existing ||
-        new Date(cert.issuanceDate || cert.validityDate) > new Date(existing.issuanceDate || existing.validityDate)
-      ) {
+      const existingDate = new Date(existing?.issuedDate || existing?.issuanceDate || existing?.validityDate);
+      const currentDate = new Date(cert?.issuedDate || cert?.issuanceDate || cert?.validityDate);
+
+      if (!existing || currentDate > existingDate) {
         uniqueCertificatesMap.set(name, cert);
       }
     });
 
+    const getLatestInnerIssuanceDate = (cert) => {
+      if (!cert || !cert.data) return null;
+
+      const data = cert.data;
+
+      const keys = Object.keys(data).filter(k =>
+        k.toLowerCase().startsWith("issuance_date_") ||
+        k.toLowerCase().startsWith("endorsement_date_")
+      );
+
+      if (!keys.length) return null;
+
+      const dates = keys
+        .map(k => data[k])
+        .filter(Boolean)
+        .map(val => {
+          // Convert DD/MM/YYYY → YYYY-MM-DD
+          if (val.includes("/") && !val.includes("-")) {
+            const [d, m, y] = val.split("/");
+            return `${y}-${m}-${d}`;
+          }
+          return val;
+        })
+        .sort((a, b) => new Date(b) - new Date(a));
+
+      return dates[0];
+    };
     const otherCertificates = Array.from(uniqueCertificatesMap.values());
 
-    // ✅ Step 4: Formatter function
     const formatCertificateRow = (cert) => {
       if (!cert?.activity?.surveyTypes?.report?.name) return "";
 
-      const name = cert.activity.surveyTypes.report.name;
-      const issued = cert.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : "";
-      const expiry = cert.validityDate;
+      const fullCert = cert;
+
+      const reportName = fullCert.activity.surveyTypes.report.name;
+      const typeLabel = fullCert.activity.surveyTypes.name || "";
+
+      const innerIssuance = getLatestInnerIssuanceDate(fullCert);
+
+      const surveyDate = innerIssuance || fullCert.surveyDate;
+      const surveyDateFormatted = surveyDate
+        ? moment(surveyDate).format("DD/MM/YYYY")
+        : "";
+
+      const expiry = fullCert.validityDate;
       const expiryFormatted = expiry ? moment(expiry).format("YYYY-MM-DD") : null;
 
       const type =
-        cert.typeOfCertificate === "short_term"
-          ? "ST"
-          : cert.typeOfCertificate === "full_term"
-            ? "FT"
-            : cert.typeOfCertificate === "intrim"
-              ? "IT"
-              : cert.typeOfCertificate === "extended"
-                ? "ET"
-                : cert.typeOfCertificate || "-";
+        fullCert.typeOfCertificate === "short_term" ? "ST" :
+          fullCert.typeOfCertificate === "full_term" ? "FT" :
+            fullCert.typeOfCertificate === "intrim" ? "IT" :
+              fullCert.typeOfCertificate === "extended" ? "ET" :
+                fullCert.typeOfCertificate || "-";
 
-      const status = "";
       const currentDate = new Date().toISOString().split("T")[0];
+      const status = "";
 
       return `
 <tr>
-  <td>${name}</td>
+  <td>${reportName}</td>
   <td>${getClassName(expiryFormatted, currentDate) ? `<span class="${getClassName(expiryFormatted, currentDate)}">C</span>` : ""}</td>
-  <td>${issued}</td>
+  <td>${surveyDateFormatted}</td>
   <td>${expiry ? moment(expiry).format("DD/MM/YYYY") : ""}</td>
   <td></td>
   <td>${type}</td>
   <td>${status}</td>
 </tr>`;
     };
+
+
+
+
+
 
     // ✅ Step 5: Combine all certificate rows
     const certificateRows = [
@@ -1107,33 +1157,106 @@ ${classificationRows}
 
     const buildSurveyTable = (data, title) => {
       if (!data?.length) return "";
-      const getSurveyDisplayName = (row) => {
-        const certName = row.surveyName || "-";
-        const surveyTypeName = row.surveyTypeName?.toLowerCase() || "";
 
-        let keyword = "";
+      // Exclude list (case-insensitive)
+      const excluded = [
+        "certificate of class",
+        "register of lifting appliances and cargo handling gear",
+        "confirmation of compliance - seemp - part ii",
+        "confirmation of compliance - seemp - part iii",
+        "engine international air pollution prevention statement of compliance"
+      ];
 
-        if (surveyTypeName.includes("intermediate")) keyword = "Intermediate Survey";
-        else if (surveyTypeName.includes("annual")) keyword = "Annual Survey";
-        else if (surveyTypeName.includes("periodical")) keyword = "Periodical Survey";
-        else if (surveyTypeName.includes("renewal")) keyword = "Renewal Survey";
+      // 🔍 Function to get latest issuance/endorsement date
+      const getLatestEndorsementDate = (row) => {
+        const dateKeys = Object.keys(row).filter(
+          (k) =>
+            k.toLowerCase().startsWith("issuance_date_") ||
+            k.toLowerCase().startsWith("endorsement_date_")
+        );
 
-        return keyword ? `${certName} - ${keyword}` : certName;
+        const dates = dateKeys
+          .map((key) => row[key])
+          .filter((d) => d)
+          .sort((a, b) => new Date(b) - new Date(a));
+
+        return dates.length ? dates[0] : row.surveyDate;
       };
 
+
+      const getSurveyDisplayName = (row) => {
+        const certName = row.surveyName || "-";
+        const typeNameRaw = (row.surveyTypeName || "").trim();
+        const lower = typeNameRaw.toLowerCase();
+
+        const mappings = [
+          ["intermediate", "Intermediate Survey"],
+          ["annual", "Annual Survey"],
+          ["periodical", "Periodical Survey"],
+          ["renewal", "Renewal Survey"],
+          ["general examination", "General Examination Survey"],
+          ["change of flag", "Change of Flag Survey"],
+          ["initial", "Initial Survey"],
+          ["additional", "Additional Survey"],
+        ];
+
+        let typeLabel = "";
+        for (const [key, label] of mappings) {
+          if (lower.includes(key)) { typeLabel = label; break; }
+        }
+
+        // Fallback: pretty-print whatever came in as survey type
+        if (!typeLabel && typeNameRaw) {
+          const toTitle = (s) =>
+            s.replace(/\s+/g, " ")
+              .trim()
+              .toLowerCase()
+              .replace(/\b\w/g, (c) => c.toUpperCase());
+
+          // Remove prefixes/suffixes like "IOPP" and trailing "survey" then re-add "Survey"
+          const cleaned = typeNameRaw
+            .replace(/^iopp\s*/i, "")
+            .replace(/\s*survey\s*$/i, "")
+            .trim();
+
+          typeLabel = cleaned ? `${toTitle(cleaned)} Survey` : "";
+        }
+
+        return typeLabel ? `${certName} - ${typeLabel}` : certName;
+      };
+
+
       const rows = data
-        .filter((row) => row.surveyName.toLowerCase() !== "certificate of class")
+        .filter(
+          (row) =>
+            !excluded.includes((row.surveyName || "").trim().toLowerCase())
+        )
         .map((row) => {
+          const surveyDate = getLatestEndorsementDate(row);
           const currentDate = new Date().toISOString().split("T")[0];
           const dueDate = row.dueDate || row.validityDate;
 
           return `
       <tr>
         <td>${getSurveyDisplayName(row)}</td>
-        <td>${getClassRangeIcon(currentDate, row.rangeFrom, row.rangeTo) ? `<span class="${getClassRangeIcon(currentDate, row.rangeFrom, row.rangeTo)}">C</span>` : ""}</td>
-        <td>${row.surveyDate ? moment(row.surveyDate).format("DD/MM/YYYY") : ""}</td>
-        <td>${row.typeOfCertificate === "full_term" ? (dueDate ? moment(dueDate).format("DD/MM/YYYY") : "") : row.validityDate ? moment(row.validityDate).format("DD/MM/YYYY") : ""}</td>
-        <td>${row.typeOfCertificate === "full_term" ? `${row.rangeFrom ? moment(row.rangeFrom).format("DD/MM/YYYY") : ""} - ${row.rangeTo ? moment(row.rangeTo).format("DD/MM/YYYY") : ""}` : ""}</td>
+        <td>${getClassRangeIcon(currentDate, row.rangeFrom, row.rangeTo)
+              ? `<span class="${getClassRangeIcon(currentDate, row.rangeFrom, row.rangeTo)}">C</span>`
+              : ""
+            }</td>
+        <td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
+        <td>${row.typeOfCertificate === "full_term"
+              ? dueDate
+                ? moment(dueDate).format("DD/MM/YYYY")
+                : ""
+              : row.validityDate
+                ? moment(row.validityDate).format("DD/MM/YYYY")
+                : ""
+            }</td>
+        <td>${row.typeOfCertificate === "full_term"
+              ? `${row.rangeFrom ? moment(row.rangeFrom).format("DD/MM/YYYY") : ""} - ${row.rangeTo ? moment(row.rangeTo).format("DD/MM/YYYY") : ""
+              }`
+              : ""
+            }</td>
         <td>${row.postponedDate || ""}</td>
       </tr>`;
         })
@@ -1325,7 +1448,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   </thead>
   <tbody>
     ${(() => {
-        const defaultRows = [{ shipStatus: "Class" }, { shipStatus: "Withdrawn" }, { shipStatus: "Re-classed" }];
+        const defaultRows = [{ shipStatus: "Class" }, { shipStatus: "Withdrawn" }, { shipStatus: "Re-classed" }, { shipStatus: "Suspended" }];
 
         // Merge response data with defaults
         const data = defaultRows.map((def) => {

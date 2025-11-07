@@ -50,6 +50,44 @@ const AdditionalFieldsList = () => {
 
   const [errorMsg, setErrorMsg] = useState({ client: "", section: "" });
 
+  const flattenAdditionalData = (sectionsArray) => {
+    let result = {};
+
+    sectionsArray.forEach((section) => {
+      const finalList = [];
+
+      section.data.forEach((item) => {
+        // ✅ Push main entry
+        finalList.push({
+          ...item,
+          isHistory: false,
+          uniqueId: "current_" + item.id,
+        });
+
+        // ✅ Push history entries
+        item.history?.forEach((h) => {
+          finalList.push({
+            ...h,
+            sectionKey: section.sectionKey,
+            type: item.type,
+            referenceNo: item.referenceNo,
+            action: h.action,
+            dueDate: h.dueDate,
+            description: h.description,
+            remarks: h.remarks,
+            client: item.client,
+            isHistory: true,
+            uniqueId: "history_" + h.id,
+          });
+        });
+      });
+
+      result[section.sectionKey] = finalList;
+    });
+
+    return result;
+  };
+
   // Fetch Clients
   useEffect(() => {
     const fetchClients = async () => {
@@ -84,11 +122,8 @@ const AdditionalFieldsList = () => {
       try {
         const res = await fetchAdditionalDetails(selectedClient);
         if (res?.status === 200 && Array.isArray(res.data?.data)) {
-          const grouped = {};
-          res.data.data.forEach((section) => {
-            grouped[section.sectionKey] = section.data || [];
-          });
-          setSectionsData(grouped);
+          const flattened = flattenAdditionalData(res.data.data);
+          setSectionsData(flattened);
         } else {
           setSectionsData({});
         }
