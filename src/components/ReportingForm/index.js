@@ -698,7 +698,6 @@ const ReportingForm = () => {
       const isArrayData = Array.isArray(extraFieldsOrEndorsements);
 
       const { endorsementValues: _, ...cleanReportData } = reportDetails.data || {};
-      const isEndorsement = !isArrayData && extraFieldsOrEndorsements?.isEndorsement === true;
 
       const payload = {
         reportDetailId: reportDetails?.id,
