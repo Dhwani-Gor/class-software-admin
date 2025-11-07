@@ -99,7 +99,7 @@ const ReportingForm = () => {
     }),
 
     surveydate: yup.string().when([], {
-      is: () => true,
+      is: () => !surveyType,
       then: (schema) => schema.required("Survey date is required"),
     }),
 
@@ -1165,7 +1165,7 @@ const ReportingForm = () => {
                     />
                   )}
                 />
-                {errors.surveydate && (
+                {errors.surveydate && !surveyType && (
                   <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
                     {errors.surveydate.message}
                   </Typography>
