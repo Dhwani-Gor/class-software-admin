@@ -69,7 +69,7 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes, ac
     reset();
     onClose();
   };
-  
+
 
   const handleSaveManual = () => {
     if (!surveyInputValue.trim()) return;
@@ -82,7 +82,7 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes, ac
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>{defaultValues ? "Edit Activity" : "Add Activity"}</DialogTitle>
-      <DialogContent sx={{ minWidth: "600px", maxWidth: "500px",height: 'auto' }}>
+      <DialogContent sx={{ minWidth: "600px", maxWidth: "500px", height: 'auto' }}>
         <Box container spacing={2} sx={{ mt: 2 }} display="flex" flexDirection="column">
           <Grid2 xs={12}>
             <Box display="flex" alignItems="center" gap={2}>
@@ -94,12 +94,14 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes, ac
                   setSurveyInputValue(e.target.value);
                   setIsManualInput(!!e.target.value);
                 }}
+                disabled
                 placeholder="Enter activity name"
               />
               <CommonButton
                 onClick={handleSaveManual}
                 color="primary"
                 text="Save"
+                disabled
                 sx={{ whiteSpace: "nowrap", height: '50px' }}
               />
             </Box>
