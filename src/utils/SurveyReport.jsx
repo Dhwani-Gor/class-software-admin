@@ -25,7 +25,6 @@ const SurveyReport = ({ id, reportNumber }) => {
   const [places, setPlaces] = useState([]);
   const [isLastVisit, setIsLastVisit] = useState(false);
   const [journalList, setJournalList] = useState([]);
-  console.log(journalList, "journalList")
   const currentDate = new Date();
 
   const formatSurveyName = (name) => {
@@ -71,21 +70,6 @@ const SurveyReport = ({ id, reportNumber }) => {
     } catch (error) {
       console.log(error);
     }
-  };
-  const matchesReportNumber = (item, reportNumber) => {
-    if (!reportNumber) return true;
-    const ref = item?.referenceNo?.toString() || "";
-    const journalTypeId = item?.journalTypeId?.toString() || "";
-
-    if (ref && ref === reportNumber) return true;
-    if (journalTypeId && journalTypeId === reportNumber) return true;
-
-    if (ref && reportNumber.includes(ref)) return true;
-
-    const digits = (reportNumber.match(/\d+/g) || []).join("");
-    if (digits && ref && digits === ref) return true;
-
-    return false;
   };
 
   const generateHtmlContent = useCallback(
@@ -224,7 +208,6 @@ const SurveyReport = ({ id, reportNumber }) => {
         const sectionsHtml = sortedSections.map((section) => {
           const allEntries = [];
 
-          // ✅ Combine current + history entries
           section.data?.forEach((entry) => {
             const combined = [entry, ...(entry.history || [])].map((e) => ({
               ...e,
@@ -235,7 +218,6 @@ const SurveyReport = ({ id, reportNumber }) => {
             allEntries.push(...combined);
           });
 
-          // ✅ Filter only entries related to current reportNumber
           const relatedEntries = allEntries.filter((r) => {
             return (
               r.journalTypeId === reportNumber ||
@@ -245,22 +227,9 @@ const SurveyReport = ({ id, reportNumber }) => {
             );
           });
 
-          // ✅ Pick the latest entry per code for this section
-          const latestByCode = Object.values(
-            relatedEntries.reduce((acc, curr) => {
-              const key = curr.parentCode || curr.code;
-              const existing = acc[key];
-              const currDate = new Date(curr.createdAt || curr.updatedAt || 0);
-              const existingDate = existing ? new Date(existing.createdAt || existing.updatedAt || 0) : 0;
-              if (!existing || currDate > existingDate) acc[key] = curr;
-              return acc;
-            }, {})
-          );
+          if (!relatedEntries.length) return "";
 
-          if (!latestByCode.length) return "";
-
-          // ✅ Generate HTML for each record
-          const rowsHtml = latestByCode
+          const rowsHtml = relatedEntries
             .map((r) => {
               const due = r?.dueDate ? moment(r.dueDate).format("DD/MM/YYYY") : "-";
               const status = r?.action || "-";
@@ -295,8 +264,6 @@ const SurveyReport = ({ id, reportNumber }) => {
 
         return sectionsHtml;
       };
-
-
 
       const mainDetailsHtml = `
         <table style="border-collapse:collapse;width:100%;margin-bottom:12px;font-size:14px;">

@@ -541,7 +541,7 @@ const TextEditor = ({ id }) => {
       return "status-icon expiring3m";
     }
 
-    const daysDiff = due.diff(today, "days");
+    const daysDiff = due.diff(moment(today, "YYYY-MM-DD"), "days");
     if (daysDiff < 0) {
       return "status-icon expired";
     }
@@ -610,7 +610,7 @@ const TextEditor = ({ id }) => {
       if (!survey.activity?.surveyTypes) return;
 
       const certificateName = survey.activity.surveyTypes.report?.name || "";
-      const surveyTypeRaw = survey.activity.surveyTypes.name || "";  // ✅ real survey type (e.g. IOPP annual survey)
+      const surveyTypeRaw = survey.activity.surveyTypes.name || "";
 
       const surveyDate = survey.surveyDate
         ? format(new Date(survey.surveyDate), "yyyy-MM-dd")
@@ -636,8 +636,8 @@ const TextEditor = ({ id }) => {
       }
 
       const row = {
-        surveyName: certificateName,   // ✅ main certificate name
-        surveyTypeName: surveyTypeRaw, // ✅ real survey type (Annual, General Examination, COFS, etc.)
+        surveyName: certificateName,
+        surveyTypeName: surveyTypeRaw,
         surveyDate,
         validityDate,
         dueDate,
@@ -654,34 +654,6 @@ const TextEditor = ({ id }) => {
     });
 
     return result;
-  };
-
-
-  const groupByReportName = (details) => {
-    const groups = {};
-
-    details.forEach(cert => {
-      const name = cert.activity?.surveyTypes?.report?.name?.toLowerCase();
-      if (!name) return;
-
-      if (!groups[name]) groups[name] = [];
-
-      // ✅ push the raw certificate as-is
-      groups[name].push(cert);
-    });
-
-    return groups;
-  };
-
-  const pickLatestCertificate = (list) => {
-    return list.reduce((latest, cert) => {
-      if (!latest) return cert;
-
-      const d1 = new Date(cert.issuanceDate || cert.validityDate);
-      const d2 = new Date(latest.issuanceDate || latest.validityDate);
-
-      return d1 > d2 ? cert : latest;
-    }, null);
   };
 
   useEffect(() => {
@@ -886,7 +858,6 @@ const TextEditor = ({ id }) => {
           const dueDate = row.dueDate ? moment(row.dueDate).format("DD/MM/YYYY") : "-";
           const surveyDate = row.surveyDate ? moment(row.surveyDate).format("DD/MM/YYYY") : "-";
           const postponed = row.postponed ? moment(row.postponed).format("DD/MM/YYYY") : "-";
-
           return `
 <tr>
 <td>${row.name}</td>
@@ -922,7 +893,6 @@ ${classificationRows}
       const title = getSectionTitle(key);
       const section = additionalFieldData?.find((s) => s.sectionKey === key) || {};
 
-      // Handle empty or missing data
       if (!section?.data || section?.data?.length === 0) {
         return `
         <h4 class="no-break" style="
@@ -1058,10 +1028,11 @@ ${classificationRows}
 
       if (!keys.length) return null;
 
-      const dates = keys
+      const validDates = keys
         .map(k => data[k])
-        .filter(Boolean)
         .map(val => {
+          if (typeof val !== "string") return null;
+
           // Convert DD/MM/YYYY → YYYY-MM-DD
           if (val.includes("/") && !val.includes("-")) {
             const [d, m, y] = val.split("/");
@@ -1069,10 +1040,15 @@ ${classificationRows}
           }
           return val;
         })
-        .sort((a, b) => new Date(b) - new Date(a));
+        .filter(val => val && !isNaN(new Date(val).getTime())); // keep only valid dates
 
-      return dates[0];
+      if (!validDates.length) return null;
+
+      validDates.sort((a, b) => new Date(b) - new Date(a));
+
+      return validDates[0];
     };
+
     const otherCertificates = Array.from(uniqueCertificatesMap.values());
 
     const formatCertificateRow = (cert) => {
@@ -1102,11 +1078,13 @@ ${classificationRows}
 
       const currentDate = new Date().toISOString().split("T")[0];
       const status = "";
+      console.log("class:", getClassName(expiryFormatted, currentDate));
+      console.log("diff:", moment(expiryFormatted).diff(moment(currentDate), "days"));
 
       return `
 <tr>
   <td>${reportName}</td>
-  <td>${getClassName(expiryFormatted, currentDate) ? `<span class="${getClassName(expiryFormatted, currentDate)}">C</span>` : ""}</td>
+  <td>${getClassName(expiryFormatted, currentDate) ? `<span class="${getClassName(expiryFormatted, currentDate)}">c</span>` : ""}</td>
   <td>${surveyDateFormatted}</td>
   <td>${expiry ? moment(expiry).format("DD/MM/YYYY") : ""}</td>
   <td></td>
@@ -1115,12 +1093,6 @@ ${classificationRows}
 </tr>`;
     };
 
-
-
-
-
-
-    // ✅ Step 5: Combine all certificate rows
     const certificateRows = [
       certificateOfClassRow ? formatCertificateRow(certificateOfClassRow) : "",
       ...otherCertificates.map(formatCertificateRow),
@@ -1155,10 +1127,32 @@ ${classificationRows}
 </div>
 `;
 
+    const filterLatestBySurveyType = (data) => {
+      if (!Array.isArray(data)) return [];
+
+      const map = {};
+
+      data.forEach((row) => {
+        const type = (row.surveyTypeName || "").trim().toLowerCase();
+        const date = row.surveyDate ? new Date(row.surveyDate) : null;
+
+        if (!type) return;
+
+        if (!map[type]) {
+          map[type] = row;
+        } else {
+          const existingDate = map[type].surveyDate ? new Date(map[type].surveyDate) : null;
+          if (date && (!existingDate || date > existingDate)) {
+            map[type] = row;
+          }
+        }
+      });
+
+      return Object.values(map);
+    };
+
     const buildSurveyTable = (data, title) => {
       if (!data?.length) return "";
-
-      // Exclude list (case-insensitive)
       const excluded = [
         "certificate of class",
         "register of lifting appliances and cargo handling gear",
@@ -1167,7 +1161,6 @@ ${classificationRows}
         "engine international air pollution prevention statement of compliance"
       ];
 
-      // 🔍 Function to get latest issuance/endorsement date
       const getLatestEndorsementDate = (row) => {
         const dateKeys = Object.keys(row).filter(
           (k) =>
@@ -1235,12 +1228,15 @@ ${classificationRows}
           const surveyDate = getLatestEndorsementDate(row);
           const currentDate = new Date().toISOString().split("T")[0];
           const dueDate = row.dueDate || row.validityDate;
+          const rangeFrom = row.rangeFrom;
+          const rangeTo = row.rangeTo;
+
 
           return `
       <tr>
         <td>${getSurveyDisplayName(row)}</td>
         <td>${getClassRangeIcon(currentDate, row.rangeFrom, row.rangeTo)
-              ? `<span class="${getClassRangeIcon(currentDate, row.rangeFrom, row.rangeTo)}">C</span>`
+              ? `<span class="${getClassRangeIcon(currentDate, row.rangeFrom, row.rangeTo)}">S</span>`
               : ""
             }</td>
         <td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
@@ -1278,9 +1274,11 @@ ${classificationRows}
   `;
     };
 
+    const statutoryFiltered = filterLatestBySurveyType(statutoryData);
+    const auditsFiltered = filterLatestBySurveyType(auditsData);
 
-    const statutorySurveyTableHtml = buildSurveyTable(statutoryData, "Statutory Surveys");
-    const auditSurveyTableHtml = buildSurveyTable(auditsData, "Audits / Inspections");
+    const statutorySurveyTableHtml = buildSurveyTable(statutoryFiltered, "Statutory Surveys");
+    const auditSurveyTableHtml = buildSurveyTable(auditsFiltered, "Audits / Inspections");
 
     const htmlString = `
 <div class="page">

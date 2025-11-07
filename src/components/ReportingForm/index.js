@@ -656,7 +656,7 @@ const ReportingForm = () => {
         setReportDetails(result?.data?.data);
         toast.success("Report saved successfully.");
       } else {
-        toast.error(result.data.message);
+        toast.error(result?.data?.message);
       }
       setLoading(false);
     } catch (error) {
@@ -671,7 +671,7 @@ const ReportingForm = () => {
       const result = await updateReportDetail(reportDetails?.id, payload);
       if (result?.data?.status === "success") {
         setReportDetails(result?.data?.data);
-        toast.success(result.data.message || "Report updated successfully");
+        toast.success(result?.data?.message || "Report updated successfully");
       } else {
         toast.error(result?.response?.data?.message);
       }

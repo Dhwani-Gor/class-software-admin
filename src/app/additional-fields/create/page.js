@@ -10,7 +10,6 @@ import { addAdditionalFields, updateAdditionalFields, fetchAdditionalDetails, fe
 import CommonButton from "@/components/CommonButton";
 import { toast } from "react-toastify";
 import moment from "moment";
-import AdditionalFieldDialog from "@/components/Dialogs/AdditionalFieldDialog";
 
 const sections = [
   { key: "coc", label: "Condition of Class", options: ["Hull", "Machinery"] },
@@ -20,7 +19,7 @@ const sections = [
   { key: "compliance", label: "Compliance to New Regulations", options: ["Hull", "Machinery"] },
   { key: "pcsFsi", label: "PSC/FSI Deficiency", options: ["Hull", "Machinery"] },
 ];
-const actions = ["Recommended", "Deleted", "Amended", "Extended", "Retained"];
+const actions = ["Recommended", "Deleted", "Amended", "Extended"];
 
 const codePrefixes = {
   coc: { Hull: "H", Machinery: "M" },
@@ -39,54 +38,7 @@ const AdditionalFieldsList = () => {
   const [sectionsData, setSectionsData] = useState({});
   const [selectedSectionKey, setSelectedSectionKey] = useState("coc");
   const [editingRows, setEditingRows] = useState({});
-  const [updateDialog, setUpdateDialog] = useState({
-    open: false,
-    sectionKey: "",
-    row: null,
-    oldJournal: "",
-    newJournal: "",
-  });
-  const [sectionHistoryFlags, setSectionHistoryFlags] = useState({});
-
   const [errorMsg, setErrorMsg] = useState({ client: "", section: "" });
-
-  const flattenAdditionalData = (sectionsArray) => {
-    let result = {};
-
-    sectionsArray.forEach((section) => {
-      const finalList = [];
-
-      section.data.forEach((item) => {
-        // ✅ Push main entry
-        finalList.push({
-          ...item,
-          isHistory: false,
-          uniqueId: "current_" + item.id,
-        });
-
-        // ✅ Push history entries
-        item.history?.forEach((h) => {
-          finalList.push({
-            ...h,
-            sectionKey: section.sectionKey,
-            type: item.type,
-            referenceNo: item.referenceNo,
-            action: h.action,
-            dueDate: h.dueDate,
-            description: h.description,
-            remarks: h.remarks,
-            client: item.client,
-            isHistory: true,
-            uniqueId: "history_" + h.id,
-          });
-        });
-      });
-
-      result[section.sectionKey] = finalList;
-    });
-
-    return result;
-  };
 
   // Fetch Clients
   useEffect(() => {
@@ -122,8 +74,11 @@ const AdditionalFieldsList = () => {
       try {
         const res = await fetchAdditionalDetails(selectedClient);
         if (res?.status === 200 && Array.isArray(res.data?.data)) {
-          const flattened = flattenAdditionalData(res.data.data);
-          setSectionsData(flattened);
+          const grouped = {};
+          res.data.data.forEach((section) => {
+            grouped[section.sectionKey] = section.data || [];
+          });
+          setSectionsData(grouped);
         } else {
           setSectionsData({});
         }
@@ -168,35 +123,10 @@ const AdditionalFieldsList = () => {
     const row = editingRows[sectionKey];
     if (!row || !selectedClient) return;
 
-    const isEdit = !!row.id;
-
-    if (isEdit) {
-      const existingRow = (sectionsData[sectionKey] || []).find((r) => r.id === row.id);
-      const oldRef = existingRow?.referenceNo;
-      const newRef = row.referenceNo;
-
-      setUpdateDialog({
-        open: true,
-        sectionKey,
-        row,
-        oldJournal: existingRow?.journalTypeId || oldRef || "—",
-        newJournal: journalList.find((j) => j.id === newRef)?.journalTypeId || newRef || oldRef || "—",
-      });
-    } else {
-      // Directly save for new entry
-      await saveUpdate(sectionKey, row, false);
-    }
-  };
-
-  const saveUpdate = async (sectionKey, row, isHistoryValue) => {
     const payload = {
       sectionKey,
       clientId: selectedClient,
-      data: {
-        ...row,
-        referenceId: row.referenceNo,
-        isHistory: isHistoryValue, // ✅ move inside data
-      },
+      data: { ...row, referenceId: row.referenceNo },
     };
 
     try {
@@ -208,7 +138,7 @@ const AdditionalFieldsList = () => {
         if (res?.data?.message) toast.success(res.data.message);
       }
 
-      // Refresh section data
+      // Refresh data
       const res = await fetchAdditionalDetails(selectedClient);
       if (res?.status === 200 && Array.isArray(res.data?.data)) {
         const grouped = {};
@@ -456,25 +386,6 @@ const AdditionalFieldsList = () => {
           })}
         </Box>
       )}
-      <AdditionalFieldDialog
-        open={updateDialog.open}
-        oldJournal={updateDialog.oldJournal}
-        newJournal={updateDialog.newJournal}
-        onClose={() => setUpdateDialog({ open: false, sectionKey: "", row: null })}
-        onConfirm={(isHistorySelected) => {
-          // Store flag for this section
-          setSectionHistoryFlags((prev) => ({
-            ...prev,
-            [updateDialog.sectionKey]: isHistorySelected,
-          }));
-
-          // Proceed with save
-          saveUpdate(updateDialog.sectionKey, updateDialog.row, isHistorySelected);
-
-          // Close dialog
-          setUpdateDialog({ open: false, sectionKey: "", row: null });
-        }}
-      />
     </Box>
   );
 };

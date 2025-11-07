@@ -98,21 +98,6 @@ const NarrativeReport = ({ id, reportNumber }) => {
   const generateHtml = useCallback(() => {
     if (!clientData || !reportDetails || !systemVariables) return "";
 
-    const matchesReportNumber = (item, reportNumber) => {
-      if (!reportNumber) return true;
-      const ref = item?.referenceNo?.toString() || "";
-      const journalTypeId = item?.journalTypeId?.toString() || "";
-
-      if (ref && ref === reportNumber) return true;
-      if (journalTypeId && journalTypeId === reportNumber) return true;
-
-      if (ref && reportNumber.includes(ref)) return true;
-
-      const digits = (reportNumber.match(/\d+/g) || []).join("");
-      if (digits && ref && digits === ref) return true;
-
-      return false;
-    };
     const companyName =
       systemVariables?.data?.find((i) => i.name === "company_name")?.information || "";
     const companyLogo =
@@ -202,22 +187,21 @@ const NarrativeReport = ({ id, reportNumber }) => {
         });
 
         // ✅ Pick the latest entry per code for this section
-        const latestByCode = Object.values(
-          relatedEntries.reduce((acc, curr) => {
-            const key = curr.parentCode || curr.code;
-            const existing = acc[key];
-            const currDate = new Date(curr.createdAt || curr.updatedAt || 0);
-            const existingDate = existing ? new Date(existing.createdAt || existing.updatedAt || 0) : 0;
-            if (!existing || currDate > existingDate) acc[key] = curr;
-            return acc;
-          }, {})
-        );
+        // const latestByCode = Object.values(
+        //   relatedEntries.reduce((acc, curr) => {
+        //     const key = curr.parentCode || curr.code;
+        //     const existing = acc[key];
+        //     const currDate = new Date(curr.createdAt || curr.updatedAt || 0);
+        //     const existingDate = existing ? new Date(existing.createdAt || existing.updatedAt || 0) : 0;
+        //     if (!existing || currDate > existingDate) acc[key] = curr;
+        //     return acc;
+        //   }, {})
+        // );
 
-        console.log("latestByCode:", latestByCode);
 
         const rowsHtml =
-          latestByCode.length > 0
-            ? latestByCode
+          relatedEntries.length > 0
+            ? relatedEntries
               .map(
                 (r) => `
         <div style="margin-bottom:8px;font-size:13px;">
