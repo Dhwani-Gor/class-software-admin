@@ -99,9 +99,7 @@ const ReportingForm = () => {
   const [archiveHistory, setArchiveHistory] = useState([]);
   const [endorsementValues, setEndorsementValues] = useState([]);
   const [endorsements, setEndorsements] = useState([]);
-  console.log(endorsements, "endorsements");
   const [surveyType, setSurveyType] = useState(false);
-  console.log(surveyType, "survey type");
 
   useEffect(() => {
     ``;
@@ -143,6 +141,7 @@ const ReportingForm = () => {
       reportDetails: reportDetails?.data,
     };
 
+    console.log(trimmedReportName, "trimmedReportName");
     switch (trimmedReportName) {
       case "INTERNATIONAL TONNAGE CERTIFICATE":
         return <InternationalTonnage {...commonProps} />;
@@ -232,7 +231,6 @@ const ReportingForm = () => {
     setReportDetails(undefined);
     setSelectCertificate("");
     setSelectSurveyor("");
-    setReportName("");
     setShowEndorsementField(false);
     setShowExtraEndorsementField(false);
 
@@ -694,6 +692,8 @@ const ReportingForm = () => {
       const reportData = result?.data?.data[0];
       setSurveyType(result?.data?.data[0]?.activity?.surveyTypes?.classificationSurvey);
       setReportDetails(reportData);
+      setReportName(row?.surveyTypes?.report?.name);
+
       // setEndorsements(reportData?.activity?.surveyTypes?.report?.endorsements);
 
       setSelectedRow(row);
