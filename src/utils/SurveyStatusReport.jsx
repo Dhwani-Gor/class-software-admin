@@ -942,7 +942,7 @@ ${classificationRows}
             <td>${item.type || "-"}</td>
             <td>${item.code || "-"}</td>
             <td>${item.journalTypeId || "-"}</td>
-            <td>${item.dueDate || "-"}</td>
+            <td>${moment(item.dueDate).format("DD/MM/YYYY") || "-"}</td>
           </tr>
           ${item.description
               ? `<tr>
