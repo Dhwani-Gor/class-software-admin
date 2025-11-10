@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { useForm, Controller, Watch } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -87,24 +87,18 @@ const ReportingForm = () => {
 
   const reportSchema = yup.object().shape({
     typesOfSurvey: yup.string().required("Type of survey is required"),
-
     typeOfCertificate: yup.string(),
-
     issuancedate: yup.string().optional(),
-
     validitydate: yup.string().when([], {
       is: () => !surveyType && !hiddenReports.includes(reportName),
       then: (schema) => schema.required("Validity date is required"),
       otherwise: (schema) => schema.optional(),
     }),
-
     surveydate: yup.string().when([], {
       is: () => !surveyType,
       then: (schema) => schema.required("Survey date is required"),
     }),
-
     endorsementdate: yup.string().optional(),
-
     issuedBy: yup.string().when([], {
       is: () => !surveyType,
       then: (schema) => schema.required("Issued by is required"),
@@ -116,7 +110,6 @@ const ReportingForm = () => {
       then: (schema) => schema.required("Place is required"),
       otherwise: (schema) => schema.optional(),
     }),
-
     newValidityDate: yup.string().when([], {
       is: () => showExtraEndorsementField || reportDetails?.typeOfCertificate === "extended",
       then: (schema) => schema.required("New validity date is required"),
@@ -298,26 +291,18 @@ const ReportingForm = () => {
   };
 
   const handleFieldChange = (fieldName, value) => {
-    console.log("🔵 handleFieldChange called:", { fieldName, value });
-
     if (!value) {
-      console.log("❌ No value provided, returning early");
       return;
     }
 
     if (errors[fieldName]) clearErrors(fieldName);
 
     const surveyType = getValues("typesOfSurvey");
-    console.log("📋 Survey Type:", surveyType);
 
     const normalizeName = (name) => name?.toLowerCase().trim().replace(/\s+/g, " ");
 
-    // Helper function to calculate ranges based on survey type
     const calculateRangesFromDueDate = (dueDate) => {
-      console.log("🔧 calculateRangesFromDueDate called with:", dueDate);
-
       if (!dueDate) {
-        console.log("❌ No due date, returning empty ranges");
         return { rangeFrom: "", rangeTo: "" };
       }
 
@@ -391,31 +376,17 @@ const ReportingForm = () => {
           rangeFrom: activity.reportDetail.rangeFrom,
           rangeTo: activity.reportDetail.rangeTo,
         }));
-      console.log("📊 Existing Surveys:", surveys);
       return surveys;
     };
 
-    // Handle survey date change
-    // Handle survey date change
     if (fieldName === "surveydate") {
-      console.log("🔄 Processing surveydate change");
-
       setValue("assignmentDate", value, { shouldValidate: true, shouldDirty: true });
 
       const issuanceDate = getValues("surveydate");
       const existingSurveys = getExistingSurveys();
 
-      console.log("🔄 Calling calculateDates with:", {
-        issuanceDate: issuanceDate || value,
-        surveyType,
-        existingSurveysCount: existingSurveys.length,
-      });
-
       const { dueDate, rangeFrom, rangeTo, anniversaryDate } = calculateDates(issuanceDate || value, surveyType, existingSurveys);
 
-      console.log("✅ calculateDates returned:", { dueDate, rangeFrom, rangeTo, anniversaryDate });
-
-      // Force update all fields with batched updates
       setTimeout(() => {
         if (dueDate) {
           setValue("dueDate", dueDate, { shouldValidate: true, shouldDirty: true });
@@ -872,9 +843,12 @@ const ReportingForm = () => {
   const handleReportClick = async (row) => {
     try {
       setLoading(true);
+      console.log(row?.surveyTypes?.id, "row");
+      const matchedActivity = tableData?.find((item) => item?.surveyTypes?.id == row?.surveyTypes?.id);
+      const classificationFlag = matchedActivity?.surveyTypes?.classificationSurvey;
+      setSurveyType(classificationFlag ?? false);
       const result = await getSelectedActivityReportDetails(row?.id);
       const reportData = result?.data?.data[0];
-      setSurveyType(result?.data?.data[0]?.activity?.surveyTypes?.classificationSurvey);
       setReportDetails(reportData);
       setEndorsements(reportData?.activity?.surveyTypes?.report?.endorsements);
       setReportName(row?.surveyTypes?.report?.name);
@@ -1199,18 +1173,15 @@ const ReportingForm = () => {
                   name="dueDate"
                   control={control}
                   render={({ field }) => (
-                    console.log("🎨 DueDate field rendering with value:", field.value),
-                    (
-                      <CommonInput
-                        {...field}
-                        type="date"
-                        label="Due Date"
-                        onChange={(e) => {
-                          field.onChange(e);
-                          handleFieldChange("dueDate", e.target.value);
-                        }}
-                      />
-                    )
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label="Due Date"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("dueDate", e.target.value);
+                      }}
+                    />
                   )}
                 />
               </Grid2>
@@ -1225,10 +1196,10 @@ const ReportingForm = () => {
                       {...field}
                       type="date"
                       label="Range From"
-                      // onChange={(e) => {
-                      //   field.onChange(e);
-                      //   handleFieldChange("rangeFrom", e.target.value);
-                      // }}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("rangeFrom", e.target.value);
+                      }}
                     />
                   )}
                 />
@@ -1244,10 +1215,10 @@ const ReportingForm = () => {
                       {...field}
                       type="date"
                       label="Range To"
-                      // onChange={(e) => {
-                      //   field.onChange(e);
-                      //   handleFieldChange("rangeTo", e.target.value);
-                      // }}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("rangeTo", e.target.value);
+                      }}
                     />
                   )}
                 />
