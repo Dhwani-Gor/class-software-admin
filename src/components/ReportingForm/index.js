@@ -396,18 +396,13 @@ const ReportingForm = () => {
     };
 
     // Handle survey date change
+    // Handle survey date change
     if (fieldName === "surveydate") {
       console.log("🔄 Processing surveydate change");
 
-      // Set assignment date and certificate base date same as survey date
-      setValue("assignmentDate", value);
-      setValue("certificateBaseDate", value);
-      console.log("✅ Set assignmentDate and certificateBaseDate to:", value);
+      setValue("assignmentDate", value, { shouldValidate: true, shouldDirty: true });
 
-      const issuanceDate = getValues("issuancedate");
-      console.log("📅 Issuance Date:", issuanceDate);
-
-      // Always recalculate, even without issuance date
+      const issuanceDate = getValues("surveydate");
       const existingSurveys = getExistingSurveys();
 
       console.log("🔄 Calling calculateDates with:", {
@@ -420,34 +415,36 @@ const ReportingForm = () => {
 
       console.log("✅ calculateDates returned:", { dueDate, rangeFrom, rangeTo, anniversaryDate });
 
-      // Force update all fields
-      if (dueDate) {
-        setValue("dueDate", dueDate, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-      }
-      if (rangeFrom) {
-        setValue("rangeFrom", rangeFrom, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-      }
-      if (rangeTo) {
-        setValue("rangeTo", rangeTo, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-      }
-      if (anniversaryDate) {
-        setValue("anniversaryDate", anniversaryDate, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-      }
+      // Force update all fields with batched updates
+      setTimeout(() => {
+        if (dueDate) {
+          setValue("dueDate", dueDate, { shouldValidate: true, shouldDirty: true });
+        }
+        if (rangeFrom) {
+          setValue("rangeFrom", rangeFrom, { shouldValidate: true, shouldDirty: true });
+        }
+        if (rangeTo) {
+          setValue("rangeTo", rangeTo, { shouldValidate: true, shouldDirty: true });
+        }
+        if (anniversaryDate) {
+          setValue("anniversaryDate", anniversaryDate, { shouldValidate: true, shouldDirty: true });
+        }
 
-      // Trigger validation
-      trigger(["dueDate", "rangeFrom", "rangeTo", "anniversaryDate"]);
+        // Trigger validation after all fields are set
+        trigger(["dueDate", "rangeFrom", "rangeTo", "anniversaryDate"]);
 
-      console.log("✅ All fields updated with values:", {
-        dueDate: getValues("dueDate"),
-        rangeFrom: getValues("rangeFrom"),
-        rangeTo: getValues("rangeTo"),
-        anniversaryDate: getValues("anniversaryDate"),
-      });
+        console.log("✅ All fields updated with values:", {
+          dueDate: getValues("dueDate"),
+          rangeFrom: getValues("rangeFrom"),
+          rangeTo: getValues("rangeTo"),
+          anniversaryDate: getValues("anniversaryDate"),
+        });
+      }, 0);
     }
 
     // Handle issuance date change
-    if (fieldName === "issuancedate") {
-      console.log("🔄 Processing issuancedate change");
+    if (fieldName === "surveydate") {
+      console.log("🔄 Processing surveydate change");
 
       const existingSurveys = getExistingSurveys();
 
@@ -540,6 +537,12 @@ const ReportingForm = () => {
     }
 
     console.log("🏁 handleFieldChange completed");
+  };
+
+  const formatToDayMonth = (value) => {
+    if (!value) return "";
+    const [y, m, d] = value.split("-");
+    return `${d}/${m}`;
   };
 
   const handleShowTable = () => {
@@ -1082,7 +1085,7 @@ const ReportingForm = () => {
                 {/* )} */}
               </Grid2>
               <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
-                <Controller name="anniversaryDate" control={control} render={({ field }) => <CommonInput {...field} type="date" label="Anniversary Date" disabled />} />
+                <Controller name="anniversaryDate" control={control} render={({ field }) => <CommonInput {...field} type="text" label="Anniversary Date" value={formatToDayMonth(field.value)} disabled />} />
               </Grid2>
               <Grid2 size={{ xs: 12, sm: 6, md: 3 }}></Grid2>
 
@@ -1142,7 +1145,7 @@ const ReportingForm = () => {
                       label="Date on which certificate is based"
                       onChange={(e) => {
                         field.onChange(e);
-                        handleFieldChange("basedDate", e.target.value);
+                        handleFieldChange("certificateBaseDate", e.target.value);
                       }}
                     />
                   )}
