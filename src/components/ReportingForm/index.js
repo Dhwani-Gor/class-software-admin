@@ -413,6 +413,47 @@ const ReportingForm = () => {
       }, 0);
     }
 
+    // Handle assignment date change
+    if (fieldName === "assignmentDate") {
+      console.log("🔄 Processing assignmentDate change");
+
+      const existingSurveys = getExistingSurveys();
+
+      const { dueDate, rangeFrom, rangeTo, anniversaryDate } = calculateDates(value, surveyType, existingSurveys);
+
+      console.log("✅ calculateDates returned:", {
+        dueDate,
+        rangeFrom,
+        rangeTo,
+        anniversaryDate,
+      });
+
+      if (dueDate) {
+        setValue("dueDate", dueDate, { shouldValidate: true, shouldDirty: true });
+      }
+      if (rangeFrom) {
+        setValue("rangeFrom", rangeFrom, { shouldValidate: true, shouldDirty: true });
+      }
+      if (rangeTo) {
+        setValue("rangeTo", rangeTo, { shouldValidate: true, shouldDirty: true });
+      }
+      if (anniversaryDate) {
+        setValue("anniversaryDate", anniversaryDate, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+      }
+
+      trigger(["dueDate", "rangeFrom", "rangeTo", "anniversaryDate"]);
+
+      console.log("✅ All fields updated from assignmentDate:", {
+        dueDate: getValues("dueDate"),
+        rangeFrom: getValues("rangeFrom"),
+        rangeTo: getValues("rangeTo"),
+        anniversaryDate: getValues("anniversaryDate"),
+      });
+    }
+
     // Handle issuance date change
     if (fieldName === "surveydate") {
       console.log("🔄 Processing surveydate change");
