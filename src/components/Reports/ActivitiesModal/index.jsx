@@ -71,13 +71,13 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes, ac
   };
 
 
-  const handleSaveManual = () => {
-    if (!surveyInputValue.trim()) return;
-    onSave({ name: surveyInputValue.trim() });
-    setSurveyInputValue("");
-    setIsManualInput(false);
-    onClose();
-  };
+  // const handleSaveManual = () => {
+  //   if (!surveyInputValue.trim()) return;
+  //   onSave({ name: surveyInputValue.trim() });
+  //   setSurveyInputValue("");
+  //   setIsManualInput(false);
+  //   onClose();
+  // };
 
   return (
     <Dialog open={open} onClose={onClose}>
@@ -92,13 +92,13 @@ const ActivitiesModal = ({ open, onClose, onSave, defaultValues, surveyTypes, ac
                 value={surveyInputValue}
                 onChange={(e) => {
                   setSurveyInputValue(e.target.value);
-                  setIsManualInput(!!e.target.value);
+                  // setIsManualInput(!!e.target.value);
                 }}
                 disabled
                 placeholder="Enter activity name"
               />
               <CommonButton
-                onClick={handleSaveManual}
+                // onClick={handleSaveManual}
                 color="primary"
                 text="Save"
                 disabled

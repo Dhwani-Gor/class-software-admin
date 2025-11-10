@@ -161,73 +161,58 @@ const NarrativeReport = ({ id, reportNumber }) => {
         return acc;
       }, {});
 
-      const sectionsHtml = sectionOrder.map((sectionKey) => {
-        const section = sectionMap[sectionKey] || { sectionKey, data: [] };
-        const allEntries = [];
+      const sectionsHtml = sectionOrder
+        .map((sectionKey) => {
+          const section = sectionMap[sectionKey] || { sectionKey, data: [] };
+          const allEntries = [];
 
-        // ✅ Combine current + history entries
-        section.data?.forEach((entry) => {
-          const combined = [entry, ...(entry.history || [])].map((e) => ({
-            ...e,
-            parentCode: entry.code,
-            createdAt: e.createdAt || entry.createdAt || null,
-            journalTypeId: e.journalTypeId || entry.journalTypeId || null,
-          }));
-          allEntries.push(...combined);
-        });
+          section.data?.forEach((entry) => {
+            const combined = [entry, ...(entry.history || [])].map((e) => ({
+              ...e,
+              parentCode: entry.code,
+              createdAt: e.createdAt || entry.createdAt || null,
+              journalTypeId: e.journalTypeId || entry.journalTypeId || null,
+            }));
+            allEntries.push(...combined);
+          });
 
-        // ✅ Filter only entries related to current reportNumber
-        const relatedEntries = allEntries.filter((r) => {
-          return (
-            r.journalTypeId === reportNumber ||
-            r.referenceNo === reportNumber ||
-            (reportDetails?.[0]?.activity?.journal?.journalTypeId &&
-              r.journalTypeId === reportDetails[0].activity.journal.journalTypeId)
-          );
-        });
+          const relatedEntries = allEntries.filter((r) => {
+            return (
+              r.journalTypeId === reportNumber ||
+              r.referenceNo === reportNumber ||
+              (reportDetails?.[0]?.activity?.journal?.journalTypeId &&
+                r.journalTypeId === reportDetails[0].activity.journal.journalTypeId)
+            );
+          });
 
-        // ✅ Pick the latest entry per code for this section
-        // const latestByCode = Object.values(
-        //   relatedEntries.reduce((acc, curr) => {
-        //     const key = curr.parentCode || curr.code;
-        //     const existing = acc[key];
-        //     const currDate = new Date(curr.createdAt || curr.updatedAt || 0);
-        //     const existingDate = existing ? new Date(existing.createdAt || existing.updatedAt || 0) : 0;
-        //     if (!existing || currDate > existingDate) acc[key] = curr;
-        //     return acc;
-        //   }, {})
-        // );
+          // ✅ Skip section if no entries at all
+          if (relatedEntries.length === 0) return "";
 
+          const rowsHtml = relatedEntries
+            .map(
+              (r) => `
+      <div style="margin-bottom:8px;font-size:13px;">
+        <div style="display:flex;justify-content:space-between;background:#f9f9f9;padding:6px 10px;border-bottom:1px solid #ddd;">
+          <div><strong>Code:</strong> ${r?.code || "-"}</div>
+          <div><strong>Ref No:</strong> ${r?.journalTypeId || "-"}</div>
+          <div><strong>Action:</strong> ${r?.action || "-"}</div>
+        </div>
+        <div style="padding:8px 10px;white-space:normal;word-wrap:break-word;word-break:break-word;">
+          <strong>Remarks:</strong> ${r?.remarks || "-"}</strong>
+        </div>
+      </div>`
+            )
+            .join("");
 
-        const rowsHtml =
-          relatedEntries.length > 0
-            ? relatedEntries
-              .map(
-                (r) => `
-        <div style="margin-bottom:8px;font-size:13px;">
-          <div style="display:flex;justify-content:space-between;background:#f9f9f9;padding:6px 10px;border-bottom:1px solid #ddd;">
-            <div><strong>Code:</strong> ${r?.code || "-"}</div>
-            <div><strong>Ref No:</strong> ${r?.journalTypeId || "-"}</div>
-            <div><strong>Action:</strong> ${r?.action || "-"}</div>
-          </div>
-          <div style="padding:8px 10px;white-space:normal;word-wrap:break-word;word-break:break-word;">
-            <strong>Remarks:</strong> ${r?.remarks || "-"}
-          </div>
-        </div>`
-              )
-              .join("")
-            : `
-        <div style="padding:10px;text-align:left;color:#666;margin-bottom:10px;">
-          No ${titleForKey(sectionKey)} Recommended
-        </div>`;
-
-        return `
+          return `
       <div style="font-weight:700;color:#1a5490;font-size:16px;margin:16px 0 8px;">
         ${titleForKey(sectionKey)}
       </div>
       ${rowsHtml}
     `;
-      }).join("");
+        })
+        .join("");
+
 
       return sectionsHtml;
     };
