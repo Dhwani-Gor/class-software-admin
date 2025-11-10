@@ -19,6 +19,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
   const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, saveData);
 
   const timberImages = systemVariables?.data?.filter((item) => item.name.startsWith("timber_image")) || [];
+  console.log(timberImages, "timberImages");
 
   const handleImageSelect = (id) => {
     setSelectedImage(id);
