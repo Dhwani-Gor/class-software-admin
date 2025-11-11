@@ -166,18 +166,15 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
     Object.entries(selectedEndorsement).forEach(([key, value]) => {
       if (key === "title") return;
 
-      // Handle _st_ fields (radio-type fields)
       if (typeof value === "string" && value.startsWith("_st_")) {
         const [, raw] = value.split("_st_");
         const optionsRaw = raw.split("_");
 
-        // Clean option labels (remove digits, replace dashes)
         const options = optionsRaw.map((opt) => opt.replace(/-/g, " ").replace(/\d+$/, ""));
         const selectedOption = radioValues[value];
         let formattedValue;
 
         if (!selectedOption) {
-          // If no option selected, show clean joined text
           formattedValue = options.join(" / ");
         } else {
           const selectedClean = selectedOption.replace(/\d+$/, "");
@@ -188,10 +185,8 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
         return;
       }
 
-      // Handle normal fields (text/date/place)
       let finalValue = endorsementInputs[key] ?? value ?? "";
 
-      // Convert date fields to DD/MM/YYYY format
       if (key.toLowerCase().includes("date") && finalValue) {
         const date = new Date(finalValue);
         if (!isNaN(date)) {
@@ -202,7 +197,6 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
         }
       }
 
-      // Map to correct backend keys
       let newKey = key;
       if (key === "endorsed_place") newKey = `issuance_place_${num}`;
       else if (key === "issuance_date") newKey = `issuance_date_${num}`;
@@ -212,14 +206,21 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
       flattenedData[newKey] = finalValue;
     });
 
-    // Add issuedBy if selected
     if (issuedBy) {
       const selectedSurveyor = surveyorOptions.find((s) => s.value === issuedBy);
       flattenedData[`endorsed_by_${num}`] = selectedSurveyor?.label || "";
     }
 
     flattenedData.isEndorsement = true;
+    if (num === "2") {
+      const rd = reportDetails?.data || {};
 
+      const endorsement1Filled = rd.endorsed_by_1 || rd.issuance_place_1 || rd.issuance_date_1;
+
+      if (!endorsement1Filled) {
+        flattenedData.not_applicable = "Not Applicable";
+      }
+    }
     onSubmit(flattenedData);
     onClose();
   };
