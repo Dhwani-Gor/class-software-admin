@@ -22,7 +22,6 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
     let dueDate, rangeFrom, rangeTo, anniversaryDate;
 
     const surveyNameNormalized = normalizeName(surveyName);
-
     const dependencyMap = {
         [normalizeName("Annual Survey")]: normalizeName("Special Survey Hull"),
         [normalizeName("Annual Survey IG System")]: normalizeName("Special Survey IG System"),
@@ -30,19 +29,18 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
         [normalizeName("Annual Survey (UMS)")]: normalizeName("Special Survey (UMS)"),
     };
 
-    // 🔹 Handle "special" or "continuous" surveys generically
-    if (surveyNameNormalized.includes("special") || surveyNameNormalized.includes("continuous")) {
+    if (surveyNameNormalized.includes("special") || surveyNameNormalized.includes("continuous") || surveyNameNormalized.includes("renewal")) {
         const due = addYears(issuanceDateObj, 5);
         return {
             dueDate: formatDate(due),
-            rangeFrom: formatDate(addMonths(due, -3)), // ✅ -3 months only
-            rangeTo: formatDate(due), // ✅ up to due date
+            rangeFrom: formatDate(addMonths(due, -3)),
+            rangeTo: formatDate(due),
             anniversaryDate: formatDate(due),
         };
     }
 
     switch (surveyNameNormalized) {
-        // 🔹 Special & Continuous Surveys (explicit cases for clarity)
+        // 🔹 Special & Continuous Surveys
         case normalizeName("Special Survey Hull"):
         case normalizeName("Special Survey Machinery"):
         case normalizeName("Special Survey IG System"):
@@ -51,12 +49,12 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
         case normalizeName("Continuous Survey Hull"):
         case normalizeName("Continuous Survey Machinery"):
             dueDate = addYears(issuanceDateObj, 5);
-            rangeFrom = addMonths(dueDate, -3); // ✅ -3 months only
-            rangeTo = dueDate; // ✅ up to due date
+            rangeFrom = addMonths(dueDate, -3);
+            rangeTo = dueDate;
             anniversaryDate = dueDate;
             break;
 
-        // 🔹 Annual Surveys (fixes SSH dependency & range)
+        // 🔹 Annual Surveys
         case normalizeName("Annual Survey"):
         case normalizeName("Annual Survey IG System"):
         case normalizeName("Annual Survey ( Fi-Fi)"):
@@ -84,7 +82,6 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
                 dueDate = addYears(baseDate, 1);
             }
 
-            // ✅ Annual surveys: -3 to +3 months range
             rangeFrom = addMonths(dueDate, -3);
             rangeTo = addMonths(dueDate, +3);
             anniversaryDate = dueDate;
@@ -121,14 +118,12 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
 
             if (dueDate.isAfter(sshDueDate)) dueDate = addMonths(sshDueDate, -3);
 
-            // 🚫 No range for Docking/Boiler
             rangeFrom = "";
             rangeTo = "";
             anniversaryDate = dueDate;
             break;
         }
 
-        // 🔹 Tailshaft Condition Monitoring Annual Survey — -3 to +3 months range
         case normalizeName("Tailshaft Condition Monitoring Annual Survey"): {
             const specialSurveyHull = findSurveyByName("special survey hull");
             const baseDate =
@@ -155,70 +150,93 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
 
             if (dueDate.isAfter(sshDueDate)) dueDate = addMonths(sshDueDate, -3);
 
-            // ✅ Tailshaft Annual gets -3 to +3 months range
             rangeFrom = addMonths(dueDate, -3);
             rangeTo = addMonths(dueDate, +3);
             anniversaryDate = dueDate;
             break;
         }
 
-        case normalizeName("Intermediate Survey"): {
-            const specialSurveyHull = findSurveyByName("special survey hull");
+        // ✅ FIXED: Intermediate Survey Logic
+        case surveyNameNormalized.includes("intermediate"):
+            {
+                const specialSurveyHull = findSurveyByName("special survey hull");
 
-            if (specialSurveyHull) {
+                if (!specialSurveyHull) {
+                    // No SSH found, cannot calculate
+                    dueDate = "";
+                    rangeFrom = "";
+                    rangeTo = "";
+                    anniversaryDate = "";
+                    break;
+                }
+
                 const sshDate = moment(
                     specialSurveyHull.surveyDate || specialSurveyHull.issuanceDate
                 );
                 const sshDueDate = addYears(sshDate, 5);
 
-                // Find all intermediate surveys conducted between SSH and SSH+5 years
+                // Get all existing intermediate surveys done after SSH
                 const existingIntermediates = existingSurveys
                     .filter(
                         (s) =>
                             normalizeName(s.surveyName) === surveyNameNormalized &&
-                            s.surveyDate &&
-                            moment(s.surveyDate).isAfter(sshDate) &&
-                            moment(s.surveyDate).isBefore(sshDueDate)
+                            (s.surveyDate || s.issuanceDate) &&
+                            moment(s.surveyDate || s.issuanceDate).isAfter(sshDate) &&
+                            moment(s.surveyDate || s.issuanceDate).isBefore(sshDueDate)
                     )
-                    .sort((a, b) => new Date(a.surveyDate) - new Date(b.surveyDate));
+                    .sort((a, b) =>
+                        new Date(a.surveyDate || a.issuanceDate) -
+                        new Date(b.surveyDate || b.issuanceDate)
+                    );
 
-                // Check if current intermediate survey is on same date as SSH
-                const currentSurveyDate = issuanceDateObj;
-                const sameAsSSH = currentSurveyDate.isSame(sshDate, "day");
+                console.log("🔍 Intermediate Survey Calculation:", {
+                    sshDate: sshDate.format("YYYY-MM-DD"),
+                    sshDueDate: sshDueDate.format("YYYY-MM-DD"),
+                    currentIssuanceDate: issuanceDateObj.format("YYYY-MM-DD"),
+                    existingIntermediatesCount: existingIntermediates.length
+                });
 
-                if (sameAsSSH) {
-                    // ✅ If done same day as SSH → next due can be 2 or 3 years later
-                    // Default to 2 years (can be made configurable in UI)
+                // Check if current intermediate is done on same day as SSH
+                const daysDifferenceFromSSH = Math.abs(issuanceDateObj.diff(sshDate, "days"));
+                const isDoneOnSSHDate = daysDifferenceFromSSH <= 1; // Within 1 day tolerance
+
+                if (isDoneOnSSHDate) {
+                    // ✅ Done on SSH date → Next due is 2 years from SSH
+                    // (Option: Could be made configurable for 2 or 3 years)
+                    console.log("✅ Intermediate done on SSH date → Next due: SSH + 2 years");
                     dueDate = addYears(sshDate, 2);
                     rangeFrom = addMonths(dueDate, -3);
-                    rangeTo = dueDate; // ✅ -3 months to due date
+                    rangeTo = dueDate;
                     anniversaryDate = dueDate;
-
-                    // Alternative: 3 years option (can be used in UI dropdown)
-                    // const option2 = addYears(sshDate, 3);
                 } else if (existingIntermediates.length >= 1) {
-                    // ✅ If already done once between 5 years → no next due date
+                    // ✅ Already have 1+ intermediate in this 5-year cycle → No next due
+                    console.log("✅ Already have intermediate survey → No next due");
                     dueDate = "";
                     rangeFrom = "";
                     rangeTo = "";
                     anniversaryDate = "";
                 } else {
-                    // First intermediate survey → around 2.5 years from SSH
-                    dueDate = addMonths(sshDate, 30);
+                    // ✅ First intermediate (not on SSH date) → Due at 2 or 3 years from SSH
+                    // Default to 2 years (can fit 2 intermediate surveys in 5-year cycle)
+                    console.log("✅ First intermediate → Due at SSH + 2 years");
+                    dueDate = addYears(sshDate, 2);
                     rangeFrom = addMonths(dueDate, -3);
-                    rangeTo = dueDate; // ✅ -3 months to due date
+                    rangeTo = dueDate;
                     anniversaryDate = dueDate;
                 }
-            } else {
-                dueDate = "";
-                rangeFrom = "";
-                rangeTo = "";
-                anniversaryDate = "";
-            }
-            break;
-        }
 
-        // 🔹 In-water Survey
+                // Ensure due date doesn't exceed SSH due date
+                if (dueDate && moment(dueDate).isAfter(sshDueDate)) {
+                    console.log("⚠️ Due date exceeds SSH due date, adjusting");
+                    dueDate = sshDueDate;
+                    rangeFrom = addMonths(dueDate, -3);
+                    rangeTo = dueDate;
+                    anniversaryDate = dueDate;
+                }
+
+                break;
+            }
+
         case normalizeName("In Water Survey"):
             dueDate = addYears(issuanceDateObj, 3);
             rangeFrom = "";
@@ -226,13 +244,12 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
             anniversaryDate = dueDate;
             break;
 
-        // 🔹 Tailshaft Surveys (no range)
         case normalizeName("Tailshaft Initial Survey"):
         case normalizeName("Tailshaft Periodical Survey"):
         case normalizeName("Tailshaft Renewal Survey"):
             dueDate = addYears(issuanceDateObj, 5);
-            rangeFrom = ""; // ✅ No range
-            rangeTo = ""; // ✅ No range
+            rangeFrom = "";
+            rangeTo = "";
             anniversaryDate = dueDate;
             break;
 
@@ -249,4 +266,4 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
         rangeTo: formatDate(rangeTo),
         anniversaryDate: formatDate(anniversaryDate),
     };
-};
+};  

@@ -312,7 +312,7 @@ const ReportingForm = () => {
       console.log("📝 Normalized Survey Type:", surveyTypeNormalized);
 
       // Special surveys: -3 months only
-      if (surveyTypeNormalized?.includes("special")) {
+      if (surveyTypeNormalized?.includes("special") || surveyTypeNormalized?.includes("renewal")) {
         const result = {
           rangeFrom: moment(dueDateMoment).add(-3, "months").format("YYYY-MM-DD"),
           rangeTo: moment(dueDateMoment).format("YYYY-MM-DD"),
@@ -539,7 +539,7 @@ const ReportingForm = () => {
           console.log("✅ Annual survey - rangeTo set to:", newRangeTo);
         }
         // For special/continuous/intermediate, range to = due date
-        else if (surveyTypeNormalized?.includes("special") || surveyTypeNormalized?.includes("continuous") || surveyTypeNormalized?.includes("intermediate")) {
+        else if (surveyTypeNormalized?.includes("special") || surveyTypeNormalized?.includes("continuous") || surveyTypeNormalized?.includes("renewal")) {
           setValue("rangeTo", dueDate);
           console.log("✅ Special/Continuous/Intermediate - rangeTo set to dueDate:", dueDate);
         }
