@@ -112,7 +112,7 @@ const JournalEntryForm = ({ journalId = null }) => {
   const hasUnlockRights = data?.specialPermission?.includes("JournalUnlockRights");
   const isArchived = journalData?.journalArchive === true;
   const isLocked = journalData?.isLocked === true;
-  const isDisabled = !hasUnlockRights && (journalData.isLocked || journalData.journalArchive);
+  const isDisabled = !hasUnlockRights && (journalData?.isLocked || journalData?.journalArchive);
 
 
   const {
@@ -384,7 +384,7 @@ const JournalEntryForm = ({ journalId = null }) => {
   };
 
   const handleSaveActivity = (activityData) => {
-    if (isJournalLocked || isJournalArchived) return;
+    if (isDisabled) return;
 
     if (journalId) {
       if (editActivity) {
@@ -454,7 +454,7 @@ const JournalEntryForm = ({ journalId = null }) => {
   };
 
   const handleActivityDelete = (activity) => {
-    if (isJournalLocked || isJournalArchived) return;
+    if (isDisabled) return;
     deleteActivities(activity)
   };
 
@@ -583,7 +583,7 @@ const JournalEntryForm = ({ journalId = null }) => {
   // }
 
   const handleSubmitJournal = async (data, lockJournal = false) => {
-    if (isJournalLocked || isJournalArchived) return;
+    if (isDisabled) return;
     try {
       const payload = {
         userId: userInfo?.id,
@@ -622,7 +622,7 @@ const JournalEntryForm = ({ journalId = null }) => {
   };
 
   const onSubmit = (data) => {
-    if (isJournalLocked || isJournalArchived) return;
+    if (isDisabled) return;
     setFormData(data);
 
     if (journalId) {
@@ -739,7 +739,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                           name="type"
                           value={field.value}
                           onChange={(e) => {
-                            if (isJournalLocked || isJournalArchived) return;
+                            if (isDisabled) return;
                             field.onChange(e.target.value);
                             setSelectedJournalType(e.target.value);
                           }}
@@ -769,7 +769,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                   />
                 </Box>
 
-                {!isJournalLocked && !isJournalArchived && (
+                {!isDisabled && (
                   <Box>
                     {/* <CommonButton sx={{ mr: 2 }} type="button" text="Archive Journal" onClick={handleArchiveJournal} /> */}
                     <CommonButton type="submit" text={journalId ? "Update" : "Save"} />
