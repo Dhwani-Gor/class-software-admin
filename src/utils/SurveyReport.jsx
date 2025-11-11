@@ -95,7 +95,7 @@ const SurveyReport = ({ id, reportNumber }) => {
     </tr>
   `;
 
-        const validCerts = reportDetailsInput.filter((cert) => cert?.activity?.surveyTypes?.classificationSurvey === true && cert?.activity?.surveyTypes?.report && cert?.activity?.surveyTypes?.report?.name);
+        const validCerts = reportDetailsInput.filter((cert) => cert?.activity?.surveyTypes?.classificationSurvey === true);
 
         if (!validCerts.length) {
           return `
