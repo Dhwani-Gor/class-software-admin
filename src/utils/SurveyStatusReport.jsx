@@ -141,6 +141,12 @@ const TextEditor = ({ id }) => {
         page-break-after: avoid !important;
         break-after: avoid !important;
       }
+      h4 + table,
+      h4 + div,
+      h4 + p {
+        page-break-before: avoid !important;
+        break-before: avoid !important;
+      }
       p, div, span { font-size: 13px !important; line-height: 1.6 !important; }
       p.subtitle { font-size: 13px !important; line-height: 1.6 !important; }
 
@@ -322,9 +328,28 @@ const TextEditor = ({ id }) => {
       const scaleFactor = usableWidth / imgWidth;
       const baseSliceHeight = Math.floor(usableHeight / scaleFactor);
 
+      // const getTableRowPositions = () => {
+      //   const rows = contentDocument.querySelectorAll("table tr");
+      //   const positions = [];
+      //   rows.forEach((row) => {
+      //     const rect = row.getBoundingClientRect();
+      //     const bodyRect = contentBody.getBoundingClientRect();
+      //     const relativeTop = rect.top - bodyRect.top + contentBody.scrollTop;
+      //     const relativeBottom = relativeTop + rect.height;
+      //     positions.push({
+      //       top: Math.floor(relativeTop * 2),
+      //       bottom: Math.floor(relativeBottom * 2),
+      //       height: Math.floor(rect.height * 2),
+      //     });
+      //   });
+      //   return positions;
+      // };
       const getTableRowPositions = () => {
         const rows = contentDocument.querySelectorAll("table tr");
+        const headings = contentDocument.querySelectorAll("h4");
         const positions = [];
+
+        // Add table rows
         rows.forEach((row) => {
           const rect = row.getBoundingClientRect();
           const bodyRect = contentBody.getBoundingClientRect();
@@ -334,11 +359,35 @@ const TextEditor = ({ id }) => {
             top: Math.floor(relativeTop * 2),
             bottom: Math.floor(relativeBottom * 2),
             height: Math.floor(rect.height * 2),
+            type: 'table-row'
           });
         });
-        return positions;
-      };
 
+        // Add h4 headings with following element
+        headings.forEach((heading) => {
+          const rect = heading.getBoundingClientRect();
+          const bodyRect = contentBody.getBoundingClientRect();
+          const relativeTop = rect.top - bodyRect.top + contentBody.scrollTop;
+
+          // Include next element (table/div) with heading
+          const nextElement = heading.nextElementSibling;
+          let combinedHeight = rect.height;
+          if (nextElement) {
+            const nextRect = nextElement.getBoundingClientRect();
+            combinedHeight = (nextRect.bottom - rect.top);
+          }
+
+          const relativeBottom = relativeTop + combinedHeight;
+          positions.push({
+            top: Math.floor(relativeTop * 2),
+            bottom: Math.floor(relativeBottom * 2),
+            height: Math.floor(combinedHeight * 2),
+            type: 'heading-block'
+          });
+        });
+
+        return positions.sort((a, b) => a.top - b.top);
+      };
       const rowPositions = getTableRowPositions();
 
       const getOptimalSliceHeight = (startY, maxSliceHeight) => {
@@ -600,6 +649,63 @@ const TextEditor = ({ id }) => {
     };
   };
 
+  // const populateSurveyRows = (surveyDataList) => {
+  //   console.log("surveyDataList", surveyDataList);
+  //   if (!surveyDataList || surveyDataList.length === 0)
+  //     return { statutory: [], audits: [] };
+
+  //   const result = { statutory: [], audits: [] };
+
+  //   surveyDataList.forEach((survey) => {
+  //     if (!survey.activity?.surveyTypes) return;
+
+  //     const certificateName = survey.activity.surveyTypes.report?.name || "";
+  //     const surveyTypeRaw = survey.activity.surveyTypes.name || "";
+
+  //     const surveyDate = survey.surveyDate
+  //       ? format(new Date(survey.surveyDate), "yyyy-MM-dd")
+  //       : "";
+
+  //     const validityDate = survey.validityDate
+  //       ? format(new Date(survey.validityDate), "yyyy-MM-dd")
+  //       : "";
+
+  //     const issuanceDate = survey.issuanceDate
+  //       ? format(new Date(survey.issuanceDate), "yyyy-MM-dd")
+  //       : "";
+
+  //     let dueDate = "";
+  //     let rangeFrom = "";
+  //     let rangeTo = "";
+
+  //     if (issuanceDate) {
+  //       const dates = calculateDates(issuanceDate);
+  //       dueDate = dates.dueDate;
+  //       rangeFrom = dates.rangeFrom;
+  //       rangeTo = dates.rangeTo;
+  //     }
+
+  //     const row = {
+  //       surveyName: certificateName,
+  //       surveyTypeName: surveyTypeRaw,
+  //       surveyDate,
+  //       validityDate,
+  //       dueDate,
+  //       rangeFrom,
+  //       rangeTo,
+  //       postponedDate: "",
+  //       typeOfCertificate: survey.typeOfCertificate || "",
+  //     };
+
+  //     const isAudit = survey.activity.surveyTypes.audit === true;
+
+  //     if (isAudit) result.audits.push(row);
+  //     else result.statutory.push(row);
+  //   });
+
+  //   return result;
+  // };
+
   const populateSurveyRows = (surveyDataList) => {
     if (!surveyDataList || surveyDataList.length === 0)
       return { statutory: [], audits: [] };
@@ -607,14 +713,48 @@ const TextEditor = ({ id }) => {
     const result = { statutory: [], audits: [] };
 
     surveyDataList.forEach((survey) => {
-      if (!survey.activity?.surveyTypes) return;
+      if (!survey.activity?.surveyTypes || !survey.activity.surveyTypes.report) return;
 
       const certificateName = survey.activity.surveyTypes.report?.name || "";
       const surveyTypeRaw = survey.activity.surveyTypes.name || "";
 
-      const surveyDate = survey.surveyDate
+      // Get latest inner issuance date for statutory surveys
+      const getLatestInnerIssuanceDate = (surveyData) => {
+        if (!surveyData || !surveyData.data) return null;
+
+        const data = surveyData.data;
+
+        const keys = Object.keys(data).filter(k =>
+          k.toLowerCase().startsWith("issuance_date_") ||
+          k.toLowerCase().startsWith("endorsement_date_")
+        );
+
+        if (!keys.length) return null;
+
+        const validDates = keys
+          .map(k => data[k])
+          .map(val => {
+            if (typeof val !== "string") return null;
+
+            if (val.includes("/") && !val.includes("-")) {
+              const [d, m, y] = val.split("/");
+              return `${y}-${m}-${d}`;
+            }
+            return val;
+          })
+          .filter(val => val && !isNaN(new Date(val).getTime()));
+
+        if (!validDates.length) return null;
+
+        validDates.sort((a, b) => new Date(b) - new Date(a));
+
+        return validDates[0];
+      };
+
+      const innerIssuanceDate = getLatestInnerIssuanceDate(survey);
+      const surveyDate = innerIssuanceDate || (survey.surveyDate
         ? format(new Date(survey.surveyDate), "yyyy-MM-dd")
-        : "";
+        : "");
 
       const validityDate = survey.validityDate
         ? format(new Date(survey.validityDate), "yyyy-MM-dd")
@@ -647,15 +787,15 @@ const TextEditor = ({ id }) => {
         typeOfCertificate: survey.typeOfCertificate || "",
       };
 
+      const isStatutory = survey.activity.surveyTypes.statutorySurvey === true;
       const isAudit = survey.activity.surveyTypes.audit === true;
 
-      if (isAudit) result.audits.push(row);
-      else result.statutory.push(row);
+      if (isStatutory) result.statutory.push(row);
+      else if (isAudit) result.audits.push(row);
     });
 
     return result;
   };
-
   useEffect(() => {
     const surveyData = populateSurveyRows(reportDetails);
     setStatutoryData(surveyData.statutory);
@@ -812,9 +952,8 @@ const TextEditor = ({ id }) => {
       reportDetailsList.forEach((r) => {
         const surveyType = r?.activity?.surveyTypes;
         const isClassification = surveyType?.classificationSurvey === true;
-        const hasValidReport = surveyType?.report?.name;
 
-        if (isClassification && hasValidReport) {
+        if (isClassification) {
           combined.push({
             name: surveyType.name,
             type: "classification",
@@ -936,7 +1075,7 @@ ${classificationRows}
             <td>${item.type || "-"}</td>
             <td>${item.code || "-"}</td>
             <td>${item.journalTypeId || "-"}</td>
-            <td>${moment(item.dueDate).format("DD/MM/YYYY") || "-"}</td>
+            <td>${item.dueDate !== null && moment(item.dueDate).format("DD/MM/YYYY") || "-"}</td>
           </tr>
           ${item.description
               ? `<tr>
@@ -1059,9 +1198,9 @@ ${classificationRows}
       const reportName = fullCert.activity.surveyTypes.report.name;
       const typeLabel = fullCert.activity.surveyTypes.name || "";
 
-      const innerIssuance = getLatestInnerIssuanceDate(fullCert);
+      // const innerIssuance = getLatestInnerIssuanceDate(fullCert);
 
-      const surveyDate = innerIssuance || fullCert.surveyDate;
+      const surveyDate = fullCert.surveyDate;
       const surveyDateFormatted = surveyDate
         ? moment(surveyDate).format("DD/MM/YYYY")
         : "";
@@ -1078,8 +1217,7 @@ ${classificationRows}
 
       const currentDate = new Date().toISOString().split("T")[0];
       const status = "";
-      console.log("class:", getClassName(expiryFormatted, currentDate));
-      console.log("diff:", moment(expiryFormatted).diff(moment(currentDate), "days"));
+
 
       return `
 <tr>
@@ -1152,7 +1290,9 @@ ${classificationRows}
     };
 
     const buildSurveyTable = (data, title) => {
-      if (!data?.length) return "";
+      const message = title?.toLowerCase().includes("audits")
+        ? "No audits data found"
+        : "No statutory data found";
       const excluded = [
         "certificate of class",
         "register of lifting appliances and cargo handling gear",
@@ -1212,7 +1352,7 @@ ${classificationRows}
             .replace(/\s*survey\s*$/i, "")
             .trim();
 
-          typeLabel = cleaned ? `${toTitle(cleaned)} Survey` : "";
+          typeLabel = cleaned ? `${toTitle(cleaned)}` : "";
         }
 
         return typeLabel ? `${certName} - ${typeLabel}` : certName;
@@ -1235,21 +1375,18 @@ ${classificationRows}
           return `
       <tr>
         <td>${getSurveyDisplayName(row)}</td>
-        <td>${getClassRangeIcon(currentDate, row.rangeFrom, row.rangeTo)
-              ? `<span class="${getClassRangeIcon(currentDate, row.rangeFrom, row.rangeTo)}">S</span>`
+        <td>${getClassRangeIcon(currentDate, rangeFrom, rangeTo)
+              ? `<span class="${getClassRangeIcon(currentDate, rangeFrom, rangeTo)}">S</span>`
               : ""
             }</td>
         <td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
         <td>${row.typeOfCertificate === "full_term"
-              ? dueDate
-                ? moment(dueDate).format("DD/MM/YYYY")
-                : ""
-              : row.validityDate
-                ? moment(row.validityDate).format("DD/MM/YYYY")
-                : ""
+              && dueDate
+              ? moment(dueDate).format("DD/MM/YYYY")
+              : ""
             }</td>
         <td>${row.typeOfCertificate === "full_term"
-              ? `${row.rangeFrom ? moment(row.rangeFrom).format("DD/MM/YYYY") : ""} - ${row.rangeTo ? moment(row.rangeTo).format("DD/MM/YYYY") : ""
+              ? `${rangeFrom ? moment(rangeFrom).format("DD/MM/YYYY") : ""} - ${rangeTo ? moment(rangeTo).format("DD/MM/YYYY") : ""
               }`
               : ""
             }</td>
@@ -1268,7 +1405,9 @@ ${classificationRows}
       <th>Due Date</th>
       <th>Range (from, to)</th>
       <th>Postponed</th>
+      
     </tr>
+    ${rows.length === 0 ? `<tr><td colspan="6">${message}</td></tr>` : ""}
     ${rows}
   </table>
   `;
