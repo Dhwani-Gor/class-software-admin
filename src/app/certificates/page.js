@@ -125,7 +125,8 @@ const Certificates = () => {
       }
       const searchQuery = debouncedSearch.trim();
       const markAsArchive = selectedFilter === "Archive Documents";
-      const res = showAll ? await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, undefined, undefined, startDate, endDate, markAsArchive) : await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, page, limit, startDate, endDate, markAsArchive);
+      const issuedDocument = selectedFilter === "Certificates" || selectedFilter === "Archive Documents" ? true : false;
+      const res = showAll ? await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, undefined, undefined, startDate, endDate, markAsArchive, issuedDocument) : await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, page, limit, startDate, endDate, markAsArchive, issuedDocument);
       const data = res?.data;
       if (data?.status === "success" && Array.isArray(data?.data)) {
         setCertificatesList(data.data);
