@@ -694,7 +694,7 @@ export const getEndorsedIssuedBy = async (filterKey, filterValue) => {
   return result;
 };
 
-export const getAllIssuedDocuments = async (filterKeys = [], filterValues = [], searchQuery, page, limit, startDate, endDate, markAsArchive) => {
+export const getAllIssuedDocuments = async (filterKeys = [], filterValues = [], searchQuery, page, limit, startDate, endDate, markAsArchive, issuedDocument) => {
   try {
     const params = {};
 
@@ -709,6 +709,7 @@ export const getAllIssuedDocuments = async (filterKeys = [], filterValues = [], 
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
     if (markAsArchive !== undefined) params.markAsArchive = markAsArchive;
+    if (issuedDocument !== undefined) params.issuedDocument = issuedDocument;
 
     const result = await axiosInstance.get("/reportDetails", { params });
     return result;
