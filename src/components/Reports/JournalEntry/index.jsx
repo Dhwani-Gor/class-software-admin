@@ -434,7 +434,6 @@ const JournalEntryForm = ({ journalId = null }) => {
               const survey = surveyTypes.find((s) => Number(s.id) === Number(surveyId));
               if (!survey) return null;
               return {
-                id: generateId(),
                 typeOfSurvey: surveyId,
                 surveyTypes: { name: survey.name, id: survey.id },
                 initialOfSurveyors: activityData.initialOfSurveyors || [],

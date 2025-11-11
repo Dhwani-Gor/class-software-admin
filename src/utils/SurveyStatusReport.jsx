@@ -558,38 +558,32 @@ const TextEditor = ({ id }) => {
   const getClassRangeIcon = (currentDate, rangeFrom, rangeTo) => {
     const today = moment(currentDate, "YYYY-MM-DD");
 
-    if (!rangeFrom || !rangeTo) return "";
+    if (!rangeFrom || !rangeTo) {
+      return "";
+    }
 
     const from = moment(rangeFrom, "YYYY-MM-DD");
     const to = moment(rangeTo, "YYYY-MM-DD");
 
-    if (!from.isValid() || !to.isValid()) return "";
-
-    // ✅ If current date is BEFORE the range starts → show green icon
-    if (today.isBefore(from, "day")) {
-      return "status-icon expiring3m";
+    if (!from.isValid() || !to.isValid()) {
+      return "";
     }
 
-    // ✅ After range ends → expired
     if (today.isAfter(to, "day")) {
       return "status-icon expired";
     }
 
     const daysToRangeTo = to.diff(today, "days");
-
-    // ✅ < 30 days to range end
     if (daysToRangeTo >= 0 && daysToRangeTo < 30) {
       return "status-icon expiring1m";
     }
 
-    // ✅ Within active range
-    if (today.isBetween(from, to, "day", "[]")) {
+    if (today.isBetween(from, to, "day", "[]") && daysToRangeTo >= 30) {
       return "status-icon expiring3m";
     }
 
     return "";
   };
-
 
   const calculateDates = (issuanceDate) => {
     if (!issuanceDate) return { dueDate: "", rangeFrom: "", rangeTo: "" };
