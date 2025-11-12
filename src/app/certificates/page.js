@@ -20,7 +20,7 @@ import Pagination from "@mui/material/Pagination";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import { deleteSurveyReport, deleteSurveyStatusReport, getAllIssuedDocuments, getAllReports, getJournalsList, markAsRevoked } from "@/api";
-import DownloadAllEmailDialog from "@/components/Dialogs/DownloadAllEmailDialog";
+// import DownloadAllEmailDialog from "@/components/Dialogs/DownloadAllEmailDialog";
 
 const Certificates = () => {
   const { data } = useAuth();
