@@ -1566,7 +1566,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   <tbody>
     <tr>
       <td><em><strong>Classification Status:</strong></em></td>
-      <td>Active</td>
+      <td>${currentStatus || ""}  </td>
     </tr>
     <tr>
       <td><em><strong>Hull Notation:</strong></em></td>
