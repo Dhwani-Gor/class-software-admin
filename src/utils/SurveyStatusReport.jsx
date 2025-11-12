@@ -24,7 +24,7 @@ const TextEditor = ({ id }) => {
   const [systemVariables, setSystemVariables] = useState();
   const companyName = systemVariables?.data?.find((item) => item.name === "company_name")?.information || "-";
   const companyLogo = systemVariables?.data?.find((item) => item.name === "company_logo")?.information || "-";
-
+  console.log("test")
   useEffect(() => {
     getSystemVariables();
   }, []);
@@ -104,7 +104,6 @@ const TextEditor = ({ id }) => {
 
     return "Class";
   };
-
 
   const currentStatus = getCurrentShipStatus();
 
