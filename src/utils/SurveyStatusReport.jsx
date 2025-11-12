@@ -57,23 +57,27 @@ const TextEditor = ({ id }) => {
 
   const getCurrentShipStatus = () => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     const historyList = clientData?.classHistory;
+    console.log(historyList, "historyList");
     if (!Array.isArray(historyList) || historyList.length === 0) {
-      return "Class";
+      return "";
     }
 
-    // Sort latest first by from_date
-    const sortedHistory = [...historyList].sort(
-      (a, b) => new Date(b.from_date) - new Date(a.from_date)
-    );
+    const reversedHistory = [...historyList].reverse();
 
-    for (const history of sortedHistory) {
-      const shipStatus = history.shipStatus?.toLowerCase();
+    for (const history of reversedHistory) {
+      const shipStatus = history.shipStatus?.toLowerCase().trim();
       const fromDate = history.from_date ? new Date(history.from_date) : null;
       const toDate = history.to_date ? new Date(history.to_date) : null;
 
       if (!fromDate) continue;
+
+      fromDate.setHours(0, 0, 0, 0);
+      if (toDate) {
+        toDate.setHours(0, 0, 0, 0);
+      }
 
       const isWithinRange = !toDate
         ? today >= fromDate
@@ -81,12 +85,20 @@ const TextEditor = ({ id }) => {
 
       if (!isWithinRange) continue;
 
-      if (shipStatus === "in class" || shipStatus === "re-classed") {
-        return "In Operation, Class Valid";
-      }
+      switch (shipStatus) {
+        case "class":
+        case "in class":
+        case "re-classed":
+          return "In Operation, Class Valid";
 
-      if (shipStatus === "withdrawn") {
-        return "Withdrawn";
+        case "withdrawn":
+          return "Withdrawn";
+
+        case "suspended":
+          return "Suspended";
+
+        default:
+          continue;
       }
     }
 
@@ -266,14 +278,12 @@ const TextEditor = ({ id }) => {
     `;
       contentDocument.head.appendChild(style);
 
-      // Handle diamond icons
       const diamondIcons = contentDocument.querySelectorAll("span.expiring1m");
       diamondIcons.forEach((icon) => {
         const text = icon.textContent;
         icon.innerHTML = `<span>${text}</span>`;
       });
 
-      // Prevent page break for table rows
       const tableRows = contentDocument.querySelectorAll("table tr");
       tableRows.forEach((row) => {
         row.classList.add("no-break");
@@ -1222,7 +1232,7 @@ ${classificationRows}
       return `
 <tr>
   <td>${reportName}</td>
-  <td>${getClassName(expiryFormatted, currentDate) ? `<span class="${getClassName(expiryFormatted, currentDate)}">c</span>` : ""}</td>
+  <td>${getClassName(expiryFormatted, currentDate) ? `<span style="align-content: center; text-align: center;" class="${getClassName(expiryFormatted, currentDate)}">c</span>` : ""}</td>
   <td>${surveyDateFormatted}</td>
   <td>${expiry ? moment(expiry).format("DD/MM/YYYY") : ""}</td>
   <td></td>
