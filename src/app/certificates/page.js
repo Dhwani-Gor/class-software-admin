@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Box, Stack, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Tooltip, Chip, TextField, Select, MenuItem, CircularProgress } from "@mui/material";
+import { Box, Stack, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Tooltip, Chip, TextField, Select, MenuItem, CircularProgress, Checkbox } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GetAppIcon from "@mui/icons-material/GetApp";
@@ -19,7 +19,8 @@ import { useAuth } from "@/hooks/useAuth";
 import Pagination from "@mui/material/Pagination";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import { deleteSurveyReport, deleteSurveyStatusReport, getAllIssuedDocuments, getAllReports, getJournalsList } from "@/api";
+import { deleteSurveyReport, deleteSurveyStatusReport, getAllIssuedDocuments, getAllReports, getJournalsList, markAsRevoked } from "@/api";
+import DownloadAllEmailDialog from "@/components/Dialogs/DownloadAllEmailDialog";
 
 const Certificates = () => {
   const { data } = useAuth();
@@ -49,6 +50,10 @@ const Certificates = () => {
   const [openAmdRemarks, setOpenAmdRemarks] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [openEmailDialog, setOpenEmailDialog] = useState(false);
+  const [zipType, setZipType] = useState("");
+  const [selectedCertificates, setSelectedCertificates] = useState([]);
+  const [selectedArchives, setSelectedArchives] = useState([]);
 
   const handleSort = (key) => {
     setSortConfig((prev) => {
@@ -58,6 +63,32 @@ const Certificates = () => {
         return { key, direction: "asc" };
       }
     });
+  };
+
+  // === Handlers for Certificates ===
+  const handleSelectAllCertificates = (rows) => {
+    if (selectedCertificates.length === rows.length) {
+      setSelectedCertificates([]);
+    } else {
+      setSelectedCertificates(rows.map((r) => r.id));
+    }
+  };
+
+  const handleSelectCertificate = (id) => {
+    setSelectedCertificates((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  // === Handlers for Archive Documents ===
+  const handleSelectAllArchives = (rows) => {
+    if (selectedArchives.length === rows.length) {
+      setSelectedArchives([]);
+    } else {
+      setSelectedArchives(rows.map((r) => r.id));
+    }
+  };
+
+  const handleSelectArchive = (id) => {
+    setSelectedArchives((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const sortData = (data) => {
@@ -310,6 +341,38 @@ const Certificates = () => {
     }
   };
 
+  const buildAndSendZip = async (emails, type) => {
+    setLoading(true);
+    try {
+      const zip = new JSZip();
+      const folder = zip.folder(type === "reports" ? "MCBG Reports" : "MCBG Certificates");
+
+      const list = type === "reports" ? reportsList : certificatesList;
+
+      await Promise.all(
+        list.map(async (item) => {
+          if (!item.generatedDoc) return;
+
+          const res = await fetch(item.generatedDoc);
+          const blob = await res.blob();
+          const fileName = item.generatedDoc.split("/").pop();
+          folder.file(fileName, blob);
+        })
+      );
+
+      const zipContent = await zip.generateAsync({ type: "blob" });
+
+      // await sendZipToEmails(emails, zipContent);
+
+      toast.success("ZIP sent successfully.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to send ZIP.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Layout>
       <CommonCard>
@@ -336,10 +399,44 @@ const Certificates = () => {
             ))}
           </Stack>
           {hasArchivePermission && (
-            <Stack>
-              <CommonButton variant="contained" onClick={selectedFilter === "Reports" ? handleBulkDownloadReports : handleBulkDownload} text="Download All">
-                Download All
-              </CommonButton>
+            <Stack direction="row" spacing={2}>
+              <CommonButton
+                variant="contained"
+                text="Download All"
+                onClick={() => {
+                  setZipType(selectedFilter === "Reports" ? "reports" : "certificates");
+                  setOpenEmailDialog(true);
+                }}
+              />
+
+              {(selectedCertificates.length > 0 || selectedArchives.length > 0) && (
+                <CommonButton
+                  variant="outlined"
+                  color="error"
+                  text={`Revoke (${selectedFilter === "Certificates" ? selectedCertificates.length : selectedArchives.length})`}
+                  onClick={async () => {
+                    try {
+                      setLoading(true);
+                      const idsToRevoke = selectedFilter === "Certificates" ? selectedCertificates : selectedArchives;
+
+                      const res = await markAsRevoked({ reportDetailIds: idsToRevoke });
+                      if (res.data.status === "success") {
+                        toast.success(res.data.message);
+                        if (selectedFilter === "Certificates") setSelectedCertificates([]);
+                        else setSelectedArchives([]);
+                        fetchCertificatesData();
+                      } else {
+                        toast.error(res.data.message || "Failed to revoke documents.");
+                      }
+                    } catch (err) {
+                      console.error(err);
+                      toast.error("Error revoking documents.");
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                />
+              )}
             </Stack>
           )}
         </Box>
@@ -417,7 +514,6 @@ const Certificates = () => {
                                     if (!row.generatedDoc) return;
 
                                     const file = row.generatedDoc.split("/").pop();
-                                    console.log(row, "row");
                                     const matches = file.match(/MCB[A-Z0-9]+/gi);
                                     const reportNo = matches ? matches[matches.length - 1] : null;
                                     const shipName = row.client?.shipName || row.ship?.name || "Unknown Ship";
@@ -473,6 +569,27 @@ const Certificates = () => {
                   <Table sx={{ marginTop: 2 }}>
                     <TableHead>
                       <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                        <TableCell
+                          sx={{
+                            fontWeight: 600,
+                            width: "100px",
+                            whiteSpace: "nowrap",
+                            cursor: "pointer",
+                            userSelect: "none",
+                          }}
+                          onClick={() => handleSelectAllCertificates(sortedCertificates)}
+                        >
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              textDecoration: "underline",
+                              color: selectedCertificates.length === sortedCertificates.length && sortedCertificates.length > 0 ? "primary.main" : "text.primary",
+                            }}
+                          >
+                            Select All
+                          </Typography>
+                        </TableCell>
+
                         {[
                           { label: "No.", key: null, width: "100px" },
                           { label: "Report No.", key: "activity.journal.journalTypeId", width: "15%" },
@@ -504,6 +621,10 @@ const Certificates = () => {
                     <TableBody>
                       {sortedCertificates.map((row, idx) => (
                         <TableRow key={row.id}>
+                          <TableCell padding="checkbox">
+                            <Checkbox checked={selectedCertificates.includes(row.id)} onChange={() => handleSelectCertificate(row.id)} />
+                          </TableCell>
+
                           <TableCell>{(page - 1) * limit + idx + 1}</TableCell>
                           <TableCell>
                             {row.amendmentVersion > 0 ? (
@@ -555,6 +676,27 @@ const Certificates = () => {
                   <Table sx={{ marginTop: 2 }}>
                     <TableHead>
                       <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                        <TableCell
+                          sx={{
+                            fontWeight: 600,
+                            width: "100px",
+                            whiteSpace: "nowrap",
+                            cursor: "pointer",
+                            userSelect: "none",
+                          }}
+                          onClick={() => handleSelectAllArchives(sortedCertificates)}
+                        >
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              textDecoration: "underline",
+                              color: selectedArchives.length === sortedCertificates.length && sortedCertificates.length > 0 ? "primary.main" : "text.primary",
+                            }}
+                          >
+                            Select All
+                          </Typography>
+                        </TableCell>
+
                         {[
                           { label: "No.", key: null, width: "100px" },
                           { label: "Report No.", key: "activity.journal.journalTypeId", width: "15%" },
@@ -586,6 +728,10 @@ const Certificates = () => {
                     <TableBody>
                       {sortedCertificates.map((row, idx) => (
                         <TableRow key={row.id}>
+                          <TableCell padding="checkbox">
+                            <Checkbox checked={selectedArchives.includes(row.id)} onChange={() => handleSelectArchive(row.id)} />
+                          </TableCell>
+
                           <TableCell>{(page - 1) * limit + idx + 1}</TableCell>
                           <TableCell>
                             {row.amendmentVersion > 0 ? (
@@ -657,6 +803,15 @@ const Certificates = () => {
       <DocumentPreview open={openPreviewModal} fileUrl={previewFile} onClose={() => setOpenPreviewModal(false)} />
       <CommonConfirmationDialog open={openDialog} onCancel={handleCancelDelete} onConfirm={handleConfirmDelete} title="Are you sure you want to delete this survey status report?" description="This action cannot be undone." />
       <ShowAmdRemarksDialog open={openAmdRemarks} onClose={() => setOpenAmdRemarks(false)} reportDetailId={selectedReportId} hasArchivePermission={hasArchivePermission} selectedFilter={selectedFilter} />
+
+      {/* <DownloadAllEmailDialog
+        open={openEmailDialog}
+        onClose={() => setOpenEmailDialog(false)}
+        onSubmit={(emails) => {
+          setOpenEmailDialog(false);
+          buildAndSendZip(emails, zipType);
+        }}
+      /> */}
     </Layout>
   );
 };

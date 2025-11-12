@@ -1084,3 +1084,12 @@ export const uploadNarrativeReports = async (payload) => {
   }
   return result;
 };
+export const markAsRevoked = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/reportDetails/markAsRevoked`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
