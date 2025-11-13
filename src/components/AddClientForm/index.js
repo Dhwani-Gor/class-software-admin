@@ -17,7 +17,7 @@ import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import CommonInput from "../CommonInput";
 import CommonButton from "../CommonButton";
-import { createClient, getSpecificClient, searchinvoicing_detail, searchmanager_detail, searchowner_detail, updateClient } from "@/api";
+import { createClient, getAllClients, getSpecificClient, searchinvoicing_detail, searchmanager_detail, searchowner_detail, updateClient } from "@/api";
 import { Accordion, AccordionDetails, AccordionSummary, Typography, IconButton, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, MenuItem } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -95,6 +95,8 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
   const [ownerInputValue, setOwnerInputValue] = useState("");
   const [managerOptions, setManagerOptions] = useState([]);
   const [managerInputValue, setManagerInputValue] = useState("");
+  const [classId, setClassId] = useState();
+
   const [isSearching, setIsSearching] = useState({
     owner: false,
     manager: false,
@@ -128,6 +130,27 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
 
   const dispatch = useDispatch();
   const router = useRouter();
+
+  const fetchClients = async () => {
+    try {
+      setLoading(true);
+      const result = await getAllClients(1, 10, "");
+      if (result?.status === 200) {
+        setClassId(result.data.results);
+      } else {
+        toast.error("Something went wrong ! Please try again after some time");
+      }
+
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
 
   const {
     control,
@@ -204,6 +227,20 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
       ...defaultValues,
     },
   });
+
+  useEffect(() => {
+    const now = new Date();
+
+    const year = String(now.getFullYear()).slice(-2);
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+
+    const totalRecords = Number(classId) || 0;
+    const nextNumber = (totalRecords + 1).toString().padStart(3, "0");
+
+    const generatedId = `${year}${month}${nextNumber}`;
+
+    setValue("classId", generatedId);
+  }, [setValue, classId]);
 
   const handleAddRow = () => {
     setClassHistory([...classHistory, { shipStatus: "", reason: "", remarks: "", from_date: "", to_date: "" }]);
@@ -1057,7 +1094,23 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
           <Grid2 container spacing={3}>
             {["shipName", "imoNumber", "classId", "flag", "portOfRegistry", "grossTonnage", "netTonnage", "lengthOfShip", "shipBuilder", "countryOfBuild", "areaOfOperation", "carryingCapacity", "classSymbol", "hullNotation", "machineryNotation", "descriptiveNotation", "typeOfShip"].map((field) => (
               <Grid2 key={field} size={{ xs: 4 }}>
-                <Controller name={field} control={control} render={({ field: controllerField }) => <CommonInput {...controllerField} fullWidth type="text" variant="standard" label={renderLabel(field)} placeholder={`Enter ${field.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}`} disabled={!editingAllowed} error={Boolean(errors?.[field])} helperText={errors?.[field]?.message} />} />
+                <Controller
+                  name={field}
+                  control={control}
+                  render={({ field: controllerField }) => (
+                    <CommonInput
+                      {...controllerField}
+                      fullWidth
+                      type="text"
+                      variant="standard"
+                      label={renderLabel(field)}
+                      placeholder={`Enter ${field.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}`}
+                      disabled={field === "classId" || !editingAllowed} // <-- disable manual entry for classId
+                      error={Boolean(errors?.[field])}
+                      helperText={errors?.[field]?.message}
+                    />
+                  )}
+                />
               </Grid2>
             ))}
 
