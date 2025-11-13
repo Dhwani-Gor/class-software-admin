@@ -1278,39 +1278,6 @@ ${classificationRows}
       }
     });
 
-    const getLatestInnerIssuanceDate = (cert) => {
-      if (!cert || !cert.data) return null;
-
-      const data = cert.data;
-
-      const keys = Object.keys(data).filter(k =>
-        k.toLowerCase().startsWith("issuance_date_") ||
-        k.toLowerCase().startsWith("endorsement_date_")
-      );
-
-      if (!keys.length) return null;
-
-      const validDates = keys
-        .map(k => data[k])
-        .map(val => {
-          if (typeof val !== "string") return null;
-
-          // Convert DD/MM/YYYY → YYYY-MM-DD
-          if (val.includes("/") && !val.includes("-")) {
-            const [d, m, y] = val.split("/");
-            return `${y}-${m}-${d}`;
-          }
-          return val;
-        })
-        .filter(val => val && !isNaN(new Date(val).getTime())); // keep only valid dates
-
-      if (!validDates.length) return null;
-
-      validDates.sort((a, b) => new Date(b) - new Date(a));
-
-      return validDates[0];
-    };
-
     const otherCertificates = Array.from(uniqueCertificatesMap.values());
 
     const formatCertificateRow = (cert) => {
@@ -1469,7 +1436,6 @@ ${classificationRows}
               .toLowerCase()
               .replace(/\b\w/g, (c) => c.toUpperCase());
 
-          // Remove prefixes/suffixes like "IOPP" and trailing "survey" then re-add "Survey"
           const cleaned = typeNameRaw
             .replace(/^iopp\s*/i, "")
             .replace(/\s*survey\s*$/i, "")
@@ -1478,7 +1444,6 @@ ${classificationRows}
           typeLabel = cleaned ? `${toTitle(cleaned)}` : "";
         }
 
-        // return typeLabel ? `${certName} - ${typeLabel}` : certName;
         return certName;
       };
 
