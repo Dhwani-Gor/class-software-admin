@@ -715,34 +715,147 @@ const TextEditor = ({ id }) => {
   //   return result;
   // };
 
+  // const populateSurveyRows = (surveyDataList) => {
+  //   if (!surveyDataList || surveyDataList.length === 0)
+  //     return { statutory: [], audits: [] };
+
+  //   const result = { statutory: [], audits: [] };
+
+  //   surveyDataList.forEach((survey) => {
+  //     if (!survey.activity?.surveyTypes || !survey.activity.surveyTypes.report) return;
+
+  //     const certificateName = survey.activity.surveyTypes.report?.name || "";
+  //     const surveyTypeRaw = survey.activity.surveyTypes.name || "";
+
+  //     // Get latest inner issuance date for statutory surveys
+  //     const getLatestInnerIssuanceDate = (surveyData) => {
+  //       if (!surveyData || !surveyData.data) return null;
+
+  //       const data = surveyData.data;
+
+  //       const keys = Object.keys(data).filter(k =>
+  //         k.toLowerCase().startsWith("issuance_date_") ||
+  //         k.toLowerCase().startsWith("endorsement_date_")
+  //       );
+
+  //       if (!keys.length) return null;
+
+  //       const validDates = keys
+  //         .map(k => data[k])
+  //         .map(val => {
+  //           if (typeof val !== "string") return null;
+
+  //           if (val.includes("/") && !val.includes("-")) {
+  //             const [d, m, y] = val.split("/");
+  //             return `${y}-${m}-${d}`;
+  //           }
+  //           return val;
+  //         })
+  //         .filter(val => val && !isNaN(new Date(val).getTime()));
+
+  //       if (!validDates.length) return null;
+
+  //       validDates.sort((a, b) => new Date(b) - new Date(a));
+
+  //       return validDates[0];
+  //     };
+
+  //     const innerIssuanceDate = getLatestInnerIssuanceDate(survey);
+  //     const surveyDate = innerIssuanceDate || (survey.surveyDate
+  //       ? format(new Date(survey.surveyDate), "yyyy-MM-dd")
+  //       : "");
+
+  //     const validityDate = survey.validityDate
+  //       ? format(new Date(survey.validityDate), "yyyy-MM-dd")
+  //       : "";
+
+  //     const issuanceDate = survey.issuanceDate
+  //       ? format(new Date(survey.issuanceDate), "yyyy-MM-dd")
+  //       : "";
+
+  //     let dueDate = "";
+  //     let rangeFrom = "";
+  //     let rangeTo = "";
+
+  //     if (issuanceDate) {
+  //       const dates = calculateDates(issuanceDate);
+  //       dueDate = dates.dueDate;
+  //       rangeFrom = dates.rangeFrom;
+  //       rangeTo = dates.rangeTo;
+  //     }
+
+  //     const row = {
+  //       surveyName: certificateName,
+  //       surveyTypeName: surveyTypeRaw,
+  //       surveyDate,
+  //       validityDate,
+  //       dueDate,
+  //       rangeFrom,
+  //       rangeTo,
+  //       postponedDate: "",
+  //       typeOfCertificate: survey.typeOfCertificate || "",
+  //     };
+
+  //     const isStatutory = survey.activity.surveyTypes.statutorySurvey === true;
+  //     const isAudit = survey.activity.surveyTypes.audit === true;
+
+  //     if (isStatutory) result.statutory.push(row);
+  //     else if (isAudit) result.audits.push(row);
+  //   });
+
+  //   return result;
+  // };
+
   const populateSurveyRows = (surveyDataList) => {
     if (!surveyDataList || surveyDataList.length === 0)
       return { statutory: [], audits: [] };
 
     const result = { statutory: [], audits: [] };
 
-    surveyDataList.forEach((survey) => {
-      if (!survey.activity?.surveyTypes || !survey.activity.surveyTypes.report) return;
+    // Filter surveys with isGenerated true
+    const generatedSurveys = surveyDataList.filter(
+      (survey) => survey.isGenerated === true
+    );
 
+    // Skip if report is null
+    const validSurveys = generatedSurveys.filter(
+      (survey) => survey.activity?.surveyTypes?.report
+    );
+
+    // Skip revoked entries
+    const nonRevokedSurveys = validSurveys.filter(
+      (survey) => survey.statusReport !== "revoked"
+    );
+
+    // Group by report name and survey type to find duplicates
+    const surveyMap = new Map();
+
+    nonRevokedSurveys.forEach((survey) => {
       const certificateName = survey.activity.surveyTypes.report?.name || "";
       const surveyTypeRaw = survey.activity.surveyTypes.name || "";
+      const isStatutory = survey.activity.surveyTypes.statutorySurvey === true;
+      const isAudit = survey.activity.surveyTypes.audit === true;
 
-      // Get latest inner issuance date for statutory surveys
+      // Create a unique key for grouping (certificate name + type)
+      const groupKey = `${certificateName}_${isStatutory ? 'statutory' : 'audit'}`;
+
+      // Get latest inner issuance date for survey date
       const getLatestInnerIssuanceDate = (surveyData) => {
         if (!surveyData || !surveyData.data) return null;
 
         const data = surveyData.data;
 
-        const keys = Object.keys(data).filter(k =>
-          k.toLowerCase().startsWith("issuance_date_") ||
-          k.toLowerCase().startsWith("endorsement_date_")
+        const keys = Object.keys(data).filter(
+          (k) =>
+            k.toLowerCase().startsWith("issuance_date_") ||
+            k.toLowerCase().startsWith("endorsement_date_")
         );
 
         if (!keys.length) return null;
 
         const validDates = keys
-          .map(k => data[k])
-          .map(val => {
+          .map((k) => data[k])
+          .map((val) => {
             if (typeof val !== "string") return null;
 
             if (val.includes("/") && !val.includes("-")) {
@@ -751,7 +864,7 @@ const TextEditor = ({ id }) => {
             }
             return val;
           })
-          .filter(val => val && !isNaN(new Date(val).getTime()));
+          .filter((val) => val && !isNaN(new Date(val).getTime()));
 
         if (!validDates.length) return null;
 
@@ -769,42 +882,39 @@ const TextEditor = ({ id }) => {
         ? format(new Date(survey.validityDate), "yyyy-MM-dd")
         : "";
 
-      const issuanceDate = survey.issuanceDate
-        ? format(new Date(survey.issuanceDate), "yyyy-MM-dd")
-        : "";
-
-      let dueDate = "";
-      let rangeFrom = "";
-      let rangeTo = "";
-
-      if (issuanceDate) {
-        const dates = calculateDates(issuanceDate);
-        dueDate = dates.dueDate;
-        rangeFrom = dates.rangeFrom;
-        rangeTo = dates.rangeTo;
-      }
-
       const row = {
         surveyName: certificateName,
-        surveyTypeName: surveyTypeRaw,
+        // surveyTypeName: surveyTypeRaw,
         surveyDate,
         validityDate,
-        dueDate,
-        rangeFrom,
-        rangeTo,
+        dueDate: "", // Removed calculation
+        rangeFrom: "", // Removed calculation
+        rangeTo: "", // Removed calculation
         postponedDate: "",
         typeOfCertificate: survey.typeOfCertificate || "",
       };
 
-      const isStatutory = survey.activity.surveyTypes.statutorySurvey === true;
-      const isAudit = survey.activity.surveyTypes.audit === true;
+      // Keep only the latest entry based on survey date for duplicate report names
+      if (!surveyMap.has(groupKey)) {
+        surveyMap.set(groupKey, { row, isStatutory, isAudit, surveyDate });
+      } else {
+        const existing = surveyMap.get(groupKey);
+        // Compare dates and keep the latest
+        if (surveyDate && (!existing.surveyDate || new Date(surveyDate) > new Date(existing.surveyDate))) {
+          surveyMap.set(groupKey, { row, isStatutory, isAudit, surveyDate });
+        }
+      }
+    });
 
+    // Populate result from the map (only unique, latest entries)
+    surveyMap.forEach(({ row, isStatutory, isAudit }) => {
       if (isStatutory) result.statutory.push(row);
       else if (isAudit) result.audits.push(row);
     });
 
     return result;
   };
+
   useEffect(() => {
     const surveyData = populateSurveyRows(reportDetails);
     setStatutoryData(surveyData.statutory);
@@ -1142,11 +1252,15 @@ ${classificationRows}
   `;
 
   const generateHtmlContent = useCallback(() => {
-    const certificateOfClassRow = reportDetails
+
+    const validReportDetails = reportDetails?.filter(
+      (cert) => cert?.reportStatus !== "revoked"
+    );
+    const certificateOfClassRow = validReportDetails
       ?.filter((cert) => cert?.activity?.surveyTypes?.report?.name?.toLowerCase() === "certificate of class")
       ?.sort((a, b) => new Date(b.issuanceDate || b.validityDate) - new Date(a.issuanceDate || a.validityDate))?.[0];
 
-    const otherCertificatesRaw = reportDetails?.filter(
+    const otherCertificatesRaw = validReportDetails?.filter(
       (cert) =>
         cert?.activity?.surveyTypes?.report?.name &&
         cert?.activity?.surveyTypes?.report?.name?.toLowerCase() !== "certificate of class"
@@ -1281,14 +1395,14 @@ ${classificationRows}
 
       data.forEach((row) => {
         const type = (row.surveyTypeName || "").trim().toLowerCase();
-        const date = row.surveyDate ? new Date(row.surveyDate) : null;
+        const date = row.assignmentDate ? new Date(row.assignmentDate) : null;
 
         if (!type) return;
 
         if (!map[type]) {
           map[type] = row;
         } else {
-          const existingDate = map[type].surveyDate ? new Date(map[type].surveyDate) : null;
+          const existingDate = map[type].assignmentDate ? new Date(map[type].assignmentDate) : null;
           if (date && (!existingDate || date > existingDate)) {
             map[type] = row;
           }
@@ -1364,7 +1478,8 @@ ${classificationRows}
           typeLabel = cleaned ? `${toTitle(cleaned)}` : "";
         }
 
-        return typeLabel ? `${certName} - ${typeLabel}` : certName;
+        // return typeLabel ? `${certName} - ${typeLabel}` : certName;
+        return certName;
       };
 
 
@@ -1565,7 +1680,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   <tbody>
     <tr>
       <td><em><strong>Classification Status:</strong></em></td>
-      <td>${currentStatus || ""}  </td>
+      <td>${currentStatus === "In Operation, Class Valid" ? "Active" : currentStatus || ""}</td>
     </tr>
     <tr>
       <td><em><strong>Hull Notation:</strong></em></td>
