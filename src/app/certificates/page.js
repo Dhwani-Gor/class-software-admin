@@ -20,6 +20,8 @@ import Pagination from "@mui/material/Pagination";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import { deleteSurveyReport, deleteSurveyStatusReport, getAllIssuedDocuments, getAllReports, getJournalsList, markAsRevoked } from "@/api";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { Menu } from "@mui/material";
 // import DownloadAllEmailDialog from "@/components/Dialogs/DownloadAllEmailDialog";
 
 const Certificates = () => {
@@ -54,6 +56,7 @@ const Certificates = () => {
   const [zipType, setZipType] = useState("");
   const [selectedCertificates, setSelectedCertificates] = useState([]);
   const [selectedArchives, setSelectedArchives] = useState([]);
+  const [anchorEl, setAnchorEl] = useState(null);
 
   const handleSort = (key) => {
     setSortConfig((prev) => {
@@ -399,45 +402,59 @@ const Certificates = () => {
             ))}
           </Stack>
           {hasArchivePermission && (
-            <Stack direction="row" spacing={2}>
-              <CommonButton
-                variant="contained"
-                text="Download All"
-                onClick={() => {
-                  setZipType(selectedFilter === "Reports" ? "reports" : "certificates");
-                  setOpenEmailDialog(true);
+            <Box>
+              <IconButton aria-label="more" aria-controls="options-menu" aria-haspopup="true" onClick={(e) => setAnchorEl(e.currentTarget)}>
+                <MoreVertIcon />
+              </IconButton>
+
+              <Menu
+                id="options-menu"
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={() => setAnchorEl(null)}
+                PaperProps={{
+                  sx: { width: 200 },
                 }}
-              />
-
-              {(selectedCertificates.length > 0 || selectedArchives.length > 0) && (
-                <CommonButton
-                  variant="outlined"
-                  color="error"
-                  text={`Revoke (${selectedFilter === "Certificates" ? selectedCertificates.length : selectedArchives.length})`}
-                  onClick={async () => {
-                    try {
-                      setLoading(true);
-                      const idsToRevoke = selectedFilter === "Certificates" ? selectedCertificates : selectedArchives;
-
-                      const res = await markAsRevoked({ reportDetailIds: idsToRevoke });
-                      if (res.data.status === "success") {
-                        toast.success(res.data.message);
-                        if (selectedFilter === "Certificates") setSelectedCertificates([]);
-                        else setSelectedArchives([]);
-                        fetchCertificatesData();
-                      } else {
-                        toast.error(res.data.message || "Failed to revoke documents.");
-                      }
-                    } catch (err) {
-                      console.error(err);
-                      toast.error("Error revoking documents.");
-                    } finally {
-                      setLoading(false);
-                    }
+              >
+                <MenuItem
+                  onClick={() => {
+                    setAnchorEl(null);
+                    selectedFilter === "Reports" ? handleBulkDownloadReports() : handleBulkDownload();
                   }}
-                />
-              )}
-            </Stack>
+                >
+                  Download All
+                </MenuItem>
+
+                {(selectedCertificates.length > 0 || selectedArchives.length > 0) && (
+                  <MenuItem
+                    onClick={async () => {
+                      setAnchorEl(null);
+                      try {
+                        setLoading(true);
+                        const idsToRevoke = selectedFilter === "Certificates" ? selectedCertificates : selectedArchives;
+
+                        const res = await markAsRevoked({ reportDetailIds: idsToRevoke });
+                        if (res.data.status === "success") {
+                          toast.success(res.data.message);
+                          if (selectedFilter === "Certificates") setSelectedCertificates([]);
+                          else setSelectedArchives([]);
+                          fetchCertificatesData();
+                        } else {
+                          toast.error(res.data.message || "Failed to revoke documents.");
+                        }
+                      } catch (err) {
+                        console.error(err);
+                        toast.error("Error revoking documents.");
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                  >
+                    {`Revoke (${selectedFilter === "Certificates" ? selectedCertificates.length : selectedArchives.length})`}
+                  </MenuItem>
+                )}
+              </Menu>
+            </Box>
           )}
         </Box>
         <CommonInput placeholder="Search" fullWidth value={search} onChange={(e) => setSearch(e.target.value)} sx={{ mb: 2 }} />
@@ -451,8 +468,8 @@ const Certificates = () => {
               {selectedFilter === "Reports" && (
                 <TableContainer component={Paper}>
                   <Table sx={{ marginTop: 2 }}>
-                    <TableHead>
-                      <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                    <TableHead sx={{ padding: 0 }}>
+                      <TableRow sx={{ backgroundColor: "#f5f5f5", padding: 0 }}>
                         {[{ label: "No.", key: null, width: "10%" }, { label: "Ship Name", key: "client.shipName", width: "22%" }, { label: "Document", key: "generatedDoc", width: "35%" }, { label: "Created Date", key: "createdAt", width: "15%" }, { label: "Actions" }].map((col) => (
                           <TableCell
                             key={col.label}
@@ -567,7 +584,7 @@ const Certificates = () => {
               {selectedFilter === "Certificates" && (
                 <TableContainer component={Paper}>
                   <Table sx={{ marginTop: 2 }}>
-                    <TableHead>
+                    <TableHead sx={{ padding: 0 }}>
                       <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
                         <TableCell
                           sx={{
@@ -579,15 +596,7 @@ const Certificates = () => {
                           }}
                           onClick={() => handleSelectAllCertificates(sortedCertificates)}
                         >
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              textDecoration: "underline",
-                              color: selectedCertificates.length === sortedCertificates.length && sortedCertificates.length > 0 ? "primary.main" : "text.primary",
-                            }}
-                          >
-                            Select All
-                          </Typography>
+                          <Checkbox checked={selectedCertificates.length === sortedCertificates.length && sortedCertificates.length > 0} onChange={() => handleSelectAllCertificates(sortedCertificates)} sx={{ padding: 0 }} />
                         </TableCell>
 
                         {[
@@ -693,7 +702,7 @@ const Certificates = () => {
                               color: selectedArchives.length === sortedCertificates.length && sortedCertificates.length > 0 ? "primary.main" : "text.primary",
                             }}
                           >
-                            Select All
+                            <Checkbox checked={selectedArchives.length === sortedCertificates.length && sortedCertificates.length > 0} onChange={() => handleSelectAllArchives(sortedCertificates)} sx={{ padding: 0 }} />
                           </Typography>
                         </TableCell>
 
