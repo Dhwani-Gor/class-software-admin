@@ -111,7 +111,6 @@ const SurveyReport = ({ id, reportNumber }) => {
         validCerts.forEach((cert, index) => {
           let reportName = cert?.activity?.surveyTypes?.report?.name;
 
-          // Fallback key to prevent overwriting
           if (!reportName) {
             reportName = `no_report_${index}`;
           }

@@ -1093,3 +1093,13 @@ export const markAsRevoked = async (payload) => {
   }
   return result;
 };
+
+export const sendEmail = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/reportDetails/sendReportEmail`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
