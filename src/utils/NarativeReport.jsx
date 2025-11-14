@@ -112,27 +112,37 @@ const NarrativeReport = ({ id, reportNumber }) => {
     const activityHtml =
       reportDetails && reportDetails.length
         ? reportDetails
+          .filter((item) => {
+            const remarks =
+              item?.activity?.remarks ||
+              item?.activity?.surveyRemarks ||
+              item?.remarks;
+
+            return remarks && remarks.trim() !== "";
+          })
           .map((item, idx) => {
             const name =
               item?.activity?.surveyTypes?.name ||
               item?.activity?.name ||
               item?.activity?.typeOfSurvey ||
               "-";
+
             const remarks =
               item?.activity?.remarks ||
               item?.activity?.surveyRemarks ||
               item?.remarks ||
               "-";
+
             return `
-                <div style="margin-bottom:20px;page-break-inside:avoid;">
-                  <div style="font-weight:700;color:#1a5490;font-size:15px;margin-bottom:8px;border-bottom:2px solid #e0e0e0;padding-bottom:4px;">
-                    ${idx + 1}. ${name}
-                  </div>
-                  <div style="margin-left:20px;line-height:1.8;text-align:justify;color:#333;">
-                    ${remarks}
-                  </div>
-                </div>
-              `;
+            <div style="margin-bottom:20px;page-break-inside:avoid;">
+              <div style="font-weight:700;color:#1a5490;font-size:15px;margin-bottom:8px;border-bottom:2px solid #e0e0e0;padding-bottom:4px;">
+                ${idx + 1}. ${name}
+              </div>
+              <div style="margin-left:20px;line-height:1.8;text-align:justify;color:#333;">
+                ${remarks}
+              </div>
+            </div>
+          `;
           })
           .join("")
         : `<p style="color:#666;text-align:center;padding:40px 0;">No narrative activities available.</p>`;
