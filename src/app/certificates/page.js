@@ -778,7 +778,7 @@ const Certificates = () => {
                           <TableCell>{row.typeOfCertificate?.replace("_", " ") || "N/A"}</TableCell>
                           <TableCell>{row.activity?.surveyTypes?.name || "N/A"}</TableCell>
                           <TableCell>{formatDate(row.surveyDate)}</TableCell>
-                          <TableCell>{row.reportStatus || "N/A"}</TableCell>
+                          <TableCell>{row.reportStatus === "re-classed" ? "class" : row.reportStatus || "N/A"}</TableCell>
                           <TableCell>
                             <Stack direction="row" spacing={1}>
                               <Tooltip title="View Document">
