@@ -30,6 +30,7 @@ import { toast } from "react-toastify";
 const statusOptions = [
     { value: "Completed", label: "Completed" },
     { value: "Partheld", label: "Part held" },
+    { value: "Postponed", label: "Postponed" },
 ];
 
 const DocumentUploadDialog = ({

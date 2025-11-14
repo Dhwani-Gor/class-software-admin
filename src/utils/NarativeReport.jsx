@@ -187,45 +187,50 @@ const NarrativeReport = ({ id, reportNumber }) => {
           });
 
           const relatedEntries = allEntries.filter((r) => {
+            const validRemarks = r?.remarks && String(r.remarks).trim() !== "";
+
             return (
-              r.journalTypeId === reportNumber ||
-              r.referenceNo === reportNumber ||
-              (reportDetails?.[0]?.activity?.journal?.journalTypeId &&
-                r.journalTypeId === reportDetails[0].activity.journal.journalTypeId)
+              validRemarks &&  // 🔥 NEW CHECK: only entries having remarks
+              (
+                r.journalTypeId === reportNumber ||
+                r.referenceNo === reportNumber ||
+                (reportDetails?.[0]?.activity?.journal?.journalTypeId &&
+                  r.journalTypeId === reportDetails[0].activity.journal.journalTypeId)
+              )
             );
           });
 
-          // ✅ Skip section if no entries at all
+          // Skip section if no relevant entries with remarks
           if (relatedEntries.length === 0) return "";
 
           const rowsHtml = relatedEntries
             .map(
               (r) => `
-      <div style="margin-bottom:8px;font-size:13px;">
-        <div style="display:flex;justify-content:space-between;background:#f9f9f9;padding:6px 10px;border-bottom:1px solid #ddd;">
-          <div><strong>Code:</strong> ${r?.code || "-"}</div>
-          <div><strong>Ref No:</strong> ${r?.journalTypeId || "-"}</div>
-          <div><strong>Action:</strong> ${r?.action || "-"}</div>
-        </div>
-        <div style="padding:8px 10px;white-space:normal;word-wrap:break-word;word-break:break-word;">
-          <strong>Remarks:</strong> ${r?.remarks || "-"}</strong>
-        </div>
-      </div>`
+        <div style="margin-bottom:8px;font-size:13px;">
+          <div style="display:flex;justify-content:space-between;background:#f9f9f9;padding:6px 10px;border-bottom:1px solid #ddd;">
+            <div><strong>Code:</strong> ${r?.code || "-"}</div>
+            <div><strong>Ref No:</strong> ${r?.journalTypeId || "-"}</div>
+            <div><strong>Action:</strong> ${r?.action || "-"}</div>
+          </div>
+          <div style="padding:8px 10px;white-space:normal;word-wrap:break-word;word-break:break-word;">
+            <strong>Remarks:</strong> ${r?.remarks}</strong>
+          </div>
+        </div>`
             )
             .join("");
 
           return `
-      <div style="font-weight:700;color:#1a5490;font-size:16px;margin:16px 0 8px;">
-        ${titleForKey(sectionKey)}
-      </div>
-      ${rowsHtml}
-    `;
+        <div style="font-weight:700;color:#1a5490;font-size:16px;margin:16px 0 8px;">
+          ${titleForKey(sectionKey)}
+        </div>
+        ${rowsHtml}
+      `;
         })
         .join("");
 
-
       return sectionsHtml;
     };
+
 
 
     const signaturesHtml = `
