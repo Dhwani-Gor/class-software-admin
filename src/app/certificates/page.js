@@ -457,7 +457,16 @@ const Certificates = () => {
             </Box>
           )}
         </Box>
-        <CommonInput placeholder="Search" fullWidth value={search} onChange={(e) => setSearch(e.target.value)} sx={{ mb: 2 }} />
+        <CommonInput
+          placeholder="Search"
+          fullWidth
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          sx={{ mb: 2 }}
+        />
         <Box sx={{ width: "100%", overflowX: "auto", height: "70vh" }}>
           {loading ? (
             <Box display="flex" justifyContent="center" alignItems="center" height="300px">
@@ -606,6 +615,7 @@ const Certificates = () => {
                           { label: "Certificate Type", key: "typeOfCertificate", width: "15%" },
                           { label: "Survey Type", key: "activity.surveyTypes.name", width: "20%" },
                           { label: "Survey Date", key: "surveyDate", width: "15%" },
+                          { label: "Status", key: "reportStatus", width: "15%" },
                           { label: "Actions", key: null, width: "100px" },
                         ].map((col) => (
                           <TableCell
@@ -659,6 +669,7 @@ const Certificates = () => {
                           <TableCell>{row.typeOfCertificate?.replace("_", " ") || "N/A"}</TableCell>
                           <TableCell>{row.activity?.surveyTypes?.name || "N/A"}</TableCell>
                           <TableCell>{formatDate(row.surveyDate)}</TableCell>
+                          <TableCell>{row.reportStatus === "re-classed" ? "class" : row.reportStatus || "N/A"}</TableCell>
                           <TableCell>
                             <Stack direction="row" spacing={1}>
                               <Tooltip title="View Document">
@@ -713,6 +724,7 @@ const Certificates = () => {
                           { label: "Certificate Type", key: "typeOfCertificate", width: "15%" },
                           { label: "Survey Type", key: "activity.surveyTypes.name", width: "20%" },
                           { label: "Survey Date", key: "surveyDate", width: "15%" },
+                          { label: "Status", key: "reportStatus", width: "15%" },
                           { label: "Actions", key: null, width: "100px" },
                         ].map((col) => (
                           <TableCell
@@ -766,6 +778,7 @@ const Certificates = () => {
                           <TableCell>{row.typeOfCertificate?.replace("_", " ") || "N/A"}</TableCell>
                           <TableCell>{row.activity?.surveyTypes?.name || "N/A"}</TableCell>
                           <TableCell>{formatDate(row.surveyDate)}</TableCell>
+                          <TableCell>{row.reportStatus || "N/A"}</TableCell>
                           <TableCell>
                             <Stack direction="row" spacing={1}>
                               <Tooltip title="View Document">
