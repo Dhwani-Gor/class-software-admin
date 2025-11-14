@@ -290,89 +290,81 @@ const ReportingForm = () => {
     }
   };
 
-  const handleFieldChange = (fieldName, value) => {
-    console.log("🔵 handleFieldChange called:", { fieldName, value });
+  const enforceAnniversaryLimit = (rangeTo) => {
+    const anniversaryDate = getValues("anniversaryDate");
+    if (!anniversaryDate || !rangeTo) return rangeTo;
 
+    if (moment(rangeTo).isAfter(moment(anniversaryDate))) {
+      return anniversaryDate;
+    }
+    return rangeTo;
+  };
+
+  const handleFieldChange = (fieldName, value) => {
     if (!value) {
-      console.log("❌ No value provided, returning early");
       return;
     }
 
     if (errors[fieldName]) clearErrors(fieldName);
 
     const surveyType = getValues("typesOfSurvey");
-    console.log("📋 Survey Type:", surveyType);
 
     const normalizeName = (name) => name?.toLowerCase().trim().replace(/\s+/g, " ");
+    const enforceAnniversaryLimit = (rangeTo) => {
+      const anniv = getValues("anniversaryDate");
+      if (!anniv || !rangeTo) return rangeTo;
+      return moment(rangeTo).isAfter(moment(anniv)) ? anniv : rangeTo;
+    };
 
-    // Helper function to calculate ranges based on survey type
     const calculateRangesFromDueDate = (dueDate) => {
-      console.log("🔧 calculateRangesFromDueDate called with:", dueDate);
-
       if (!dueDate) {
-        console.log("❌ No due date, returning empty ranges");
         return { rangeFrom: "", rangeTo: "" };
       }
 
       const dueDateMoment = moment(dueDate);
       const surveyTypeNormalized = normalizeName(surveyType);
 
-      console.log("📝 Normalized Survey Type:", surveyTypeNormalized);
-
-      // Special surveys: -3 months only
       if (surveyTypeNormalized?.includes("special")) {
         const result = {
           rangeFrom: moment(dueDateMoment).add(-3, "months").format("YYYY-MM-DD"),
           rangeTo: moment(dueDateMoment).format("YYYY-MM-DD"),
         };
-        console.log("✅ Special survey ranges:", result);
         return result;
       }
 
-      // Continuous surveys: -3 months only
       if (surveyTypeNormalized?.includes("continuous")) {
         const result = {
           rangeFrom: moment(dueDateMoment).add(-3, "months").format("YYYY-MM-DD"),
           rangeTo: moment(dueDateMoment).format("YYYY-MM-DD"),
         };
-        console.log("✅ Continuous survey ranges:", result);
         return result;
       }
 
-      // Annual surveys: -3 to +3 months
       if (surveyTypeNormalized?.includes("annual")) {
         const result = {
           rangeFrom: moment(dueDateMoment).add(-3, "months").format("YYYY-MM-DD"),
           rangeTo: moment(dueDateMoment).add(3, "months").format("YYYY-MM-DD"),
         };
-        console.log("✅ Annual survey ranges:", result);
         return result;
       }
 
-      // Intermediate surveys: -3 months only
       if (surveyTypeNormalized?.includes("intermediate")) {
         const result = {
           rangeFrom: moment(dueDateMoment).add(-3, "months").format("YYYY-MM-DD"),
           rangeTo: moment(dueDateMoment).format("YYYY-MM-DD"),
         };
-        console.log("✅ Intermediate survey ranges:", result);
         return result;
       }
 
-      // Surveys with no range
       const noRangeSurveys = ["docking survey", "tailshaft initial survey", "tailshaft renewal survey", "tailshaft periodical survey", "main boiler survey", "auxiliary boiler survey", "thermal oil heating systems survey", "exhaust gas steam generators and economisers survey"];
 
       if (noRangeSurveys.includes(surveyTypeNormalized)) {
-        console.log("✅ No-range survey type");
         return { rangeFrom: "", rangeTo: "" };
       }
 
-      // Default: no range
-      console.log("⚠️ No matching survey type, returning empty ranges");
       return { rangeFrom: "", rangeTo: "" };
     };
 
-    // Prepare existing surveys data
     const getExistingSurveys = () => {
       const surveys = tableData
         .filter((activity) => activity.reportDetail && activity.surveyTypes?.name)
@@ -384,36 +376,18 @@ const ReportingForm = () => {
           rangeFrom: activity.reportDetail.rangeFrom,
           rangeTo: activity.reportDetail.rangeTo,
         }));
-      console.log("📊 Existing Surveys:", surveys);
       return surveys;
     };
 
-    // Handle survey date change
     if (fieldName === "surveydate") {
-      console.log("🔄 Processing surveydate change");
-
-      // Set assignment date and certificate base date same as survey date
       setValue("assignmentDate", value);
-      setValue("certificateBaseDate", value);
-      console.log("✅ Set assignmentDate and certificateBaseDate to:", value);
 
-      const issuanceDate = getValues("issuancedate");
-      console.log("📅 Issuance Date:", issuanceDate);
+      const issuanceDate = getValues("surveyDate");
 
-      // Always recalculate, even without issuance date
       const existingSurveys = getExistingSurveys();
 
-      console.log("🔄 Calling calculateDates with:", {
-        issuanceDate: issuanceDate || value,
-        surveyType,
-        existingSurveysCount: existingSurveys.length,
-      });
+      const { dueDate, rangeFrom, rangeTo, anniversaryDate } = calculateDates(issuanceDate, surveyType, existingSurveys);
 
-      const { dueDate, rangeFrom, rangeTo, anniversaryDate } = calculateDates(issuanceDate || value, surveyType, existingSurveys);
-
-      console.log("✅ calculateDates returned:", { dueDate, rangeFrom, rangeTo, anniversaryDate });
-
-      // Force update all fields
       if (dueDate) {
         setValue("dueDate", dueDate, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
       }
@@ -421,118 +395,76 @@ const ReportingForm = () => {
         setValue("rangeFrom", rangeFrom, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
       }
       if (rangeTo) {
-        setValue("rangeTo", rangeTo, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+        setValue("rangeTo", enforceAnniversaryLimit(rangeTo));
       }
-      // if (anniversaryDate) {
-      //   setValue("anniversaryDate", anniversaryDate, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-      // }
 
-      // Trigger validation
       trigger(["dueDate", "rangeFrom", "rangeTo", "anniversaryDate"]);
-
-      console.log("✅ All fields updated with values:", {
-        dueDate: getValues("dueDate"),
-        rangeFrom: getValues("rangeFrom"),
-        rangeTo: getValues("rangeTo"),
-        anniversaryDate: getValues("anniversaryDate"),
-      });
     }
 
-    // Handle issuance date change
-    if (fieldName === "issuancedate") {
-      console.log("🔄 Processing issuancedate change");
-
+    if (fieldName === "assignmentDate") {
+      const surveyType = getValues("typesOfSurvey");
       const existingSurveys = getExistingSurveys();
-
-      console.log("🔄 Calling calculateDates with:", {
-        issuanceDate: value,
-        surveyType,
-        existingSurveysCount: existingSurveys.length,
-      });
 
       const { dueDate, rangeFrom, rangeTo, anniversaryDate } = calculateDates(value, surveyType, existingSurveys);
 
-      console.log("✅ calculateDates returned:", { dueDate, rangeFrom, rangeTo, anniversaryDate });
-
       if (dueDate) {
-        setValue("dueDate", dueDate, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+        setValue("dueDate", dueDate, {
+          shouldValidate: true,
+          shouldDirty: true,
+          shouldTouch: true,
+        });
       }
+
+      // Apply rangeFrom
       if (rangeFrom) {
-        setValue("rangeFrom", rangeFrom, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+        setValue("rangeFrom", rangeFrom, {
+          shouldValidate: true,
+          shouldDirty: true,
+          shouldTouch: true,
+        });
       }
-      if (rangeTo) {
-        setValue("rangeTo", rangeTo, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+
+      let finalRangeTo = rangeTo;
+
+      const annivDate = anniversaryDate || getValues("anniversaryDate");
+
+      if (annivDate && moment(rangeTo).isAfter(moment(annivDate))) {
+        finalRangeTo = annivDate;
       }
-      // if (anniversaryDate) {
-      //   setValue("anniversaryDate", anniversaryDate, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-      // }
+
+      if (finalRangeTo) {
+        setValue("rangeTo", finalRangeTo, {
+          shouldValidate: true,
+          shouldDirty: true,
+          shouldTouch: true,
+        });
+      }
 
       trigger(["dueDate", "rangeFrom", "rangeTo", "anniversaryDate"]);
-
-      console.log("✅ All fields updated with values:", {
-        dueDate: getValues("dueDate"),
-        rangeFrom: getValues("rangeFrom"),
-        rangeTo: getValues("rangeTo"),
-        anniversaryDate: getValues("anniversaryDate"),
-      });
     }
 
-    // Handle due date change - recalculate ranges
     if (fieldName === "dueDate") {
-      console.log("🔄 Processing dueDate change");
-
       const { rangeFrom, rangeTo } = calculateRangesFromDueDate(value);
-
-      console.log("✅ Calculated ranges:", { rangeFrom, rangeTo });
 
       setValue("rangeFrom", rangeFrom, { shouldValidate: true, shouldDirty: true });
       setValue("rangeTo", rangeTo, { shouldValidate: true, shouldDirty: true });
-
-      console.log("✅ rangeFrom set to:", rangeFrom);
-      console.log("✅ rangeTo set to:", rangeTo);
-
-      // Verify the values were actually set
-      setTimeout(() => {
-        console.log("🔍 Verifying values after set:", {
-          rangeFrom: getValues("rangeFrom"),
-          rangeTo: getValues("rangeTo"),
-        });
-      }, 100);
-
-      // Also update anniversary date to match due date
-      // setValue("anniversaryDate", value, { shouldValidate: true, shouldDirty: true });
-      console.log("✅ anniversaryDate set to:", value);
     }
 
-    // Handle range from change - adjust range to accordingly
     if (fieldName === "rangeFrom") {
-      console.log("🔄 Processing rangeFrom change");
-
       const dueDate = getValues("dueDate");
-      console.log("📅 Current Due Date:", dueDate);
 
       if (dueDate) {
         const surveyTypeNormalized = normalizeName(surveyType);
-        console.log("📝 Normalized Survey Type:", surveyTypeNormalized);
 
-        // For annual surveys, maintain +3 months from due date
         if (surveyTypeNormalized?.includes("annual")) {
           const dueDateMoment = moment(dueDate);
           const newRangeTo = moment(dueDateMoment).add(3, "months").format("YYYY-MM-DD");
           setValue("rangeTo", newRangeTo);
-          console.log("✅ Annual survey - rangeTo set to:", newRangeTo);
-        }
-        // For special/continuous/intermediate, range to = due date
-        else if (surveyTypeNormalized?.includes("special") || surveyTypeNormalized?.includes("continuous") || surveyTypeNormalized?.includes("intermediate")) {
+        } else if (surveyTypeNormalized?.includes("special") || surveyTypeNormalized?.includes("continuous") || surveyTypeNormalized?.includes("intermediate")) {
           setValue("rangeTo", dueDate);
-          console.log("✅ Special/Continuous/Intermediate - rangeTo set to dueDate:", dueDate);
         }
-      } else {
-        console.log("⚠️ No due date found");
       }
     }
-
-    console.log("🏁 handleFieldChange completed");
   };
 
   const formatToDayMonth = (value) => {
@@ -881,41 +813,6 @@ const ReportingForm = () => {
       setSelectedRow(row);
       setShowForm(true);
       clearErrors();
-
-      const surveyType = row.surveyTypes?.name;
-      const issuanceDate = reportData?.issuanceDate;
-
-      // Format existing surveys from tableData (now includes reportDetail)
-      // console.log(tableData, "tableData");
-      // const existingSurveys = [
-      //   {
-      //     surveyName: "Special Survey (Fi-Fi)",
-      //     surveyDate: "2025-10-25T00:00:00.000Z",
-      //     issuanceDate: "2025-10-18T00:00:00.000Z",
-      //     dueDate: "2030-10-25T00:00:00.000Z",
-      //     rangeFrom: "2030-07-25T00:00:00.000Z",
-      //     rangeTo: "2030-10-25T00:00:00.000Z",
-      //   },
-      // ];
-
-      // const result1 = calculateDates("2025-10-06", "Annual Survey ( Fi-Fi)", existingSurveys);
-      // console.log(result1, "result1");
-
-      // // Auto-calculate dates if backend doesn't provide them
-      // const { dueDate, rangeFrom, rangeTo, anniversaryDate } = calculateDates(issuanceDate, surveyType, existingSurveys);
-      // console.log(
-      //   {
-      //     dueDate,
-      //     rangeFrom,
-      //     rangeTo,
-      //     anniversaryDate,
-      //   },
-      //   "calculateDates"
-      // );
-      // console.log("Before setValue:", {
-      //   surveydate: getValues("surveydate"),
-      //   issuancedate: getValues("issuancedate"),
-      // });
       const data = extractUnderscoreFields(row);
       setUnderscoreFields(data);
       setValue("typesOfSurvey", getSurveyTitle(row.surveyTypes?.name));
