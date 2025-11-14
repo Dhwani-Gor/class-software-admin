@@ -96,7 +96,7 @@ const SurveyReport = ({ id, reportNumber }) => {
   `;
 
         const validCerts = reportDetailsInput.filter((cert) => cert?.activity?.surveyTypes?.classificationSurvey === true);
-
+        console.log(validCerts, "valid certs")
         if (!validCerts.length) {
           return `
 
@@ -108,16 +108,25 @@ const SurveyReport = ({ id, reportNumber }) => {
         }
 
         const latestMap = {};
-        validCerts.forEach((cert) => {
-          const reportName = cert?.activity?.surveyTypes?.report?.name;
-          if (!reportName) return;
-          if (!latestMap[reportName] || new Date(cert?.issuanceDate || 0) > new Date(latestMap[reportName]?.issuanceDate || 0)) {
+        validCerts.forEach((cert, index) => {
+          let reportName = cert?.activity?.surveyTypes?.report?.name;
+
+          // Fallback key to prevent overwriting
+          if (!reportName) {
+            reportName = `no_report_${index}`;
+          }
+
+          if (
+            !latestMap[reportName] ||
+            new Date(cert?.issuanceDate || 0) >
+            new Date(latestMap[reportName]?.issuanceDate || 0)
+          ) {
             latestMap[reportName] = cert;
           }
         });
 
+
         const rows = Object.values(latestMap)
-          .filter((cert) => cert?.activity?.surveyTypes?.report?.name)
           .map((cert) => {
             const formattedName = formatSurveyName(cert?.activity?.surveyTypes?.name);
             const status = cert?.activity?.status || "";
