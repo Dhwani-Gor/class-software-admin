@@ -11,19 +11,34 @@ import {
     CircularProgress,
     Alert,
     Divider,
+    TextareaAutosize,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import AttachFileIcon from "@mui/icons-material/AttachFile";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import AddIcon from "@mui/icons-material/Add";
 import JSZip from "jszip";
 import { sendEmail } from "@/api";
+import { toast } from "react-toastify"
 
 const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) => {
+
+    console.log(zipType, selectedItems)
     const [recipients, setRecipients] = useState([]);
     const [currentEmail, setCurrentEmail] = useState("");
     const [subject, setSubject] = useState("");
-    const [message, setMessage] = useState("");
+    const messageText = `Dear User,
+ 
+    The updated certificates for vessel XYZ are now available for download.
+    
+    Please find the “Download All” ZIP file attached/provided.
+    
+    For access to the certificate from the software, please use the following link:
+    https://gambiaclass.org/login
+    
+    Kind regards,
+    Marine Assurance Team`;
+    ;
+
+
+    const [message, setMessage] = useState(messageText);
     const [sending, setSending] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
@@ -57,11 +72,11 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
 
             const itemsToZip =
                 selectedItems.length > 0
-                    ? allItems.filter((item) => selectedItems.includes(item.id))
+                    ? allItems?.filter((item) => selectedItems.includes(item.id))
                     : allItems;
 
             await Promise.all(
-                itemsToZip.map(async (item) => {
+                itemsToZip?.map(async (item) => {
                     if (!item.generatedDoc) return;
                     const res = await fetch(item.generatedDoc);
                     const blob = await res.blob();
@@ -80,9 +95,9 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
             formData.append("zipFile", zipBlob, `${folderName}.zip`);
 
             const response = await sendEmail(formData);
-            if (!response.ok) throw new Error("Failed to send email");
+            if (response.status !== "success") throw new Error("Failed to send email");
 
-            setSuccess(true);
+            toast.success("Email sent successfully")
             setTimeout(() => handleClose(), 2000);
         } catch (err) {
             setError(err.message || "Failed to send email. Please try again.");
@@ -108,20 +123,13 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
             onClose={handleClose}
             maxWidth="md"
             fullWidth
-            PaperProps={{
-                sx: {
-                    backgroundColor: "#2b2b2b",
-                    color: "#fff",
-                    borderRadius: "10px",
-                },
-            }}
+
         >
             {/* Header */}
             <Box
                 sx={{
                     px: 3,
                     py: 2,
-                    borderBottom: "1px solid #3a3a3a",
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
@@ -141,35 +149,10 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
 
                     {/* Recipients */}
                     <Box>
-                        <Typography sx={{ color: "#ccc", mb: 1 }}>To</Typography>
 
                         <Stack direction="row" spacing={1} mb={1}>
-                            <TextField
-                                fullWidth
-                                size="small"
-                                placeholder="Enter email"
-                                value={currentEmail}
-                                onChange={(e) => setCurrentEmail(e.target.value)}
-                                onKeyDown={(e) => e.key === "Enter" && handleAddRecipient()}
-                                sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                        bgcolor: "#1e1e1e",
-                                        color: "#fff",
-                                        "& fieldset": { borderColor: "#555" },
-                                        "&:hover fieldset": { borderColor: "#777" },
-                                    },
-                                }}
-                            />
-                            <Button
-                                variant="contained"
-                                onClick={handleAddRecipient}
-                                startIcon={<AddIcon />}
-                            >
-                                Add
-                            </Button>
-                        </Stack>
+                            <Typography>To</Typography>
 
-                        <Stack direction="row" spacing={1} flexWrap="wrap">
                             {recipients.map((email, i) => (
                                 <Chip
                                     key={i}
@@ -184,46 +167,62 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
                                     }}
                                 />
                             ))}
+                            <TextField
+                                fullWidth
+                                variant="standard"
+                                size="small"
+                                placeholder="Enter email"
+                                value={currentEmail}
+                                onChange={(e) => setCurrentEmail(e.target.value)}
+                                onKeyDown={(e) => e.key === " " && handleAddRecipient()}
+                                sx={{
+                                    "& .MuiInput-underline:before": { borderBottom: "none" },
+                                    "& .MuiInput-underline:after": { borderBottom: "none" },
+                                    "& .MuiInput-underline:hover:before": { borderBottom: "none" },
+                                }}
+                            />
+
                         </Stack>
                     </Box>
 
                     {/* Subject */}
-                    <Box>
-                        <Typography sx={{ color: "#ccc", mb: 1 }}>Subject</Typography>
+                    <Stack direction="row" spacing={1} mb={1}>
+                        <Typography>Subject</Typography>
                         <TextField
                             fullWidth
+                            variant="standard"
                             size="small"
                             value={subject}
                             onChange={(e) => setSubject(e.target.value)}
                             sx={{
-                                "& .MuiOutlinedInput-root": {
-                                    bgcolor: "#1e1e1e",
-                                    color: "#fff",
-                                    "& fieldset": { borderColor: "#555" },
-                                    "&:hover fieldset": { borderColor: "#777" },
-                                },
+                                "& .MuiInput-underline:before": { borderBottom: "none" },
+                                "& .MuiInput-underline:after": { borderBottom: "none" },
+                                "& .MuiInput-underline:hover:before": { borderBottom: "none" },
                             }}
                         />
-                    </Box>
+                    </Stack>
 
                     {/* Message */}
                     <Box>
-                        <Typography sx={{ color: "#ccc", mb: 1 }}>Message</Typography>
-                        <TextField
-                            fullWidth
-                            multiline
-                            rows={8}
+                        {/* <Typography sx={{ color: "#ccc", mb: 1 }}>Message</Typography> */}
+                        <TextareaAutosize
+                            name="message"
+                            minRows={8}
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
-                            sx={{
-                                "& .MuiOutlinedInput-root": {
-                                    bgcolor: "#1e1e1e",
-                                    color: "#fff",
-                                    "& fieldset": { borderColor: "#555" },
-                                    "&:hover fieldset": { borderColor: "#777" },
-                                },
+                            style={{
+                                width: "100%",
+                                padding: "12px",
+                                border: "none",
+                                maxHeight: "270px",
+                                outline: "none",
+                                backgroundColor: "transparent",
+                                fontSize: "14px",
+                                fontFamily: "inherit",
+                                resize: "vertical"
                             }}
                         />
+
                     </Box>
 
                     {error && (
@@ -239,7 +238,7 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
                     )}
 
                     {/* Attachments */}
-                    <Box sx={{ mt: 2, p: 2, borderTop: "1px solid #444" }}>
+                    <Box sx={{ mt: 2, p: 2 }}>
                         <Typography
                             sx={{
                                 color: "#7dc8ff",
@@ -248,12 +247,8 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
                                 mb: 1,
                             }}
                         >
-                            Request for Quotation – P00015.pdf
+                            {zipType === "reports" ? "MCBG Reports.zip" : "MCBG Certificates.zip"}
                         </Typography>
-
-                        <IconButton sx={{ color: "#fff" }}>
-                            <DeleteOutlineIcon />
-                        </IconButton>
                     </Box>
                 </Stack>
             </Box>
@@ -263,22 +258,22 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
                 sx={{
                     px: 3,
                     py: 2,
-                    borderTop: "1px solid #3a3a3a",
                     display: "flex",
-                    justifyContent: "space-between",
+                    justifyContent: "end",
                     alignItems: "center",
                 }}
             >
-                <Button
-                    variant="contained"
-                    onClick={handleSendEmail}
-                    disabled={sending}
-                    startIcon={sending && <CircularProgress size={18} />}
-                >
-                    {sending ? "Sending..." : "Send"}
-                </Button>
-
                 <Stack direction="row" spacing={2}>
+
+                    <Button
+                        variant="contained"
+                        onClick={handleSendEmail}
+                        disabled={sending}
+                        startIcon={sending && <CircularProgress size={18} />}
+                    >
+                        {sending ? "Sending..." : "Send"}
+                    </Button>
+
                     <Button
                         variant="outlined"
                         sx={{ borderColor: "#666", color: "#ccc" }}
@@ -286,10 +281,6 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
                     >
                         Discard
                     </Button>
-
-                    <IconButton sx={{ color: "#ccc" }}>
-                        <AttachFileIcon />
-                    </IconButton>
                 </Stack>
             </Box>
         </Dialog>

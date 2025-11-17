@@ -324,7 +324,7 @@ const ReportingForm = () => {
       const dueDateMoment = moment(dueDate);
       const surveyTypeNormalized = normalizeName(surveyType);
 
-      if (surveyTypeNormalized?.includes("special")) {
+      if (surveyTypeNormalized?.includes("special") || surveyTypeNormalized?.includes("renewal")) {
         const result = {
           rangeFrom: moment(dueDateMoment).add(-3, "months").format("YYYY-MM-DD"),
           rangeTo: moment(dueDateMoment).format("YYYY-MM-DD"),
@@ -460,7 +460,7 @@ const ReportingForm = () => {
           const dueDateMoment = moment(dueDate);
           const newRangeTo = moment(dueDateMoment).add(3, "months").format("YYYY-MM-DD");
           setValue("rangeTo", newRangeTo);
-        } else if (surveyTypeNormalized?.includes("special") || surveyTypeNormalized?.includes("continuous") || surveyTypeNormalized?.includes("intermediate")) {
+        } else if (surveyTypeNormalized?.includes("special") || surveyTypeNormalized?.includes("continuous") || surveyTypeNormalized?.includes("renewal") || surveyTypeNormalized?.includes("intermediate")) {
           setValue("rangeTo", dueDate);
         }
       }

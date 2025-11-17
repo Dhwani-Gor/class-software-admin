@@ -22,15 +22,16 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import { deleteSurveyReport, deleteSurveyStatusReport, getAllIssuedDocuments, getAllReports, getJournalsList, markAsRevoked } from "@/api";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { Menu } from "@mui/material";
-import DownloadAllEmailDialog from "@/components/Dialogs/DownloadAllEmailDialog";
 import SendEmailDialog from "@/components/Dialogs/DownloadAllEmailDialog";
 import EmailIcon from "@mui/icons-material/Email";
+import { DownloadOutlined } from "@mui/icons-material";
 
 const Certificates = () => {
   const { data } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [certificatesList, setCertificatesList] = useState([]);
+  console.log(certificatesList, "cert lodt");
   const [reportsList, setReportsList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
@@ -56,6 +57,7 @@ const Certificates = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [openEmailDialog, setOpenEmailDialog] = useState(false);
   const [zipType, setZipType] = useState("");
+
   const [selectedCertificates, setSelectedCertificates] = useState([]);
   const [selectedArchives, setSelectedArchives] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -129,6 +131,10 @@ const Certificates = () => {
       return "";
     }
   };
+
+  useEffect(() => {
+    setZipType(selectedFilter === "Certificates" ? "certificates" : selectedFilter === "Archive Documents" ? "archive-documents" : "reports");
+  }, [selectedFilter]);
 
   const hasArchivePermission = data?.specialPermission?.some((perm) => perm.toLowerCase() === "archivedocuments");
 
@@ -445,6 +451,7 @@ const Certificates = () => {
                 color={selectedFilter === tab ? "primary" : "default"}
                 onClick={() => {
                   setSelectedFilter(tab);
+
                   setPage(1);
                 }}
               />
@@ -470,23 +477,23 @@ const Certificates = () => {
                     setAnchorEl(null);
 
                     if (selectedFilter === "Reports") {
-                      // Handle Reports
                       handleBulkDownloadReports();
                     } else {
-                      // Handle Certificates and Archive Documents
                       const selectedIds = selectedFilter === "Certificates" ? selectedCertificates : selectedArchives;
 
                       if (selectedIds.length > 0) {
-                        // Download only selected certificates
                         handleBulkDownloadSelected(selectedIds);
                       } else {
-                        // Download all certificates
                         handleBulkDownload();
                       }
                     }
                   }}
                 >
-                  Download {selectedFilter === "Certificates" && selectedCertificates.length > 0 ? `Selected (${selectedCertificates.length})` : selectedFilter === "Archive Documents" && selectedArchives.length > 0 ? `Selected (${selectedArchives.length})` : "All"}
+                  <ListItemIcon>
+                    <DownloadOutlined fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText primary="Download" />
+                  {selectedFilter === "Certificates" && selectedCertificates.length > 0 ? `(${selectedCertificates.length})` : selectedFilter === "Archive Documents" && selectedArchives.length > 0 ? `(${selectedArchives.length})` : "All"}
                 </MenuItem>
 
                 {(selectedCertificates.length > 0 || selectedArchives.length > 0) && (
@@ -520,7 +527,6 @@ const Certificates = () => {
                 <MenuItem
                   onClick={() => {
                     setAnchorEl(null);
-                    setZipType(selectedFilter === "Reports" ? "reports" : "certificates");
                     setOpenEmailDialog(true);
                   }}
                 >
@@ -908,7 +914,7 @@ const Certificates = () => {
       <CommonConfirmationDialog open={openDialog} onCancel={handleCancelDelete} onConfirm={handleConfirmDelete} title="Are you sure you want to delete this survey status report?" description="This action cannot be undone." />
       <ShowAmdRemarksDialog open={openAmdRemarks} onClose={() => setOpenAmdRemarks(false)} reportDetailId={selectedReportId} hasArchivePermission={hasArchivePermission} selectedFilter={selectedFilter} />
 
-      <SendEmailDialog open={openEmailDialog} onClose={() => setOpenEmailDialog(false)} selectedItems={selectedFilter === "Certificates" ? selectedCertificates : selectedFilter === "Archive Documents" ? selectedArchives : []} allItems={selectedFilter === "Reports" ? reportsList : certificatesList} zipType={selectedFilter === "Reports" ? "reports" : "certificates"} />
+      <SendEmailDialog open={openEmailDialog} onClose={() => setOpenEmailDialog(false)} selectedItems={selectedFilter === "Certificates" ? selectedCertificates : selectedFilter === "Archive Documents" ? selectedArchives : selectedFilter === "Reports" ? selectedReports : []} zipType={zipType} allItems={selectedFilter === "Certificates" ? certificatesList : selectedFilter === "Archive Documents" ? certificatesList : selectedFilter === "Reports" ? reportsList : []} />
     </Layout>
   );
 };
