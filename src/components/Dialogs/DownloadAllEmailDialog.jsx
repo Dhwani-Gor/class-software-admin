@@ -18,17 +18,13 @@ import JSZip from "jszip";
 import { sendEmail } from "@/api";
 import { toast } from "react-toastify"
 import CommonButton from "../CommonButton";
+import { useAuth } from "@/hooks/useAuth";
 
-const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) => {
-
-    console.log(zipType, selectedItems)
-    const [recipients, setRecipients] = useState([]);
-    const [currentEmail, setCurrentEmail] = useState("");
-    const [subject, setSubject] = useState("");
+const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, createdUserEmail }) => {
     const messageText = `Dear User,
  
-    The updated certificates for vessel XYZ are now available for download <br/>.
-    
+    The updated certificates for vessel XYZ are now available for download.
+
     Please find the “Download All” ZIP file attached/provided.
     
     For access to the certificate from the software, please use the following link:
@@ -37,12 +33,21 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
     Kind regards,
     Marine Assurance Team`;
     ;
-
-
+    const [recipients, setRecipients] = useState([]);
+    const [currentEmail, setCurrentEmail] = useState("");
+    const [subject, setSubject] = useState("")
     const [message, setMessage] = useState(messageText);
     const [sending, setSending] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
+    const { data } = useAuth();
+
+    React.useEffect(() => {
+        if (open && data?.email) {
+            const defaultRecipients = [data.email, createdUserEmail];
+            setRecipients(defaultRecipients);
+        }
+    }, [open]);
 
     const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -52,7 +57,7 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
 
         if (!validateEmail(email)) return setError("Please enter a valid email address");
         if (recipients.includes(email)) return setError("This email is already added");
-
+        setRecipients(data.email);
         setRecipients([...recipients, email]);
         setCurrentEmail("");
         setError("");
@@ -89,7 +94,7 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
             const zipBlob = await zip.generateAsync({ type: "blob" });
 
             const formData = new FormData();
-            formData.append("recipientEmails", JSON.stringify(recipients));
+            formData.append("recipientEmails", recipients);
             formData.append("subject", subject);
             formData.append("message", message);
             formData.append("zipType", zipType);
@@ -156,20 +161,22 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
                         <Stack direction="row" spacing={1} mb={1}>
                             <Typography>To</Typography>
 
-                            {recipients.map((email, i) => (
-                                <Chip
-                                    key={i}
-                                    label={email}
-                                    onDelete={() =>
-                                        setRecipients(recipients.filter((e) => e !== email))
-                                    }
-                                    sx={{
-                                        bgcolor: "#414141",
-                                        color: "#fff",
-                                        border: "1px solid #6f6f6f",
-                                    }}
-                                />
-                            ))}
+                            {recipients
+                                .filter((email) => email && email.trim() !== "")
+                                .map((email, i) => (
+                                    <Chip
+                                        key={i}
+                                        label={email}
+                                        onDelete={() =>
+                                            setRecipients((prev) => prev.filter((e) => e !== email))
+                                        }
+                                        sx={{
+                                            bgcolor: "#1976d2",
+                                            color: "#fff",
+                                        }}
+                                    />
+                                ))}
+
                             <TextField
                                 fullWidth
                                 variant="standard"
@@ -182,6 +189,7 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
                                     "& .MuiInput-underline:before": { borderBottom: "none" },
                                     "& .MuiInput-underline:after": { borderBottom: "none" },
                                     "& .MuiInput-underline:hover:before": { borderBottom: "none" },
+                                    "& .MuiInput-underline:hover:after": { borderBottom: "none" },
                                 }}
                             />
 
@@ -201,6 +209,7 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
                                 "& .MuiInput-underline:before": { borderBottom: "none" },
                                 "& .MuiInput-underline:after": { borderBottom: "none" },
                                 "& .MuiInput-underline:hover:before": { borderBottom: "none" },
+                                "& .MuiInput-underline:hover:after": { borderBottom: "none" },
                             }}
                         />
                     </Stack>
@@ -244,9 +253,7 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
                     <Box sx={{ mt: 2, p: 2 }}>
                         <Typography
                             sx={{
-                                color: "#7dc8ff",
                                 textDecoration: "underline",
-                                cursor: "pointer",
                                 mb: 1,
                             }}
                         >
