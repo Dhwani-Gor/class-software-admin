@@ -96,11 +96,11 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
             formData.append("zipFile", zipBlob, `${folderName}.zip`);
 
             const response = await sendEmail(formData);
-            if (response?.status === "success") {
-                toast.success("Email sent successfully")
+            if (response?.data?.status === "success") {
+                toast.success(response?.data?.message)
             }
             else {
-                toast.error("Failed to send email. Please try again.")
+                toast.error(response?.data?.message)
             }
         } catch (err) {
             setError(err.message || "Failed to send email. Please try again.");
