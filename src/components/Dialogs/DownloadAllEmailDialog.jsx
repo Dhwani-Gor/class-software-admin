@@ -17,6 +17,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import JSZip from "jszip";
 import { sendEmail } from "@/api";
 import { toast } from "react-toastify"
+import CommonButton from "../CommonButton";
 
 const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) => {
 
@@ -26,7 +27,7 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
     const [subject, setSubject] = useState("");
     const messageText = `Dear User,
  
-    The updated certificates for vessel XYZ are now available for download.
+    The updated certificates for vessel XYZ are now available for download <br/>.
     
     Please find the “Download All” ZIP file attached/provided.
     
@@ -59,7 +60,7 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
 
     const handleSendEmail = async () => {
         if (recipients.length === 0) return setError("Please add at least one recipient");
-        if (!subject.trim()) return setError("Please enter a subject");
+        // if (!subject.trim()) return setError("Please enter a subject");
         if (!message.trim()) return setError("Please enter a message");
 
         setSending(true);
@@ -95,10 +96,12 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
             formData.append("zipFile", zipBlob, `${folderName}.zip`);
 
             const response = await sendEmail(formData);
-            if (response.status !== "success") throw new Error("Failed to send email");
-
-            toast.success("Email sent successfully")
-            setTimeout(() => handleClose(), 2000);
+            if (response?.status === "success") {
+                toast.success("Email sent successfully")
+            }
+            else {
+                toast.error("Failed to send email. Please try again.")
+            }
         } catch (err) {
             setError(err.message || "Failed to send email. Please try again.");
         } finally {
@@ -265,22 +268,20 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType }) =>
             >
                 <Stack direction="row" spacing={2}>
 
-                    <Button
+
+                    <CommonButton
+                        variant="outlined"
+                        onClick={handleClose}
+                        text="Discard"
+                    />
+                    <CommonButton
                         variant="contained"
                         onClick={handleSendEmail}
                         disabled={sending}
                         startIcon={sending && <CircularProgress size={18} />}
-                    >
-                        {sending ? "Sending..." : "Send"}
-                    </Button>
+                        text={sending ? "Sending..." : "Send"}
+                    />
 
-                    <Button
-                        variant="outlined"
-                        sx={{ borderColor: "#666", color: "#ccc" }}
-                        onClick={handleClose}
-                    >
-                        Discard
-                    </Button>
                 </Stack>
             </Box>
         </Dialog>
