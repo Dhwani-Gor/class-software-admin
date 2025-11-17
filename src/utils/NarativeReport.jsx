@@ -94,7 +94,6 @@ const NarrativeReport = ({ id, reportNumber }) => {
     pcsfsi: "PSC / FSI Deficiency",
     "psc/fsi": "PSC / FSI Deficiency",
   };
-  // Generate HTML layout for narrative report
   const generateHtml = useCallback(() => {
     if (!clientData || !reportDetails || !systemVariables) return "";
 
@@ -190,7 +189,7 @@ const NarrativeReport = ({ id, reportNumber }) => {
             const validRemarks = r?.remarks && String(r.remarks).trim() !== "";
 
             return (
-              validRemarks &&  // 🔥 NEW CHECK: only entries having remarks
+              validRemarks &&
               (
                 r.journalTypeId === reportNumber ||
                 r.referenceNo === reportNumber ||
