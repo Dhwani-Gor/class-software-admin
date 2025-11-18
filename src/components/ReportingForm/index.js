@@ -290,7 +290,15 @@ const ReportingForm = () => {
     }
   };
 
-  const normalizeName = (name) => name?.toLowerCase().trim().replace(/\s+/g, " ");
+  const normalizeName = (name) =>
+    name
+      ?.toLowerCase()
+      .trim()
+      .replace(/\s+/g, " ")
+      .replace(/\(\s+/g, "(")
+      .replace(/\s+\)/g, ")")
+      .replace(/\s*\(\s*/g, " (")
+      .replace(/\s*\)\s*/g, ")");
 
   const fiveYearSpecials = ["special survey hull", "special survey machinery", "special survey ig system", "special survey (fi-fi)", "special survey (ums)", "continuous survey hull", "continuous survey machinery"];
 
@@ -311,10 +319,12 @@ const ReportingForm = () => {
     return base.month(annivMoment.month()).date(annivMoment.date()).format("YYYY-MM-DD");
   };
 
+  const normalize = (str) => str.replace(/\(\s*/g, "(").replace(/\s*\)/g, ")");
+
   const calculateDueDateBase = (value, surveyType) => {
     let yearsToAdd = 0;
-
-    const isFiveYearSpecial = fiveYearSpecials.includes(surveyType);
+    console.log("🚀 ~ calculateDueDateBase ~ surveyType:", surveyType);
+    const isFiveYearSpecial = fiveYearSpecials.includes(normalize(surveyType));
 
     if (isFiveYearSpecial) yearsToAdd = 5;
 
