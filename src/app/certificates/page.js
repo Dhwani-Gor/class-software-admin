@@ -410,36 +410,24 @@ const Certificates = () => {
     }
   };
 
-  const buildAndSendZip = async (emails, type) => {
-    setLoading(true);
-    try {
-      const zip = new JSZip();
-      const folder = zip.folder(type === "reports" ? "MCBG Reports" : "MCBG Certificates");
+  const resolveSelectedRows = () => {
+    let masterList = [];
 
-      const list = type === "reports" ? reportsList : certificatesList;
+    if (selectedFilter === "Certificates") masterList = certificatesList;
+    console.log("certidi", certificatesList);
+    if (selectedFilter === "Archive Documents") masterList = certificatesList;
+    if (selectedFilter === "Reports") masterList = reportsList;
 
-      await Promise.all(
-        list.map(async (item) => {
-          if (!item.generatedDoc) return;
+    const selectedIds = selectedFilter === "Certificates" ? selectedCertificates : selectedFilter === "Archive Documents" ? selectedArchives : selectedFilter === "Reports" ? selectedReports : [];
 
-          const res = await fetch(item.generatedDoc);
-          const blob = await res.blob();
-          const fileName = item.generatedDoc.split("/").pop();
-          folder.file(fileName, blob);
-        })
-      );
-
-      const zipContent = await zip.generateAsync({ type: "blob" });
-
-      // await sendZipToEmails(emails, zipContent);
-
-      toast.success("ZIP sent successfully.");
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to send ZIP.");
-    } finally {
-      setLoading(false);
-    }
+    return selectedIds.map((id) => {
+      const fullRow = masterList.find((item) => item.id === id);
+      console.log("fullRow", fullRow);
+      return {
+        ...fullRow,
+        shipName: fullRow?.shipName || fullRow?.vesselName || "", // adjust your field
+      };
+    });
   };
 
   return (
@@ -961,7 +949,7 @@ const Certificates = () => {
       <DocumentPreview open={openPreviewModal} fileUrl={previewFile} onClose={() => setOpenPreviewModal(false)} />
       <CommonConfirmationDialog open={openDialog} onCancel={handleCancelDelete} onConfirm={handleConfirmDelete} title="Are you sure you want to delete this survey status report?" description="This action cannot be undone." />
       <ShowAmdRemarksDialog open={openAmdRemarks} onClose={() => setOpenAmdRemarks(false)} reportDetailId={selectedReportId} hasArchivePermission={hasArchivePermission} selectedFilter={selectedFilter} />
-      <SendEmailDialog open={openEmailDialog} onClose={() => setOpenEmailDialog(false)} selectedItems={selectedFilter === "Certificates" ? selectedCertificates : selectedFilter === "Archive Documents" ? selectedArchives : selectedFilter === "Reports" ? selectedReports : []} zipType={zipType} allItems={selectedFilter === "Certificates" ? certificatesList : selectedFilter === "Archive Documents" ? certificatesList : selectedFilter === "Reports" ? reportsList : []} createdUserEmail={createdUserEmail} />
+      <SendEmailDialog open={openEmailDialog} onClose={() => setOpenEmailDialog(false)} selectedItems={resolveSelectedRows()} zipType={zipType} allItems={selectedFilter === "Certificates" ? certificatesList : selectedFilter === "Archive Documents" ? certificatesList : selectedFilter === "Reports" ? reportsList : []} createdUserEmail={createdUserEmail} />
     </Layout>
   );
 };

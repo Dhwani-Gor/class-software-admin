@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
     Dialog,
     Box,
@@ -21,18 +21,28 @@ import CommonButton from "../CommonButton";
 import { useAuth } from "@/hooks/useAuth";
 
 const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, createdUserEmail }) => {
+
+    const shipName = [
+        ...new Set(
+            selectedItems?.map(
+                (item) => item?.activity?.journal?.client?.shipName
+            )
+        )
+    ].join(", ");
+
     const messageText = `Dear User,
  
-    The updated certificates for vessel XYZ are now available for download.
+    The updated certificates for vessel ${shipName} are now available for download.
 
-    Please find the “Download All” ZIP file attached/provided.
+    Please find the zip file attached/provided.
     
     For access to the certificate from the software, please use the following link:
     https://gambiaclass.org/login
     
     Kind regards,
-    Marine Assurance Team`;
+    Marine Assure Team`;
     ;
+
     const [recipients, setRecipients] = useState([]);
     const [currentEmail, setCurrentEmail] = useState("");
     const [subject, setSubject] = useState("")
@@ -46,6 +56,7 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, crea
         if (open && data?.email) {
             const defaultRecipients = [data.email, createdUserEmail];
             setRecipients(defaultRecipients);
+            setMessage(messageText);
         }
     }, [open]);
 
@@ -64,6 +75,10 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, crea
     };
 
     const handleSendEmail = async () => {
+        if ((!selectedItems || selectedItems.length === 0)) {
+            toast.error("Please select reports or certificates to send email");
+            return;
+        }
         if (recipients.length === 0) return setError("Please add at least one recipient");
         // if (!subject.trim()) return setError("Please enter a subject");
         if (!message.trim()) return setError("Please enter a message");
