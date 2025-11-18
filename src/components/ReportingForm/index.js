@@ -928,7 +928,7 @@ const ReportingForm = () => {
                 {/* )} */}
               </Grid2>
               <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
-                <Controller name="anniversaryDate" control={control} render={({ field }) => <CommonInput {...field} type="text" label="Anniversary Date" value={"2/11"} disabled />} />
+                <Controller name="anniversaryDate" control={control} render={({ field }) => <CommonInput {...field} type="text" label="Anniversary Date" value={formatToDayMonth(field.value)} disabled />} />
               </Grid2>
               <Grid2 size={{ xs: 12, sm: 6, md: 3 }}></Grid2>
 
