@@ -714,7 +714,7 @@ const Certificates = () => {
                           { label: "No.", key: null, width: "100px" },
                           { label: "Report No.", key: "activity.journal.journalTypeId", width: "15%" },
                           { label: "Ship Name", key: "activity.journal.client.shipName", width: "15%" },
-                          { label: "Certificate Type", key: "typeOfCertificate", width: "15%" },
+                          { label: "Certificate Type", key: "typeOfCertificate", width: "5%" },
                           { label: "Survey Type", key: "activity.surveyTypes.name", width: "20%" },
                           { label: "Survey Date", key: "surveyDate", width: "15%" },
                           { label: "Status", key: "reportStatus", width: "15%" },
@@ -747,8 +747,8 @@ const Certificates = () => {
                           const validity = row?.validityDate ? new Date(row.validityDate) : null;
 
                           if (validity) {
-                            if (validity > today) return "valid";
-                            if (validity < today) return "expired";
+                            if (validity > today) return "Valid";
+                            if (validity < today) return "Expired";
                           }
                         };
                         return (
@@ -779,10 +779,16 @@ const Certificates = () => {
                               )}
                             </TableCell>
                             <TableCell>{row.activity?.journal?.client?.shipName || "N/A"}</TableCell>
-                            <TableCell>{row.typeOfCertificate?.replace("_", " ") || "N/A"}</TableCell>
+                            <TableCell align="center">
+                              {{
+                                full_term: "FT",
+                                short_term: "ST",
+                                intrim: "Interim",
+                              }[row.typeOfCertificate] || "N/A"}
+                            </TableCell>
                             <TableCell>{row.activity?.surveyTypes?.name || "N/A"}</TableCell>
                             <TableCell>{formatDate(row.surveyDate)}</TableCell>
-                            <TableCell>{row.reportStatus === "re-classed" ? "class" : row.reportStatus || getStatus(row)}</TableCell>
+                            <TableCell>{row.reportStatus === "re-classed" ? "Class" : row.reportStatus === "revoked" ? "Revoked" : row.reportStatus || getStatus(row)}</TableCell>
                             <TableCell>
                               <Stack direction="row" spacing={1}>
                                 <Tooltip title="View Document">
@@ -899,10 +905,16 @@ const Certificates = () => {
                               )}
                             </TableCell>
                             <TableCell>{row.activity?.journal?.client?.shipName || "N/A"}</TableCell>
-                            <TableCell>{row.typeOfCertificate?.replace("_", " ") || "N/A"}</TableCell>
+                            <TableCell>
+                              {{
+                                full_term: "FT",
+                                short_term: "ST",
+                                intrim: "Interim",
+                              }[row.typeOfCertificate] || "N/A"}
+                            </TableCell>
                             <TableCell>{row.activity?.surveyTypes?.name || "N/A"}</TableCell>
                             <TableCell>{formatDate(row.surveyDate)}</TableCell>
-                            <TableCell>{row.reportStatus === "re-classed" ? "class" : row.reportStatus || getStatus(row)}</TableCell>
+                            <TableCell>{row.reportStatus === "re-classed" ? "Class" : row.reportStatus === "revoked" ? "Revoke" : row.reportStatus || getStatus(row)}</TableCell>
                             <TableCell>
                               <Stack direction="row" spacing={1}>
                                 <Tooltip title="View Document">

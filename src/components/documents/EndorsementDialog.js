@@ -218,7 +218,7 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
       const endorsement1Filled = rd.endorsed_by_1 || rd.issuance_place_1 || rd.issuance_date_1;
 
       if (!endorsement1Filled) {
-        flattenedData.not_applicable = "Not Applicable";
+        flattenedData.not_applicable = "Survey Carried out earlier";
       }
     }
     onSubmit(flattenedData);
