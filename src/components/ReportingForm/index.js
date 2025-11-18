@@ -290,225 +290,124 @@ const ReportingForm = () => {
     }
   };
 
-  const enforceAnniversaryLimit = (rangeTo) => {
-    const anniversaryDate = getValues("anniversaryDate");
-    if (!anniversaryDate || !rangeTo) return rangeTo;
+  const normalizeName = (name) => name?.toLowerCase().trim().replace(/\s+/g, " ");
 
-    if (moment(rangeTo).isAfter(moment(anniversaryDate))) {
-      return anniversaryDate;
-    }
-    return rangeTo;
+  const fiveYearSpecials = ["special survey hull", "special survey machinery", "special survey ig system", "special survey (fi-fi)", "special survey (ums)", "continuous survey hull", "continuous survey machinery"];
+
+  const enforceAnniversaryLimit = (date) => {
+    const annivDate = getValues("anniversaryDate");
+    if (!annivDate || !date) return date;
+
+    return moment(date).isAfter(moment(annivDate)) ? moment(annivDate).format("YYYY-MM-DD") : date;
   };
 
-  const applySurveyDateRules = (surveyType, issuanceDate) => {
-    const issuance = moment(issuanceDate);
-    let dueDate = "";
+  const applyAnniversaryDayMonth = (baseDate) => {
+    const anniv = getValues("anniversaryDate");
+    if (!anniv) return baseDate;
+
+    const annivMoment = moment(anniv);
+    const base = moment(baseDate);
+
+    return base.month(annivMoment.month()).date(annivMoment.date()).format("YYYY-MM-DD");
+  };
+
+  const calculateDueDateBase = (value, surveyType) => {
+    let yearsToAdd = 0;
+
+    const isFiveYearSpecial = fiveYearSpecials.includes(surveyType);
+
+    if (isFiveYearSpecial) yearsToAdd = 5;
+
+    if (!isFiveYearSpecial && (surveyType.includes("special") || surveyType.includes("continuous") || surveyType.includes("renewal") || surveyType.includes("intermediate"))) {
+      yearsToAdd = 1;
+    }
+
+    if (surveyType.includes("annual")) yearsToAdd = 1;
+
+    if (surveyType === "docking survey" || surveyType === "main boiler survey" || surveyType === "auxiliary boiler survey" || surveyType === "thermal oil heating systems survey" || surveyType === "exhaust gas steam generators and economisers survey") {
+      yearsToAdd = 2;
+    }
+
+    if (surveyType === "in water survey") yearsToAdd = 3;
+
+    if (surveyType === "tailshaft initial survey" || surveyType === "tailshaft periodical survey" || surveyType === "tailshaft renewal survey") {
+      yearsToAdd = 5;
+    }
+
+    return moment(value).add(yearsToAdd, "years").format("YYYY-MM-DD");
+  };
+
+  const applyRangeFromDueDate = (dueDate, surveyType) => {
+    if (!dueDate) return;
+
+    const due = moment(dueDate);
     let rangeFrom = "";
     let rangeTo = "";
-    let anniversaryDate = "";
 
-    // ----------------------------
-    // 1) IN WATER SURVEY – 3 years, no range
-    // ----------------------------
-    if (surveyType === "in water survey") {
-      dueDate = issuance.clone().add(3, "years").format("YYYY-MM-DD");
-      anniversaryDate = dueDate;
-      setValue("dueDate", dueDate);
-      setValue("rangeFrom", "");
-      setValue("rangeTo", "");
-      setValue("anniversaryDate", anniversaryDate);
-      return;
+    const isFiveYearSpecial = fiveYearSpecials.includes(surveyType);
+
+    if (isFiveYearSpecial) {
+      rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
+      rangeTo = dueDate;
+      setValue("validitydate", dueDate);
+    } else if (surveyType.includes("special") || surveyType.includes("renewal") || surveyType.includes("continuous") || surveyType.includes("intermediate")) {
+      rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
+      rangeTo = dueDate;
+    } else if (surveyType.includes("annual")) {
+      rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
+      rangeTo = moment(due).add(3, "months").format("YYYY-MM-DD");
     }
 
-    // ----------------------------
-    // 2) TAILSHAFT INITIAL / PERIODICAL / RENEWAL – 5 years, no range
-    // ----------------------------
-    if (surveyType === "tailshaft initial survey" || surveyType === "tailshaft periodical survey" || surveyType === "tailshaft renewal survey") {
-      dueDate = issuance.clone().add(5, "years").format("YYYY-MM-DD");
-      anniversaryDate = dueDate;
-      setValue("dueDate", dueDate);
-      setValue("rangeFrom", "");
-      setValue("rangeTo", "");
-      setValue("anniversaryDate", anniversaryDate);
-      return;
+    const noRangeSurveys = ["docking survey", "tailshaft initial survey", "tailshaft renewal survey", "tailshaft periodical survey", "main boiler survey", "auxiliary boiler survey", "thermal oil heating systems survey", "exhaust gas steam generators and economisers survey"];
+
+    if (noRangeSurveys.includes(surveyType)) {
+      rangeFrom = "";
+      rangeTo = "";
     }
 
-    // ----------------------------
-    // 3) DOCKING / BOILER / OIL SYSTEMS / ECONOMISERS – FIXED 2 YEARS GAP
-    // ----------------------------
-    if (surveyType === "docking survey" || surveyType === "main boiler survey" || surveyType === "auxiliary boiler survey" || surveyType === "thermal oil heating systems survey" || surveyType === "exhaust gas steam generators and economisers survey") {
-      dueDate = issuance.clone().add(2, "years").format("YYYY-MM-DD");
-      anniversaryDate = dueDate;
-      setValue("dueDate", dueDate);
-      setValue("rangeFrom", "");
-      setValue("rangeTo", "");
-      setValue("anniversaryDate", anniversaryDate);
-      return;
-    }
-
-    // ----------------------------
-    // 4) TAILSHAFT CONDITION MONITORING ANNUAL – Keep your original 3+3 months range
-    // ----------------------------
-    if (surveyType === "tailshaft condition monitoring annual survey") {
-      dueDate = issuance.clone().add(1, "years").format("YYYY-MM-DD"); // yearly
-      anniversaryDate = dueDate;
-      rangeFrom = moment(dueDate).add(-3, "months").format("YYYY-MM-DD");
-      rangeTo = moment(dueDate).add(3, "months").format("YYYY-MM-DD");
-
-      setValue("dueDate", dueDate);
-      setValue("rangeFrom", rangeFrom);
-      setValue("rangeTo", rangeTo);
-      setValue("anniversaryDate", anniversaryDate);
-      return;
-    }
-
-    // ----------------------------
-    // 5) INTERMEDIATE SURVEY – Fixed 2-year gap
-    // ----------------------------
-    if (surveyType === "intermediate survey") {
-      dueDate = issuance.clone().add(2, "years").format("YYYY-MM-DD");
-      anniversaryDate = dueDate;
-
-      setValue("dueDate", dueDate);
-      setValue("rangeFrom", "");
-      setValue("rangeTo", "");
-      setValue("anniversaryDate", anniversaryDate);
-      return;
-    }
-
-    setValue("rangeFrom", "");
-    setValue("rangeTo", "");
+    setValue("rangeFrom", rangeFrom);
+    setValue("rangeTo", enforceAnniversaryLimit(rangeTo));
   };
 
   const handleFieldChange = (fieldName, value) => {
     if (!value) return;
 
     if (errors[fieldName]) clearErrors(fieldName);
-    const normalizeName = (name) => name?.toLowerCase().trim().replace(/\s+/g, " ");
 
     const surveyType = normalizeName(getValues("typesOfSurvey"));
-    const annivDate = getValues("anniversaryDate");
 
-    const enforceAnniversaryLimit = (date) => {
-      if (!annivDate || !date) return date;
-      return moment(date).isAfter(moment(annivDate)) ? moment(annivDate).format("YYYY-MM-DD") : date;
-    };
-
-    // ----------------------------------------
-    // Range calculation based on due-date
-    // ----------------------------------------
-    const applyRangeFromDueDate = (dueDate) => {
-      if (!dueDate) return;
-
-      const due = moment(dueDate);
-      let rangeFrom = "";
-      let rangeTo = "";
-
-      if (surveyType.includes("special") || surveyType.includes("renewal") || surveyType.includes("continuous") || surveyType.includes("intermediate")) {
-        rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
-        rangeTo = moment(due).format("YYYY-MM-DD");
-      }
-
-      if (surveyType === "tailshaft condition monitoring annual survey") {
-        dueDate = issuance.clone().add(1, "years").format("YYYY-MM-DD");
-        anniversaryDate = dueDate;
-        rangeFrom = moment(dueDate).add(-3, "months").format("YYYY-MM-DD");
-        rangeTo = moment(dueDate).add(3, "months").format("YYYY-MM-DD");
-
-        setValue("dueDate", dueDate);
-        setValue("rangeFrom", rangeFrom);
-        setValue("rangeTo", rangeTo);
-        setValue("anniversaryDate", anniversaryDate);
-        return;
-      }
-      if (surveyType === "docking survey" || surveyType === "main boiler survey" || surveyType === "auxiliary boiler survey" || surveyType === "thermal oil heating systems survey" || surveyType === "exhaust gas steam generators and economisers survey") {
-        dueDate = issuance.clone().add(2, "years").format("YYYY-MM-DD");
-        anniversaryDate = dueDate;
-        setValue("dueDate", dueDate);
-        setValue("rangeFrom", "");
-        setValue("rangeTo", "");
-        setValue("anniversaryDate", anniversaryDate);
-        return;
-      }
-      if (surveyType === "in water survey") {
-        dueDate = issuance.clone().add(3, "years").format("YYYY-MM-DD");
-        anniversaryDate = dueDate;
-        setValue("dueDate", dueDate);
-        setValue("rangeFrom", "");
-        setValue("rangeTo", "");
-        setValue("anniversaryDate", anniversaryDate);
-        return;
-      }
-
-      // ----------------------------
-      // 2) TAILSHAFT INITIAL / PERIODICAL / RENEWAL – 5 years, no range
-      // ----------------------------
-      if (surveyType === "tailshaft initial survey" || surveyType === "tailshaft periodical survey" || surveyType === "tailshaft renewal survey") {
-        dueDate = issuance.clone().add(5, "years").format("YYYY-MM-DD");
-        anniversaryDate = dueDate;
-        setValue("dueDate", dueDate);
-        setValue("rangeFrom", "");
-        setValue("rangeTo", "");
-        setValue("anniversaryDate", anniversaryDate);
-        return;
-      }
-      if (surveyType.includes("annual")) {
-        rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
-        rangeTo = moment(due).add(3, "months").format("YYYY-MM-DD");
-      }
-
-      const noRangeSurveys = ["docking survey", "tailshaft initial survey", "tailshaft renewal survey", "tailshaft periodical survey", "main boiler survey", "auxiliary boiler survey", "thermal oil heating systems survey", "exhaust gas steam generators and economisers survey"];
-
-      if (noRangeSurveys.includes(surveyType)) {
-        rangeFrom = "";
-        rangeTo = "";
-      }
-
-      setValue("rangeFrom", rangeFrom);
-      setValue("rangeTo", enforceAnniversaryLimit(rangeTo));
-    };
-
-    // ----------------------------------------
-    // When survey date selected
-    // ----------------------------------------
     if (fieldName === "surveydate") {
       setValue("assignmentDate", value);
 
-      const dueDate = moment(value).add(1, "years").format("YYYY-MM-DD"); // example logic
-      setValue("dueDate", dueDate);
+      const baseDue = calculateDueDateBase(value, surveyType);
+      const dueDate = applyAnniversaryDayMonth(baseDue);
 
-      applyRangeFromDueDate(dueDate);
+      setValue("dueDate", dueDate);
+      applyRangeFromDueDate(dueDate, surveyType);
 
       trigger(["dueDate", "rangeFrom", "rangeTo", "anniversaryDate"]);
     }
 
-    // ----------------------------------------
-    // When assignment date selected
-    // ----------------------------------------
     if (fieldName === "assignmentDate") {
-      const dueDate = moment(value).add(1, "years").format("YYYY-MM-DD");
-      setValue("dueDate", dueDate);
+      const baseDue = calculateDueDateBase(value, surveyType);
+      const dueDate = applyAnniversaryDayMonth(baseDue);
 
-      applyRangeFromDueDate(dueDate);
+      setValue("dueDate", dueDate);
+      applyRangeFromDueDate(dueDate, surveyType);
 
       trigger(["dueDate", "rangeFrom", "rangeTo", "anniversaryDate"]);
     }
 
-    // ----------------------------------------
-    // When dueDate changed manually
-    // ----------------------------------------
     if (fieldName === "dueDate") {
-      applyRangeFromDueDate(value);
+      applyRangeFromDueDate(value, surveyType);
     }
 
-    // When rangeFrom is changed manually
     if (fieldName === "rangeFrom") {
       const dueDate = getValues("dueDate");
       if (!dueDate) return;
 
       if (surveyType.includes("annual")) {
-        const newRangeTo = moment(dueDate).add(3, "months").format("YYYY-MM-DD");
-        setValue("rangeTo", newRangeTo);
+        setValue("rangeTo", moment(dueDate).add(3, "months").format("YYYY-MM-DD"));
       } else if (surveyType.includes("special") || surveyType.includes("continuous") || surveyType.includes("renewal") || surveyType.includes("intermediate")) {
         setValue("rangeTo", dueDate);
       }
@@ -1029,7 +928,7 @@ const ReportingForm = () => {
                 {/* )} */}
               </Grid2>
               <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
-                <Controller name="anniversaryDate" control={control} render={({ field }) => <CommonInput {...field} type="text" label="Anniversary Date" value={formatToDayMonth(field.value)} disabled />} />
+                <Controller name="anniversaryDate" control={control} render={({ field }) => <CommonInput {...field} type="text" label="Anniversary Date" value={"2/11"} disabled />} />
               </Grid2>
               <Grid2 size={{ xs: 12, sm: 6, md: 3 }}></Grid2>
 
