@@ -75,10 +75,7 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, crea
     };
 
     const handleSendEmail = async () => {
-        if ((!selectedItems || selectedItems.length === 0)) {
-            toast.error("Please select reports or certificates to send email");
-            return;
-        }
+
         if (recipients.length === 0) return setError("Please add at least one recipient");
         // if (!subject.trim()) return setError("Please enter a subject");
         if (!message.trim()) return setError("Please enter a message");
@@ -118,9 +115,11 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, crea
             const response = await sendEmail(formData);
             if (response?.data?.status === "success") {
                 toast.success(response?.data?.message)
+                onClose();
             }
             else {
-                toast.error(response?.data?.message)
+                toast.error(response?.response?.data?.message)
+                onClose();
             }
         } catch (err) {
             setError(err.message || "Failed to send email. Please try again.");
