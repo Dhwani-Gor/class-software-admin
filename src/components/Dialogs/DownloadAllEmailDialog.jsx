@@ -51,7 +51,7 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, crea
     const [error, setError] = useState("");
     const { data } = useAuth();
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (open && data?.email) {
             const defaultRecipients = [data.email, createdUserEmail];
             setRecipients(defaultRecipients);
