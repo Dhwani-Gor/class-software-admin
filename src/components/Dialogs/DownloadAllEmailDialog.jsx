@@ -21,7 +21,6 @@ import CommonButton from "../CommonButton";
 import { useAuth } from "@/hooks/useAuth";
 
 const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, createdUserEmail }) => {
-
     const shipName = [
         ...new Set(
             selectedItems?.map(
@@ -75,10 +74,10 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, crea
     };
 
     const handleSendEmail = async () => {
-
-        if (recipients.length === 0) return setError("Please add at least one recipient");
-        // if (!subject.trim()) return setError("Please enter a subject");
-        if (!message.trim()) return setError("Please enter a message");
+        if (recipients.length === 0)
+            return setError("Please add at least one recipient");
+        if (!message.trim())
+            return setError("Please enter a message");
 
         setSending(true);
         setError("");
@@ -88,9 +87,10 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, crea
             const folderName = zipType === "reports" ? "MCBG Reports" : "MCBG Certificates";
             const folder = zip.folder(folderName);
 
+            const selectedIds = selectedItems.map((s) => String(s.id));
             const itemsToZip =
-                selectedItems.length > 0
-                    ? allItems?.filter((item) => selectedItems.includes(item.id))
+                selectedIds.length > 0
+                    ? allItems?.filter((item) => selectedIds.includes(String(item.id)))
                     : allItems;
 
             await Promise.all(
@@ -113,12 +113,12 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, crea
             formData.append("zipFile", zipBlob, `${folderName}.zip`);
 
             const response = await sendEmail(formData);
+
             if (response?.data?.status === "success") {
-                toast.success(response?.data?.message)
+                toast.success(response?.data?.message);
                 onClose();
-            }
-            else {
-                toast.error(response?.response?.data?.message)
+            } else {
+                toast.error(response?.response?.data?.message);
                 onClose();
             }
         } catch (err) {
@@ -127,6 +127,7 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, crea
             setSending(false);
         }
     };
+
 
     const handleClose = () => {
         setRecipients([]);
@@ -198,7 +199,7 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, crea
                                 placeholder="Enter email"
                                 value={currentEmail}
                                 onChange={(e) => setCurrentEmail(e.target.value)}
-                                onKeyDown={(e) => e.key === " " && handleAddRecipient()}
+                                onKeyDown={(e) => e.key === "Enter" && handleAddRecipient()}
                                 sx={{
                                     "& .MuiInput-underline:before": { borderBottom: "none" },
                                     "& .MuiInput-underline:after": { borderBottom: "none" },
