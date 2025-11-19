@@ -177,7 +177,7 @@ const MachineryList = () => {
             <Card sx={{ pl: 3, pt: 2, mt: 2 }}>
                 <FormControl fullWidth sx={{ maxWidth: 300 }}>
                     <Typography sx={{ fontWeight: 700, mb: 1, ml: 2 }}>
-                        Select Client
+                        Select Ship
                     </Typography>
 
                     <Select sx={{ ml: 2 }} value={selectedShip.id || ""} onChange={handleClientChange}>
@@ -192,7 +192,7 @@ const MachineryList = () => {
                 </FormControl>
                 <CardContent>
                     <FormControl>
-                        <Typography fontWeight={700} mb={1}>Ship Type</Typography>
+                        <Typography fontWeight={700} mb={1}>Engine Type</Typography>
                         <RadioGroup
                             row
                             value={shipType}
