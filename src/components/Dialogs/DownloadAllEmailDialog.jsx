@@ -50,14 +50,16 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, crea
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
     const { data } = useAuth();
-
     useEffect(() => {
         if (open && data?.email) {
-            const defaultRecipients = [data.email, createdUserEmail];
+            const defaultRecipients = [data.email, createdUserEmail]
+                .filter(Boolean);
+
             setRecipients(defaultRecipients);
             setMessage(messageText);
         }
     }, [open]);
+
 
     const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 

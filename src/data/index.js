@@ -39,6 +39,10 @@ export const sidemenu_items = [
     label: "Additional Fields",
     to: "/additional-fields",
   },
+  {
+    label: "Machinery",
+    to: "/machine-list",
+  },
 ];
 
 export const TYPE_OF_SURVEYS = [

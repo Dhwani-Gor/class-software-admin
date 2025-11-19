@@ -8,7 +8,7 @@ import { Card, Box, Stack, Typography, Dialog, DialogTitle, DialogContent, Dialo
 import CloseIcon from "@mui/icons-material/Close";
 import CommonInput from "@/components/CommonInput";
 import CommonButton from "@/components/CommonButton";
-import { adminLogin, forgotPassword } from "@/api"; // ← add forgotPassword API
+import { adminLogin, forgotPassword } from "@/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useDispatch } from "react-redux";
 import { saveUserInfo } from "@/redux/slice/authSlice";
