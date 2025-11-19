@@ -1,7 +1,7 @@
 // Machinery List Accordion Component
 'use client';
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Accordion,
     AccordionSummary,
@@ -23,6 +23,7 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CommonInput from "../CommonInput";
+import { getAllClients } from "@/api";
 
 const POSITION_OPTIONS = [
     { code: "P", name: "Port" },
@@ -114,6 +115,10 @@ const MachineryList = () => {
     const [shipType, setShipType] = useState();
     const [noOfCylinders, setNoOfCylinders] = useState();
     const [dynamicRows, setDynamicRows] = useState([]);
+    const [clientsList, setClientsList] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [selectedShip, setSelectedShip] = useState({});
+    const [position, setPosition] = useState([]);
 
     const handleAddRow = () => {
         const newRow = {
@@ -134,10 +139,57 @@ const MachineryList = () => {
         }));
     };
 
+    const fetchClients = async () => {
+        try {
+            setLoading(true);
+            const result = await getAllClients();
+            if (result?.status === 200) {
+                setClientsList(result.data.data);
+            } else {
+                toast.error(result?.message);
+            }
+            setLoading(false);
+        } catch (error) {
+            setLoading(false);
+            toast.error(error?.message || "Failed to fetch clients");
+        }
+    };
+
+    useEffect(() => {
+        fetchClients();
+    }, []);
+    const handleClientChange = (event) => {
+        const selectedId = event.target.value;
+        const selectedClient = clientsList.find((client) => client.id === selectedId);
+        // setEditRowId(null);
+        setSelectedShip({
+            id: selectedId,
+            shipName: selectedClient ? selectedClient.shipName : "",
+        });
+    };
+
+    const handlePositionChange = (event) => {
+        setPosition(event.target.value);
+    };
     return (
         <>
             {/* MAIN ACCORDIONS */}
             <Card sx={{ pl: 3, pt: 2, mt: 2 }}>
+                <FormControl fullWidth sx={{ maxWidth: 300 }}>
+                    <Typography sx={{ fontWeight: 700, mb: 1, ml: 2 }}>
+                        Select Client
+                    </Typography>
+
+                    <Select sx={{ ml: 2 }} value={selectedShip.id || ""} onChange={handleClientChange}>
+                        <MenuItem value="">&nbsp;
+                        </MenuItem>
+                        {clientsList.map((client) => (
+                            <MenuItem key={client.id} value={client.id}>
+                                {client.shipName}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
                 <CardContent>
                     <FormControl>
                         <Typography fontWeight={700} mb={1}>Ship Type</Typography>
@@ -145,23 +197,52 @@ const MachineryList = () => {
                             row
                             value={shipType}
                             onChange={(e) => setShipType(e.target.value)}
+                            sx={{ mb: 2 }}
                         >
                             <FormControlLabel value="crosshead" control={<Radio />} label="Crosshead Type Engine" />
                             <FormControlLabel value="inline" control={<Radio />} label="Inline Trunk Piston Engine" />
                             <FormControlLabel value="vee" control={<Radio />} label="Vee-Type Trunk Piston Engine" />
                         </RadioGroup>
                     </FormControl>
+                    <Grid2 container spacing={2} alignItems="center" sx={{ mb: 2 }}>
+                        <Grid2 size={{ xs: 12, md: 4 }}>
+                            <Typography fontWeight={700} mb={1}>
+                                No. of cylinders in each engine/bank
+                            </Typography>
+                            <TextField
+                                id="cylinders-input"
+                                placeholder="Enter no of cylinders"
+                                variant="outlined"
+                                size="small"
+                                fullWidth
+                                value={noOfCylinders}
+                                onChange={(e) => setNoOfCylinders(e.target.value)}
+                            />
+                        </Grid2>
+                        <Grid2 size={{ xs: 12, md: 3 }}>
+                            <FormControl fullWidth size="small">
+                                <Typography fontWeight={700} mb={1}>Position / No.</Typography>
 
-                    <Typography fontWeight={700} mt={2} mb={1}>
-                        No. of cylinders in each engine/bank
-                    </Typography>
-                    <TextField
-                        sx={{ mb: 5 }}
-                        size="small"
-                        placeholder="Enter no of cylinders"
-                        value={noOfCylinders}
-                        onChange={(e) => setNoOfCylinders(e.target.value)}
-                    />
+                                <Select
+                                    multiple
+                                    variant="outlined"
+                                    fullWidth
+                                    size="small"
+                                    displayEmpty
+                                    value={position}
+                                    onChange={handlePositionChange}
+                                    renderValue={(selected) => selected.join("")} // <-- shows only codes
+                                >
+                                    {POSITION_OPTIONS.map((opt) => (
+                                        <MenuItem key={opt.code} value={opt.code}>
+                                            <Checkbox checked={position.includes(opt.code)} />
+                                            <Typography>{opt.name} ({opt.code})</Typography>
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid2>
+                    </Grid2>
 
                     {/* ---------------- MACHINERY LIST ---------------- */}
                     <Accordion defaultExpanded>
