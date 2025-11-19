@@ -21,7 +21,7 @@ const AuthProvider = ({ children }) => {
     Clients: ["/clients"],
     Users: ["/staff"],
     Journals: ["/journal"],
-    Reporting: ["/reporting", "/survey-report", "/survey-status-report", "/narative-report", "/reset-password"],
+    Reporting: ["/reporting", "/survey-report", "/survey-status-report", "/narative-report", "/reset-password", "/machine-list"],
     IssuedDocument: ["/certificates"],
     SurveyType: ["/survey-types"],
     Documents: ["/documents"],
@@ -29,6 +29,7 @@ const AuthProvider = ({ children }) => {
     Classification: ["/classification"],
     Settings: ["/settings"],
     AdditionalFields: ["/additional-fields"],
+    Machinery: ["/machine-list"],
   };
 
   const publicRoutes = ["/login", "/digital-document", "/reset-password", "/forgot-password"];
