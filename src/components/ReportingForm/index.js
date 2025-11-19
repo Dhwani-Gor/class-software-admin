@@ -368,7 +368,7 @@ const ReportingForm = () => {
     else if (isFiveYearSpecial) {
       rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
       rangeTo = dueDate;
-      setValue("validitydate", dueDate);
+      setValue("validitydate", new Date(new Date(dueDate).setDate(new Date(dueDate).getDate() - 1)).toISOString().slice(0, 10));
     } else if (surveyType.toLowerCase().includes("annual")) {
       rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
       rangeTo = moment(due).add(3, "months").format("YYYY-MM-DD");
