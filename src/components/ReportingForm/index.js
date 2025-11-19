@@ -354,29 +354,36 @@ const ReportingForm = () => {
     let rangeFrom = "";
     let rangeTo = "";
 
-    const isFiveYearSpecial = fiveYearSpecials.includes(surveyType);
+    const isFiveYearSpecial = fiveYearSpecials.includes(normalize(surveyType));
+    const noRangeSurveys = ["docking survey", "tailshaft initial survey", "tailshaft renewal survey", "tailshaft periodical survey", "main boiler survey", "auxiliary boiler survey", "thermal oil heating systems survey", "exhaust gas steam generators and economisers survey"];
 
-    if (isFiveYearSpecial) {
+    // Case 1: No range surveys
+    if (noRangeSurveys.includes(normalize(surveyType))) {
+      rangeFrom = "";
+      rangeTo = "";
+    }
+    // Case 2: Five-year special surveys
+    else if (isFiveYearSpecial) {
       rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
       rangeTo = dueDate;
       setValue("validitydate", dueDate);
-    } else if (surveyType.includes("special") || surveyType.includes("renewal") || surveyType.includes("continuous") || surveyType.includes("intermediate")) {
+    }
+    // Case 3: Annual surveys
+    else if (surveyType.toLowerCase().includes("annual")) {
       rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
-      rangeTo = dueDate;
-    } else if (surveyType.includes("annual")) {
+      rangeTo = moment(due).add(3, "months").format("YYYY-MM-DD");
+    }
+    // Case 4: All other surveys (new + special/renewal/intermediate/continuous)
+    else {
       rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
       rangeTo = moment(due).add(3, "months").format("YYYY-MM-DD");
     }
 
-    const noRangeSurveys = ["docking survey", "tailshaft initial survey", "tailshaft renewal survey", "tailshaft periodical survey", "main boiler survey", "auxiliary boiler survey", "thermal oil heating systems survey", "exhaust gas steam generators and economisers survey"];
-
-    if (noRangeSurveys.includes(surveyType)) {
-      rangeFrom = "";
-      rangeTo = "";
-    }
+    // Enforce anniversary limit for rangeTo
+    rangeTo = enforceAnniversaryLimit(rangeTo);
 
     setValue("rangeFrom", rangeFrom);
-    setValue("rangeTo", enforceAnniversaryLimit(rangeTo));
+    setValue("rangeTo", rangeTo);
   };
 
   const handleFieldChange = (fieldName, value) => {
