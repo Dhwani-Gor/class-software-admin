@@ -323,7 +323,6 @@ const ReportingForm = () => {
 
   const calculateDueDateBase = (value, surveyType) => {
     let yearsToAdd = 0;
-    console.log("🚀 ~ calculateDueDateBase ~ surveyType:", surveyType);
     const isFiveYearSpecial = fiveYearSpecials.includes(normalize(surveyType));
 
     if (isFiveYearSpecial) yearsToAdd = 5;
@@ -341,6 +340,9 @@ const ReportingForm = () => {
     if (surveyType === "in water survey") yearsToAdd = 3;
 
     if (surveyType === "tailshaft initial survey" || surveyType === "tailshaft periodical survey" || surveyType === "tailshaft renewal survey") {
+      yearsToAdd = 5;
+    }
+    if (yearsToAdd === 0) {
       yearsToAdd = 5;
     }
 
@@ -367,19 +369,14 @@ const ReportingForm = () => {
       rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
       rangeTo = dueDate;
       setValue("validitydate", dueDate);
-    }
-    // Case 3: Annual surveys
-    else if (surveyType.toLowerCase().includes("annual")) {
+    } else if (surveyType.toLowerCase().includes("annual")) {
       rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
       rangeTo = moment(due).add(3, "months").format("YYYY-MM-DD");
-    }
-    // Case 4: All other surveys (new + special/renewal/intermediate/continuous)
-    else {
+    } else {
       rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
       rangeTo = moment(due).add(3, "months").format("YYYY-MM-DD");
     }
 
-    // Enforce anniversary limit for rangeTo
     rangeTo = enforceAnniversaryLimit(rangeTo);
 
     setValue("rangeFrom", rangeFrom);
