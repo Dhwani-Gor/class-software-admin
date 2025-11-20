@@ -55,7 +55,7 @@ const POSITION_OPTIONS = [
 const MACHINERY_SECTIONS = {
     1: {
         sectionId: "machinery_list",
-        sectionName: "Machinery List",
+        sectionName: "Main Engine",
         rows: [
             { id: 1, label: "Main journal and bearing", hasFromTo: true, isDue: true, isFrom: false },
             { id: 2, label: "O.F. injection pump, h.p .o.f. pipes & shielding", hasFromTo: true, isDue: true, isFrom: false },
