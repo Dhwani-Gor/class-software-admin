@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Box, Typography, Tooltip, IconButton, Stack, Snackbar, Pagination, CircularProgress, Dialog, DialogTitle, DialogActions, Button, Alert, Modal } from "@mui/material";
+import { Box, Typography, Tooltip, IconButton, Stack, Pagination, CircularProgress, Dialog, DialogTitle, DialogActions, Button, Alert, Modal } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -12,6 +12,7 @@ import CommonButton from "@/components/CommonButton";
 import CommonInput from "@/components/CommonInput";
 import { deleteSystemVariable, getAllSystemVariables } from "@/api";
 import { useDispatch } from "react-redux";
+import { toast } from "react-toastify";
 
 const SystemVariables = () => {
   const dispatch = useDispatch();
@@ -19,11 +20,6 @@ const SystemVariables = () => {
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [snackBar, setSnackBar] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
   const [systemVariablesList, setSystemVariablesList] = useState([]);
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [limit, setLimit] = useState(10);
@@ -33,10 +29,6 @@ const SystemVariables = () => {
   const [selectedVariableId, setSelectedVariableId] = useState(null);
   const [selectedVariableName, setSelectedVariableName] = useState("");
   const [previewModal, setPreviewModal] = useState({ open: false, url: "", name: "" });
-
-  const snackbarClose = () => {
-    setSnackBar({ open: false, message: "", severity: "success" });
-  };
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -60,11 +52,7 @@ const SystemVariables = () => {
       }
     } catch (e) {
       console.error("Error fetching system configuration:", e);
-      setSnackBar({
-        open: true,
-        message: "Failed to fetch system configuration",
-        severity: "error",
-      });
+      toast.error("Failed to fetch system configuration");
     } finally {
       setLoading(false);
     }
@@ -93,28 +81,16 @@ const SystemVariables = () => {
     try {
       const res = await deleteSystemVariable({ id: selectedVariableId });
       if (res?.data?.message) {
-        setSnackBar({
-          open: true,
-          message: res.data.message,
-          severity: "success",
-        });
+        toast.success(res.data.message);
       } else {
-        setSnackBar({
-          open: true,
-          message: "System Variable deleted successfully",
-          severity: "success",
-        });
+        toast.success("System Variable deleted successfully");
       }
 
       // Refresh the data
       fetchSystemVariablesData(page, limit, debouncedSearch);
     } catch (e) {
       console.error("Error deleting System Variable:", e.response?.data || e.message);
-      setSnackBar({
-        open: true,
-        message: e.response?.data?.message || "Failed to delete System Variable.",
-        severity: "error",
-      });
+      toast.error(e.response?.data?.message || "Failed to delete System Variable.");
     } finally {
       setSelectedVariableId(null);
       setSelectedVariableName("");
@@ -208,6 +184,19 @@ const SystemVariables = () => {
       flex: 2,
       minWidth: 200,
       renderCell: renderInformationCell,
+      sortable: false,
+    },
+    {
+      field: "subject",
+      headerName: "Subject",
+      flex: 1,
+      minWidth: 150,
+    },
+    {
+      field: "message",
+      headerName: "Message",
+      flex: 2,
+      minWidth: 200,
       sortable: false,
     },
     {
@@ -394,21 +383,6 @@ const SystemVariables = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Snackbar for notifications */}
-      <Snackbar
-        open={snackBar.open}
-        autoHideDuration={4000}
-        onClose={snackbarClose}
-        anchorOrigin={{
-          vertical: "top",
-          horizontal: "center",
-        }}
-      >
-        <Alert onClose={snackbarClose} severity={snackBar.severity} sx={{ width: "100%" }}>
-          {snackBar.message}
-        </Alert>
-      </Snackbar>
     </Layout>
   );
 };
