@@ -10,7 +10,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import Snackbar from "@mui/material/Snackbar";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -28,7 +27,6 @@ import { deleteMachineList, getMachineList } from "@/api";
 const MachineList = () => {
     const [view, setView] = useState('list');
     const router = useRouter();
-    const { data } = useAuth();
     const searchParams = useSearchParams();
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -37,8 +35,9 @@ const MachineList = () => {
     const [totalRows, setTotalRows] = useState(0);
     const [loading, setLoading] = useState(false);
     const [openDialog, setOpenDialog] = useState(false);
-    const [selectedClient, setSelectedClientId] = useState(null);
     const [machineList, setMachineList] = useState([]);
+    const [selectedMachineId, setSelectedMachineId] = useState(null);
+
 
     useEffect(() => {
         const handler = setTimeout(() => {
@@ -61,36 +60,34 @@ const MachineList = () => {
         setSearch(event.target.value);
     };
 
-    const handleDeleteClick = (clientId) => {
-        setSelectedClientId(clientId);
+    const handleDeleteClick = (id) => {
+        setSelectedMachineId(id);
         setOpenDialog(true);
     };
-
-
 
     const handlePageChange = (event, value) => {
         setPage(value);
         router.push(`/machine-list?page=${value}&limit=${limit}`);
     };
 
-
     const handleConfirmDelete = async () => {
         setOpenDialog(false);
-        if (!selectedClient) return;
+        if (!selectedMachineId) return;
+
         try {
-            const res = await deleteMachineList({ id: selectedClient });
+            const res = await deleteMachineList(selectedMachineId);
             if (res?.data?.message) {
                 toast.success(res.data.message);
             }
             fetchMachineList();
         } catch (e) {
-            console.error("Error deleting Client:", e.response?.data || e.message);
-            toast.error("Failed to delete Client.");
+            console.error("Error deleting:", e.response?.data || e.message);
+            toast.error("Failed to delete Machinery.");
         }
     };
 
     const handleCancelDelete = () => {
-        setSelectedClientId(null);
+        setSelectedMachineId(null);
         setOpenDialog(false);
     };
 
@@ -139,7 +136,7 @@ const MachineList = () => {
             }
         },
         {
-            field: "0",
+            field: "numberOfCylinders",
             headerName: "No of cylinders",
             flex: 1,
             renderCell: (params) => params.row.machineData?.machinery_list?.numberOfCylinders
@@ -155,8 +152,8 @@ const MachineList = () => {
                             <EditIcon />
                         </IconButton>
                     </Tooltip>
-                    <Tooltip title="Delete Client">
-                        <IconButton color="error" onClick={() => handleDeleteClick(params?.id)}>
+                    <Tooltip title="Delete Machine">
+                        <IconButton color="error" onClick={() => { handleDeleteClick(params?.row?.id) }}>
                             <DeleteIcon />
                         </IconButton>
                     </Tooltip>
@@ -165,19 +162,6 @@ const MachineList = () => {
         },
     ];
 
-    const handleDelete = async (id) => {
-        if (window.confirm('Are you sure you want to delete this record?')) {
-            try {
-                const result = await deleteMachineList(id);
-                if (result?.status === 'success') {
-                    toast.success('Deleted successfully');
-                    fetchMachineList();
-                }
-            } catch (error) {
-                toast.error(error?.message || 'Failed to delete');
-            }
-        }
-    };
 
     return (
         <>

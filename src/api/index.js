@@ -1144,7 +1144,7 @@ export const updateMachineList = async (id, payload) => {
   return result;
 };
 
-export const getMachineList = async (id) => {
+export const getMachineList = async () => {
   let result;
   try {
     result = await axiosInstance.get(`/machineList`);

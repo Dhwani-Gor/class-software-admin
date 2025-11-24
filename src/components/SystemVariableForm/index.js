@@ -18,6 +18,8 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
     type: "",
     information: "",
     file: null,
+    subject: "",
+    message: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -47,6 +49,8 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
           type: data.type || "",
           information: data.information || "",
           file: null, // Always null for file input
+          subject: data.subject || "",
+          message: data.message || "",
         });
 
         // Store existing file info separately if it's an image type
@@ -91,6 +95,8 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
       type: newType,
       information: "", // Clear information when type changes
       file: null, // Clear file when type changes
+      subject: "", // Clear subject when type changes
+      message: "", // Clear message when type changes
     }));
     setExistingFileInfo(null); // Clear existing file info
 
@@ -183,6 +189,8 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
       const apiData = new FormData();
       apiData.append("name", formData.name.trim());
       apiData.append("type", formData.type);
+      apiData.append("subject", formData.subject.trim());
+      apiData.append("message", formData.message.trim());
 
       if (formData.type === "text") {
         apiData.append("information", formData.information.trim());
@@ -216,7 +224,7 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
       console.error(`Error ${mode === "create" ? "creating" : "updating"} system variable:`, error);
       setSnackBar({
         open: true,
-        message: error.response?.data?.message || `Failed to ${mode === "create" ? "create" : "update"} system variable`,
+        message: error.response?.data?.message || `Failed to ${mode === "create" ? "create" : "update"} system configuration`,
         severity: "error",
       });
     } finally {
@@ -241,14 +249,14 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
   return (
     <CommonCard>
       <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
-        {mode === "create" ? "Create" : "Update"} System Variable
+        {mode === "create" ? "Create" : "Update"} System Configuration
       </Typography>
 
       <Box component="form" onSubmit={handleSubmit}>
         <Stack spacing={3}>
           {/* Name Field */}
           <Box>
-            <CommonInput label="Name" placeholder="Enter system variable name" fullWidth value={formData.name} onChange={(e) => handleInputChange("name", e.target.value)} error={!!errors.name} helperText={errors.name} required />
+            <CommonInput label="Name" placeholder="Enter system configuration name" fullWidth value={formData.name} onChange={(e) => handleInputChange("name", e.target.value)} error={!!errors.name} helperText={errors.name} required />
           </Box>
 
           {/* Type Field */}
@@ -270,7 +278,9 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
           {/* Conditional Field - Information or File */}
           {formData.type === "text" && (
             <Box>
-              <CommonInput label="Information" placeholder="Enter information" fullWidth multiline value={formData.information} onChange={(e) => handleInputChange("information", e.target.value)} error={!!errors.information} helperText={errors.information} required />
+              <CommonInput style={{ marginBottom: "16px" }} label="Information" placeholder="Enter information" fullWidth multiline value={formData.information} onChange={(e) => handleInputChange("information", e.target.value)} error={!!errors.information} helperText={errors.information} required />
+              <CommonInput style={{ marginBottom: "16px" }} label="Subject" placeholder="Enter subject" fullWidth value={formData.subject} onChange={(e) => handleInputChange("subject", e.target.value)} error={!!errors.subject} helperText={errors.subject} required />
+              <CommonInput label="Message" placeholder="Enter message" fullWidth multiline value={formData.message} onChange={(e) => handleInputChange("message", e.target.value)} error={!!errors.message} helperText={errors.message} required />
             </Box>
           )}
 
