@@ -181,7 +181,6 @@ const MachineryHullManager = ({ mode, shipId }) => {
         }
     };
 
-
     useEffect(() => {
         fetchClients();
 
