@@ -23,22 +23,11 @@ import {
     FormControlLabel,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import Tooltip from "@mui/material/Tooltip";
-import IconButton from "@mui/material/IconButton";
-import TableContainer from "@mui/material/TableContainer";
-import Table from "@mui/material/Table";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import TableCell from "@mui/material/TableCell";
-import TableBody from "@mui/material/TableBody";
-import Paper from "@mui/material/Paper";
 import { toast } from "react-toastify";
-import { addMachineList, deleteMachineList, getAllClients, getMachineById, getMachineList } from "@/api";
+import { addMachineList, getAllClients, getMachineById, updateMachineList } from "@/api";
 import CommonButton from "../CommonButton";
 import { MACHINERY_SECTIONS, HULL_SECTIONS, POSITION_OPTIONS } from "@/utils/MachineList";
+import { useRouter } from "next/navigation";
 
 const MachineryHullManager = ({ mode, shipId }) => {
     const [view, setView] = useState('form');
@@ -51,12 +40,12 @@ const MachineryHullManager = ({ mode, shipId }) => {
     const [clientsList, setClientsList] = useState([]);
     const [machineList, setMachineList] = useState([]);
     const [dynamicRows, setDynamicRows] = useState({ machinery: {}, hull: {} });
-    const [loading, setLoading] = useState(false);
     const [editingId, setEditingId] = useState(null);
+    const [engineUnitsCountedFrom, setEngineUnitsCountedFrom] = useState("flywheel_end");
+    const router = useRouter();
 
     const [expandedAccordions, setExpandedAccordions] = useState({});
     const [renderedSections, setRenderedSections] = useState({});
-    const observerRef = useRef(null);
 
     const calculateDueDate = (assignmentDate) => {
         if (!assignmentDate) return "";
@@ -94,7 +83,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
             ];
             const nextId = Math.max(...existingIds, 0) + 1;
 
-            const newRow = { id: nextId, label: "", hasPosition: true };
+            const newRow = { id: nextId, label: "", hasPosition: true, isDue: true, isFrom: false };
             return {
                 ...prev,
                 [sectionType]: {
@@ -107,12 +96,12 @@ const MachineryHullManager = ({ mode, shipId }) => {
 
     const fetchClients = async () => {
         try {
-            setLoading(true);
             const result = await getAllClients();
-            if (result?.status === 200) {
+
+            if (result?.data?.status === "success") {
                 setClientsList(result.data.data);
             } else {
-                toast.error(result?.message);
+                toast.error(result?.data?.message);
             }
             setLoading(false);
         } catch (error) {
@@ -121,35 +110,32 @@ const MachineryHullManager = ({ mode, shipId }) => {
         }
     };
 
-    const fetchMachineList = async () => {
-        try {
-            setLoading(true);
-            const result = await getMachineList();
-            console.log(result?.data?.data, "result");
-            if (result?.data?.status === "success") {
-                setMachineList(result.data.data);
-            }
-            setLoading(false);
-        } catch (error) {
-            setLoading(false);
-            toast.error(error?.message || "Failed to fetch machine list");
-        }
-    };
-
     const fetchMachineData = async (shipId) => {
         try {
-            setLoading(true);
             const result = await getMachineById(shipId);
-            if (result?.status === 200) {
+
+            if (result?.data?.status === "success") {
                 const data = result.data.data;
+
                 setShipType(data.engineType);
                 setNoOfCylinders(data.numberOfCylinders);
-                setPosition([data.globalPosition]);
+                setPosition(data.globalPosition || []);
+                setEngineUnitsCountedFrom(data.engineUnitsCountedFrom);
 
                 const populatedData = {};
-                Object.values(data.blocks || {}).forEach((section) => {
+                const restoredDynamicRows = { machinery: {}, hull: {} };
+
+                // Parse machineData from backend
+                Object.entries(data.machineData || {}).forEach(([sectionId, section]) => {
                     section.items.forEach((item) => {
-                        const fieldKey = `${data.type}-${section.sectionNumber}-${item.rowId}`;
+                        // Detect if section belongs to machinery or hull
+                        const sectionType =
+                            MACHINERY_SECTIONS[section.sectionNumber]?.sectionId === sectionId
+                                ? "machinery"
+                                : "hull";
+
+                        const fieldKey = `${sectionType}-${section.sectionNumber}-${item.rowId}`;
+
                         populatedData[fieldKey] = {
                             xMark: "X",
                             label: item.label,
@@ -158,13 +144,36 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             to: item.to,
                             assignmentDate: item.assignmentDate,
                             dueDate: item.dueDate,
-                            postponedDate: item.postponedDate,
+                            postponedDate: item.postponedDate
                         };
+
+                        // Check if this row is a dynamic row (not in default rows)
+                        const currentSections = sectionType === "machinery" ? MACHINERY_SECTIONS : HULL_SECTIONS;
+                        const sectionConfig = currentSections[section.sectionNumber];
+                        const isDefaultRow = sectionConfig?.rows.some(r => r.id === item.rowId);
+
+                        // If not a default row, restore it as a dynamic row
+                        if (!isDefaultRow) {
+                            if (!restoredDynamicRows[sectionType][section.sectionNumber]) {
+                                restoredDynamicRows[sectionType][section.sectionNumber] = [];
+                            }
+
+                            restoredDynamicRows[sectionType][section.sectionNumber].push({
+                                id: item.rowId,
+                                label: item.label || "",
+                                hasPosition: item.position && item.position.length > 0,
+                                hasFromTo: item.from !== null || item.to !== null,
+                                isDue: item.dueDate !== null,
+                                isFrom: false
+                            });
+                        }
                     });
                 });
+
                 setFormData(populatedData);
-                setTabValue(data.type === "machinery" ? 0 : 1);
+                setDynamicRows(restoredDynamicRows);
             }
+
             setLoading(false);
         } catch (error) {
             setLoading(false);
@@ -172,12 +181,11 @@ const MachineryHullManager = ({ mode, shipId }) => {
         }
     };
 
+
     useEffect(() => {
         fetchClients();
-        if (view === 'list') {
-            fetchMachineList();
-        }
-    }, [view]);
+
+    }, []);
 
     const handleClientChange = (event) => {
         const selectedId = event.target.value;
@@ -189,9 +197,8 @@ const MachineryHullManager = ({ mode, shipId }) => {
     };
 
     useEffect(() => {
-        if (shipId) {
+        if (shipId && clientsList.length > 0) {
             setEditingId(shipId);
-            setView('form');
             const selectedClient = clientsList.find((client) => client.id === shipId);
             setSelectedShip({
                 id: shipId,
@@ -199,21 +206,8 @@ const MachineryHullManager = ({ mode, shipId }) => {
             });
             fetchMachineData(shipId);
         }
-    }, [shipId]);
+    }, [shipId, clientsList]);
 
-    const handleDelete = async (id) => {
-        if (window.confirm('Are you sure you want to delete this record?')) {
-            try {
-                const result = await deleteMachineList(id);
-                if (result?.status === 'success') {
-                    toast.success('Deleted successfully');
-                    fetchMachineList();
-                }
-            } catch (error) {
-                toast.error(error?.message || 'Failed to delete');
-            }
-        }
-    };
 
     const handleAccordionChange = (sectionNum) => (event, isExpanded) => {
         setExpandedAccordions((prev) => ({
@@ -230,69 +224,75 @@ const MachineryHullManager = ({ mode, shipId }) => {
     };
 
     const generatePayload = () => {
-        const currentSections = tabValue === 0 ? MACHINERY_SECTIONS : HULL_SECTIONS;
-        const sectionType = tabValue === 0 ? "machinery" : "hull";
-
         const payload = {
             shipId: selectedShip.id,
             shipName: selectedShip.shipName,
             engineType: shipType,
             numberOfCylinders: noOfCylinders,
             globalPosition: position,
-            type: sectionType,
+            engineUnitsCountedFrom: engineUnitsCountedFrom,
             blocks: {},
         };
 
-        Object.keys(currentSections).forEach((sectionNum) => {
-            const section = currentSections[sectionNum];
-            const dynamicRowsForSection = dynamicRows[sectionType][sectionNum] || [];
-            const allRows = [...section.rows, ...dynamicRowsForSection];
+        const sectionGroups = {
+            machinery: MACHINERY_SECTIONS,
+            hull: HULL_SECTIONS,
+        };
 
-            const sectionData = allRows
-                .filter((row) => {
-                    const fieldKey = `${sectionType}-${sectionNum}-${row.id}`;
-                    return formData[fieldKey]?.xMark === "X";
-                })
-                .map((row) => {
-                    const fieldKey = `${sectionType}-${sectionNum}-${row.id}`;
-                    const data = formData[fieldKey] || {};
-                    return {
-                        rowId: row.id,
-                        label: data.label || row.label,
-                        position: data.position || [],
-                        from: data.from || null,
-                        to: data.to || null,
-                        assignmentDate: data.assignmentDate || null,
-                        dueDate: data.dueDate || null,
-                        postponedDate: data.postponedDate || null,
+        Object.entries(sectionGroups).forEach(([sectionType, sections]) => {
+            Object.keys(sections).forEach((sectionNum) => {
+                const section = sections[sectionNum];
+                const dynamicRowsForSection = dynamicRows[sectionType][sectionNum] || [];
+                const allRows = [...section.rows, ...dynamicRowsForSection];
+
+                const sectionData = allRows
+                    .filter((row) => {
+                        const fieldKey = `${sectionType}-${sectionNum}-${row.id}`;
+                        return formData[fieldKey]?.xMark === "X";
+                    })
+                    .map((row) => {
+                        const fieldKey = `${sectionType}-${sectionNum}-${row.id}`;
+                        const data = formData[fieldKey] || {};
+
+                        return {
+                            rowId: row.id,
+                            label: data.label || row.label,
+                            position: data.position || [],
+                            from: data.from || null,
+                            to: data.to || null,
+                            assignmentDate: data.assignmentDate || null,
+                            dueDate: data.dueDate || null,
+                            postponedDate: data.postponedDate || null,
+                        };
+                    });
+
+                if (sectionData.length > 0) {
+                    payload.blocks[section.sectionId] = {
+                        sectionNumber: parseInt(sectionNum),
+                        sectionName: section.sectionName,
+                        items: sectionData,
                     };
-                });
-
-            if (sectionData.length > 0) {
-                payload.blocks[section.sectionId] = {
-                    sectionNumber: parseInt(sectionNum),
-                    sectionName: section.sectionName,
-                    items: sectionData,
-                };
-            }
+                }
+            });
         });
 
         return payload;
     };
 
+
     const handleSubmit = async () => {
         const payload = generatePayload();
+        console.log("payload", payload)
         const response = editingId
             ? await updateMachineList(editingId, payload)
             : await addMachineList(payload);
-
-        if (response?.status === "success") {
-            toast.success(response?.message);
-            setView('list');
+        if (response?.data?.status === "success") {
+            toast.success(response?.data?.message);
+            router.push("/machine-list");
             setEditingId(null);
             resetForm();
         } else {
-            toast.error(response?.message);
+            toast.error(response?.response?.data?.message);
         }
     };
 
@@ -305,6 +305,10 @@ const MachineryHullManager = ({ mode, shipId }) => {
         setDynamicRows({ machinery: {}, hull: {} });
         setExpandedAccordions({});
         setRenderedSections({});
+    };
+
+    const handleEngineUnitsCountedFromChange = (e) => {
+        setEngineUnitsCountedFrom(e.target.value);
     };
 
     const renderRow = (row, sectionType, sectionNum) => {
@@ -487,7 +491,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
             <Accordion
                 key={sectionNum}
                 sx={{ mt: 2 }}
-                expanded={isExpanded}
+                expanded={!!isExpanded}
                 onChange={handleAccordionChange(sectionNum)}
             >
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -506,20 +510,20 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         <>
                             {section.sectionId === "machinery_list" && (
                                 <>
-                                    <FormControl sx={{ p: 3 }}>
+                                    <FormControl sx={{ pl: 2 }}>
                                         <Typography fontWeight={700} mb={1}>Engine Type</Typography>
                                         <RadioGroup row value={shipType} onChange={(e) => setShipType(e.target.value)}>
-                                            <FormControlLabel value="crosshead" control={<Radio />} label="Crosshead Type Engine" />
-                                            <FormControlLabel value="inline" control={<Radio />} label="Inline Trunk Piston Engine" />
-                                            <FormControlLabel value="vee" control={<Radio />} label="Vee-Type Trunk Piston Engine" />
+                                            <FormControlLabel value="crosshead_type_engine" control={<Radio />} label="Crosshead Type Engine" />
+                                            <FormControlLabel value="inline_trunk_piston_engine" control={<Radio />} label="Inline Trunk Piston Engine" />
+                                            <FormControlLabel value="vee_type_trunk_piston_engine" control={<Radio />} label="Vee-Type Trunk Piston Engine" />
                                         </RadioGroup>
                                     </FormControl>
 
-                                    <Grid2 container spacing={2} sx={{ mb: 3 }}>
+                                    <Grid2 container spacing={2} sx={{ mb: 3, mt: 2 }}>
                                         <Grid2 size={{ xs: 12, md: 4 }}>
-                                            <Typography fontWeight={700} mb={1} sx={{ ml: 3 }}>No. of cylinders</Typography>
+                                            <Typography fontWeight={700} mb={1} sx={{ ml: 2 }}>No. of cylinders</Typography>
                                             <TextField
-                                                sx={{ ml: 3 }}
+                                                sx={{ ml: 2 }}
                                                 placeholder="Enter no of cylinders"
                                                 variant="outlined"
                                                 size="small"
@@ -529,10 +533,10 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                             />
                                         </Grid2>
 
-                                        <Grid2 size={{ xs: 12, md: 4, ml: 3 }}>
-                                            <Typography fontWeight={700} mb={1} sx={{ ml: 3 }}>Global Position</Typography>
+                                        <Grid2 size={{ xs: 12, md: 4, ml: 2 }}>
+                                            <Typography fontWeight={700} mb={1} sx={{ ml: 2 }}>Global Position</Typography>
                                             <Select
-                                                sx={{ ml: 3 }}
+                                                sx={{ ml: 2 }}
                                                 multiple
                                                 variant="outlined"
                                                 fullWidth
@@ -550,11 +554,22 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                                 ))}
                                             </Select>
                                         </Grid2>
+
+
+                                    </Grid2>
+
+
+                                    <Grid2 size={{ xs: 12, md: 4 }} sx={{ display: { xs: "none", md: "flex" }, flexDirection: "row" }}>
+                                        <Typography fontWeight={700} mt={1} sx={{ ml: 2 }}>Main engine units counted from :</Typography>
+                                        <RadioGroup row value={engineUnitsCountedFrom} onChange={(e) => setEngineUnitsCountedFrom(e.target.value)} sx={{ ml: 3 }}   >
+                                            <FormControlLabel value="flywheel_end" control={<Radio />} label="Flywheel end" />
+                                            <FormControlLabel value="free_end" control={<Radio />} label="Free end" />
+                                        </RadioGroup>
                                     </Grid2>
                                 </>
                             )}
 
-                            <Grid2 container spacing={2} alignItems="center" sx={{ mb: 2, fontWeight: 700 }}>
+                            <Grid2 container spacing={2} alignItems="center" sx={{ mb: 2, mt: 2, fontWeight: 700 }}>
                                 <Grid2 size={{ xs: 12, md: 0.6 }}></Grid2>
                                 <Grid2 size={{ xs: 12, md: 3.3 }}>Description</Grid2>
                                 <Grid2 size={{ xs: 12, md: 2 }}>Position / No.</Grid2>
@@ -568,9 +583,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             {allRows.map((row) => renderRow(row, sectionType, sectionNum))}
 
                             <Box mt={3} textAlign="right">
-                                <CommonButton variant="outlined" size="small" onClick={() => handleAddRow(sectionType, sectionNum)}>
-                                    + Add Row
-                                </CommonButton>
+                                <CommonButton variant="outlined" size="small" text="Add Row" onClick={() => handleAddRow(sectionType, sectionNum)} />
                             </Box>
                         </>
                     )}
@@ -580,76 +593,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
     };
 
     // Listing View
-    const renderListView = () => (
-        <Card sx={{ p: 3, mt: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h5" fontWeight={600}>Machine List</Typography>
-                <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => {
-                        resetForm();
-                        setView('form');
-                    }}
-                >
-                    Add New
-                </Button>
-            </Box>
 
-            <TableContainer component={Paper}>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell><strong>Ship Name</strong></TableCell>
-                            <TableCell><strong>Engine Type</strong></TableCell>
-                            <TableCell><strong>Cylinders</strong></TableCell>
-                            <TableCell align="center"><strong>Actions</strong></TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-
-                        {machineList.map((machine) => {
-                            console.log(machine, "machine")
-                            return (
-                                <TableRow key={machine.id}>
-                                    <TableCell>{machine.shipName}</TableCell>
-                                    <TableCell>{machine?.machineData?.machinery_list?.engineType || '-'}</TableCell>
-                                    <TableCell>{machine?.machineData?.machinery_list?.numberOfCylinders || '-'}</TableCell>
-                                    <TableCell align="center">
-                                        <Tooltip title="Edit">
-                                            <IconButton
-                                                size="small"
-                                                color="primary"
-                                                onClick={() => handleEdit(machine.shipId)}
-                                            >
-                                                <EditIcon />
-                                            </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title="Delete">
-                                            <IconButton
-                                                size="small"
-                                                color="error"
-                                                onClick={() => handleDelete(machine.id)}
-                                            >
-                                                <DeleteIcon />
-                                            </IconButton>
-                                        </Tooltip>
-                                    </TableCell>
-                                </TableRow>
-                            )
-                        })}
-                        {machineList.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={5} align="center">
-                                    <Typography color="text.secondary">No records found</Typography>
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-        </Card>
-    );
 
     // Form View
     const renderFormView = () => {
@@ -714,16 +658,19 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             variant="contained"
                             size="large"
                             onClick={handleSubmit}
-                        >
-                            {editingId ? 'Update' : 'Submit'}
-                        </CommonButton>
+                            text={editingId ? 'Update' : 'Submit'}
+                        />
                     </Box>
                 </CardContent>
             </Card>
         );
     };
 
-    return view === 'list' ? renderListView() : renderFormView();
+    return (
+        <>
+            {renderFormView()}
+        </>
+    );
 };
 
 export default MachineryHullManager;

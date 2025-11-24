@@ -1,6 +1,6 @@
 import { Editor } from "@tinymce/tinymce-react";
 import { useEffect, useState, useCallback } from "react";
-import { fetchAdditionalDetails, getAllListClassificationSurveys, getAllSystemVariables, getSpecificClient, getSurveyReportData, uploadSurveyReport } from "../api";
+import { fetchAdditionalDetails, getAllListClassificationSurveys, getAllMachineList, getAllSystemVariables, getMachineById, getMachineList, getSpecificClient, getSurveyReportData, uploadSurveyReport } from "../api";
 import { toast } from "react-toastify";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import html2canvas from "html2canvas";
@@ -20,15 +20,22 @@ const TextEditor = ({ id }) => {
   const [classificationData, setClassificationData] = useState([]);
   const [additionalFieldData, setAdditionalFieldData] = useState([]);
   const [statutoryData, setStatutoryData] = useState([]);
-  console.log(statutoryData, "statutoryData")
   const [auditsData, setAuditsData] = useState([]);
+  const [machineList, setMachineList] = useState([]);
+  console.log(machineList, "machineList");
   const [systemVariables, setSystemVariables] = useState();
   const companyName = systemVariables?.data?.find((item) => item.name === "company_name")?.information || "-";
   const companyLogo = systemVariables?.data?.find((item) => item.name === "company_logo")?.information || "-";
-  console.log("test")
+
   useEffect(() => {
     getSystemVariables();
+    fetchMachineList();
   }, []);
+
+  const fetchMachineList = async () => {
+    const response = await getMachineById(id);
+    setMachineList(response?.data?.data);
+  };
 
   const getAllClassification = async () => {
     const response = await getAllListClassificationSurveys({ clientId: id });
@@ -659,154 +666,6 @@ const TextEditor = ({ id }) => {
     };
   };
 
-  // const populateSurveyRows = (surveyDataList) => {
-  //   console.log("surveyDataList", surveyDataList);
-  //   if (!surveyDataList || surveyDataList.length === 0)
-  //     return { statutory: [], audits: [] };
-
-  //   const result = { statutory: [], audits: [] };
-
-  //   surveyDataList.forEach((survey) => {
-  //     if (!survey.activity?.surveyTypes) return;
-
-  //     const certificateName = survey.activity.surveyTypes.report?.name || "";
-  //     const surveyTypeRaw = survey.activity.surveyTypes.name || "";
-
-  //     const surveyDate = survey.surveyDate
-  //       ? format(new Date(survey.surveyDate), "yyyy-MM-dd")
-  //       : "";
-
-  //     const validityDate = survey.validityDate
-  //       ? format(new Date(survey.validityDate), "yyyy-MM-dd")
-  //       : "";
-
-  //     const issuanceDate = survey.issuanceDate
-  //       ? format(new Date(survey.issuanceDate), "yyyy-MM-dd")
-  //       : "";
-
-  //     let dueDate = "";
-  //     let rangeFrom = "";
-  //     let rangeTo = "";
-
-  //     if (issuanceDate) {
-  //       const dates = calculateDates(issuanceDate);
-  //       dueDate = dates.dueDate;
-  //       rangeFrom = dates.rangeFrom;
-  //       rangeTo = dates.rangeTo;
-  //     }
-
-  //     const row = {
-  //       surveyName: certificateName,
-  //       surveyTypeName: surveyTypeRaw,
-  //       surveyDate,
-  //       validityDate,
-  //       dueDate,
-  //       rangeFrom,
-  //       rangeTo,
-  //       postponedDate: "",
-  //       typeOfCertificate: survey.typeOfCertificate || "",
-  //     };
-
-  //     const isAudit = survey.activity.surveyTypes.audit === true;
-
-  //     if (isAudit) result.audits.push(row);
-  //     else result.statutory.push(row);
-  //   });
-
-  //   return result;
-  // };
-
-  // const populateSurveyRows = (surveyDataList) => {
-  //   if (!surveyDataList || surveyDataList.length === 0)
-  //     return { statutory: [], audits: [] };
-
-  //   const result = { statutory: [], audits: [] };
-
-  //   surveyDataList.forEach((survey) => {
-  //     if (!survey.activity?.surveyTypes || !survey.activity.surveyTypes.report) return;
-
-  //     const certificateName = survey.activity.surveyTypes.report?.name || "";
-  //     const surveyTypeRaw = survey.activity.surveyTypes.name || "";
-
-  //     // Get latest inner issuance date for statutory surveys
-  //     const getLatestInnerIssuanceDate = (surveyData) => {
-  //       if (!surveyData || !surveyData.data) return null;
-
-  //       const data = surveyData.data;
-
-  //       const keys = Object.keys(data).filter(k =>
-  //         k.toLowerCase().startsWith("issuance_date_") ||
-  //         k.toLowerCase().startsWith("endorsement_date_")
-  //       );
-
-  //       if (!keys.length) return null;
-
-  //       const validDates = keys
-  //         .map(k => data[k])
-  //         .map(val => {
-  //           if (typeof val !== "string") return null;
-
-  //           if (val.includes("/") && !val.includes("-")) {
-  //             const [d, m, y] = val.split("/");
-  //             return `${y}-${m}-${d}`;
-  //           }
-  //           return val;
-  //         })
-  //         .filter(val => val && !isNaN(new Date(val).getTime()));
-
-  //       if (!validDates.length) return null;
-
-  //       validDates.sort((a, b) => new Date(b) - new Date(a));
-
-  //       return validDates[0];
-  //     };
-
-  //     const innerIssuanceDate = getLatestInnerIssuanceDate(survey);
-  //     const surveyDate = innerIssuanceDate || (survey.surveyDate
-  //       ? format(new Date(survey.surveyDate), "yyyy-MM-dd")
-  //       : "");
-
-  //     const validityDate = survey.validityDate
-  //       ? format(new Date(survey.validityDate), "yyyy-MM-dd")
-  //       : "";
-
-  //     const issuanceDate = survey.issuanceDate
-  //       ? format(new Date(survey.issuanceDate), "yyyy-MM-dd")
-  //       : "";
-
-  //     let dueDate = "";
-  //     let rangeFrom = "";
-  //     let rangeTo = "";
-
-  //     if (issuanceDate) {
-  //       const dates = calculateDates(issuanceDate);
-  //       dueDate = dates.dueDate;
-  //       rangeFrom = dates.rangeFrom;
-  //       rangeTo = dates.rangeTo;
-  //     }
-
-  //     const row = {
-  //       surveyName: certificateName,
-  //       surveyTypeName: surveyTypeRaw,
-  //       surveyDate,
-  //       validityDate,
-  //       dueDate,
-  //       rangeFrom,
-  //       rangeTo,
-  //       postponedDate: "",
-  //       typeOfCertificate: survey.typeOfCertificate || "",
-  //     };
-
-  //     const isStatutory = survey.activity.surveyTypes.statutorySurvey === true;
-  //     const isAudit = survey.activity.surveyTypes.audit === true;
-
-  //     if (isStatutory) result.statutory.push(row);
-  //     else if (isAudit) result.audits.push(row);
-  //   });
-
-  //   return result;
-  // };
-
   const populateSurveyRows = (surveyDataList) => {
     if (!surveyDataList || surveyDataList.length === 0)
       return { statutory: [], audits: [] };
@@ -1254,6 +1113,42 @@ ${classificationRows}
     })
     .join("");
 
+
+  const rows = Object.values(machineList.machineData || {})
+    .flatMap(section => section?.items || []);
+
+  console.log(rows, "ROWS");
+
+  const machineListHtml = `
+<table style="width:100%; border-collapse:collapse; font-size:14px;">
+  <thead>
+    <tr style="background-color:#f2f2f2; text-align:left;">
+      <th style="padding:6px;">Code</th>
+      <th style="padding:6px;">Postponed Date</th>
+      <th style="padding:6px;">Cycle</th>
+      <th style="padding:6px;">Assignment Date</th>
+      <th style="padding:6px;">Next Due Date</th>
+      <th style="padding:6px;">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${rows
+      .map(
+        (item) => `
+      <tr>
+        <td>${item.rowId || "-"}</td>
+        <td>${item.postponedDate ? moment(item.postponedDate).format("DD/MM/YYYY") : "-"}</td>
+        <td>5</td>
+        <td>${item.assignmentDate ? moment(item.assignmentDate).format("DD/MM/YYYY") : "-"}</td>
+        <td>${item.dueDate ? moment(item.dueDate).format("DD/MM/YYYY") : "-"}</td>
+        <td>${item.label || "-"}</td>
+      </tr>`
+      )
+      .join("")}
+  </tbody>
+</table>
+`;
+
   // Final HTML
   const finalHtml = `
     <div>
@@ -1265,6 +1160,7 @@ ${classificationRows}
     </div>
 
     ${additionalFieldsHtml}
+    ${machineListHtml}
   `;
 
   const calculateDueDate = (cert) => {
@@ -1302,20 +1198,15 @@ ${classificationRows}
       const name = cert.activity.surveyTypes.report.name?.toLowerCase();
       const existing = uniqueCertificatesMap.get(name);
 
-      const existingDate = existing ? new Date(existing?.surveyDate) : null;
-      const currentDate = new Date(cert?.surveyDate);
-
       const existingDue = existing ? calculateDueDate(existing) : null;
       const currentSurvey = moment(cert.surveyDate);
 
       if (!existing) {
         uniqueCertificatesMap.set(name, cert);
       } else {
-        // Case 1: This is a fresh cycle (survey after previous due date)
         if (existingDue && currentSurvey.isAfter(existingDue)) {
           uniqueCertificatesMap.set(name, cert);
         }
-        // Case 2: Otherwise, keep the OLDEST surveyDate
         else if (currentSurvey.isBefore(existing.surveyDate)) {
           uniqueCertificatesMap.set(name, cert);
         }
@@ -1478,7 +1369,6 @@ ${classificationRows}
           if (lower.includes(key)) { typeLabel = label; break; }
         }
 
-        // Fallback: pretty-print whatever came in as survey type
         if (!typeLabel && typeNameRaw) {
           const toTitle = (s) =>
             s.replace(/\s+/g, " ")
@@ -1496,7 +1386,6 @@ ${classificationRows}
 
         return certName;
       };
-
 
       const rows = data
         .filter(
@@ -1895,7 +1784,10 @@ ${auditSurveyTableHtml}
 
 ${additionalFieldsHtml}
 </div>
+<h2 style="margin-top: 10px; color:black">Machine List</h2>
 
+${machineListHtml}
+</div>
 `;
   }, [clientData, reportDetails, classificationData, statutoryData]);
 

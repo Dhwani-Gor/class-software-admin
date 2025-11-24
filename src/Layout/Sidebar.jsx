@@ -35,7 +35,7 @@ const SidebarComponent = ({ isSidebarOpen }) => {
     "IssuedDocument": "Issued Documents",
     "SurveyType": "Survey Types",
     "Documents": "Documents",
-    "SystemVariable": "System Variables",
+    "SystemVariable": "System Configuration",
     "Classification": "Classification",
     "AdditionalFields": "Additional Fields",
     "MachineryList": "Machinery"
@@ -72,14 +72,14 @@ const SidebarComponent = ({ isSidebarOpen }) => {
         return sidemenu_items;
       } else if (roleId === "3") {
         return sidemenu_items.filter((item) =>
-          ["Reporting", "Issued Documents", "System Variables", "AdditionalFields", "MachineryList"].includes(item.label)
+          ["Reporting", "Issued Documents", "System Configuration", "AdditionalFields", "MachineryList"].includes(item.label)
         );
       } else if (roleId === "2") {
         return sidemenu_items.filter((item) => {
           if (item.label === "Clients") {
             return userData?.dataEntryRights === true;
           }
-          return ["Journal", "Reporting", "Issued Documents", "Survey Types", "Documents", "System Variables", "Classification", "AdditionalFields", "MachineryList"].includes(item.label);
+          return ["Journal", "Reporting", "Issued Documents", "Survey Types", "Documents", "System Configuration", "Classification", "AdditionalFields", "MachineryList"].includes(item.label);
         });
       }
     }

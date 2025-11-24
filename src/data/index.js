@@ -28,7 +28,7 @@ export const sidemenu_items = [
     to: "/documents",
   },
   {
-    label: "System Variables",
+    label: "System Configuration",
     to: "/system-variables",
   },
   {
