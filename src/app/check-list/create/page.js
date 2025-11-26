@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Box, Typography, Select, MenuItem, TextField, FormControl, Grid, Autocomplete, Button, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
+import { Box, Typography, Select, MenuItem, TextField, FormControl, Grid, Autocomplete, Button, Table, TableBody, TableCell, TableHead, TableRow, Grid2 } from "@mui/material";
 
 import { getAllClients, getSurveyTypes } from "@/api";
 import { Controller, useForm } from "react-hook-form";
@@ -12,7 +12,6 @@ const CheckListCreate = () => {
   const [selectedClient, setSelectedClient] = useState("");
   const [clientsList, setClientsList] = useState([]);
   const [surveyTypes, setSurveyTypes] = useState([]);
-  console.log(surveyTypes, "survey tpes");
   const [rows, setRows] = useState([]);
 
   const surveyOptions =
@@ -46,9 +45,6 @@ const CheckListCreate = () => {
     setErrorMsg({ client: "", section: "" });
   };
 
-  // ------------------------------------------------------------
-  // 📌 HANDLE WORD UPLOAD USING MAMMOTH
-  // ------------------------------------------------------------
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -89,9 +85,6 @@ const CheckListCreate = () => {
     setRows(updated);
   };
 
-  // ------------------------------------------------------------
-  // 📌 FINAL PAYLOAD
-  // ------------------------------------------------------------
   const onSubmit = () => {
     const payload = {
       clientId: selectedClient,
@@ -108,7 +101,6 @@ const CheckListCreate = () => {
 
   return (
     <Box sx={{ p: 3, bgcolor: "white", borderRadius: 2, boxShadow: 1, mt: 2 }}>
-      {/* SHIP DROPDOWN */}
       <FormControl fullWidth sx={{ maxWidth: 300 }}>
         <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
           Select Ship
@@ -126,26 +118,24 @@ const CheckListCreate = () => {
         </Select>
       </FormControl>
 
-      {/* SURVEY TYPE */}
-      <Grid xs={12} sx={{ mt: 2 }}>
+      <Grid2 xs={12} sx={{ mt: 2 }}>
         <Controller
           name="typeOfSurvey"
           control={control}
-          defaultValue={[]}
+          defaultValue={null}
           render={({ field }) => (
             <Autocomplete
-              multiple
               options={surveyOptions?.sort((a, b) => a.label?.localeCompare(b.label))}
-              value={surveyOptions.filter((option) => field.value.includes(option.value))}
+              value={surveyOptions.find((option) => option.value === field.value) || null}
               onChange={(event, newValue) => {
-                field.onChange(newValue.map((v) => v.value));
+                field.onChange(newValue ? newValue.value : null);
               }}
-              getOptionLabel={(option) => option.label}
+              getOptionLabel={(option) => option.label || ""}
               renderInput={(params) => <TextField {...params} label="Type of Activity" variant="standard" />}
             />
           )}
         />
-      </Grid>
+      </Grid2>
 
       {/* WORD FILE UPLOAD */}
       <Box mt={3}>
