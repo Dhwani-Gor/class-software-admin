@@ -1163,3 +1163,13 @@ export const getMachineById = async (id) => {
   }
   return result;
 };
+
+export const addCheckList = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/checkList`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
