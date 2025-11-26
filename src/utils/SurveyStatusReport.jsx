@@ -1114,10 +1114,8 @@ ${classificationRows}
     .join("");
 
 
-  const rows = Object.values(machineList.machineData || {})
+  const rows = Object.values(machineList?.machineData || {})
     .flatMap(section => section?.items || []);
-
-  console.log(rows, "ROWS");
 
   const machineListHtml = `
 <table style="width:100%; border-collapse:collapse; font-size:14px;">
