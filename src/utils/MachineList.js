@@ -327,23 +327,6 @@ export const MACHINERY_SECTIONS = {
     ],
   },
   18: {
-    sectionId: "electrical_system",
-    sectionName: "Electrical System",
-    rows: [
-      { id: 1, label: "Electrical system", hasPosition: false, isDue: true, isFrom: false },
-      { id: 2, label: "Gen. and governor running test", hasPosition: true, isDue: true, isFrom: false },
-      { id: 3, label: "Switch boards and fittings", hasPosition: true, isDue: true, isFrom: false },
-      { id: 4, label: "Emerg. source of power and associated equip.", hasPosition: false, isDue: true, isFrom: false },
-      { id: 5, label: "Navigating lights, indicators", hasPosition: false, isDue: true, isFrom: false },
-      { id: 6, label: "Cables/expansion boxes/fittings etc.", hasPosition: false, isDue: true, isFrom: false },
-      { id: 7, label: "Circuit breakers", hasPosition: false, isDue: true, isFrom: false },
-      { id: 8, label: "Motor/s, control/s and starter/s", hasPosition: false, isDue: true, isFrom: false },
-      { id: 9, label: "Transformer/s", hasPosition: false, isDue: true, isFrom: false },
-      { id: 10, label: "Megger test", hasPosition: false, isDue: true, isFrom: false },
-      { id: 11, label: "Shaft Generator", hasPosition: false, isDue: true, isFrom: false },
-    ],
-  },
-  19: {
     sectionId: "instrumentation_automation",
     sectionName: "Instrumentation and Automation Equipment",
     rows: [
@@ -353,7 +336,7 @@ export const MACHINERY_SECTIONS = {
       { id: 4, label: "Boiler front oil burning unit", hasPosition: false, isDue: true, isFrom: false },
     ],
   },
-  20: {
+  19: {
     sectionId: "inert_gas_system",
     sectionName: "Inert Gas System",
     rows: [
@@ -369,12 +352,12 @@ export const MACHINERY_SECTIONS = {
       { id: 9, label: "Scrubber Effluent Discharge pipe and Valves", hasPosition: false, isDue: true, isFrom: false },
     ],
   },
-  21: {
+  20: {
     sectionId: "sea_connections",
     sectionName: "Sea Connections",
     rows: [{ id: 1, label: "Sea connections", hasPosition: false, isDue: true, isFrom: false }],
   },
-  22: {
+  21: {
     sectionId: "thrusters",
     sectionName: "Bow and Aft Thruster",
     rows: [
@@ -385,7 +368,7 @@ export const MACHINERY_SECTIONS = {
       { id: 5, label: "Aft Thruster Driving Machinery Unit", hasPosition: true, isDue: true, isFrom: false },
     ],
   },
-  23: {
+  22: {
     sectionId: "tailshaft_survey",
     sectionName: "Tailshaft Survey",
     rows: [
@@ -398,7 +381,7 @@ export const MACHINERY_SECTIONS = {
       { id: 7, label: "Stern Bush & Bearing", hasPosition: true, isDue: true, isFrom: false },
     ],
   },
-  24: {
+  23: {
     sectionId: "waterjet_propulsion",
     sectionName: "Waterjet Propulsion",
     rows: [
@@ -409,7 +392,7 @@ export const MACHINERY_SECTIONS = {
       { id: 5, label: "Impeller Chamber", hasPosition: true, isDue: true, isFrom: false },
     ],
   },
-  25: {
+  24: {
     sectionId: "directional_propulsion",
     sectionName: "Directional Propulsion",
     rows: [
@@ -423,7 +406,7 @@ export const MACHINERY_SECTIONS = {
       { id: 8, label: "Foundation structure/Tightness of Principal Assemblies", hasPosition: true, isDue: true, isFrom: false },
     ],
   },
-  26: {
+  25: {
     sectionId: "main_aux_boiler",
     sectionName: "Main Boiler / Aux. Oil Fired Boiler / Composite Aux Boiler",
     rows: [
@@ -435,7 +418,7 @@ export const MACHINERY_SECTIONS = {
       { id: 6, label: "Adjustment of Safety Valve, O.F. Burning & Remote Control", hasPosition: false, isDue: true, isFrom: false },
     ],
   },
-  27: {
+  26: {
     sectionId: "exhaust_gas_boiler",
     sectionName: "Exhaust Gas Boiler / Economiser",
     rows: [
@@ -443,7 +426,7 @@ export const MACHINERY_SECTIONS = {
       { id: 2, label: "Adjustment of Safety Valve", hasPosition: false, isDue: true, isFrom: false },
     ],
   },
-  28: {
+  27: {
     sectionId: "thermal_oil_heater",
     sectionName: "Thermal Oil Heater",
     rows: [
@@ -455,12 +438,12 @@ export const MACHINERY_SECTIONS = {
       { id: 6, label: "Oil Piping", hasPosition: false, isDue: true, isFrom: false },
     ],
   },
-  29: {
+  28: {
     sectionId: "steam_pipes",
     sectionName: "Steam Pipes (for pipes over 75 mm NB)",
     rows: [{ id: 1, label: "Steam pipes (for pipes over 75 mm NB)", hasPosition: true, isDue: true, isFrom: false }],
   },
-  30: {
+  29: {
     sectionId: "refrigerated_cargo_system",
     sectionName: "Refrigerated Cargo System",
     rows: [
