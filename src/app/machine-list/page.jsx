@@ -1,88 +1,148 @@
-
 "use client";
+
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import CircularProgress from "@mui/material/CircularProgress";
-import Pagination from "@mui/material/Pagination";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogTitle from "@mui/material/DialogTitle";
-import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
-import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import { DataGrid } from "@mui/x-data-grid";
+
+import {
+    CircularProgress,
+    Box,
+    Stack,
+    Typography,
+    IconButton,
+    Tooltip,
+    Pagination,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
+    Dialog,
+    DialogTitle,
+    Table,
+    TableHead,
+    TableRow,
+    TableCell,
+    TableBody,
+    FormControl,
+    Select,
+    MenuItem,
+} from "@mui/material";
+
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+
 import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import CommonInput from "@/components/CommonInput";
+
 import { toast } from "react-toastify";
-import { useAuth } from "@/hooks/useAuth";
-import { deleteMachineList, getMachineList } from "@/api";
+import {
+    deleteMachineList,
+    getAllClients,
+    getMachineById,
+} from "@/api";
+import moment from "moment";
 
 const MachineList = () => {
-    const [view, setView] = useState('list');
     const router = useRouter();
     const searchParams = useSearchParams();
-    const [search, setSearch] = useState("");
-    const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
-    const [limit, setLimit] = useState(10);
-    const [totalRows, setTotalRows] = useState(0);
-    const [loading, setLoading] = useState(false);
-    const [openDialog, setOpenDialog] = useState(false);
+
     const [machineList, setMachineList] = useState([]);
+    console.log(machineList, "machine list")
+    const [clientsList, setClientsList] = useState([]);
+
+    const [selectedShipId, setSelectedShipId] = useState(null);
+
+    const [search, setSearch] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
+    const [limit] = useState(10);
+    const [totalRows, setTotalRows] = useState(0);
+
+    const [openDialog, setOpenDialog] = useState(false);
     const [selectedMachineId, setSelectedMachineId] = useState(null);
 
+    // -------------------------------------------------------
+    // Fetch Clients
+    // -------------------------------------------------------
+    const fetchClients = async () => {
+        try {
+            const response = await getAllClients();
 
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedSearch(search);
-        }, 300);
-
-        return () => clearTimeout(handler);
-    }, [search]);
-
-
-    useEffect(() => {
-        fetchMachineList(page, limit, debouncedSearch);
-    }, [debouncedSearch, page, limit]);
-
-    const resetForm = () => {
-        setView('form');
+            if (response?.data?.status === "success") {
+                setClientsList(response.data.data);
+            } else {
+                toast.error(response?.data?.message);
+            }
+        } catch (error) {
+            toast.error(error?.message || "Failed to load clients");
+        }
     };
 
-    const handleSearchChange = (event) => {
-        setSearch(event.target.value);
+    useEffect(() => {
+        fetchClients();
+    }, []);
+
+    // -------------------------------------------------------
+    // Handle Ship Change
+    // -------------------------------------------------------
+    const handleClientChange = (e) => {
+        const shipId = e.target.value;
+        setSelectedShipId(shipId);
+        setPage(1); // reset pagination when ship changes
     };
 
+    // -------------------------------------------------------
+    // Fetch Machine List – Only when ship selected
+    // -------------------------------------------------------
+    useEffect(() => {
+        if (!selectedShipId) return;
+
+        const fetchMachineList = async () => {
+            try {
+                setLoading(true);
+                const result = await getMachineById(selectedShipId);
+                console.log(result, "result")
+                if (result?.data?.status === "success") {
+                    setMachineList(result.data.data);
+                }
+                else {
+                    // setMachineList([])
+                }
+
+                setLoading(false);
+            } catch (error) {
+                setLoading(false);
+                toast.error("Failed to fetch machine list");
+            }
+        };
+
+        fetchMachineList();
+    }, [selectedShipId, page, search]);
+
+    // -------------------------------------------------------
+    // Delete Logic
+    // -------------------------------------------------------
     const handleDeleteClick = (id) => {
         setSelectedMachineId(id);
         setOpenDialog(true);
     };
 
-    const handlePageChange = (event, value) => {
-        setPage(value);
-        router.push(`/machine-list?page=${value}&limit=${limit}`);
-    };
-
     const handleConfirmDelete = async () => {
         setOpenDialog(false);
         if (!selectedMachineId) return;
-
         try {
             const res = await deleteMachineList(selectedMachineId);
-            if (res?.data?.message) {
-                toast.success(res.data.message);
+            if (res?.data?.message) toast.success(res.data.message);
+
+            // Refresh list
+            if (selectedShipId) {
+                const updated = await getMachineById(selectedShipId);
+                setMachineList(updated.data.data);
             }
-            fetchMachineList();
-        } catch (e) {
-            console.error("Error deleting:", e.response?.data || e.message);
-            toast.error("Failed to delete Machinery.");
+        } catch {
+            toast.error("Failed to delete Machinery");
         }
     };
 
@@ -91,175 +151,152 @@ const MachineList = () => {
         setOpenDialog(false);
     };
 
-    const fetchMachineList = async () => {
-        try {
-            setLoading(true);
-            const result = await getMachineList(page, limit, debouncedSearch);
-            if (result?.data?.status === "success") {
-                setMachineList(result.data.data);
-                setTotalRows(result.data.results);
-            }
-            setLoading(false);
-        } catch (error) {
-            setLoading(false);
-            toast.error(error?.message || "Failed to fetch machine list");
-        }
+    // -------------------------------------------------------
+    // Pagination
+    // -------------------------------------------------------
+    const handlePageChange = (e, value) => {
+        setPage(value);
+        router.push(`/machine-list?page=${value}&limit=${limit}`);
     };
 
-
-    useEffect(() => {
-        if (view === 'list') {
-            fetchMachineList();
-        }
-    }, [view]);
-
-    const columns = [
-        {
-            field: "index",
-            headerName: "No.",
-            flex: 1,
-            sortable: false,
-            renderCell: (params) => {
-                return (page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1;
-            },
-        },
-        { field: "shipName", headerName: "Ship Name", flex: 1.5 },
-        { field: "engineType", headerName: "Engine Type", flex: 1, renderCell: (params) => params.row.machineData?.machinery_list?.engineType },
-
-        {
-            field: "globalPosition",
-            headerName: "Position",
-            flex: 1,
-            renderCell: (params) => {
-                const pos = params.row.machineData?.machinery_list?.globalPosition;
-                return pos?.join("");
-            }
-        },
-        {
-            field: "numberOfCylinders",
-            headerName: "No of cylinders",
-            flex: 1,
-            renderCell: (params) => params.row.machineData?.machinery_list?.numberOfCylinders
-        },
-        {
-            field: "actions",
-            headerName: "Actions",
-            width: 100,
-            renderCell: (params) => (
-                <Stack direction="row" spacing={1}>
-                    <Tooltip title="Edit Machine">
-                        <IconButton color="primary" onClick={() => router.push(`/machine-list/${params?.row?.shipId}`)}>
-                            <EditIcon />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete Machine">
-                        <IconButton color="error" onClick={() => { handleDeleteClick(params?.row?.id) }}>
-                            <DeleteIcon />
-                        </IconButton>
-                    </Tooltip>
-                </Stack>
-            ),
-        },
-    ];
-
-
     return (
-        <>
-            {/* <Layout>
-                <CommonCard sx={{ mt: 0 }}>
-                    <Stack direction="row" alignItems="center" justifyContent="space-between">
-                        <Typography variant="h4" fontWeight={700}>
-                            Machinery / Hull List
-                        </Typography>
-                    </Stack>
-                </CommonCard>
-                <CommonButton
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => {
-                        resetForm();
-                        setView('form');
-                    }}
-                >
-                    Add New
-                </CommonButton>
-                <MachineryForm />
-            </Layout> */}
-            <Layout>
-                <CommonCard sx={{ mt: 0 }}>
-                    <Stack direction="row" alignItems="center" justifyContent="space-between">
-                        <Typography variant="h4" fontWeight={700}>
-                            Machinery / Hull List
-                        </Typography>
-                        {/* {data?.specialPermission?.includes("DataEntryRights(Clients)") && ( */}
-                        <CommonButton
-                            sx={{ textTransform: "capitalize" }}
-                            text="Add Machinery"
-                            variant="contained"
-                            onClick={() => {
-                                router.push("/machine-list/create");
-                            }}
-                        />
-                        {/* )} */}
-                    </Stack>
-                </CommonCard>
+        <Layout>
+            {/* --------------------------------------------------- */}
+            {/* Header */}
+            {/* --------------------------------------------------- */}
+            <CommonCard sx={{ mt: 0 }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="h4" fontWeight={700}>
+                        Machinery / Hull List
+                    </Typography>
 
-                <CommonCard>
-                    <CommonInput placeholder="Search Ship" fullWidth value={search} onChange={handleSearchChange} sx={{ marginBottom: 2 }} />
-                    <Box sx={{ width: "100%", mt: 4 }}>
-                        {loading ? (
-                            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
-                                <CircularProgress />
-                            </Box>
-                        ) : machineList.length > 0 ? (
-                            <DataGrid
-                                rows={machineList}
-                                columns={columns}
-                                loading={loading}
-                                pagination={false}
-                                disableColumnFilter
-                                disableColumnMenu
-                                disableColumnSelector
-                                disableDensitySelector
-                                disableRowSelectionOnClick
-                                hideFooter
-                                sx={{
-                                    backgroundColor: "#fff",
-                                    border: "none",
-                                }}
-                            />
-                        ) : (
-                            <Typography variant="h6" align="center" sx={{ color: "gray", padding: 3 }}>
-                                No Data Found
-                            </Typography>
-                        )}
+                    <CommonButton
+                        text="Add Machinery"
+                        variant="contained"
+                        sx={{ textTransform: "capitalize" }}
+                        onClick={() => router.push("/machine-list/create")}
+                    />
+                </Stack>
+            </CommonCard>
+
+            {/* --------------------------------------------------- */}
+            {/* Filters */}
+            {/* --------------------------------------------------- */}
+            <CommonCard sx={{ mt: 2 }}>
+
+                {/* Ship Dropdown */}
+                <FormControl fullWidth sx={{ maxWidth: 300, mb: 3, mt: 3 }}>
+                    <Typography sx={{ fontWeight: 700, mb: 1 }}>Select Ship</Typography>
+
+                    <Select
+                        value={selectedShipId || ""}
+                        onChange={handleClientChange}
+                    >
+                        <MenuItem value="">&nbsp;</MenuItem>
+                        {clientsList.map((client) => (
+                            <MenuItem key={client.id} value={client.id}>
+                                {client.shipName}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+
+                {/* --------------------------------------------------- */}
+                {/* Data Display */}
+                {/* --------------------------------------------------- */}
+
+
+                {loading ? (
+                    <Box display="flex" justifyContent="center" p={4}>
+                        <CircularProgress />
                     </Box>
-                    <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-                        <Pagination count={Math.ceil(totalRows / limit)} page={page} onChange={handlePageChange} color="primary" variant="outlined" shape="rounded" sx={{ marginTop: "10px" }} />
-                    </Box>
-                </CommonCard>
+                ) : !selectedShipId ? (
+                    <Typography align="center" sx={{ color: "gray", p: 3 }}>
+                        Please select a ship to view machinery list.
+                    </Typography>
+                ) : !machineList?.machineData ||
+                    Object.keys(machineList.machineData).length === 0 ? (
+                    <Typography align="center" sx={{ color: "gray", p: 3 }}>
+                        No Data Found
+                    </Typography>
+                ) : (
+                    // Render sections dynamically
+                    Object.values(machineList?.machineData).map((section, index) => (
+                        <Accordion key={index} defaultExpanded sx={{ mb: 2 }}>
+                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                <Typography variant="h6" fontWeight="bold">{section.sectionName || `Section ${index + 1}`}</Typography>
+                            </AccordionSummary>
 
-                <Dialog open={openDialog} onClose={handleCancelDelete}>
-                    <DialogTitle>Are you sure you want to delete this Machinery / Hull?</DialogTitle>
-                    <DialogActions>
-                        <Button onClick={handleCancelDelete} color="primary">
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={handleConfirmDelete}
-                            sx={{
-                                backgroundColor: "#ed2b1c",
-                                color: "white",
-                                fontWeight: "500",
-                            }}
-                        >
-                            Delete
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-            </Layout>
-        </>
+                            <AccordionDetails>
+                                <Table>
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>Code</TableCell>
 
+                                            <TableCell>Label</TableCell>
+                                            <TableCell>Position</TableCell>
+                                            <TableCell>Occurrence</TableCell>
+                                            <TableCell>Assignment Date</TableCell>
+                                            <TableCell>Due Date</TableCell>
+                                            <TableCell>Postponed Date</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+
+                                    <TableBody>
+                                        {(section.items || []).map((item, idx) => (
+                                            <TableRow key={idx}>
+                                                <TableCell>{item.generatedCode || "-"}</TableCell>
+
+                                                <TableCell>{item.content ? item.content : item.label || "-"}</TableCell>
+                                                <TableCell>{item.positionCode || "-"}</TableCell>
+                                                <TableCell>{item.occurrence || "-"}</TableCell>
+                                                <TableCell>{moment(item.assignmentDate).format("DD/MM/YYYY") || "-"}</TableCell>
+                                                <TableCell>{moment(item.dueDate).format("DD/MM/YYYY") || "-"}</TableCell>
+                                                <TableCell>{moment(item.postponedDate).format("DD/MM/YYYY")}</TableCell>
+                                            </TableRow>
+                                        ))}
+
+                                        {/* Show a message if there are no items in this section */}
+                                        {(!section.items || section.items.length === 0) && (
+                                            <TableRow>
+                                                <TableCell colSpan={7} align="center">
+                                                    No items in this section.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </AccordionDetails>
+                        </Accordion>
+                    ))
+                )}
+
+
+            </CommonCard>
+
+            {/* --------------------------------------------------- */}
+            {/* Delete Confirmation */}
+            {/* --------------------------------------------------- */}
+            <Dialog open={openDialog} onClose={handleCancelDelete}>
+                <DialogTitle>
+                    Are you sure you want to delete this Machinery / Hull?
+                </DialogTitle>
+
+                <Box display="flex" justifyContent="flex-end" p={2}>
+                    <CommonButton onClick={handleCancelDelete}>
+                        Cancel
+                    </CommonButton>
+
+                    <CommonButton
+                        onClick={handleConfirmDelete}
+                        sx={{ backgroundColor: "#ed2b1c", color: "#fff", fontWeight: 500, ml: 1 }}
+                    >
+                        Delete
+                    </CommonButton>
+                </Box>
+            </Dialog>
+        </Layout>
     );
 };
+
 export default MachineList;

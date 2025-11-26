@@ -47,6 +47,94 @@ const MachineryHullManager = ({ mode, shipId }) => {
     const [expandedAccordions, setExpandedAccordions] = useState({});
     const [renderedSections, setRenderedSections] = useState({});
 
+    const STATIC_ROWS_SECTION_01 = [
+        { id: "01", content: "No {cyl} Cyl, Cvr, Pstn, Rod, Vlvs & gears", hasPosition: true, hasFromTo: false },
+        { id: "02", content: "No {cyl}, Con Rod, Top end & Guides", hasPosition: true, hasFromTo: false },
+        { id: "03", content: "No {cyl} Crankpin, Bearing & webs", hasPosition: true, hasFromTo: false }
+    ];
+
+    const generateRowInstances = (sectionNum, row, data) => {
+        const instances = [];
+        const numCyl = Number(noOfCylinders || 1);
+
+        // Use global positions if available
+        const positions = position.length ? position : ["-"];
+
+        positions.forEach((pos) => {
+            for (let cyl = 1; cyl <= numCyl; cyl++) {
+                const code = `${String(sectionNum).padStart(2, "0")}${pos}${row.id}${String(cyl).padStart(2, "0")}`;
+                instances.push({
+                    xMark: "X",
+                    assignmentDate: data.assignmentDate || new Date().toISOString().split("T")[0],
+                    dueDate: data.dueDate || calculateDueDate(data.assignmentDate || new Date()),
+                    generatedCode: code,
+                    occurrence: cyl,
+                    positionCode: pos,
+                    content: row.content?.replace("{cyl}", cyl),
+                    label: row.label
+                });
+            }
+        });
+
+        return instances;
+    };
+
+
+
+
+    console.log(noOfCylinders, "no of cylinders")
+
+    const generatePayload = () => {
+        const payload = {
+            shipId: selectedShip.id,
+            shipName: selectedShip.shipName,
+            engineType: shipType,
+            numberOfCylinders: noOfCylinders,
+            globalPosition: position,
+            engineUnitsCountedFrom,
+            blocks: {},
+        };
+
+        const sectionGroups = { machinery: MACHINERY_SECTIONS, hull: HULL_SECTIONS };
+
+        Object.entries(sectionGroups).forEach(([sectionType, sections]) => {
+            Object.keys(sections).forEach((sectionNum) => {
+                const section = sections[sectionNum];
+                const dynamicRowsForSection = dynamicRows[sectionType][sectionNum] || [];
+                const allRows = [...section.rows, ...dynamicRowsForSection];
+
+                let finalItems = [];
+
+                // --- STATIC ROWS FOR SECTION 01 ---
+                if (sectionNum === "01" && sectionType === "machinery") {
+                    STATIC_ROWS_SECTION_01.forEach((staticRow) => {
+                        const repeatedRows = generateRowInstances(sectionNum, staticRow, {});
+                        finalItems.push(...repeatedRows);
+                    });
+                }
+
+                // --- DYNAMIC ROWS ---
+                allRows.forEach((row) => {
+                    const fieldKey = `${sectionType}-${sectionNum}-${row.id}`;
+                    const data = formData[fieldKey];
+                    if (data?.xMark === "X") {
+                        const repeated = generateRowInstances(sectionNum, row, data);
+                        finalItems.push(...repeated);
+                    }
+                });
+
+                if (finalItems.length > 0) {
+                    payload.blocks[section.sectionId] = {
+                        sectionNumber: parseInt(sectionNum),
+                        sectionName: section.sectionName,
+                        items: finalItems,
+                    };
+                }
+            });
+        });
+
+        return payload;
+    };
     const calculateDueDate = (assignmentDate) => {
         if (!assignmentDate) return "";
         const date = new Date(assignmentDate);
@@ -222,61 +310,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
         }
     };
 
-    const generatePayload = () => {
-        const payload = {
-            shipId: selectedShip.id,
-            shipName: selectedShip.shipName,
-            engineType: shipType,
-            numberOfCylinders: noOfCylinders,
-            globalPosition: position,
-            engineUnitsCountedFrom: engineUnitsCountedFrom,
-            blocks: {},
-        };
 
-        const sectionGroups = {
-            machinery: MACHINERY_SECTIONS,
-            hull: HULL_SECTIONS,
-        };
-
-        Object.entries(sectionGroups).forEach(([sectionType, sections]) => {
-            Object.keys(sections).forEach((sectionNum) => {
-                const section = sections[sectionNum];
-                const dynamicRowsForSection = dynamicRows[sectionType][sectionNum] || [];
-                const allRows = [...section.rows, ...dynamicRowsForSection];
-
-                const sectionData = allRows
-                    .filter((row) => {
-                        const fieldKey = `${sectionType}-${sectionNum}-${row.id}`;
-                        return formData[fieldKey]?.xMark === "X";
-                    })
-                    .map((row) => {
-                        const fieldKey = `${sectionType}-${sectionNum}-${row.id}`;
-                        const data = formData[fieldKey] || {};
-
-                        return {
-                            rowId: row.id,
-                            label: data.label || row.label,
-                            position: data.position || [],
-                            from: data.from || null,
-                            to: data.to || null,
-                            assignmentDate: data.assignmentDate || null,
-                            dueDate: data.dueDate || null,
-                            postponedDate: data.postponedDate || null,
-                        };
-                    });
-
-                if (sectionData.length > 0) {
-                    payload.blocks[section.sectionId] = {
-                        sectionNumber: parseInt(sectionNum),
-                        sectionName: section.sectionName,
-                        items: sectionData,
-                    };
-                }
-            });
-        });
-
-        return payload;
-    };
 
 
     const handleSubmit = async () => {
