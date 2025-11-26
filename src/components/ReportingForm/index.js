@@ -327,7 +327,7 @@ const ReportingForm = () => {
 
     if (isFiveYearSpecial) yearsToAdd = 5;
 
-    if (!isFiveYearSpecial && (surveyType.includes("special") || surveyType.includes("continuous") || surveyType.includes("renewal") || surveyType.includes("intermediate"))) {
+    if (!isFiveYearSpecial && (surveyType.includes("special") || surveyType.includes("continuous") || surveyType.includes("intermediate"))) {
       yearsToAdd = 1;
     }
 
@@ -359,7 +359,6 @@ const ReportingForm = () => {
     const isFiveYearSpecial = fiveYearSpecials.includes(normalize(surveyType));
     const noRangeSurveys = ["docking survey", "tailshaft initial survey", "tailshaft renewal survey", "tailshaft periodical survey", "main boiler survey", "auxiliary boiler survey", "thermal oil heating systems survey", "exhaust gas steam generators and economisers survey"];
 
-    // Case 1: No range surveys
     if (noRangeSurveys.includes(normalize(surveyType))) {
       rangeFrom = "";
       rangeTo = "";

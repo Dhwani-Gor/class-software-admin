@@ -30,6 +30,7 @@ const AuthProvider = ({ children }) => {
     Settings: ["/settings"],
     AdditionalFields: ["/additional-fields"],
     Machinery: ["/machine-list"],
+    CheckList: ["/check-list"],
   };
 
   const publicRoutes = ["/login", "/digital-document", "/reset-password", "/forgot-password"];

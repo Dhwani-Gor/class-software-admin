@@ -38,7 +38,8 @@ const SidebarComponent = ({ isSidebarOpen }) => {
     "SystemVariable": "System Configuration",
     "Classification": "Classification",
     "AdditionalFields": "Additional Fields",
-    "MachineryList": "Machinery"
+    "MachineryList": "Machinery",
+    "CheckList": "Check List"
   };
 
   const getFilteredMenuItems = () => {

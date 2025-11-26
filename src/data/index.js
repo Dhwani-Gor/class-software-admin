@@ -43,6 +43,10 @@ export const sidemenu_items = [
     label: "Machinery",
     to: "/machine-list",
   },
+  {
+    label: "Check List",
+    to: "/check-list",
+  },
 ];
 
 export const TYPE_OF_SURVEYS = [
