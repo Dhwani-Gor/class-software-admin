@@ -53,37 +53,62 @@ const MachineryHullManager = ({ mode, shipId }) => {
         { id: "03", content: "No {cyl} Crankpin, Bearing & webs", hasPosition: true, hasFromTo: false }
     ];
 
+    // const generateRowInstances = (sectionNum, row, data) => {
+    //     const instances = [];
+    //     const numCyl = Number(noOfCylinders || 1);
+
+    //     // Use global positions if available
+    //     const positions = position.length ? position : ["-"];
+
+    //     positions.forEach((pos) => {
+    //         for (let cyl = 1; cyl <= numCyl; cyl++) {
+    //             const code = `${String(sectionNum).padStart(2, "0")}${pos}${row.id}${String(cyl).padStart(2, "0")}`;
+    //             instances.push({
+    //                 xMark: "X",
+    //                 assignmentDate: data.assignmentDate || new Date().toISOString().split("T")[0],
+    //                 dueDate: data.dueDate || calculateDueDate(data.assignmentDate || new Date()),
+    //                 generatedCode: code,
+    //                 occurrence: cyl,
+    //                 positionCode: pos,
+    //                 content: row.content?.replace("{cyl}", cyl),
+    //                 label: row.label
+    //             });
+    //         }
+    //     });
+
+    //     return instances;
+    // };
+
     const generateRowInstances = (sectionNum, row, data) => {
         const instances = [];
         const numCyl = Number(noOfCylinders || 1);
 
-        // Use global positions if available
-        const positions = position.length ? position : ["-"];
+        // Use row-specific positions if available, otherwise fall back to global positions
+        const rowPositions = data.position && data.position.length > 0
+            ? data.position
+            : (position.length ? position : ["-"]);
 
-        positions.forEach((pos) => {
+        const labelToUse = data.label || row.label || "";
+
+
+        rowPositions.forEach((pos) => {
             for (let cyl = 1; cyl <= numCyl; cyl++) {
                 const code = `${String(sectionNum).padStart(2, "0")}${pos}${row.id}${String(cyl).padStart(2, "0")}`;
                 instances.push({
                     xMark: "X",
                     assignmentDate: data.assignmentDate || new Date().toISOString().split("T")[0],
-                    dueDate: data.dueDate || calculateDueDate(data.assignmentDate || new Date()),
+                dueDate: data.dueDate || calculateDueDate(data.assignmentDate || new Date()),
                     generatedCode: code,
                     occurrence: cyl,
                     positionCode: pos,
                     content: row.content?.replace("{cyl}", cyl),
-                    label: row.label
+                    label: labelToUse
                 });
             }
         });
 
         return instances;
     };
-
-
-
-
-    console.log(noOfCylinders, "no of cylinders")
-
     const generatePayload = () => {
         const payload = {
             shipId: selectedShip.id,
@@ -235,12 +260,10 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             postponedDate: item.postponedDate
                         };
 
-                        // Check if this row is a dynamic row (not in default rows)
                         const currentSections = sectionType === "machinery" ? MACHINERY_SECTIONS : HULL_SECTIONS;
                         const sectionConfig = currentSections[section.sectionNumber];
                         const isDefaultRow = sectionConfig?.rows.some(r => r.id === item.rowId);
 
-                        // If not a default row, restore it as a dynamic row
                         if (!isDefaultRow) {
                             if (!restoredDynamicRows[sectionType][section.sectionNumber]) {
                                 restoredDynamicRows[sectionType][section.sectionNumber] = [];
@@ -587,8 +610,6 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                                 ))}
                                             </Select>
                                         </Grid2>
-
-
                                     </Grid2>
 
 
