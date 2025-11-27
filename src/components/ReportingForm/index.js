@@ -324,10 +324,12 @@ const ReportingForm = () => {
   const calculateDueDateBase = (value, surveyType) => {
     let yearsToAdd = 0;
     const isFiveYearSpecial = fiveYearSpecials.includes(normalize(surveyType));
-
+    if (isFiveYearSpecial) {
+      return moment(value).subtract(1, "days").format("YYYY-MM-DD");
+    }
     if (isFiveYearSpecial) yearsToAdd = 5;
 
-    if (!isFiveYearSpecial && (surveyType.includes("special") || surveyType.includes("continuous") || surveyType.includes("intermediate"))) {
+    if (!isFiveYearSpecial && (surveyType.includes("special") || surveyType.includes("continuous") || surveyType.includes("renewal") || surveyType.includes("intermediate"))) {
       yearsToAdd = 1;
     }
 
@@ -359,6 +361,7 @@ const ReportingForm = () => {
     const isFiveYearSpecial = fiveYearSpecials.includes(normalize(surveyType));
     const noRangeSurveys = ["docking survey", "tailshaft initial survey", "tailshaft renewal survey", "tailshaft periodical survey", "main boiler survey", "auxiliary boiler survey", "thermal oil heating systems survey", "exhaust gas steam generators and economisers survey"];
 
+    // Case 1: No range surveys
     if (noRangeSurveys.includes(normalize(surveyType))) {
       rangeFrom = "";
       rangeTo = "";

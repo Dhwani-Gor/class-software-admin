@@ -676,7 +676,7 @@ const TextEditor = ({ id }) => {
     const validSurveys = surveyDataList.filter((s) =>
       s.isGenerated === true &&
       s.activity?.surveyTypes?.report &&
-      s.statusReport !== "revoked"
+      s.reportStatus !== "revoked"
     );
 
     const surveyMap = new Map();
@@ -715,6 +715,7 @@ const TextEditor = ({ id }) => {
     };
 
     validSurveys.forEach((survey) => {
+      console.log(survey, "surveys")
       const certificateName = survey.activity.surveyTypes.report.name;
       const isStatutory = survey.activity.surveyTypes.statutorySurvey === true;
       const isAudit = survey.activity.surveyTypes.audit === true;
@@ -732,10 +733,8 @@ const TextEditor = ({ id }) => {
         ? new Date(latestInnerDateString)
         : null;
 
-      // FINAL surveyDate = endorsement date if exists → else certificate survey date
       const finalSurveyDate = latestInnerDate || certSurveyDate;
 
-      // Extract latest certificate-level due and ranges (DO NOT override with endorsement)
       const latestDue = survey.dueDate || "";
       const latestRangeFrom = survey.rangeFrom || "";
       const latestRangeTo = survey.rangeTo || "";
@@ -754,7 +753,6 @@ const TextEditor = ({ id }) => {
         typeOfCertificate: survey.typeOfCertificate || "",
       };
 
-      // If first entry → save directly
       if (!surveyMap.has(groupKey)) {
         surveyMap.set(groupKey, {
           row: newRow,
@@ -1219,7 +1217,7 @@ ${classificationRows}
       if (!cert?.activity?.surveyTypes?.report?.name) return "";
 
       const fullCert = cert;
-
+      console.log(fullCert, "full cert")
       const reportName = fullCert.activity.surveyTypes.report.name;
       const typeLabel = fullCert.activity.surveyTypes.name || "";
 
@@ -1406,14 +1404,12 @@ ${classificationRows}
               : ""
             }</td>
         <td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
-        <td>${row.typeOfCertificate === "full_term"
-              && dueDate
+        <td>${dueDate
               ? moment(dueDate).format("DD/MM/YYYY")
               : ""
             }</td>
-        <td>${row.typeOfCertificate === "full_term"
-              ? `${rangeFrom ? moment(rangeFrom).format("DD/MM/YYYY") : ""} - ${rangeTo ? moment(rangeTo).format("DD/MM/YYYY") : ""
-              }`
+        <td>${rangeFrom && rangeTo
+              ? `${rangeFrom ? moment(rangeFrom).format("DD/MM/YYYY") : ""} - ${rangeTo ? moment(rangeTo).format("DD/MM/YYYY") : ""}`
               : ""
             }</td>
         <td>${row.postponedDate || ""}</td>
