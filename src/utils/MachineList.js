@@ -45,19 +45,19 @@ export const MACHINERY_SECTIONS = {
       { id: "16", label: "Starting and reversing gear", hasPosition: true, isDue: true, isFrom: false },
       { id: "17", label: "Super charger/Turbocharger", hasPosition: true, isDue: true, isFrom: false },
       { id: "18", label: "Electric scavenge blower/ scavenge pump", hasPosition: true, isDue: true, isFrom: false },
-      { id: "16", label: "Piston cooling water air compressor", hasPosition: true, isDue: true, isFrom: false },
-      { id: "17", label: "Main engine air cooler", hasPosition: true, isDue: true, isFrom: false },
-      { id: "18", label: "Engine under piston scavenge air cooler", hasPosition: true, isDue: true, isFrom: false },
-      { id: "19", label: "Main engine attached bilge pump", hasPosition: true, isDue: true, isFrom: false },
-      { id: "20", label: "Main engine attached sea water cooling pump", hasPosition: true, isDue: true, isFrom: false },
-      { id: "21", label: "Main engine attached fresh water cooling pump", hasPosition: true, isDue: true, isFrom: false },
-      { id: "22", label: "Main engine attached lub. oil circulating pump", hasPosition: true, isDue: true, isFrom: false },
-      { id: "23", label: "Main engine attached O.F. booster pump", hasPosition: true, isDue: true, isFrom: false },
-      { id: "24", label: "Main engine attached air compressor", hasPosition: true, isDue: true, isFrom: false },
-      { id: "25", label: "Main engine attached rocker arm lub. oil pump", hasPosition: true, isDue: true, isFrom: false },
-      { id: "26", label: "Coupling", hasPosition: true, isDue: true, isFrom: false },
-      { id: "27", label: "Thrust Bearing", hasPosition: true, isDue: true, isFrom: false },
-      { id: "28", label: "Engine trial", hasPosition: true, isDue: true, isFrom: false },
+      { id: "19", label: "Piston cooling water air compressor", hasPosition: true, isDue: true, isFrom: false },
+      { id: "20", label: "Main engine air cooler", hasPosition: true, isDue: true, isFrom: false },
+      { id: "21", label: "Engine under piston scavenge air cooler", hasPosition: true, isDue: true, isFrom: false },
+      { id: "22", label: "Main engine attached bilge pump", hasPosition: true, isDue: true, isFrom: false },
+      { id: "23", label: "Main engine attached sea water cooling pump", hasPosition: true, isDue: true, isFrom: false },
+      { id: "24", label: "Main engine attached fresh water cooling pump", hasPosition: true, isDue: true, isFrom: false },
+      { id: "25", label: "Main engine attached lub. oil circulating pump", hasPosition: true, isDue: true, isFrom: false },
+      { id: "26", label: "Main engine attached O.F. booster pump", hasPosition: true, isDue: true, isFrom: false },
+      { id: "27", label: "Main engine attached air compressor", hasPosition: true, isDue: true, isFrom: false },
+      { id: "28", label: "Main engine attached rocker arm lub. oil pump", hasPosition: true, isDue: true, isFrom: false },
+      { id: "29", label: "Coupling", hasPosition: true, isDue: true, isFrom: false },
+      { id: "30", label: "Thrust Bearing", hasPosition: true, isDue: true, isFrom: false },
+      { id: "31", label: "Engine trial", hasPosition: true, isDue: true, isFrom: false },
     ],
   },
   2: {
@@ -560,6 +560,75 @@ export const HULL_SECTIONS = {
     ],
   },
   39: {
+    sectionId: "cargo_tank_for_tankers_only",
+    sectionName: "Cargo tanks for tankers only",
+    rows: [
+      {
+        id: "01",
+        label: "No.1 Cargo tank",
+        hasPosition: true,
+        isDue: false,
+        isFrom: false,
+      },
+      {
+        id: "02",
+        label: "No.2 Cargo tank",
+        hasPosition: true,
+        isDue: false,
+        isFrom: false,
+      },
+      {
+        id: "03",
+        label: "No.3 Cargo tank",
+        hasPosition: true,
+        isDue: false,
+        isFrom: false,
+      },
+      {
+        id: "04",
+        label: "No.4 Cargo tank",
+        hasPosition: true,
+        isDue: false,
+        isFrom: false,
+      },
+      {
+        id: "05",
+        label: "No.5 Cargo tank",
+        hasPosition: true,
+        isDue: false,
+        isFrom: false,
+      },
+      {
+        id: "06",
+        label: "No.6 Cargo tank",
+        hasPosition: true,
+        isDue: false,
+        isFrom: false,
+      },
+      {
+        id: "07",
+        label: "No.7 Cargo tank",
+        hasPosition: true,
+        isDue: false,
+        isFrom: false,
+      },
+      {
+        id: "08",
+        label: "No.8 Cargo tank",
+        hasPosition: true,
+        isDue: false,
+        isFrom: false,
+      },
+      {
+        id: "09",
+        label: "No.9 Cargo tank",
+        hasPosition: true,
+        isDue: false,
+        isFrom: false,
+      },
+    ],
+  },
+  40: {
     sectionId: "slop_tanks",
     sectionName: "Slop tank/s",
     rows: [
@@ -586,20 +655,20 @@ export const HULL_SECTIONS = {
       },
     ],
   },
-  40: {
+  41: {
     sectionId: "dry_tanks_void_spaces",
     sectionName: "Dry tanks/void spaces",
     rows: [
       {
         id: "01",
         label: "Dry tanks/void spaces",
-        hasPosition: true,
+        hasPosition: false,
         isDue: false,
         isFrom: false,
       },
     ],
   },
-  41: {
+  42: {
     sectionId: "peak_tanks",
     sectionName: "Peak tanks",
     rows: [
@@ -626,7 +695,7 @@ export const HULL_SECTIONS = {
       },
     ],
   },
-  42: {
+  43: {
     sectionId: "W.B & Storage tank/s",
     sectionName: "W.B & Storage tank/s",
     rows: [
@@ -639,7 +708,7 @@ export const HULL_SECTIONS = {
       },
     ],
   },
-  43: {
+  44: {
     sectionId: "Duct keels/Cofferdams/Stool spaces",
     sectionName: "Duct keels/Cofferdams/Stool spaces (for Bulk carriers)",
     rows: [
@@ -666,7 +735,7 @@ export const HULL_SECTIONS = {
       },
     ],
   },
-  44: {
+  45: {
     sectionId: "tunnels",
     sectionName: "Tunnel/s",
     rows: [
@@ -700,7 +769,7 @@ export const HULL_SECTIONS = {
       },
     ],
   },
-  45: {
+  46: {
     sectionId: "under_engine_boiler",
     sectionName: "Under engine/s/boiler/s",
     rows: [
@@ -727,14 +796,14 @@ export const HULL_SECTIONS = {
       },
     ],
   },
-  46: {
+  47: {
     sectionId: "misc_compartments",
     sectionName: "Misc. compartments",
     rows: [
       {
         id: "01",
         label: "Misc. compartments",
-        hasPosition: true,
+        hasPosition: false,
         isDue: false,
         isFrom: false,
       },
@@ -775,8 +844,8 @@ export const HULL_SECTIONS = {
       },
     ],
   },
-  47: {
-    sectionId: "cargo_tanks_tankers",
+  48: {
+    sectionId: "misc_items",
     sectionName: "Misc. items",
     rows: [
       { id: "01", label: "Misc. items", hasPosition: false, isDue: false, isFrom: false },

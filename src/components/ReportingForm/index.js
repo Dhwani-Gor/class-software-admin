@@ -325,9 +325,12 @@ const ReportingForm = () => {
     let yearsToAdd = 0;
     const isFiveYearSpecial = fiveYearSpecials.includes(normalize(surveyType));
     if (isFiveYearSpecial) {
-      return moment(value).subtract(1, "days").format("YYYY-MM-DD");
+      // Add 5 years first
+      let due = moment(value).add(5, "years");
+      // Then subtract 1 day
+      due = due.subtract(1, "day");
+      return due.format("YYYY-MM-DD");
     }
-    if (isFiveYearSpecial) yearsToAdd = 5;
 
     if (!isFiveYearSpecial && (surveyType.includes("special") || surveyType.includes("continuous") || surveyType.includes("renewal") || surveyType.includes("intermediate"))) {
       yearsToAdd = 1;
@@ -370,7 +373,7 @@ const ReportingForm = () => {
     else if (isFiveYearSpecial) {
       rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
       rangeTo = dueDate;
-      setValue("validitydate", new Date(new Date(dueDate).setDate(new Date(dueDate).getDate() - 1)).toISOString().slice(0, 10));
+      setValue("validitydate", dueDate);
     } else if (surveyType.toLowerCase().includes("annual")) {
       rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
       rangeTo = moment(due).add(3, "months").format("YYYY-MM-DD");
