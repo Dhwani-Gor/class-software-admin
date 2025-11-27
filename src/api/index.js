@@ -1173,3 +1173,23 @@ export const addCheckList = async (payload) => {
   }
   return result;
 };
+
+export const fetchMachineList = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/machineList/${id}`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const updateMachineryItem = async (id, payload) => {
+  let result;
+  try {
+    result = await axiosInstance.put(`/machineList/update/${id}`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};

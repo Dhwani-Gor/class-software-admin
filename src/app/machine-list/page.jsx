@@ -28,8 +28,6 @@ import {
 
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-
 import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
@@ -40,25 +38,29 @@ import {
     deleteMachineList,
     getAllClients,
     getMachineById,
+    updateMachineList,
 } from "@/api";
 import moment from "moment";
 
 const MachineList = () => {
     const router = useRouter();
-    const searchParams = useSearchParams();
-
     const [machineList, setMachineList] = useState([]);
-    console.log(machineList.length, "machine list")
     const [clientsList, setClientsList] = useState([]);
-
     const [selectedShipId, setSelectedShipId] = useState(null);
-
+    const [openEditDialog, setOpenEditDialog] = useState(false);
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(false);
-
-    const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
-    const [limit] = useState(10);
-    const [totalRows, setTotalRows] = useState(0);
+    const [editForm, setEditForm] = useState({
+        generatedCode: "",
+        label: "",
+        position: "",
+        dueDate: "",
+        assignmentDate: "",
+        postponedDate: "",
+        xMark: "",
+        positionCode: "",
+        machineSection: ""
+    });
 
     const [openDialog, setOpenDialog] = useState(false);
     const [selectedMachineId, setSelectedMachineId] = useState(null);
@@ -66,6 +68,57 @@ const MachineList = () => {
     // -------------------------------------------------------
     // Fetch Clients
     // -------------------------------------------------------
+    const handleEditClick = (item, sectionKey) => {
+        setEditForm({
+            generatedCode: item.generatedCode,
+            label: item.label || item.content || "",
+            position: item.position,
+            dueDate: moment(item.dueDate).format("YYYY-MM-DD"),
+            assignmentDate: moment(item.assignmentDate).format("YYYY-MM-DD"),
+            postponedDate: moment(item.postponedDate).format("YYYY-MM-DD"),
+            xMark: item.xMark || "",
+            positionCode: item.positionCode || "",
+            machineSection: sectionKey     // ← STORE SECTION KEY
+        });
+
+        setOpenEditDialog(true);
+    };
+
+    const handleUpdateMachine = async () => {
+        if (!selectedShipId) {
+            toast.error("Select ship first!");
+            return;
+        }
+
+        const payload = {
+            generatedCode: editForm.generatedCode,
+            machineSection: editForm.machineSection,
+            updateData: {
+                label: editForm.label,
+                dueDate: editForm.dueDate,
+                assignmentDate: editForm.assignmentDate,
+                postponedDate: editForm.postponedDate,
+                xMark: editForm.xMark,
+                positionCode: editForm.positionCode
+            }
+        };
+
+        try {
+            const res = await updateMachineList(selectedShipId, payload);
+            console.log(res);
+
+            if (res?.data?.status === "success") {
+                toast.success("Machinery updated successfully");
+                setOpenEditDialog(false);
+                setSelectedShipId(selectedShipId);
+            } else {
+                toast.error(res?.data?.message);
+            }
+        } catch (err) {
+            toast.error("Update failed");
+        }
+    };
+
     const fetchClients = async () => {
         try {
             const response = await getAllClients();
@@ -90,7 +143,6 @@ const MachineList = () => {
     const handleClientChange = (e) => {
         const shipId = e.target.value;
         setSelectedShipId(shipId);
-        setPage(1); // reset pagination when ship changes
     };
 
     // -------------------------------------------------------
@@ -118,7 +170,7 @@ const MachineList = () => {
         };
 
         fetchMachineList();
-    }, [selectedShipId, page, search]);
+    }, [selectedShipId, search]);
 
     // -------------------------------------------------------
     // Delete Logic
@@ -136,7 +188,7 @@ const MachineList = () => {
         if (!selectedMachineId) return;
 
         try {
-            const res = await deleteMachineList(selectedMachineId); // use shipId here
+            const res = await deleteMachineList(selectedMachineId);
 
             if (res?.data?.message) toast.success(res.data.message);
             setSelectedShipId("")
@@ -151,8 +203,6 @@ const MachineList = () => {
         }
     };
 
-
-
     const handleCancelDelete = () => {
         setSelectedMachineId(null);
         setOpenDialog(false);
@@ -161,21 +211,28 @@ const MachineList = () => {
 
     return (
         <Layout>
-            {/* --------------------------------------------------- */}
-            {/* Header */}
-            {/* --------------------------------------------------- */}
             <CommonCard sx={{ mt: 0 }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Typography variant="h4" fontWeight={700}>
-                        Machinery / Hull List
-                    </Typography>
+                    <Box>
+                        <Typography variant="h4" fontWeight={700}>
+                            Machinery / Hull List
+                        </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 2 }}>
+                        <CommonButton
+                            text="Edit Machinery"
+                            variant="contained"
+                            sx={{ textTransform: "capitalize" }}
+                            onClick={() => router.push(`/machine-list/${selectedShipId}`)}
+                        />
+                        <CommonButton
+                            text="Add Machinery"
+                            variant="contained"
+                            sx={{ textTransform: "capitalize" }}
+                            onClick={() => router.push("/machine-list/create")}
+                        />
 
-                    <CommonButton
-                        text="Add Machinery"
-                        variant="contained"
-                        sx={{ textTransform: "capitalize" }}
-                        onClick={() => router.push("/machine-list/create")}
-                    />
+                    </Box>
                 </Stack>
             </CommonCard>
 
@@ -228,7 +285,7 @@ const MachineList = () => {
                         </Typography>
                     ) : (
                         // Render sections dynamically
-                        Object.values(machineList?.machineData).map((section, index) => (
+                        Object.entries(machineList?.machineData).map(([sectionKey, section], index) => (
                             <Accordion key={index} defaultExpanded sx={{ mb: 2 }}>
                                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                                     <Typography variant="h6" fontWeight="bold">{section.sectionName || `Section ${index + 1}`}</Typography>
@@ -246,6 +303,7 @@ const MachineList = () => {
                                                 <TableCell>Assignment Date</TableCell>
                                                 <TableCell>Due Date</TableCell>
                                                 <TableCell>Postponed Date</TableCell>
+                                                <TableCell>Action</TableCell>
                                             </TableRow>
                                         </TableHead>
 
@@ -260,6 +318,16 @@ const MachineList = () => {
                                                     <TableCell>{moment(item.assignmentDate).format("DD/MM/YYYY") || "-"}</TableCell>
                                                     <TableCell>{moment(item.dueDate).format("DD/MM/YYYY") || "-"}</TableCell>
                                                     <TableCell>{moment(item.postponedDate).format("DD/MM/YYYY")}</TableCell>
+                                                    <TableCell>
+                                                        <IconButton
+                                                            color="primary"
+                                                            onClick={() => handleEditClick(item, sectionKey)}
+                                                        >
+                                                            <EditIcon />
+                                                        </IconButton>
+
+                                                    </TableCell>
+
                                                 </TableRow>
                                             ))}
 
@@ -300,6 +368,91 @@ const MachineList = () => {
                     </CommonButton>
                 </Box>
             </Dialog>
+            <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)}>
+                <DialogTitle>Edit Machinery</DialogTitle>
+
+                <Box p={3}>
+
+                    <CommonInput
+                        label="Label"
+                        disabled
+                        value={editForm.label}
+                        onChange={(e) => setEditForm({ ...editForm, label: e.target.value })}
+                    />
+
+                    <CommonInput
+                        type="date"
+                        label="Due Date"
+                        sx={{ mt: 2 }}
+                        value={editForm.dueDate}
+                        onChange={(e) =>
+                            setEditForm({ ...editForm, dueDate: e.target.value })
+                        }
+                    />
+                    <CommonInput
+                        type="date"
+                        label="Assignment Date"
+                        sx={{ mt: 2 }}
+                        value={editForm.assignmentDate}
+                        onChange={(e) =>
+                            setEditForm({ ...editForm, assignmentDate: e.target.value })
+                        }
+                    />
+                    <CommonInput
+                        type="date"
+                        label="Postponed Date"
+                        sx={{ mt: 2 }}
+                        value={editForm.postponedDate}
+                        onChange={(e) =>
+                            setEditForm({ ...editForm, postponedDate: e.target.value })
+                        }
+                    />
+
+                    {/* <FormControl fullWidth sx={{ mt: 2 }}>
+                        <Typography>X Mark</Typography>
+                        <Select
+                            value={editForm.xMark}
+                            onChange={(e) =>
+                                setEditForm({ ...editForm, xMark: e.target.value })
+                            }
+                        >
+                            <MenuItem value="Y">Y</MenuItem>
+                            <MenuItem value="N">N</MenuItem>
+                            <MenuItem value="NA">NA</MenuItem>
+                        </Select>
+                    </FormControl> */}
+                    <FormControl fullWidth sx={{ mt: 2 }}>
+                        <Typography>Status</Typography>
+                        <Select
+                            value={editForm.xMark}
+                            onChange={(e) =>
+                                setEditForm({ ...editForm, xMark: e.target.value })
+                            }
+                        >
+                            <MenuItem value="credited">Credited</MenuItem>
+                            <MenuItem value="waived off">Waived Off</MenuItem>
+                            <MenuItem value="postponed">Postponed</MenuItem>
+                        </Select>
+                    </FormControl>
+
+
+                    <Box display="flex" justifyContent="flex-end" mt={3}>
+                        <CommonButton
+                            variant="outlined"
+                            text="Cancel"
+                            onClick={() => setOpenEditDialog(false)}
+                        />
+
+                        <CommonButton
+                            sx={{ ml: 2 }}
+                            variant="contained"
+                            text="Update"
+                            onClick={handleUpdateMachine}
+                        />
+                    </Box>
+                </Box>
+            </Dialog>
+
         </Layout >
     );
 };

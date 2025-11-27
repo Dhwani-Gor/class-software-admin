@@ -24,7 +24,7 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { toast } from "react-toastify";
-import { addMachineList, getAllClients, getMachineById, updateMachineList } from "@/api";
+import { addMachineList, getAllClients, getMachineById, updateMachineList, updateMachineryItem } from "@/api";
 import CommonButton from "../CommonButton";
 import { MACHINERY_SECTIONS, HULL_SECTIONS, POSITION_OPTIONS } from "@/utils/MachineList";
 import { useRouter } from "next/navigation";
@@ -79,25 +79,42 @@ const MachineryHullManager = ({ mode, shipId }) => {
     //     return instances;
     // };
 
-    const generateRowInstances = (sectionNum, row, data) => {
+    const generateRowInstances = (sectionNum, row, data, isMachineryList = false) => {
         const instances = [];
         const numCyl = Number(noOfCylinders || 1);
 
-        // Use row-specific positions if available, otherwise fall back to global positions
-        const rowPositions = data.position && data.position.length > 0
-            ? data.position
-            : (position.length ? position : ["-"]);
+        let positionsToUse = [];
+
+        if (isMachineryList) {
+            // ✔ Machinery_list MUST always use global position
+            positionsToUse = position.length ? position : ["-"];
+        } else {
+            // ❗ Other sections use ONLY row-level position OR "-"
+            if (data.position && data.position.length > 0) {
+                positionsToUse = data.position;
+            } else {
+                positionsToUse = ["-"];   // <- NOT global position
+            }
+        }
+
+        console.log(
+            "GEN ROW",
+            "sectionNum:", sectionNum,
+            "rowId:", row.id,
+            "isMachineryList:", isMachineryList,
+            "positionsToUse:", positionsToUse
+        );
 
         const labelToUse = data.label || row.label || "";
 
-
-        rowPositions.forEach((pos) => {
+        positionsToUse.forEach((pos) => {
             for (let cyl = 1; cyl <= numCyl; cyl++) {
                 const code = `${String(sectionNum).padStart(2, "0")}${pos}${row.id}${String(cyl).padStart(2, "0")}`;
+
                 instances.push({
                     xMark: "X",
                     assignmentDate: data.assignmentDate || new Date().toISOString().split("T")[0],
-                dueDate: data.dueDate || calculateDueDate(data.assignmentDate || new Date()),
+                    dueDate: data.dueDate || calculateDueDate(data.assignmentDate || new Date()),
                     generatedCode: code,
                     occurrence: cyl,
                     positionCode: pos,
@@ -109,6 +126,8 @@ const MachineryHullManager = ({ mode, shipId }) => {
 
         return instances;
     };
+
+
     const generatePayload = () => {
         const payload = {
             shipId: selectedShip.id,
@@ -124,28 +143,34 @@ const MachineryHullManager = ({ mode, shipId }) => {
 
         Object.entries(sectionGroups).forEach(([sectionType, sections]) => {
             Object.keys(sections).forEach((sectionNum) => {
+
                 const section = sections[sectionNum];
                 const dynamicRowsForSection = dynamicRows[sectionType][sectionNum] || [];
                 const allRows = [...section.rows, ...dynamicRowsForSection];
+                console.log("PROCESSING SECTION →", section.sectionId, "sectionNum:", sectionNum);
 
                 let finalItems = [];
 
-                // --- STATIC ROWS FOR SECTION 01 ---
-                if (sectionNum === "01" && sectionType === "machinery") {
+                const isMachineryList = section.sectionId === "machinery_list";
+
+                if (sectionNum === "01" && isMachineryList) {
                     STATIC_ROWS_SECTION_01.forEach((staticRow) => {
-                        const repeatedRows = generateRowInstances(sectionNum, staticRow, {});
+                        const repeatedRows = generateRowInstances(sectionNum, staticRow, {}, true);
                         finalItems.push(...repeatedRows);
                     });
                 }
+
 
                 // --- DYNAMIC ROWS ---
                 allRows.forEach((row) => {
                     const fieldKey = `${sectionType}-${sectionNum}-${row.id}`;
                     const data = formData[fieldKey];
                     if (data?.xMark === "X") {
-                        const repeated = generateRowInstances(sectionNum, row, data);
+                        const isMachineryList = section.sectionId === "machinery_list";
+                        const repeated = generateRowInstances(sectionNum, row, data, isMachineryList);
                         finalItems.push(...repeated);
                     }
+
                 });
 
                 if (finalItems.length > 0) {
@@ -233,61 +258,109 @@ const MachineryHullManager = ({ mode, shipId }) => {
                 setShipType(data.engineType);
                 setNoOfCylinders(data.numberOfCylinders);
                 setPosition(data.globalPosition || []);
-                setEngineUnitsCountedFrom(data.engineUnitsCountedFrom);
+                setEngineUnitsCountedFrom(data.engineUnitsCountedFrom || "flywheel_end");
 
                 const populatedData = {};
                 const restoredDynamicRows = { machinery: {}, hull: {} };
+                const processedRows = new Set(); // Track unique row combinations
 
                 // Parse machineData from backend
                 Object.entries(data.machineData || {}).forEach(([sectionId, section]) => {
+                    // Detect if section belongs to machinery or hull
+                    const sectionType =
+                        MACHINERY_SECTIONS[section.sectionNumber]?.sectionId === sectionId
+                            ? "machinery"
+                            : "hull";
+
+                    const currentSections = sectionType === "machinery" ? MACHINERY_SECTIONS : HULL_SECTIONS;
+                    const sectionConfig = currentSections[section.sectionNumber];
+
+                    // Group items by row to get unique rows only
+                    const rowMap = new Map();
+
                     section.items.forEach((item) => {
-                        // Detect if section belongs to machinery or hull
-                        const sectionType =
-                            MACHINERY_SECTIONS[section.sectionNumber]?.sectionId === sectionId
-                                ? "machinery"
-                                : "hull";
+                        // Extract rowId from generatedCode
+                        // Format: SSPPRROOcc where:
+                        // SS = section (2 digits)
+                        // PP = position (1-2 chars: C, S, SL, etc.)
+                        // RR = row (2 digits)
+                        // OO = occurrence (2 digits)
+                        const generatedCode = item.generatedCode || "";
 
-                        const fieldKey = `${sectionType}-${section.sectionNumber}-${item.rowId}`;
+                        // Position can be 1 or 2 characters (C, S, SL, etc.)
+                        // So we need to find where the row ID starts
+                        // Remove section number (first 2 chars)
+                        const afterSection = generatedCode.substring(2);
 
-                        populatedData[fieldKey] = {
-                            xMark: "X",
-                            label: item.label,
-                            position: item.position || [],
-                            from: item.from,
-                            to: item.to,
-                            assignmentDate: item.assignmentDate,
-                            dueDate: item.dueDate,
-                            postponedDate: item.postponedDate
-                        };
+                        // Find the row ID: it's the 2 digits before the last 2 digits
+                        // Last 2 digits = occurrence
+                        // Previous 2 digits = row ID
+                        const rowId = afterSection.substring(afterSection.length - 4, afterSection.length - 2);
 
-                        const currentSections = sectionType === "machinery" ? MACHINERY_SECTIONS : HULL_SECTIONS;
-                        const sectionConfig = currentSections[section.sectionNumber];
-                        const isDefaultRow = sectionConfig?.rows.some(r => r.id === item.rowId);
+                        if (!rowMap.has(rowId)) {
+                            rowMap.set(rowId, []);
+                        }
+                        rowMap.get(rowId).push(item);
+                    });
 
-                        if (!isDefaultRow) {
-                            if (!restoredDynamicRows[sectionType][section.sectionNumber]) {
-                                restoredDynamicRows[sectionType][section.sectionNumber] = [];
+                    // Process each unique row
+                    rowMap.forEach((rowItems, rowId) => {
+                        const rowKey = `${sectionType}-${section.sectionNumber}-${rowId}`;
+
+                        console.log(`Processing row: ${rowKey}`, {
+                            rowId,
+                            itemCount: rowItems.length,
+                            codes: rowItems.map(i => i.generatedCode)
+                        });
+
+                        if (!processedRows.has(rowKey)) {
+                            processedRows.add(rowKey);
+
+                            // Get first item as reference (all items in same row have same dates/label)
+                            const firstItem = rowItems[0];
+
+                            // Collect all unique positions for this row
+                            const positions = [...new Set(rowItems.map(i => i.positionCode))].filter(Boolean);
+
+                            populatedData[rowKey] = {
+                                xMark: "X",
+                                label: firstItem.label || "",
+                                position: positions,
+                                from: firstItem.from,
+                                to: firstItem.to,
+                                assignmentDate: firstItem.assignmentDate,
+                                dueDate: firstItem.dueDate,
+                                postponedDate: firstItem.postponedDate
+                            };
+
+                            const isDefaultRow = sectionConfig?.rows.some(r => String(r.id).padStart(2, "0") === rowId);
+
+                            if (!isDefaultRow && firstItem.label) {
+                                if (!restoredDynamicRows[sectionType][section.sectionNumber]) {
+                                    restoredDynamicRows[sectionType][section.sectionNumber] = [];
+                                }
+
+                                const alreadyAdded = restoredDynamicRows[sectionType][section.sectionNumber]
+                                    .some(r => String(r.id).padStart(2, "0") === rowId);
+
+                                if (!alreadyAdded) {
+                                    restoredDynamicRows[sectionType][section.sectionNumber].push({
+                                        id: parseInt(rowId),
+                                        label: firstItem.label || "",
+                                        hasPosition: positions.length > 0,
+                                        hasFromTo: firstItem.from !== null || firstItem.to !== null,
+                                        isDue: firstItem.dueDate !== null,
+                                        isFrom: false
+                                    });
+                                }
                             }
-
-                            restoredDynamicRows[sectionType][section.sectionNumber].push({
-                                id: item.rowId,
-                                label: item.label || "",
-                                hasPosition: item.position && item.position.length > 0,
-                                hasFromTo: item.from !== null || item.to !== null,
-                                isDue: item.dueDate !== null,
-                                isFrom: false
-                            });
                         }
                     });
                 });
-
                 setFormData(populatedData);
                 setDynamicRows(restoredDynamicRows);
             }
-
-            setLoading(false);
         } catch (error) {
-            setLoading(false);
             toast.error(error?.message || "Failed to fetch machine data");
         }
     };
@@ -333,14 +406,11 @@ const MachineryHullManager = ({ mode, shipId }) => {
         }
     };
 
-
-
-
     const handleSubmit = async () => {
         const payload = generatePayload();
         console.log("payload", payload)
         const response = editingId
-            ? await updateMachineList(editingId, payload)
+            ? await updateMachineryItem(editingId, payload)
             : await addMachineList(payload);
         if (response?.data?.status === "success") {
             toast.success(response?.data?.message);
