@@ -1193,3 +1193,13 @@ export const updateMachineryItem = async (id, payload) => {
   }
   return result;
 };
+
+export const getAllChecklist = async () => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/checkList`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};

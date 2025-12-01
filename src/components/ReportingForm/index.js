@@ -374,7 +374,7 @@ const ReportingForm = () => {
       rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
       rangeTo = dueDate;
       setValue("validitydate", dueDate);
-    } else if (surveyType.toLowerCase().includes("annual")) {
+    } else if (surveyType?.toLowerCase().includes("annual")) {
       rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
       rangeTo = moment(due).add(3, "months").format("YYYY-MM-DD");
     } else {
@@ -606,7 +606,7 @@ const ReportingForm = () => {
           amdRemarks,
           stamp: 6,
           companyText: 8,
-          ...(reportName.toLocaleLowerCase() === "certificate of class" && {
+          ...(reportName?.toLocaleLowerCase() === "certificate of class" && {
             logo: 7,
           }),
         },
