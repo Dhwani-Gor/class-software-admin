@@ -19,7 +19,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Pagination from "@mui/material/Pagination";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import { deleteSurveyReport, deleteSurveyStatusReport, getAllIssuedDocuments, getAllReports, getJournalsList, markAsRevoked } from "@/api";
+import { deleteSurveyReport, deleteSurveyStatusReport, getAllChecklist, getAllIssuedDocuments, getAllReports, getJournalsList, markAsRevoked } from "@/api";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { Menu } from "@mui/material";
 import SendEmailDialog from "@/components/Dialogs/DownloadAllEmailDialog";
@@ -62,8 +62,8 @@ const Certificates = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedReports, setSelectedReports] = useState([]);
   const [createdUserEmail, setCreatedUserEmail] = useState("");
-  console.log("createdUserEmail", createdUserEmail);
-
+  const [checkList, setCheckList] = useState([]);
+  console.log(checkList, "cehcklist");
   const handleSort = (key) => {
     setSortConfig((prev) => {
       if (prev.key === key) {
@@ -143,13 +143,30 @@ const Certificates = () => {
     }
   };
 
+  const getCheckList = async () => {
+    try {
+      const res = await getAllChecklist();
+      console.log(res, "res-------------res");
+      const data = res?.data;
+      if (data?.status === "success" && Array.isArray(data?.data)) {
+        setCheckList(data.data);
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  useEffect(() => {
+    getCheckList();
+  }, []);
+
   useEffect(() => {
     setZipType(selectedFilter === "Certificates" ? "certificates" : selectedFilter === "Archive Documents" ? "archive-documents" : "reports");
   }, [selectedFilter]);
 
   const hasArchivePermission = data?.specialPermission?.some((perm) => perm.toLowerCase() === "archivedocuments");
 
-  const tabs = ["Certificates", "Archive Documents", "Reports"];
+  const tabs = ["Certificates", "Archive Documents", "Reports", "Checklist"];
 
   const formatDate = (dateString) =>
     dateString
