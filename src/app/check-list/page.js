@@ -2,6 +2,7 @@ import Layout from "@/Layout";
 import AdditionalFieldsList from "./create/page";
 import CommonCard from "@/components/CommonCard";
 import { Stack, Typography } from "@mui/material";
+import CheckListCreate from "./create/page";
 
 const AdditionalField = async () => {
   return (
@@ -14,7 +15,7 @@ const AdditionalField = async () => {
             </Typography>
           </Stack>
         </CommonCard>
-        <AdditionalFieldsList />
+        <CheckListCreate />
       </Layout>
     </>
   );

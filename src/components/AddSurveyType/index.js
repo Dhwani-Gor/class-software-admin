@@ -9,6 +9,7 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import DocxUpload from "@/utils/DocxUpload";
 
 // Form validation schema
 const schema = yup.object().shape({
@@ -81,6 +82,7 @@ const SurveyTypeForm = ({ mode = "create", surveyTypeId = null, defaultValues = 
       setValue("name", data.name || "");
       setValue("abbreviation", data.abbreviation || "");
       setValue("reportId", data.reportId || null);
+      setValue("checkListDocument", data.checkListDocument || "");
 
       // Convert boolean fields to single category selection
       let category = "";
@@ -110,31 +112,44 @@ const SurveyTypeForm = ({ mode = "create", surveyTypeId = null, defaultValues = 
   const onSubmit = async (data) => {
     try {
       setIsSubmitting(true);
+      const formData = new FormData();
+      formData.append("name", data.name);
+      formData.append("abbreviation", data.abbreviation);
+      formData.append("statutorySurvey", data.surveyCategory === "statutory");
+      formData.append("classificationSurvey", data.surveyCategory === "classification");
+      formData.append("audit", data.surveyCategory === "audit");
 
+      // if (data.reportIds) formData.append("reportIds", JSON.stringify(data.reportIds));
+      formData.append("reportId", data.reportId);
+      if (data.checklistFile) formData.append("checkListDocument", data.checklistFile);
       // Convert single category back to boolean fields for API
-      const payload = {
-        name: data.name,
-        abbreviation: data.abbreviation,
-        reportId: data.reportId,
-        statutorySurvey: data.surveyCategory === "statutory",
-        classificationSurvey: data.surveyCategory === "classification",
-        audit: data.surveyCategory === "audit",
-      };
+      // const payload = {
+      //   name: data.name,
+      //   abbreviation: data.abbreviation,
+      //   statutorySurvey: data.surveyCategory === "statutory",
+      //   classificationSurvey: data.surveyCategory === "classification",
+      //   audit: data.surveyCategory === "audit",
+      // };
 
-      let res;
-      if (isUpdate) {
-        res = await updateSurveyType(surveyTypeId, payload);
-        if (res?.data?.status === "success") {
-          toast.success("Survey type updated successfully");
-          setTimeout(() => router.push("/survey-types"), 2000);
-        } else throw new Error(res?.data?.message || "Failed to update survey type");
-      } else {
-        res = await createSurveyType(payload);
-        if (res?.data?.status === "success") {
-          toast.success("Survey type created successfully");
-          router.push("/survey-types");
-        } else throw new Error(res?.data?.message || "Failed to create survey type");
-      }
+      const res = isUpdate ? await updateSurveyType(surveyTypeId, formData) : await createSurveyType(formData);
+
+      if (res?.data?.status === "success") {
+        toast.success(`Survey type ${isUpdate ? "updated" : "created"} successfully`);
+        router.push("/survey-types");
+      } else throw new Error(res?.data?.message || "Failed to save survey type");
+      // if (isUpdate) {
+      //   res = await updateSurveyType(surveyTypeId, payload);
+      //   if (res?.data?.status === "success") {
+      //     toast.success("Survey type updated successfully");
+      //     setTimeout(() => router.push("/survey-types"), 2000);
+      //   } else throw new Error(res?.data?.message || "Failed to update survey type");
+      // } else {
+      //   res = await createSurveyType(payload);
+      //   if (res?.data?.status === "success") {
+      //     toast.success("Survey type created successfully");
+      //     router.push("/survey-types");
+      //   } else throw new Error(res?.data?.message || "Failed to create survey type");
+      // }
     } catch (error) {
       console.error("Error:", error);
       toast.error(error.message || "An error occurred");
@@ -256,6 +271,9 @@ const SurveyTypeForm = ({ mode = "create", surveyTypeId = null, defaultValues = 
                           />
                         )}
                       />
+                      <Grid2 xs={12} mt={2}>
+                        <DocxUpload control={control}  />
+                      </Grid2>
                     </FormControl>
                   </Grid2>
 
