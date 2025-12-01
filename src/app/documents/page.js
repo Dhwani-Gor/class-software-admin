@@ -20,8 +20,9 @@ import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
 import CommonInput from "@/components/CommonInput";
-import { deleteDocument, getAllDocuments } from "@/api";
+import { createDocument, deleteDocument, getAllDocuments } from "@/api";
 import { toast } from "react-toastify";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 
 const Documents = () => {
   const router = useRouter();
@@ -117,6 +118,37 @@ const Documents = () => {
               <EditIcon />
             </IconButton>
           </Tooltip>
+          <Tooltip title="Copy Document">
+            <IconButton
+              color="primary"
+              onClick={async () => {
+                try {
+                  const { id, createdAt, updatedAt, createdBy, updatedBy, createdByUser, updatedByUser, ...payload } = params.row;
+
+                  // Add clone flag
+                  payload.clone = true;
+
+                  // Add " - copy" to the name
+                  payload.name = `${payload.name} - copy`;
+
+                  const res = await createDocument(payload);
+
+                  if (res?.data?.status === "success") {
+                    toast.success("Document copied successfully");
+                    fetchAllDocuments();
+                  } else {
+                    toast.error("Failed to copy document");
+                  }
+                } catch (err) {
+                  console.error(err);
+                  toast.error("Something went wrong");
+                }
+              }}
+            >
+              <ContentCopyIcon />
+            </IconButton>
+          </Tooltip>
+
           <Tooltip title="Delete Document">
             <IconButton
               color="error"

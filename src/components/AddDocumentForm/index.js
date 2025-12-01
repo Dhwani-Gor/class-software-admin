@@ -330,7 +330,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
         formData.append("type", formValues.type);
         formData.append("abbreviation", formValues.abbreviation);
 
-        // Append files
         if (formValues.fullTermDocument instanceof File) formData.append("fullTermDocument", formValues.fullTermDocument);
         if (formValues.shortTermDocument instanceof File) formData.append("shortTermDocument", formValues.shortTermDocument);
         if (formValues.interimDocument instanceof File) formData.append("interimDocument", formValues.interimDocument);
