@@ -38,7 +38,6 @@ const MachineryHullManager = ({ mode, shipId }) => {
     const [selectedShip, setSelectedShip] = useState({ id: "", shipName: "" });
     const [position, setPosition] = useState([]);
     const [clientsList, setClientsList] = useState([]);
-    const [machineList, setMachineList] = useState([]);
     const [dynamicRows, setDynamicRows] = useState({ machinery: {}, hull: {} });
     const [editingId, setEditingId] = useState(null);
     const [engineUnitsCountedFrom, setEngineUnitsCountedFrom] = useState("flywheel_end");
@@ -53,16 +52,38 @@ const MachineryHullManager = ({ mode, shipId }) => {
         { id: "03", content: "No {cyl} Crankpin, Bearing & webs", hasPosition: true, hasFromTo: false }
     ];
 
-    // const generateRowInstances = (sectionNum, row, data) => {
+    // const generateRowInstances = (sectionNum, row, data, isMachineryList = false) => {
     //     const instances = [];
     //     const numCyl = Number(noOfCylinders || 1);
 
-    //     // Use global positions if available
-    //     const positions = position.length ? position : ["-"];
+    //     let positionsToUse = [];
 
-    //     positions.forEach((pos) => {
+    //     if (isMachineryList) {
+    //         // ✔ Machinery_list MUST always use global position
+    //         positionsToUse = position.length ? position : ["-"];
+    //     } else {
+    //         // ❗ Other sections use ONLY row-level position OR "-"
+    //         if (data.position && data.position.length > 0) {
+    //             positionsToUse = data.position;
+    //         } else {
+    //             positionsToUse = ["-"];   // <- NOT global position
+    //         }
+    //     }
+
+    //     console.log(
+    //         "GEN ROW",
+    //         "sectionNum:", sectionNum,
+    //         "rowId:", row.id,
+    //         "isMachineryList:", isMachineryList,
+    //         "positionsToUse:", positionsToUse
+    //     );
+
+    //     const labelToUse = data.label || row.label || "";
+
+    //     positionsToUse.forEach((pos) => {
     //         for (let cyl = 1; cyl <= numCyl; cyl++) {
     //             const code = `${String(sectionNum).padStart(2, "0")}${pos}${row.id}${String(cyl).padStart(2, "0")}`;
+
     //             instances.push({
     //                 xMark: "X",
     //                 assignmentDate: data.assignmentDate || new Date().toISOString().split("T")[0],
@@ -71,7 +92,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
     //                 occurrence: cyl,
     //                 positionCode: pos,
     //                 content: row.content?.replace("{cyl}", cyl),
-    //                 label: row.label
+    //                 label: labelToUse
     //             });
     //         }
     //     });
@@ -83,50 +104,76 @@ const MachineryHullManager = ({ mode, shipId }) => {
         const instances = [];
         const numCyl = Number(noOfCylinders || 1);
 
-        let positionsToUse = [];
+        const globalPositions = position.length ? position : ["-"];
+
+        // Determine row-level positions
+        let rowPositions = [];
 
         if (isMachineryList) {
-            // ✔ Machinery_list MUST always use global position
-            positionsToUse = position.length ? position : ["-"];
+            // machinery_list uses global positions as row positions
+            rowPositions = data.position?.length ? data.position : ["-"];
         } else {
-            // ❗ Other sections use ONLY row-level position OR "-"
-            if (data.position && data.position.length > 0) {
-                positionsToUse = data.position;
-            } else {
-                positionsToUse = ["-"];   // <- NOT global position
-            }
+            // other sections use only row-level position data
+            rowPositions = data.position?.length ? data.position : ["-"];
         }
-
-        console.log(
-            "GEN ROW",
-            "sectionNum:", sectionNum,
-            "rowId:", row.id,
-            "isMachineryList:", isMachineryList,
-            "positionsToUse:", positionsToUse
-        );
 
         const labelToUse = data.label || row.label || "";
 
-        positionsToUse.forEach((pos) => {
-            for (let cyl = 1; cyl <= numCyl; cyl++) {
-                const code = `${String(sectionNum).padStart(2, "0")}${pos}${row.id}${String(cyl).padStart(2, "0")}`;
+        // Loop based on section type
+        if (isMachineryList) {
+            // ✔ Include global position
+            globalPositions.forEach((globalPos) => {
+                rowPositions.forEach((rowPos) => {
+                    for (let cyl = 1; cyl <= numCyl; cyl++) {
 
-                instances.push({
-                    xMark: "X",
-                    assignmentDate: data.assignmentDate || new Date().toISOString().split("T")[0],
-                    dueDate: data.dueDate || calculateDueDate(data.assignmentDate || new Date()),
-                    generatedCode: code,
-                    occurrence: cyl,
-                    positionCode: pos,
-                    content: row.content?.replace("{cyl}", cyl),
-                    label: labelToUse
+                        const code =
+                            `${String(sectionNum).padStart(2, "0")}` +
+                            `${globalPos}` +
+                            `${row.id}` +
+                            `${String(cyl).padStart(2, "0")}` +
+                            `${rowPos}`;
+
+                        instances.push({
+                            xMark: "X",
+                            assignmentDate: data.assignmentDate || new Date().toISOString().split("T")[0],
+                            dueDate: data.dueDate || calculateDueDate(data.assignmentDate || new Date()),
+                            generatedCode: code,
+                            occurrence: cyl,
+                            positionCode: rowPos,
+                            globalPositionCode: globalPos,
+                            content: row.content?.replace("{cyl}", cyl),
+                            label: labelToUse,
+                        });
+                    }
                 });
-            }
-        });
+            });
+        } else {
+            // ❗ No global position
+            rowPositions.forEach((rowPos) => {
+                for (let cyl = 1; cyl <= numCyl; cyl++) {
+
+                    const code =
+                        `${String(sectionNum).padStart(2, "0")}` +
+                        `${row.id}` +
+                        `${String(cyl).padStart(2, "0")}` +
+                        `${rowPos}`;
+
+                    instances.push({
+                        xMark: "X",
+                        assignmentDate: data.assignmentDate || new Date().toISOString().split("T")[0],
+                        dueDate: data.dueDate || calculateDueDate(data.assignmentDate || new Date()),
+                        generatedCode: code,
+                        occurrence: cyl,
+                        positionCode: rowPos,
+                        content: row.content?.replace("{cyl}", cyl),
+                        label: labelToUse,
+                    });
+                }
+            });
+        }
 
         return instances;
     };
-
 
     const generatePayload = () => {
         const payload = {
@@ -408,7 +455,6 @@ const MachineryHullManager = ({ mode, shipId }) => {
 
     const handleSubmit = async () => {
         const payload = generatePayload();
-        console.log("payload", payload)
         const response = editingId
             ? await updateMachineryItem(editingId, payload)
             : await addMachineList(payload);
@@ -416,6 +462,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
             toast.success(response?.data?.message);
             router.push("/machine-list");
             setEditingId(null);
+
             resetForm();
         } else {
             toast.error(response?.response?.data?.message);

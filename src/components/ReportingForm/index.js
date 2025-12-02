@@ -11,7 +11,7 @@ import CommonButton from "@/components/CommonButton";
 import CommonCard from "@/components/CommonCard";
 import Grid2 from "@mui/material/Grid2";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
-import { createReportDetail, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument, addUnArchiveDocument, updateActivityDetails } from "@/api";
+import { createReportDetail, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument, addUnArchiveDocument, updateActivityDetails, getSystemVariableDetails, getAllSystemVariables } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { getAllActivities } from "@/api";
@@ -78,6 +78,10 @@ const ReportingForm = () => {
   const [surveyType, setSurveyType] = useState(false);
   const [endorsementDate, setEndorsementDate] = useState(null);
   const [doingEndorsement, setDoingEndorsement] = useState(false);
+  const [systemVariable, setSystemVariable] = useState([]);
+  const [stampId, setStampId] = useState(null);
+  const [companyLogoId, setCompanyLogoId] = useState(null);
+  const [endorsementStamp, setEndorsementStamp] = useState(null);
 
   useEffect(() => {
     if (reportDetails) {
@@ -220,6 +224,25 @@ const ReportingForm = () => {
     return tableData?.some((activity) => activity.status !== "Completed");
   };
 
+  const getSystemVariable = async () => {
+    const response = await getAllSystemVariables();
+    const vars = response?.data?.data || [];
+
+    if (vars.length > 0) {
+      setSystemVariable(vars);
+
+      const stamp = vars.find((item) => item.name === "company_stamp")?.id || null;
+      const logo = vars.find((item) => item.name === "company_logo")?.id || null;
+
+      setStampId(stamp);
+      setCompanyLogoId(logo);
+      setEndorsementStamp(stamp);
+    }
+  };
+
+  useEffect(() => {
+    getSystemVariable();
+  }, []);
   const handleClientChange = (event) => {
     const selectedId = event.target.value;
     const selectedClient = clientsList.find((client) => client.id === selectedId);
@@ -604,10 +627,10 @@ const ReportingForm = () => {
           ...(!isArrayData ? extraFieldsOrEndorsements : {}),
           type: "image",
           amdRemarks,
-          stamp: 6,
+          stamp: stampId,
           companyText: 8,
           ...(reportName?.toLocaleLowerCase() === "certificate of class" && {
-            logo: 7,
+            logo: companyLogoId,
           }),
         },
       };
@@ -1283,6 +1306,7 @@ const ReportingForm = () => {
           reportDetailsId={reportDetails?.id}
           endorsedIssuedBy={surveyorOptions}
           surveyorOptions={surveyorOptions}
+          endorsementStamp={endorsementStamp}
         />
       )}
       <AmendmentRemarksDialog open={showAmendmentDialog} onClose={() => setShowAmendmentDialog(false)} onSubmit={handleAmendmentSubmit} isLoading={continueBtnLoading} />

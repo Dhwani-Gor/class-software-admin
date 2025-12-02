@@ -40,7 +40,7 @@ const SurveyTypeForm = ({ mode = "create", surveyTypeId = null, defaultValues = 
       name: "",
       abbreviation: "",
       reportId: null,
-      surveyCategory: "", // Changed from individual boolean fields to single category
+      surveyCategory: "",
       ...defaultValues,
     },
   });
@@ -118,38 +118,14 @@ const SurveyTypeForm = ({ mode = "create", surveyTypeId = null, defaultValues = 
       formData.append("statutorySurvey", data.surveyCategory === "statutory");
       formData.append("classificationSurvey", data.surveyCategory === "classification");
       formData.append("audit", data.surveyCategory === "audit");
-
-      // if (data.reportIds) formData.append("reportIds", JSON.stringify(data.reportIds));
-      formData.append("reportId", data.reportId);
+      if (data.reportId) formData.append("reportId", data.reportId);
       if (data.checklistFile) formData.append("checkListDocument", data.checklistFile);
-      // Convert single category back to boolean fields for API
-      // const payload = {
-      //   name: data.name,
-      //   abbreviation: data.abbreviation,
-      //   statutorySurvey: data.surveyCategory === "statutory",
-      //   classificationSurvey: data.surveyCategory === "classification",
-      //   audit: data.surveyCategory === "audit",
-      // };
-
       const res = isUpdate ? await updateSurveyType(surveyTypeId, formData) : await createSurveyType(formData);
 
       if (res?.data?.status === "success") {
         toast.success(`Survey type ${isUpdate ? "updated" : "created"} successfully`);
         router.push("/survey-types");
       } else throw new Error(res?.data?.message || "Failed to save survey type");
-      // if (isUpdate) {
-      //   res = await updateSurveyType(surveyTypeId, payload);
-      //   if (res?.data?.status === "success") {
-      //     toast.success("Survey type updated successfully");
-      //     setTimeout(() => router.push("/survey-types"), 2000);
-      //   } else throw new Error(res?.data?.message || "Failed to update survey type");
-      // } else {
-      //   res = await createSurveyType(payload);
-      //   if (res?.data?.status === "success") {
-      //     toast.success("Survey type created successfully");
-      //     router.push("/survey-types");
-      //   } else throw new Error(res?.data?.message || "Failed to create survey type");
-      // }
     } catch (error) {
       console.error("Error:", error);
       toast.error(error.message || "An error occurred");
@@ -250,7 +226,7 @@ const SurveyTypeForm = ({ mode = "create", surveyTypeId = null, defaultValues = 
                             onChange={(event, newValue) => {
                               field.onChange(newValue?.id || null);
                             }}
-                            filterOptions={(options, { inputValue }) => options.filter((option) => option.name.toLowerCase().includes(inputValue.toLowerCase()))}
+                            filterOptions={(options, { inputValue }) => options?.filter((option) => option.name.toLowerCase().includes(inputValue.toLowerCase()))}
                             renderTags={(tagValue, getTagProps) => tagValue.map((option, index) => <Chip key={option.id} label={option.name} {...getTagProps({ index })} />)}
                             renderInput={(params) => (
                               <TextField
@@ -272,7 +248,7 @@ const SurveyTypeForm = ({ mode = "create", surveyTypeId = null, defaultValues = 
                         )}
                       />
                       <Grid2 xs={12} mt={2}>
-                        <DocxUpload control={control}  />
+                        <DocxUpload control={control} />
                       </Grid2>
                     </FormControl>
                   </Grid2>
