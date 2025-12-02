@@ -19,7 +19,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Pagination from "@mui/material/Pagination";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import { deleteSurveyReport, deleteSurveyStatusReport, getAllChecklist, getAllIssuedDocuments, getAllReports, getJournalsList, markAsRevoked } from "@/api";
+import { deleteCheckList, deleteSurveyReport, deleteSurveyStatusReport, getAllChecklist, getAllIssuedDocuments, getAllReports, getJournalsList, getSingleChecklist, markAsRevoked } from "@/api";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { Menu } from "@mui/material";
 import SendEmailDialog from "@/components/Dialogs/DownloadAllEmailDialog";
@@ -63,7 +63,8 @@ const Certificates = () => {
   const [selectedReports, setSelectedReports] = useState([]);
   const [createdUserEmail, setCreatedUserEmail] = useState("");
   const [checkList, setCheckList] = useState([]);
-  console.log(checkList, "cehcklist");
+  const [selectedCheckList, setSelectedCheckList] = useState(null);
+
   const handleSort = (key) => {
     setSortConfig((prev) => {
       if (prev.key === key) {
@@ -74,6 +75,18 @@ const Certificates = () => {
     });
   };
 
+  const getSelectedCheckList = async (id) => {
+    try {
+      const res = await getSingleChecklist(id);
+      setSelectedCheckList(res?.data?.data);
+    } catch (error) {
+      console.error("Error fetching single checklist:", error);
+    }
+  };
+
+  // useEffect(() => {
+  //   getSelectedCheckList();
+  // }, [selectedFilter === "Checklist"]);
   // === Handlers for Certificates ===
   const handleSelectAllCertificates = (rows) => {
     if (selectedCertificates.length === rows.length) {
@@ -144,21 +157,38 @@ const Certificates = () => {
   };
 
   const getCheckList = async () => {
+    setLoading(true);
     try {
-      const res = await getAllChecklist();
-      console.log(res, "res-------------res");
-      const data = res?.data;
-      if (data?.status === "success" && Array.isArray(data?.data)) {
-        setCheckList(data.data);
+      const res = showAll ? await getAllChecklist("", "", debouncedSearch) : await getAllChecklist(page, limit, debouncedSearch);
+      if (res?.data?.status === "success" && Array.isArray(res?.data?.data)) {
+        setCheckList(res?.data?.data);
+        setTotalRows(res?.data?.results || res?.data?.data?.length);
+        setTotalCount(res?.data?.results || res?.data?.data?.length);
+      } else {
+        setCheckList([]);
+        setTotalRows(0);
+        setTotalCount(0);
       }
     } catch (e) {
-      console.log(e);
+      setCheckList([]);
+      setTotalRows(0);
+      setTotalCount(0);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    getCheckList();
-  }, []);
+    if (selectedFilter === "Checklist") {
+      getCheckList();
+    }
+  }, [selectedFilter, page, limit, debouncedSearch, showAll]);
+
+  useEffect(() => {
+    if (selectedFilter === "Checklist") {
+      getCheckList();
+    }
+  }, [selectedFilter, page, limit, debouncedSearch, showAll]);
 
   useEffect(() => {
     setZipType(selectedFilter === "Certificates" ? "certificates" : selectedFilter === "Archive Documents" ? "archive-documents" : "reports");
@@ -229,6 +259,7 @@ const Certificates = () => {
   };
 
   const handleConfirmDelete = async () => {
+
     setOpenDialog(false);
     if (!selectedDocument) return;
     try {
@@ -240,15 +271,19 @@ const Certificates = () => {
         await deleteSurveyReport(selectedDocument.id);
         toast.success("Report deleted successfully");
         fetchReportsData();
+      } else if (selectedDocument.type === "checklist") {
+        await deleteCheckList(selectedDocument.id);
+        toast.success("Checklist deleted successfully");
+        getCheckList();
       }
     } catch (e) {
       console.error("Error deleting:", e.response?.data || e.message);
-      toast.error("Failed to delete.");
     }
   };
 
   const handleCancelDelete = () => {
     setSelectedDocument(null);
+    setSelectedCheckList(nulll);
     setOpenDialog(false);
   };
 
@@ -431,15 +466,14 @@ const Certificates = () => {
     let masterList = [];
 
     if (selectedFilter === "Certificates") masterList = certificatesList;
-    console.log("certidi", certificatesList);
     if (selectedFilter === "Archive Documents") masterList = certificatesList;
     if (selectedFilter === "Reports") masterList = reportsList;
+    if (selectedFilter === "Checklist") masterList = checkList;
 
     const selectedIds = selectedFilter === "Certificates" ? selectedCertificates : selectedFilter === "Archive Documents" ? selectedArchives : selectedFilter === "Reports" ? selectedReports : [];
 
     return selectedIds.map((id) => {
       const fullRow = masterList.find((item) => item.id === id);
-      console.log("fullRow", fullRow);
       return {
         ...fullRow,
         shipName: fullRow?.shipName || fullRow?.vesselName || "", // adjust your field
@@ -697,6 +731,142 @@ const Certificates = () => {
                 </TableContainer>
               )}
 
+              {selectedFilter === "Checklist" && (
+                <TableContainer component={Paper} sx={{ mt: 2 }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                        <TableCell sx={{ fontWeight: 600 }}>No.</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Ship Name</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Survey Type</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Report Number</TableCell>
+
+                        <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+
+                    <TableBody>
+                      {checkList.map((item, idx) => (
+                        <TableRow key={item.id}>
+                          {/* Ship Name */}
+                          <TableCell>{(page - 1) * limit + idx + 1}</TableCell>
+
+                          <TableCell>{item?.client?.shipName || "N/A"}</TableCell>
+
+                          {/* Report Number */}
+                          <TableCell>{item?.surveyType?.name || "N/A"}</TableCell>
+
+                          <TableCell>{item?.reportNo || "N/A"}</TableCell>
+
+                          {/* Checklist title */}
+
+                          {/* Checklist description */}
+
+                          <TableCell>
+                            <Tooltip title="Preview Checklist">
+                              <IconButton
+                                color="info"
+                                onClick={() => {
+                                  getSelectedCheckList(item.id);
+
+                                  const notesArray = item?.checkListData?.notes ? item.checkListData.notes.split(/\d+\s*/).filter(Boolean) : [];
+
+                                  const html = `
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; color: #000; }
+    .logo-title { text-align: center; font-weight: bold; font-size: 26px; padding-bottom: 5px; }
+    .subtitle { text-align: center; font-size: 18px; margin-top: -5px; }
+    .survey-type { text-align: center; font-size: 16px; font-weight: 600; margin-top: 5px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; margin-top: 20px; font-size: 14px; row-gap: 8px; }
+    .label { font-weight: 600; margin-bottom: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    table, th, td { border: 1px solid #000; }
+    th { text-align: center; font-weight: 600; font-size: 14px; background-color: #f0f0f0; }
+    td { padding: 6px; font-size: 13px; }
+    .notes-title { font-weight: 600; margin-top: 25px; font-size: 14px; }
+    .notes-table td { font-size: 12px; }
+  </style>
+</head>
+<body>
+
+  <div class="logo-title">Indian Register of Shipping</div>
+  <div class="subtitle">SAFETY CONSTRUCTION SURVEY CHECKLIST</div>
+
+  <div class="survey-type">Type of Survey: ${item?.surveyType?.name || "—"}</div>
+
+  <div class="grid">
+    <div><span class="label">Name of Ship:</span> ${item?.client?.shipName || "................"}</div>
+    <div><span class="label">I.R. No.:</span> ${item?.reportNo || "................"}</div>
+    <div><span class="label">IMO No.:</span> ${item?.checkListData?.header?.imoNumber || "................"}</div>
+    <div><span class="label">Port of Survey:</span> ${item?.checkListData?.header?.portOfSurvey || "................"}</div>
+  </div>
+
+  <div class="notes-title">NOTES:</div>
+  <table class="notes-table">
+    ${notesArray.length > 0 ? notesArray.map((note, index) => `<tr><td>${index + 1}</td><td>${note.trim()}</td></tr>`).join("") : ""}
+  </table>
+
+  <table>
+    <tr>
+      <th style="width: 60px;">Sr. No.</th>
+      <th>Item</th>
+      <th style="width: 120px;">Y / N / NO / NA / P</th>
+    </tr>
+
+    ${
+      item?.checkListData?.checkList
+        ?.map(
+          (row, index) => `
+            <tr>
+              <td style="text-align:center;">${row.number || index + 1}</td>
+              <td>${row.item || ""}</td>
+              <td style="text-align:center;">${row.selected || "—"}</td>
+            </tr>
+          `
+        )
+        .join("") || ""
+    }
+  </table>
+
+  <p style="font-size:12px; text-align:center; margin-top:30px;">
+    Generated by MCBG System
+  </p>
+
+</body>
+</html>
+`;
+
+                                  const blob = new Blob([html], { type: "text/html" });
+                                  const url = URL.createObjectURL(blob);
+
+                                  setPreviewFile(url);
+                                  setOpenPreviewModal(true);
+                                }}
+                              >
+                                <VisibilityIcon />
+                              </IconButton>
+                            </Tooltip>
+
+                            <Tooltip title="Delete Checklist">
+                              <IconButton
+                                color="error"
+                                onClick={() => {
+                                  setSelectedDocument({ id: item.id, type: "checklist" });
+                                  setOpenDialog(true);
+                                }}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </Tooltip>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
               {selectedFilter === "Certificates" && (
                 <TableContainer component={Paper}>
                   <Table sx={{ marginTop: 2 }}>

@@ -107,7 +107,6 @@ const MachineList = () => {
 
         try {
             const res = await updateMachineList(selectedShipId, payload);
-            console.log(res);
 
             if (res?.data?.status === "success") {
                 toast.success("Machinery updated successfully");

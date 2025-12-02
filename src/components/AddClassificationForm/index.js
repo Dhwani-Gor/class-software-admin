@@ -10,7 +10,6 @@ import { toast } from "react-toastify";
 import { calculateDates } from "@/utils/DateCalculation";
 
 const ClassificationForm = ({ mode, variableId, selectedShip, onSuccess }) => {
-  console.log(mode, variableId, selectedShip, onSuccess, "classification");
   const [classificationRows, setClassificationRows] = useState([]);
   const [cancelled, setCancelled] = useState(false);
   const [surveyTypes, setSurveyTypes] = useState([]);

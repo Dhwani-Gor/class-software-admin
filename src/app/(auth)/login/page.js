@@ -84,7 +84,6 @@ const Login = () => {
   };
 
   const onForgotSubmit = async (data) => {
-    console.log(data, "dtaa");
     try {
       const res = await forgotPassword({ email: data.usernameOrEmail });
       if (res?.data?.status === "success") {

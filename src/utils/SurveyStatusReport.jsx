@@ -22,7 +22,6 @@ const TextEditor = ({ id }) => {
   const [statutoryData, setStatutoryData] = useState([]);
   const [auditsData, setAuditsData] = useState([]);
   const [machineList, setMachineList] = useState([]);
-  console.log(machineList, "machineList");
   const [systemVariables, setSystemVariables] = useState();
   const companyName = systemVariables?.data?.find((item) => item.name === "company_name")?.information || "-";
   const companyLogo = systemVariables?.data?.find((item) => item.name === "company_logo")?.information || "-";
@@ -68,7 +67,6 @@ const TextEditor = ({ id }) => {
     today.setHours(0, 0, 0, 0);
 
     const historyList = clientData?.classHistory;
-    console.log(historyList, "historyList");
     if (!Array.isArray(historyList) || historyList.length === 0) {
       return "";
     }
@@ -715,7 +713,6 @@ const TextEditor = ({ id }) => {
     };
 
     validSurveys.forEach((survey) => {
-      console.log(survey, "surveys")
       const certificateName = survey.activity.surveyTypes.report.name;
       const isStatutory = survey.activity.surveyTypes.statutorySurvey === true;
       const isAudit = survey.activity.surveyTypes.audit === true;
@@ -789,7 +786,6 @@ const TextEditor = ({ id }) => {
 
   useEffect(() => {
     const surveyData = populateSurveyRows(reportDetails);
-    console.log(surveyData, "surveyData")
     setStatutoryData(surveyData.statutory);
     setAuditsData(surveyData.audits);
   }, [reportDetails]);
@@ -1181,7 +1177,6 @@ ${classificationRows}
     const certificateOfClassRow = validReportDetails
       ?.filter((cert) => cert?.activity?.surveyTypes?.report?.name?.toLowerCase() === "certificate of class")
       ?.sort((a, b) => new Date(b.issuanceDate || b.validityDate) - new Date(a.issuanceDate || a.validityDate))?.[0];
-    console.log(certificateOfClassRow, "certificateOfClassRow")
     const otherCertificatesRaw = validReportDetails?.filter(
       (cert) =>
         cert?.activity?.surveyTypes?.report?.name &&
@@ -1217,7 +1212,6 @@ ${classificationRows}
       if (!cert?.activity?.surveyTypes?.report?.name) return "";
 
       const fullCert = cert;
-      console.log(fullCert, "full cert")
       const reportName = fullCert.activity.surveyTypes.report.name;
       const typeLabel = fullCert.activity.surveyTypes.name || "";
 
@@ -1287,7 +1281,6 @@ ${classificationRows}
 `;
 
     const filterLatestBySurveyType = (data) => {
-      console.log(data, "data")
       if (!Array.isArray(data)) return [];
 
       const map = {};

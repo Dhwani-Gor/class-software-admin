@@ -521,7 +521,6 @@ const JournalEntryForm = ({ journalId = null }) => {
       if (result?.status === 200) {
         const journalData = result.data.data;
         setJournalData(journalData);
-        console.log(journalData, "journalData")
         setIsJournalLocked(journalData.isLocked);
         setIsJournalArchived(journalData.journalArchive === true);
 

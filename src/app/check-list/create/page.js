@@ -5,7 +5,7 @@ import { Box, Typography, Select, MenuItem, TextField, FormControl, Grid, Autoco
 import { Controller, useForm } from "react-hook-form";
 import mammoth from "mammoth";
 import { toast } from "react-toastify";
-import { addCheckList, fetchJournalList, getAllActivities, getAllClients, getAllJournals, getSurveyTypes } from "@/api";
+import { addCheckList, fetchJournalList, getAllActivities, getAllChecklist, getAllClients, getAllJournals, getSurveyTypes, updateCheckList } from "@/api";
 import CommonButton from "@/components/CommonButton";
 
 const CheckListCreate = () => {
@@ -15,6 +15,59 @@ const CheckListCreate = () => {
   const [file, setFile] = useState("");
   const [selectedShip, setSelectedShip] = useState(null);
   const [selectedReportNumber, setSelectedReportNumber] = useState(null);
+  const [remarks, setRemarks] = useState("");
+  const [existingChecklist, setExistingChecklist] = useState(null);
+
+  const [buttonText, setButtonText] = useState("Submit");
+
+  const fetchExistingChecklist = async () => {
+    if (!selectedShip?.id || !selectedReportNumber?.id) return;
+
+    try {
+      setLoading(true);
+      const response = await getAllChecklist();
+      // Replace getAllChecklists with your API function to fetch checklist by ship & report
+      if (response?.data?.status === "success" && response.data?.data) {
+        const data = response?.data?.data;
+        setExistingChecklist(data);
+        setDocumentTitle(data[0]?.checkListData?.documentTitle || "");
+        setHeaderFields(data[0]?.checkListData?.header || {});
+        setNotes(data[0]?.checkListData?.notes || []);
+        setRows(
+          data[0]?.checkListData?.checkList?.map((item) => ({
+            number: item.number,
+            text: item.item,
+            type: "item",
+            inputType: "dropdown",
+            choice: item.selected,
+            level: 2,
+          }))
+        );
+        setRemarks(data?.checkListData?.remarks || "");
+        setSurveyor(data?.checkListData?.surveyor || {});
+        setButtonText("Update");
+      } else {
+        setExistingChecklist(null);
+        setRows([]);
+        setButtonText("Submit");
+      }
+    } catch (err) {
+      console.error("Error fetching existing checklist:", err);
+      toast.error("Failed to fetch existing checklist");
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchExistingChecklist();
+  }, [selectedShip?.id, selectedReportNumber?.id]);
+
+  const [surveyor, setSurveyor] = useState({
+    name: "",
+    date: "",
+    place: "",
+  });
+
   const [headerFields, setHeaderFields] = useState({
     shipName: "",
     irNumber: "",
@@ -235,20 +288,50 @@ const CheckListCreate = () => {
   };
 
   const onSubmit = async () => {
-    const typeId = control._formValues?.typeOfSurvey;
-    const payload = {
-      clientId: selectedClient,
-      typeOfSurvey: typeId ? [String(typeId)] : [],
-      reportHeader: headerFields,
-      checklist: rows
-        .filter((r) => r.type === "item")
+    const surveyId = control._formValues?.typeOfSurvey;
+
+    const checkListData = {
+      documentTitle,
+      header: headerFields,
+      notes,
+      checkList: rows
+        ?.filter((r) => r.type === "item")
         .map((r) => ({
-          item: `${r.number} ${r.text}`.trim(),
+          number: r.number,
+          item: r.text,
           selected: r.choice,
         })),
+      remarks,
+      surveyor,
     };
-    const response = await addCheckList(payload);
-    if (response?.data?.status === "success") toast.success("Checklist added successfully");
+
+    const payload = {
+      clientId: selectedShip?.id,
+      typeOfSurvey: surveyId ? [String(surveyId)] : [],
+      reportNo: selectedReportNumber?.id || null,
+      checkListData: {
+        ...checkListData,
+        notes: notes.join("\n"), // convert array to string
+      },
+    };
+
+    try {
+      let response;
+      if (existingChecklist) {
+        response = await updateCheckList(existingChecklist.id, payload); // API to update checklist
+      } else {
+        response = await addCheckList(payload); // API to create checklist
+      }
+
+      if (response?.data?.status === "success") {
+        toast.success(`Checklist ${existingChecklist ? "updated" : "added"} successfully`);
+      } else {
+        toast.error(response?.data?.message || "Failed to save checklist");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error submitting checklist");
+    }
   };
 
   return (
@@ -342,7 +425,7 @@ const CheckListCreate = () => {
         </Stack>
 
         {/* Document Preview */}
-        {rows.length > 0 && (
+        {rows?.length > 0 && (
           <Box sx={{ mt: 4, p: 3, border: "1px solid #ddd", borderRadius: 1, bgcolor: "white" }}>
             {/* Document Title */}
             {documentTitle && (
@@ -468,6 +551,8 @@ const CheckListCreate = () => {
                   fontSize: "14px",
                   fontFamily: "inherit",
                 }}
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
               />
             </Box>
 
@@ -476,7 +561,7 @@ const CheckListCreate = () => {
               <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
                 Surveyor Information
               </Typography>
-              <TextField size="small" fullWidth sx={{ mb: 2, maxWidth: 400 }} placeholder="Surveyor Name" />
+              <TextField size="small" fullWidth sx={{ mb: 2, maxWidth: 400 }} placeholder="Surveyor Name" value={surveyor.name} onChange={(e) => setSurveyor({ ...surveyor, name: e.target.value })} />
               <Typography variant="body2" sx={{ mb: 2, color: "text.secondary" }}>
                 Surveyor(s) to Indian Register of Shipping
               </Typography>
@@ -485,13 +570,13 @@ const CheckListCreate = () => {
                   <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
                     Date:
                   </Typography>
-                  <TextField type="date" size="small" InputLabelProps={{ shrink: true }} />
+                  <TextField type="date" size="small" InputLabelProps={{ shrink: true }} value={surveyor.date} onChange={(e) => setSurveyor({ ...surveyor, date: e.target.value })} />
                 </Box>
                 <Box>
                   <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
                     Place:
                   </Typography>
-                  <TextField size="small" placeholder="Location" />
+                  <TextField size="small" placeholder="Location" value={surveyor.place} onChange={(e) => setSurveyor({ ...surveyor, place: e.target.value })} />
                 </Box>
               </Stack>
             </Box>
@@ -499,7 +584,7 @@ const CheckListCreate = () => {
         )}
 
         {/* Submit Button */}
-        {rows.length > 0 && (
+        {rows?.length > 0 && (
           <Box sx={{ mt: 3, textAlign: "end" }}>
             <CommonButton variant="contained" onClick={handleSubmit(onSubmit)} sx={{ px: 4 }} text="submit"></CommonButton>
           </Box>

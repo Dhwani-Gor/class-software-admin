@@ -293,7 +293,6 @@ const ReportingForm = () => {
   };
 
   const watchedFields = watch(["dueDate", "rangeFrom", "rangeTo", "anniversaryDate"]);
-  console.log("👀 Watched fields:", watchedFields);
 
   const handleCertificate = (event) => {
     const value = event.target.value;
@@ -784,12 +783,10 @@ const ReportingForm = () => {
     label: surveyor.name,
     value: surveyor.id,
   }));
-  console.log(surveyorOptions, "surveyorOptions");
 
   const handleReportClick = async (row) => {
     try {
       setLoading(true);
-      console.log(row?.surveyTypes?.id, "row");
       const matchedActivity = tableData?.find((item) => item?.surveyTypes?.id == row?.surveyTypes?.id);
       const classificationFlag = matchedActivity?.surveyTypes?.classificationSurvey;
       setSurveyType(classificationFlag ?? false);
