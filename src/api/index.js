@@ -925,6 +925,16 @@ export const deleteSurveyReport = async (id) => {
   return result;
 };
 
+export const deleteCheckList = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.delete(`/checklist/${id}`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
 export const getAllClassificationSurveyType = async () => {
   let result;
   try {
@@ -1194,10 +1204,30 @@ export const updateMachineryItem = async (id, payload) => {
   return result;
 };
 
+export const updateCheckList = async (id, payload) => {
+  let result;
+  try {
+    result = await axiosInstance.put(`/checkList/${id}`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
 export const getAllChecklist = async () => {
   let result;
   try {
     result = await axiosInstance.get(`/checkList`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const getSingleChecklist = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/checkList/${id}`);
   } catch (e) {
     result = e;
   }

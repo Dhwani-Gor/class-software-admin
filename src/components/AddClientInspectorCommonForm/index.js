@@ -1,23 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
-import {
-  addInspectors,
-  getInspectorsDetails,
-  updateInspectorDetail,
-} from "@/api";
-import {
-  CircularProgress,
-  FormControl,
-  FormControlLabel,
-  FormHelperText,
-  FormLabel,
-  Grid2,
-  Paper,
-  Radio,
-  RadioGroup,
-  Snackbar,
-  Stack,
-} from "@mui/material";
+import { addInspectors, getInspectorsDetails, updateInspectorDetail } from "@/api";
+import { CircularProgress, FormControl, FormControlLabel, FormHelperText, FormLabel, Grid2, Paper, Radio, RadioGroup, Snackbar, Stack } from "@mui/material";
 // import SuccessModal from "./SuccessModal";
 import { useDispatch, useSelector } from "react-redux";
 import { Controller, useForm } from "react-hook-form";
@@ -43,13 +27,7 @@ const clientSchema = (mode) =>
     nameOfCompany: yup.string().required("Company Name is required"),
   });
 
-
-const AddClientInspectorCommonForm = ({
-  mode = "create",
-  userId = null,
-  defaultValues = {},
-  role = "",
-}) => {
+const AddClientInspectorCommonForm = ({ mode = "create", userId = null, defaultValues = {}, role = "" }) => {
   const [formData, setFormData] = useState({});
   const [snackBar, setSnackBar] = useState({ open: false, message: "" });
   const [isDataLoading, setIsDataLoading] = useState(false);
@@ -95,7 +73,7 @@ const AddClientInspectorCommonForm = ({
 
           if (!data) return;
           setFormData(data);
-          setValue('id', data?.id)
+          setValue("id", data?.id);
           setValue("name", data?.name);
           setValue("nameOfCompany", data?.nameOfCompany);
           setValue("mail", data?.email);
@@ -109,10 +87,9 @@ const AddClientInspectorCommonForm = ({
           const data = res?.data?.data;
 
           if (!data) return;
-          
 
           setFormData(data);
-          setValue('id', data?.id)
+          setValue("id", data?.id);
           setValue("name", data?.name);
           setValue("inspectorDesignation", data?.inspectorDesignation);
           setValue("mail", data?.email);
@@ -127,96 +104,29 @@ const AddClientInspectorCommonForm = ({
     fetchUserDetails();
   }, [mode, userId, role, setValue]);
 
-  // const onSubmit = async (data) => {
-  //   // console.log(data, "data");
-
-  //   setIsDataLoading(true);
-  //   // Handle the submission logic here
-  //   // setTimeout(() => {
-  //   //   setSnackBar({ open: true, message: "Form submitted successfully!" });
-  //   //   setIsDataLoading(false);
-  //   // }, 2000);
-
-  //   let payload = {};
-
-  //   if(role === "client"){
-  //      payload = {
-  //       name: data?.name,
-  //       roleId: 3,
-  //       email: data?.mail,
-  //       password: data?.password,
-  //       nameOfCompany: data?.nameOfCompany,
-  //       // ...data,
-  //     };
-  //   }
-  //   else{
-  //      payload = {
-  //       name: data?.name,
-  //       roleId: 2,
-  //       email: data?.mail,
-  //       password: data?.password,
-  //       inspectorDesignation: data?.inspectorDesignation,
-  //       // ...data,
-  //     };
-  //   }
-
-  //   const redirectPath = role === "client" ? "/clients/" : "/staff/";
-
-  //   if (mode === "create") {
-  //     await addInspectors(payload)
-  //       .then((res) => {
-  //         console.log("res", res);
-  //         console.log("res 22", res?.response?.data?.message);
-  //         if (res?.status === 400) {
-  //           setSnackBar({ open: true, message: res?.data.message });
-  //         } else {
-  //           router.push(redirectPath);
-  //         }
-  //       })
-  //       .catch((error) => {
-  //         console.log("error", error);
-  //       });
-  //     setIsDataLoading(false);
-  //   } else if (mode === "update" && userId) {
-  //     await updateInspectorDetail(userId, payload)
-  //       .then((res) => {
-  //         if (res?.status === 400) {
-  //           setSnackBar({ open: true, message: res?.data.message });
-  //         } else {
-  //           router.push(redirectPath);
-  //         }
-  //       })
-  //       .catch((error) => {
-  //         console.log("error", error);
-  //       });
-  //     setIsDataLoading(false);
-  //   }
-  // };
-
-
   const onSubmit = async (data) => {
     setIsDataLoading(true);
-  
+
     let payload = {
-      id : data.id ? data.id : null,
+      id: data.id ? data.id : null,
       name: data?.name,
       roleId: role === "client" ? 3 : 2,
       email: data?.mail,
     };
-  
+
     if (role === "client") {
       payload.nameOfCompany = data?.nameOfCompany;
     } else {
       payload.inspectorDesignation = data?.inspectorDesignation;
     }
-  
+
     // Only add password if it's a new user (create mode)
     if (mode === "create") {
       payload.password = data?.password;
     }
-  
+
     const redirectPath = role === "client" ? "/clients/" : "/staff/";
-  
+
     if (mode === "create") {
       await addInspectors(payload)
         .then((res) => {
@@ -238,11 +148,9 @@ const AddClientInspectorCommonForm = ({
         })
         .catch((error) => console.log("error", error));
     }
-  
+
     setIsDataLoading(false);
   };
-
-  
 
   const snackbarClose = () => {
     setSnackBar({ open: false, message: "" });
@@ -251,12 +159,7 @@ const AddClientInspectorCommonForm = ({
   return (
     <Box>
       {isDataLoading ? (
-        <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          sx={{ height: 300 }}
-        >
+        <Box display="flex" justifyContent="center" alignItems="center" sx={{ height: 300 }}>
           <CircularProgress />
         </Box>
       ) : (
@@ -277,9 +180,7 @@ const AddClientInspectorCommonForm = ({
                             variant="standard"
                             label={
                               <span>
-                                {role === "client"
-                                  ? "Client Name"
-                                  : "Inserpector Name"}
+                                {role === "client" ? "Client Name" : "Inserpector Name"}
                                 <span style={{ color: "red" }}>*</span>
                               </span>
                             }
@@ -322,35 +223,34 @@ const AddClientInspectorCommonForm = ({
                     />
                   </Grid2>
 
-                  {
-                    mode != "update" &&
-                  <Grid2 size={{ xs: 12 }}>
-                    <Controller
-                      name="password"
-                      control={control}
-                      disabled = {mode === 'update'}
-                      render={({ field }) => (
-                        <CommonInput
-                          {...field}
-                          fullWidth
-                          variant="standard"
-                          label={
-                            <span>
-                              Password <span style={{ color: "red" }}>*</span>
-                            </span>
-                          }
-                          placeholder="Enter password"
-                          error={Boolean(errors.password)}
-                          helperText={errors.password?.message}
-                          type="password"
-                          InputProps={{
-                            style: { color: "black" },
-                          }}
-                        />
-                      )}
-                    />
-                  </Grid2>
-}
+                  {mode != "update" && (
+                    <Grid2 size={{ xs: 12 }}>
+                      <Controller
+                        name="password"
+                        control={control}
+                        disabled={mode === "update"}
+                        render={({ field }) => (
+                          <CommonInput
+                            {...field}
+                            fullWidth
+                            variant="standard"
+                            label={
+                              <span>
+                                Password <span style={{ color: "red" }}>*</span>
+                              </span>
+                            }
+                            placeholder="Enter password"
+                            error={Boolean(errors.password)}
+                            helperText={errors.password?.message}
+                            type="password"
+                            InputProps={{
+                              style: { color: "black" },
+                            }}
+                          />
+                        )}
+                      />
+                    </Grid2>
+                  )}
                   {/* <Grid2 size={{ xs: 12 }}>
                     <Controller
                       name="role"
@@ -421,8 +321,7 @@ const AddClientInspectorCommonForm = ({
                             variant="standard"
                             label={
                               <span>
-                                Company Name{" "}
-                                <span style={{ color: "red" }}>*</span>
+                                Company Name <span style={{ color: "red" }}>*</span>
                               </span>
                             }
                             placeholder="Enter company name"
@@ -447,8 +346,7 @@ const AddClientInspectorCommonForm = ({
                             variant="standard"
                             label={
                               <span>
-                                Inspector Designation{" "}
-                                <span style={{ color: "red" }}>*</span>
+                                Inspector Designation <span style={{ color: "red" }}>*</span>
                               </span>
                             }
                             placeholder="Enter inspector designation"
@@ -464,17 +362,8 @@ const AddClientInspectorCommonForm = ({
                   )}
                 </Grid2>
 
-                <Stack
-                  mt={4}
-                  spacing={2}
-                  direction="row"
-                  justifyContent="flex-start"
-                >
-                  <CommonButton
-                    type="submit"
-                    variant="contained"
-                    text="Submit"
-                  />
+                <Stack mt={4} spacing={2} direction="row" justifyContent="flex-start">
+                  <CommonButton type="submit" variant="contained" text="Submit" />
                 </Stack>
               </form>
 

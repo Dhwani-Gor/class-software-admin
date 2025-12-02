@@ -194,7 +194,6 @@ const MachineryHullManager = ({ mode, shipId }) => {
                 const section = sections[sectionNum];
                 const dynamicRowsForSection = dynamicRows[sectionType][sectionNum] || [];
                 const allRows = [...section.rows, ...dynamicRowsForSection];
-                console.log("PROCESSING SECTION →", section.sectionId, "sectionNum:", sectionNum);
 
                 let finalItems = [];
 
@@ -353,12 +352,6 @@ const MachineryHullManager = ({ mode, shipId }) => {
                     // Process each unique row
                     rowMap.forEach((rowItems, rowId) => {
                         const rowKey = `${sectionType}-${section.sectionNumber}-${rowId}`;
-
-                        console.log(`Processing row: ${rowKey}`, {
-                            rowId,
-                            itemCount: rowItems.length,
-                            codes: rowItems.map(i => i.generatedCode)
-                        });
 
                         if (!processedRows.has(rowKey)) {
                             processedRows.add(rowKey);

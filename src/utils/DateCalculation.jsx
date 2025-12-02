@@ -189,45 +189,29 @@ export const calculateDates = (issuanceDate, surveyName, existingSurveys = []) =
                         new Date(b.surveyDate || b.issuanceDate)
                     );
 
-                console.log("🔍 Intermediate Survey Calculation:", {
-                    sshDate: sshDate.format("YYYY-MM-DD"),
-                    sshDueDate: sshDueDate.format("YYYY-MM-DD"),
-                    currentIssuanceDate: issuanceDateObj.format("YYYY-MM-DD"),
-                    existingIntermediatesCount: existingIntermediates.length
-                });
 
                 // Check if current intermediate is done on same day as SSH
                 const daysDifferenceFromSSH = Math.abs(issuanceDateObj.diff(sshDate, "days"));
                 const isDoneOnSSHDate = daysDifferenceFromSSH <= 1; // Within 1 day tolerance
 
                 if (isDoneOnSSHDate) {
-                    // ✅ Done on SSH date → Next due is 2 years from SSH
-                    // (Option: Could be made configurable for 2 or 3 years)
-                    console.log("✅ Intermediate done on SSH date → Next due: SSH + 2 years");
                     dueDate = addYears(sshDate, 2);
                     rangeFrom = addMonths(dueDate, -3);
                     rangeTo = dueDate;
                     anniversaryDate = dueDate;
                 } else if (existingIntermediates.length >= 1) {
-                    // ✅ Already have 1+ intermediate in this 5-year cycle → No next due
-                    console.log("✅ Already have intermediate survey → No next due");
                     dueDate = "";
                     rangeFrom = "";
                     rangeTo = "";
                     anniversaryDate = "";
                 } else {
-                    // ✅ First intermediate (not on SSH date) → Due at 2 or 3 years from SSH
-                    // Default to 2 years (can fit 2 intermediate surveys in 5-year cycle)
-                    console.log("✅ First intermediate → Due at SSH + 2 years");
                     dueDate = addYears(sshDate, 2);
                     rangeFrom = addMonths(dueDate, -3);
                     rangeTo = dueDate;
                     anniversaryDate = dueDate;
                 }
 
-                // Ensure due date doesn't exceed SSH due date
                 if (dueDate && moment(dueDate).isAfter(sshDueDate)) {
-                    console.log("⚠️ Due date exceeds SSH due date, adjusting");
                     dueDate = sshDueDate;
                     rangeFrom = addMonths(dueDate, -3);
                     rangeTo = dueDate;

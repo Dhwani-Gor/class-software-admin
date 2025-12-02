@@ -4,7 +4,6 @@ import { getSelectedReportDetails } from "@/api";
 import CommonButton from "../CommonButton";
 
 const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsementList = [], reportDetailsId, surveyorOptions = [] }) => {
-  console.log(endorsementStamp, "stamps in end dialog");
   const [selectedEndorsement, setSelectedEndorsement] = useState(null);
   const [reportDetails, setReportDetails] = useState({});
   const [radioValues, setRadioValues] = useState({});
