@@ -317,11 +317,11 @@ const CheckListCreate = () => {
 
     try {
       let response;
-      if (existingChecklist) {
-        response = await updateCheckList(existingChecklist.id, payload); // API to update checklist
-      } else {
-        response = await addCheckList(payload); // API to create checklist
-      }
+      // if (existingChecklist) {
+      //   response = await updateCheckList(existingChecklist.id, payload); // API to update checklist
+      // } else {
+      response = await addCheckList(payload); // API to create checklist
+      // }
 
       if (response?.data?.status === "success") {
         toast.success(`Checklist ${existingChecklist ? "updated" : "added"} successfully`);
@@ -405,13 +405,38 @@ const CheckListCreate = () => {
                         field.onChange(newValue ? newValue.value : null);
                         if (newValue) {
                           const selectedSurvey = surveyType?.find((s) => Number(s.surveyTypes?.id) === newValue.value);
+
                           if (selectedSurvey?.surveyTypes?.checkListDocument) {
                             setFile(selectedSurvey.surveyTypes.checkListDocument);
                           } else {
+                            // No file → RESET EVERYTHING
                             setFile("");
+                            setRows([]);
+                            setDocumentTitle("");
+                            setHeaderFields({
+                              shipName: "",
+                              irNumber: "",
+                              imoNumber: "",
+                              portOfSurvey: "",
+                            });
+                            setNotes([]);
+                            setRemarks("");
+                            setSurveyor({ name: "", date: "", place: "" });
                           }
                         } else {
+                          // No selection → reset everything
                           setFile("");
+                          setRows([]);
+                          setDocumentTitle("");
+                          setHeaderFields({
+                            shipName: "",
+                            irNumber: "",
+                            imoNumber: "",
+                            portOfSurvey: "",
+                          });
+                          setNotes([]);
+                          setRemarks("");
+                          setSurveyor({ name: "", date: "", place: "" });
                         }
                       }}
                       getOptionLabel={(option) => option.label || ""}

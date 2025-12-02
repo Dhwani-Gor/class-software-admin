@@ -259,7 +259,6 @@ const Certificates = () => {
   };
 
   const handleConfirmDelete = async () => {
-
     setOpenDialog(false);
     if (!selectedDocument) return;
     try {
@@ -756,7 +755,7 @@ const Certificates = () => {
                           {/* Report Number */}
                           <TableCell>{item?.surveyType?.name || "N/A"}</TableCell>
 
-                          <TableCell>{item?.reportNo || "N/A"}</TableCell>
+                          <TableCell>{item?.journal?.journalTypeId || "N/A"}</TableCell>
 
                           {/* Checklist title */}
 
@@ -791,10 +790,10 @@ const Certificates = () => {
 </head>
 <body>
 
-  <div class="logo-title">Indian Register of Shipping</div>
-  <div class="subtitle">SAFETY CONSTRUCTION SURVEY CHECKLIST</div>
+  <div class="logo-title" style="margin-bottom:10px">Indian Register of Shipping</div>
+  <div class="subtitle" style="margin-bottom:10px">SAFETY CONSTRUCTION SURVEY CHECKLIST</div>
 
-  <div class="survey-type">Type of Survey: ${item?.surveyType?.name || "—"}</div>
+  <div class="survey-type" style="margin-bottom:10px">Type of Survey: ${item?.surveyType?.name || "—"}</div>
 
   <div class="grid">
     <div><span class="label">Name of Ship:</span> ${item?.client?.shipName || "................"}</div>
