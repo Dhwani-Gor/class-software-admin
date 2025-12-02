@@ -3,10 +3,10 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, Radio, FormControlLa
 import { getSelectedReportDetails } from "@/api";
 import CommonButton from "../CommonButton";
 
-const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], reportDetailsId, surveyorOptions = [] }) => {
+const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsementList = [], reportDetailsId, surveyorOptions = [] }) => {
+  console.log(endorsementStamp, "stamps in end dialog");
   const [selectedEndorsement, setSelectedEndorsement] = useState(null);
   const [reportDetails, setReportDetails] = useState({});
-  console.log(reportDetails.data, "reportDetails.data");
   const [radioValues, setRadioValues] = useState({});
   const [endorsementInputs, setEndorsementInputs] = useState({});
   const [issuedBy, setIssuedBy] = useState("");
@@ -220,6 +220,9 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementList = [], repo
       if (!endorsement1Filled) {
         flattenedData.not_applicable = "Survey Carried out earlier";
       }
+    }
+    if (endorsementStamp) {
+      flattenedData[`endorsement_stamp_${num}`] = endorsementStamp;
     }
     onSubmit(flattenedData);
     onClose();

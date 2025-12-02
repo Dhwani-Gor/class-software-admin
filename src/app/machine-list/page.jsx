@@ -36,6 +36,7 @@ import CommonInput from "@/components/CommonInput";
 import { toast } from "react-toastify";
 import {
     deleteMachineList,
+    fetchMachineList,
     getAllClients,
     getMachineById,
     updateMachineList,
@@ -50,6 +51,7 @@ const MachineList = () => {
     const [openEditDialog, setOpenEditDialog] = useState(false);
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(false);
+
     const [editForm, setEditForm] = useState({
         generatedCode: "",
         label: "",
@@ -110,6 +112,8 @@ const MachineList = () => {
             if (res?.data?.status === "success") {
                 toast.success("Machinery updated successfully");
                 setOpenEditDialog(false);
+                fetchMachineList()
+
                 setSelectedShipId(selectedShipId);
             } else {
                 toast.error(res?.data?.message);
@@ -137,44 +141,35 @@ const MachineList = () => {
         fetchClients();
     }, []);
 
-    // -------------------------------------------------------
-    // Handle Ship Change
-    // -------------------------------------------------------
     const handleClientChange = (e) => {
         const shipId = e.target.value;
         setSelectedShipId(shipId);
     };
 
-    // -------------------------------------------------------
-    // Fetch Machine List – Only when ship selected
-    // -------------------------------------------------------
+    const fetchMachineList = async () => {
+        try {
+            setLoading(true);
+            const result = await getMachineById(selectedShipId);
+            if (result?.data?.status === "success") {
+                setMachineList(result.data.data);
+            }
+            else {
+                setMachineList([])
+            }
+            setLoading(false);
+        } catch (error) {
+            setLoading(false);
+            toast.error("Failed to fetch machine list");
+        }
+    };
+
     useEffect(() => {
         if (!selectedShipId) return;
 
-        const fetchMachineList = async () => {
-            try {
-                setLoading(true);
-                const result = await getMachineById(selectedShipId);
-                if (result?.data?.status === "success") {
-                    setMachineList(result.data.data);
-                }
-                else {
-                    setMachineList([])
-                }
-
-                setLoading(false);
-            } catch (error) {
-                setLoading(false);
-                toast.error("Failed to fetch machine list");
-            }
-        };
 
         fetchMachineList();
     }, [selectedShipId, search]);
 
-    // -------------------------------------------------------
-    // Delete Logic
-    // -------------------------------------------------------
     const handleDeleteClick = (shipId) => {
         if (!shipId) {
             toast.error("Please select a ship first.");
@@ -207,6 +202,28 @@ const MachineList = () => {
         setSelectedMachineId(null);
         setOpenDialog(false);
     };
+
+    useEffect(() => {
+        if (!machineList) return;
+
+        const newFormData = {};
+
+        Object.entries(machineList).forEach(([index, item]) => {
+
+            // Identify which section and row this belongs to
+            const rowKey = findRowKeyFromGeneratedCode(item.generatedCode);
+
+            newFormData[rowKey] = {
+                xMark: "X",
+                assignmentDate: item.assignmentDate,
+                dueDate: item.dueDate,
+                position: item.positionCode === "-" ? [] : [item.positionCode],
+                label: item.label,
+            };
+        });
+
+    }, []);
+
 
 
     return (
