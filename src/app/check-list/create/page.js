@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Box, Typography, Select, MenuItem, TextField, FormControl, Grid, Autocomplete, Button, Divider, TextareaAutosize, Paper, Stack } from "@mui/material";
+import { Box, Typography, Select, MenuItem, TextField, FormControl, Grid, Autocomplete, Button, Divider, TextareaAutosize, Paper, Stack, CircularProgress } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import mammoth from "mammoth";
 import { toast } from "react-toastify";
 import { addCheckList, fetchJournalList, getAllActivities, getAllChecklist, getAllClients, getAllJournals, getSurveyTypes, updateCheckList } from "@/api";
 import CommonButton from "@/components/CommonButton";
+import CommonCard from "@/components/CommonCard";
 
 const CheckListCreate = () => {
   const [selectedClient, setSelectedClient] = useState("");
@@ -26,13 +27,19 @@ const CheckListCreate = () => {
     try {
       setLoading(true);
       const response = await getAllChecklist();
-      // Replace getAllChecklists with your API function to fetch checklist by ship & report
       if (response?.data?.status === "success" && response.data?.data) {
         const data = response?.data?.data;
         setExistingChecklist(data);
         setDocumentTitle(data[0]?.checkListData?.documentTitle || "");
         setHeaderFields(data[0]?.checkListData?.header || {});
-        setNotes(data[0]?.checkListData?.notes || []);
+        setNotes(
+          Array.isArray(data[0]?.checkListData?.notes)
+            ? data[0]?.checkListData?.notes
+            : (data[0]?.checkListData?.notes || "")
+                .split("\n")
+                .map((n) => n.trim())
+                .filter(Boolean)
+        );
         setRows(
           data[0]?.checkListData?.checkList?.map((item) => ({
             number: item.number,
@@ -74,6 +81,7 @@ const CheckListCreate = () => {
     imoNumber: "",
     portOfSurvey: "",
   });
+
   const [notes, setNotes] = useState([]);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -134,7 +142,6 @@ const CheckListCreate = () => {
   const handleReportNumberChange = async (event) => {
     const selectedJournalTypeId = event.target.value;
     const journal = journals?.find((j) => j.journalTypeId === selectedJournalTypeId);
-
     if (!journal) return;
 
     setSelectedReportNumber({
@@ -163,6 +170,8 @@ const CheckListCreate = () => {
 
   const handleFileUpload = async (fileUrl) => {
     try {
+      setLoading(true); // <<< Start loader here
+
       const response = await fetch(fileUrl);
       const blob = await response.blob();
       const arrayBuffer = await blob.arrayBuffer();
@@ -197,7 +206,7 @@ const CheckListCreate = () => {
         const notesList = notesText
           .split(/\n/)
           .map((line) => line.trim())
-          .filter((line) => line.length > 10 && /^\d+/.test(line))
+          ?.filter((line) => line.length > 10 && /^\d+/.test(line))
           .map((line) => line.replace(/^\d+\s*/, ""));
         setNotes(notesList);
       }
@@ -269,16 +278,19 @@ const CheckListCreate = () => {
       }
 
       setRows(extractedRows);
+      setLoading(false);
+      if (file === null) {
+        return toast.info("No checklist is attached for this activity.");
+      }
 
-      if (extractedRows.length === 0) {
-        toast.error("No checklist items found. Please check the document format.");
-      } else {
-        toast.success(`Successfully loaded ${extractedRows.length} items`);
+      if (typeof file === "string") {
+        return toast.info("Checklist is already uploaded. Showing preview...");
       }
     } catch (error) {
       console.error("Error parsing file:", error);
       toast.error(`Error: ${error.message}`);
     }
+    setLoading(false);
   };
 
   const updateRowChoice = (index, value) => {
@@ -311,7 +323,7 @@ const CheckListCreate = () => {
       reportNo: selectedReportNumber?.id || null,
       checkListData: {
         ...checkListData,
-        notes: notes.join("\n"), // convert array to string
+        notes: notes.join("\n"),
       },
     };
 
@@ -328,294 +340,278 @@ const CheckListCreate = () => {
       } else {
         toast.error(response?.data?.message || "Failed to save checklist");
       }
-    } catch (err) {
-      console.error(err);
-      toast.error("Error submitting checklist");
+    } catch (error) {
+      console.error("Error parsing file:", error);
+      toast.error(`Error: ${error.message}`);
+    } finally {
+      setLoading(false); // <<< Stop loader after parsing
     }
   };
 
   return (
-    <Box sx={{ p: 3, bgcolor: "#fafafa", minHeight: "100vh" }}>
-      <Paper sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
-        {/* Header */}
-        <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
-          Create Checklist
-        </Typography>
+    <CommonCard>
+      <Stack spacing={3} sx={{ mb: 4 }}>
+        {/* Ship Selection */}
+        <Box>
+          <Typography variant="body2" sx={{ mb: 1, fontWeight: 700, fontSize: 16 }}>
+            Select Ship
+          </Typography>
+          <FormControl fullWidth sx={{ maxWidth: 400 }}>
+            <Select value={selectedShip?.id || ""} onChange={handleShipChange} displayEmpty size="small">
+              <MenuItem value="">
+                <em>Select Ship</em>
+              </MenuItem>
+              {clientsList.map((c) => (
+                <MenuItem key={c.id} value={c.id}>
+                  {c.shipName}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
 
-        {/* Selection Section */}
-        <Stack spacing={3} sx={{ mb: 4 }}>
-          {/* Ship Selection */}
+        {/* Report Number Selection */}
+        {selectedShip?.id && (
           <Box>
-            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-              Select Ship
+            <Typography variant="body2" sx={{ mb: 1, fontWeight: 700, fontSize: 16 }}>
+              Select Report Number
             </Typography>
             <FormControl fullWidth sx={{ maxWidth: 400 }}>
-              <Select value={selectedShip?.id || ""} onChange={handleShipChange} displayEmpty size="small">
-                <MenuItem value="">
-                  <em>Select Ship</em>
-                </MenuItem>
-                {clientsList.map((c) => (
-                  <MenuItem key={c.id} value={c.id}>
-                    {c.shipName}
+              <Select value={selectedReportNumber?.journalTypeId || ""} onChange={handleReportNumberChange} displayEmpty size="small">
+                {journals?.length > 0 ? (
+                  <MenuItem value="" disabled>
+                    Select Report
+                  </MenuItem>
+                ) : null}
+                {journals?.map((r) => (
+                  <MenuItem key={r.id} value={r.journalTypeId}>
+                    {r.journalTypeId}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
           </Box>
+        )}
 
-          {/* Report Number Selection */}
-          {selectedShip?.id && (
-            <Box>
-              <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                Select Report Number
-              </Typography>
-              <FormControl fullWidth sx={{ maxWidth: 400 }}>
-                <Select value={selectedReportNumber?.journalTypeId || ""} onChange={handleReportNumberChange} displayEmpty size="small">
-                  {journals?.length > 0 ? (
-                    <MenuItem value="" disabled>
-                      Select Report
-                    </MenuItem>
-                  ) : null}
-                  {journals?.map((r) => (
-                    <MenuItem key={r.id} value={r.journalTypeId}>
-                      {r.journalTypeId}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-          )}
+        {/* Survey Type Selection */}
+        {selectedShip?.id && selectedReportNumber?.journalTypeId && (
+          <Box>
+            <Typography variant="body2" sx={{ mb: 1, fontWeight: 700, fontSize: 16 }}>
+              Type of Activity
+            </Typography>
+            <Box sx={{ maxWidth: 400 }}>
+              <Controller
+                name="typeOfSurvey"
+                control={control}
+                defaultValue={null}
+                render={({ field }) => (
+                  <Autocomplete
+                    options={surveyOptions?.sort((a, b) => a.label?.localeCompare(b.label))}
+                    value={surveyOptions?.find((o) => o.value === field.value) || null}
+                    onChange={(event, newValue) => {
+                      field.onChange(newValue ? newValue.value : null);
 
-          {/* Survey Type Selection */}
-          {selectedShip?.id && selectedReportNumber?.journalTypeId && (
-            <Box>
-              <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                Type of Activity
-              </Typography>
-              <Box sx={{ maxWidth: 400 }}>
-                <Controller
-                  name="typeOfSurvey"
-                  control={control}
-                  defaultValue={null}
-                  render={({ field }) => (
-                    <Autocomplete
-                      options={surveyOptions?.sort((a, b) => a.label?.localeCompare(b.label))}
-                      value={surveyOptions?.find((o) => o.value === field.value) || null}
-                      onChange={(event, newValue) => {
-                        field.onChange(newValue ? newValue.value : null);
-                        if (newValue) {
-                          const selectedSurvey = surveyType?.find((s) => Number(s.surveyTypes?.id) === newValue.value);
+                      if (newValue) {
+                        const selectedSurvey = surveyType?.find((s) => Number(s.surveyTypes?.id) === newValue.value);
 
-                          if (selectedSurvey?.surveyTypes?.checkListDocument) {
-                            setFile(selectedSurvey.surveyTypes.checkListDocument);
-                          } else {
-                            // No file → RESET EVERYTHING
-                            setFile("");
-                            setRows([]);
-                            setDocumentTitle("");
-                            setHeaderFields({
-                              shipName: "",
-                              irNumber: "",
-                              imoNumber: "",
-                              portOfSurvey: "",
-                            });
-                            setNotes([]);
-                            setRemarks("");
-                            setSurveyor({ name: "", date: "", place: "" });
-                          }
-                        } else {
-                          // No selection → reset everything
-                          setFile("");
-                          setRows([]);
+                        if (selectedSurvey?.surveyTypes?.checkListDocument) {
+                          setRows([]); // <<< Add this
                           setDocumentTitle("");
-                          setHeaderFields({
-                            shipName: "",
-                            irNumber: "",
-                            imoNumber: "",
-                            portOfSurvey: "",
-                          });
+                          setHeaderFields({});
                           setNotes([]);
                           setRemarks("");
+                          setLoading(false);
                           setSurveyor({ name: "", date: "", place: "" });
+
+                          setFile(selectedSurvey.surveyTypes.checkListDocument);
+                        } else {
+                          toast.error("No checklist is attached for this activity.");
+                          setFile(null);
+                          setRows([]);
                         }
-                      }}
-                      getOptionLabel={(option) => option.label || ""}
-                      renderInput={(params) => <TextField {...params} placeholder="Search activity type..." size="small" />}
-                    />
-                  )}
-                />
-              </Box>
-            </Box>
-          )}
-        </Stack>
-
-        {/* Document Preview */}
-        {rows?.length > 0 && (
-          <Box sx={{ mt: 4, p: 3, border: "1px solid #ddd", borderRadius: 1, bgcolor: "white" }}>
-            {/* Document Title */}
-            {documentTitle && (
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, textAlign: "center", textTransform: "uppercase" }}>
-                {documentTitle}
-              </Typography>
-            )}
-
-            {/* Header Fields */}
-            <Box sx={{ mb: 3, p: 2, bgcolor: "#f9f9f9", borderRadius: 1 }}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography sx={{ fontWeight: 500, minWidth: 120 }}>Name of Ship:</Typography>
-                    <TextField fullWidth size="small" value={headerFields.shipName} onChange={(e) => setHeaderFields({ ...headerFields, shipName: e.target.value })} />
-                  </Stack>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography sx={{ fontWeight: 500, minWidth: 120 }}>Port of Survey:</Typography>
-                    <TextField fullWidth size="small" value={headerFields.portOfSurvey} onChange={(e) => setHeaderFields({ ...headerFields, portOfSurvey: e.target.value })} />
-                  </Stack>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography sx={{ fontWeight: 500, minWidth: 120 }}>I. R. No.:</Typography>
-                    <TextField fullWidth size="small" value={headerFields.irNumber} onChange={(e) => setHeaderFields({ ...headerFields, irNumber: e.target.value })} />
-                  </Stack>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography sx={{ fontWeight: 500, minWidth: 120 }}>IMO No.:</Typography>
-                    <TextField fullWidth size="small" value={headerFields.imoNumber} onChange={(e) => setHeaderFields({ ...headerFields, imoNumber: e.target.value })} />
-                  </Stack>
-                </Grid>
-              </Grid>
-            </Box>
-
-            <Divider sx={{ my: 2 }} />
-
-            {/* NOTES Section */}
-            {notes.length > 0 && (
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                  NOTES:
-                </Typography>
-                {notes.map((note, idx) => (
-                  <Typography key={idx} variant="body2" sx={{ mb: 0.5, pl: 2 }}>
-                    {idx + 1}. {note}
-                  </Typography>
-                ))}
-              </Box>
-            )}
-
-            <Divider sx={{ my: 2 }} />
-
-            {/* Table Header */}
-            <Grid container spacing={2} sx={{ mb: 2, p: 1, bgcolor: "#f5f5f5" }}>
-              <Grid item xs={1}>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  Sr. No.
-                </Typography>
-              </Grid>
-              <Grid item xs={8}>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  Item
-                </Typography>
-              </Grid>
-              <Grid item xs={3}>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  Y/N/NO/NA/P
-                </Typography>
-              </Grid>
-            </Grid>
-
-            {/* Checklist Rows */}
-            {rows.map((r, index) => (
-              <Box key={index} sx={{ mb: 1 }}>
-                {r.type === "section" ? (
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mt: 2, mb: 1 }}>
-                    {r.number} {r.text}
-                  </Typography>
-                ) : r.type === "subsection" ? (
-                  <Typography variant="body1" sx={{ fontWeight: 500, mt: 1.5, mb: 1, pl: 2 }}>
-                    {r.number} {r.text}
-                  </Typography>
-                ) : (
-                  <Grid container spacing={2} alignItems="center" sx={{ py: 1 }}>
-                    <Grid item xs={1}>
-                      <Typography variant="body2">{r.number}</Typography>
-                    </Grid>
-                    <Grid item xs={8}>
-                      <Typography variant="body2">{r.text}</Typography>
-                    </Grid>
-                    <Grid item xs={3}>
-                      <Select value={r.choice} fullWidth size="small" onChange={(e) => updateRowChoice(index, e.target.value)} displayEmpty>
-                        <MenuItem value=""></MenuItem>
-                        <MenuItem value="Y">Y</MenuItem>
-                        <MenuItem value="N">N</MenuItem>
-                        <MenuItem value="NO">NO</MenuItem>
-                        <MenuItem value="NA">NA</MenuItem>
-                        <MenuItem value="P">P</MenuItem>
-                      </Select>
-                    </Grid>
-                  </Grid>
+                      }
+                    }}
+                    getOptionLabel={(option) => option.label || ""}
+                    renderInput={(params) => <TextField {...params} placeholder="Search activity type..." size="small" />}
+                  />
                 )}
-              </Box>
-            ))}
-
-            <Divider sx={{ my: 3 }} />
-
-            {/* Remarks Section */}
-            <Box sx={{ mb: 3 }}>
-              <Typography sx={{ fontWeight: 500, mb: 1 }}>Remarks:</Typography>
-              <TextareaAutosize
-                minRows={3}
-                placeholder="Enter remarks..."
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  borderRadius: "4px",
-                  border: "1px solid #ccc",
-                  fontSize: "14px",
-                  fontFamily: "inherit",
-                }}
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
               />
             </Box>
+          </Box>
+        )}
+        {loading && (
+          <Box sx={{ textAlign: "center", py: 5 }}>
+            <CircularProgress />
+          </Box>
+        )}
+      </Stack>
 
-            {/* Signature Section */}
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                Surveyor Information
+      {/* Document Preview */}
+      {rows?.length > 0 && (
+        <Box sx={{ mt: 4, p: 3, border: "1px solid #ddd", borderRadius: 1, bgcolor: "white" }}>
+          {/* Document Title */}
+          {documentTitle && (
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 3, textAlign: "center", textTransform: "uppercase" }}>
+              {documentTitle}
+            </Typography>
+          )}
+
+          {/* Header Fields */}
+          <Box sx={{ mb: 3, p: 2, bgcolor: "#f9f9f9", borderRadius: 1 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography sx={{ fontWeight: 500, minWidth: 120 }}>Name of Ship:</Typography>
+                  <TextField fullWidth size="small" value={headerFields.shipName} onChange={(e) => setHeaderFields({ ...headerFields, shipName: e.target.value })} />
+                </Stack>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography sx={{ fontWeight: 500, minWidth: 120 }}>Port of Survey:</Typography>
+                  <TextField fullWidth size="small" value={headerFields.portOfSurvey} onChange={(e) => setHeaderFields({ ...headerFields, portOfSurvey: e.target.value })} />
+                </Stack>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography sx={{ fontWeight: 500, minWidth: 120 }}>I. R. No.:</Typography>
+                  <TextField fullWidth size="small" value={headerFields.irNumber} onChange={(e) => setHeaderFields({ ...headerFields, irNumber: e.target.value })} />
+                </Stack>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography sx={{ fontWeight: 500, minWidth: 120 }}>IMO No.:</Typography>
+                  <TextField fullWidth size="small" value={headerFields.imoNumber} onChange={(e) => setHeaderFields({ ...headerFields, imoNumber: e.target.value })} />
+                </Stack>
+              </Grid>
+            </Grid>
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* NOTES Section */}
+          {notes.length > 0 && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                NOTES:
               </Typography>
-              <TextField size="small" fullWidth sx={{ mb: 2, maxWidth: 400 }} placeholder="Surveyor Name" value={surveyor.name} onChange={(e) => setSurveyor({ ...surveyor, name: e.target.value })} />
-              <Typography variant="body2" sx={{ mb: 2, color: "text.secondary" }}>
-                Surveyor(s) to Indian Register of Shipping
-              </Typography>
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
-                    Date:
-                  </Typography>
-                  <TextField type="date" size="small" InputLabelProps={{ shrink: true }} value={surveyor.date} onChange={(e) => setSurveyor({ ...surveyor, date: e.target.value })} />
-                </Box>
-                <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
-                    Place:
-                  </Typography>
-                  <TextField size="small" placeholder="Location" value={surveyor.place} onChange={(e) => setSurveyor({ ...surveyor, place: e.target.value })} />
-                </Box>
-              </Stack>
+              {notes?.map((note, idx) => (
+                <Typography key={idx} variant="body2" sx={{ mb: 0.5, pl: 2 }}>
+                  {idx + 1}. {note}
+                </Typography>
+              ))}
             </Box>
-          </Box>
-        )}
+          )}
 
-        {/* Submit Button */}
-        {rows?.length > 0 && (
-          <Box sx={{ mt: 3, textAlign: "end" }}>
-            <CommonButton variant="contained" onClick={handleSubmit(onSubmit)} sx={{ px: 4 }} text="submit"></CommonButton>
+          <Divider sx={{ my: 2 }} />
+
+          {/* Table Header */}
+          <Grid container spacing={2} sx={{ mb: 2, p: 1, bgcolor: "#f5f5f5" }}>
+            <Grid item xs={1}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                Sr. No.
+              </Typography>
+            </Grid>
+            <Grid item xs={8}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                Item
+              </Typography>
+            </Grid>
+            <Grid item xs={3}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                Y/N/NO/NA/P
+              </Typography>
+            </Grid>
+          </Grid>
+
+          {/* Checklist Rows */}
+          {rows.map((r, index) => (
+            <Box key={index} sx={{ mb: 1 }}>
+              {r.type === "section" ? (
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mt: 2, mb: 1 }}>
+                  {r.number} {r.text}
+                </Typography>
+              ) : r.type === "subsection" ? (
+                <Typography variant="body1" sx={{ fontWeight: 500, mt: 1.5, mb: 1, pl: 2 }}>
+                  {r.number} {r.text}
+                </Typography>
+              ) : (
+                <Grid container spacing={2} alignItems="center" sx={{ py: 1 }}>
+                  <Grid item xs={1}>
+                    <Typography variant="body2">{r.number}</Typography>
+                  </Grid>
+                  <Grid item xs={8}>
+                    <Typography variant="body2">{r.text}</Typography>
+                  </Grid>
+                  <Grid item xs={3}>
+                    <Select value={r.choice} fullWidth size="small" onChange={(e) => updateRowChoice(index, e.target.value)} displayEmpty>
+                      <MenuItem value=""></MenuItem>
+                      <MenuItem value="Y">Y</MenuItem>
+                      <MenuItem value="N">N</MenuItem>
+                      <MenuItem value="NO">NO</MenuItem>
+                      <MenuItem value="NA">NA</MenuItem>
+                      <MenuItem value="P">P</MenuItem>
+                    </Select>
+                  </Grid>
+                </Grid>
+              )}
+            </Box>
+          ))}
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Remarks Section */}
+          <Box sx={{ mb: 3 }}>
+            <Typography sx={{ fontWeight: 500, mb: 1 }}>Remarks:</Typography>
+            <TextareaAutosize
+              minRows={3}
+              placeholder="Enter remarks..."
+              style={{
+                width: "100%",
+                padding: "8px",
+                borderRadius: "4px",
+                border: "1px solid #ccc",
+                fontSize: "14px",
+                fontFamily: "inherit",
+              }}
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+            />
           </Box>
-        )}
-      </Paper>
-    </Box>
+
+          {/* Signature Section */}
+          <Box>
+            <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+              Surveyor Information
+            </Typography>
+            <TextField size="small" fullWidth sx={{ mb: 2, maxWidth: 400 }} placeholder="Surveyor Name" value={surveyor.name} onChange={(e) => setSurveyor({ ...surveyor, name: e.target.value })} />
+            <Typography variant="body2" sx={{ mb: 2, color: "text.secondary" }}>
+              Surveyor(s) to Indian Register of Shipping
+            </Typography>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
+                  Date:
+                </Typography>
+                <TextField type="date" size="small" InputLabelProps={{ shrink: true }} value={surveyor.date} onChange={(e) => setSurveyor({ ...surveyor, date: e.target.value })} />
+              </Box>
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
+                  Place:
+                </Typography>
+                <TextField size="small" placeholder="Location" value={surveyor.place} onChange={(e) => setSurveyor({ ...surveyor, place: e.target.value })} />
+              </Box>
+            </Stack>
+          </Box>
+        </Box>
+      )}
+
+      {/* Submit Button */}
+      {rows?.length > 0 && (
+        <Box sx={{ mt: 3, textAlign: "end" }}>
+          <CommonButton variant="contained" onClick={handleSubmit(onSubmit)} sx={{ px: 4 }} text={buttonText}></CommonButton>
+        </Box>
+      )}
+    </CommonCard>
   );
 };
 
