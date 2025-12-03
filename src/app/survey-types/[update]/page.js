@@ -22,32 +22,32 @@ const UpdateClient = ({ params }) => {
   const [isEditDialogVisible, setIsEditDialogVisible] = useState(false);
   const [editingAllowed, setEditingAllowed] = useState(false);
   const [changeHistory, setChangeHistory] = useState([]);
-  const [editReason, setEditReason] = useState('');
+  const [editReason, setEditReason] = useState("");
 
   const fetchClientsHistory = async () => {
     try {
-      const result = await getClientHistory(params?.update);
-      if (result?.status === 200) {
-        const newData = transformData(result.data.data);
-        setChangeHistory(newData)
+      if (params?.update) {
+        const result = await getClientHistory(params?.update);
+        if (result?.status === 200) {
+          const newData = transformData(result.data.data);
+        }
       } else {
         // toast.error("Something went wrong ! Please try again after some time")
       }
-
     } catch (error) {
-      toast.error(error)
+      toast.error(error);
     }
-  }
+  };
 
   useEffect(() => {
     fetchClientsHistory();
-  }, [])
+  }, []);
 
   return (
     <Layout>
       <CommonCard sx={{ mt: 0, pl: 2 }}>
-        <Stack direction={'row'} alignItems={'center'} gap={2}>
-          <IconButton size="small" onClick={() => router.push('/survey-types')}>
+        <Stack direction={"row"} alignItems={"center"} gap={2}>
+          <IconButton size="small" onClick={() => router.push("/survey-types")}>
             <ArrowBack />
           </IconButton>
           <Typography variant="h6" fontWeight={"700"}>
@@ -58,7 +58,7 @@ const UpdateClient = ({ params }) => {
         </Stack>
       </CommonCard>
       <Stack>
-        <SurveyTypeForm  mode="update" surveyTypeId={params?.update} />
+        <SurveyTypeForm mode="update" surveyTypeId={params?.update} />
       </Stack>
       {/* {isEditDialogVisible && (
         <EditingReasonDialog

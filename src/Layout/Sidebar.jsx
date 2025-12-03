@@ -21,15 +21,12 @@ const Sidebar = styled(Drawer)(({ theme }) => ({
 }));
 
 const SidebarComponent = ({ isSidebarOpen }) => {
-  const { roleId, permissions } = useAuth(); // Get permissions from context
-  console.log("=>permissions", permissions)
+  const { roleId, permissions } = useAuth();
   const pathName = usePathname();
   const [activeTab, setActiveTab] = useState(pathName);
 
-  // Get user data from localStorage
   const userData = JSON.parse(localStorage.getItem("data") || "{}");
 
-  // Module to menu item mapping
   const moduleMenuMapping = {
     "Clients": "Clients",
     "Users": "Users",
@@ -38,9 +35,11 @@ const SidebarComponent = ({ isSidebarOpen }) => {
     "IssuedDocument": "Issued Documents",
     "SurveyType": "Survey Types",
     "Documents": "Documents",
-    "SystemVariable": "System Variables",
+    "SystemVariable": "System Configuration",
     "Classification": "Classification",
-    "AdditionalFields": "Additional Fields"
+    "AdditionalFields": "Additional Fields",
+    "MachineryList": "Machinery",
+    "CheckList": "Check List"
   };
 
   const getFilteredMenuItems = () => {
@@ -74,19 +73,18 @@ const SidebarComponent = ({ isSidebarOpen }) => {
         return sidemenu_items;
       } else if (roleId === "3") {
         return sidemenu_items.filter((item) =>
-          ["Reporting", "Issued Documents", "System Variables", "AdditionalFields"].includes(item.label)
+          ["Reporting", "Issued Documents", "System Configuration", "AdditionalFields", "MachineryList"].includes(item.label)
         );
       } else if (roleId === "2") {
         return sidemenu_items.filter((item) => {
           if (item.label === "Clients") {
             return userData?.dataEntryRights === true;
           }
-          return ["Journal", "Reporting", "Issued Documents", "Survey Types", "Documents", "System Variables", "Classification", "AdditionalFields"].includes(item.label);
+          return ["Journal", "Reporting", "Issued Documents", "Survey Types", "Documents", "System Configuration", "Classification", "AdditionalFields", "MachineryList"].includes(item.label);
         });
       }
     }
 
-    // Remove duplicates and maintain original order
     const uniqueItems = [];
     const seenLabels = new Set();
 

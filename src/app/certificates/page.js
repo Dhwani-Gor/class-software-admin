@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Box, Stack, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Tooltip, Chip, TextField, Select, MenuItem, CircularProgress } from "@mui/material";
+import { Box, Stack, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Tooltip, Chip, TextField, Select, MenuItem, CircularProgress, Checkbox, ListItemText, ListItemIcon } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GetAppIcon from "@mui/icons-material/GetApp";
@@ -19,27 +19,29 @@ import { useAuth } from "@/hooks/useAuth";
 import Pagination from "@mui/material/Pagination";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-
-import { deleteSurveyReport, deleteSurveyStatusReport, getAllIssuedDocuments, getAllReports, getJournalsList } from "@/api";
+import { deleteCheckList, deleteSurveyReport, deleteSurveyStatusReport, getAllChecklist, getAllIssuedDocuments, getAllReports, getJournalsList, getSingleChecklist, markAsRevoked } from "@/api";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { Menu } from "@mui/material";
+import SendEmailDialog from "@/components/Dialogs/DownloadAllEmailDialog";
+import EmailIcon from "@mui/icons-material/Email";
+import { DownloadOutlined } from "@mui/icons-material";
+import BlockIcon from "@mui/icons-material/Block";
 
 const Certificates = () => {
   const { data } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-
   const [certificatesList, setCertificatesList] = useState([]);
   const [reportsList, setReportsList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const [limit, setLimit] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
-
   const [count, setTotalCount] = useState(0);
   const [showAll, setShowAll] = useState(false);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("Certificates");
-  console.log(selectedFilter, "selectedfilter");
   const [selectedReportNumber, setSelectedReportNumber] = useState("");
   const [placeFilter, setPlaceFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -53,16 +55,84 @@ const Certificates = () => {
   const [openAmdRemarks, setOpenAmdRemarks] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [openEmailDialog, setOpenEmailDialog] = useState(false);
+  const [zipType, setZipType] = useState("");
+  const [selectedCertificates, setSelectedCertificates] = useState([]);
+  const [selectedArchives, setSelectedArchives] = useState([]);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedReports, setSelectedReports] = useState([]);
+  const [createdUserEmail, setCreatedUserEmail] = useState("");
+  const [checkList, setCheckList] = useState([]);
+  const [selectedCheckList, setSelectedCheckList] = useState(null);
 
   const handleSort = (key) => {
     setSortConfig((prev) => {
       if (prev.key === key) {
-        // toggle direction
         return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
       } else {
         return { key, direction: "asc" };
       }
     });
+  };
+
+  const getSelectedCheckList = async (id) => {
+    try {
+      const res = await getSingleChecklist(id);
+      setSelectedCheckList(res?.data?.data);
+    } catch (error) {
+      console.error("Error fetching single checklist:", error);
+    }
+  };
+
+  // useEffect(() => {
+  //   getSelectedCheckList();
+  // }, [selectedFilter === "Checklist"]);
+  // === Handlers for Certificates ===
+  const handleSelectAllCertificates = (rows) => {
+    if (selectedCertificates.length === rows.length) {
+      setSelectedCertificates([]);
+    } else {
+      setSelectedCertificates(rows.map((r) => r.id));
+    }
+  };
+
+  const handleSelectCertificate = (id, email) => {
+    if (!selectedCertificates.includes(id)) {
+      setCreatedUserEmail(email);
+    }
+
+    setSelectedCertificates((prev) => (prev.includes(id) ? prev.filter((cid) => cid !== id) : [...prev, id]));
+  };
+
+  // === Handlers for Archive Documents ===
+  const handleSelectAllArchives = (rows) => {
+    if (selectedArchives.length === rows.length) {
+      setSelectedArchives([]);
+    } else {
+      setSelectedArchives(rows.map((r) => r.id));
+    }
+  };
+
+  const handleSelectArchive = (id, email) => {
+    if (!selectedArchives.includes(id)) {
+      setCreatedUserEmail(email);
+    }
+    setSelectedArchives((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const handleSelectAllReports = (rows) => {
+    if (selectedReports.length === rows.length) {
+      setSelectedReports([]);
+    } else {
+      setSelectedReports(rows.map((r) => r.id));
+    }
+  };
+
+  const handleSelectReport = (id, email) => {
+    if (!selectedReports.includes(id)) {
+      setCreatedUserEmail(email);
+    }
+    setSelectedReports((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const sortData = (data) => {
@@ -78,7 +148,6 @@ const Certificates = () => {
     });
   };
 
-  // helper to safely extract nested values
   const getValue = (obj, key) => {
     try {
       return key.split(".").reduce((acc, part) => acc && acc[part], obj) || "";
@@ -87,9 +156,47 @@ const Certificates = () => {
     }
   };
 
+  const getCheckList = async () => {
+    setLoading(true);
+    try {
+      const res = showAll ? await getAllChecklist("", "", debouncedSearch) : await getAllChecklist(page, limit, debouncedSearch);
+      if (res?.data?.status === "success" && Array.isArray(res?.data?.data)) {
+        setCheckList(res?.data?.data);
+        setTotalRows(res?.data?.results || res?.data?.data?.length);
+        setTotalCount(res?.data?.results || res?.data?.data?.length);
+      } else {
+        setCheckList([]);
+        setTotalRows(0);
+        setTotalCount(0);
+      }
+    } catch (e) {
+      setCheckList([]);
+      setTotalRows(0);
+      setTotalCount(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedFilter === "Checklist") {
+      getCheckList();
+    }
+  }, [selectedFilter, page, limit, debouncedSearch, showAll]);
+
+  useEffect(() => {
+    if (selectedFilter === "Checklist") {
+      getCheckList();
+    }
+  }, [selectedFilter, page, limit, debouncedSearch, showAll]);
+
+  useEffect(() => {
+    setZipType(selectedFilter === "Certificates" ? "certificates" : selectedFilter === "Archive Documents" ? "archive-documents" : "reports");
+  }, [selectedFilter]);
+
   const hasArchivePermission = data?.specialPermission?.some((perm) => perm.toLowerCase() === "archivedocuments");
 
-  const tabs = ["Certificates", "Archive Documents", "Reports"];
+  const tabs = ["Certificates", "Archive Documents", "Reports", "Checklist"];
 
   const formatDate = (dateString) =>
     dateString
@@ -131,11 +238,11 @@ const Certificates = () => {
       }
       const searchQuery = debouncedSearch.trim();
       const markAsArchive = selectedFilter === "Archive Documents";
-      const res = showAll ? await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, undefined, undefined, startDate, endDate, markAsArchive) : await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, page, limit, startDate, endDate, markAsArchive);
+      const issuedDocument = selectedFilter === "Certificates" || selectedFilter === "Archive Documents" ? true : false;
+      const res = showAll ? await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, undefined, undefined, startDate, endDate, markAsArchive, issuedDocument) : await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, page, limit, startDate, endDate, markAsArchive, issuedDocument);
       const data = res?.data;
       if (data?.status === "success" && Array.isArray(data?.data)) {
         setCertificatesList(data.data);
-        console.log(data.data, "data");
         setTotalRows(data.results);
         setTotalCount(data.results);
       } else {
@@ -163,15 +270,19 @@ const Certificates = () => {
         await deleteSurveyReport(selectedDocument.id);
         toast.success("Report deleted successfully");
         fetchReportsData();
+      } else if (selectedDocument.type === "checklist") {
+        await deleteCheckList(selectedDocument.id);
+        toast.success("Checklist deleted successfully");
+        getCheckList();
       }
     } catch (e) {
       console.error("Error deleting:", e.response?.data || e.message);
-      toast.error("Failed to delete.");
     }
   };
 
   const handleCancelDelete = () => {
     setSelectedDocument(null);
+    setSelectedCheckList(nulll);
     setOpenDialog(false);
   };
 
@@ -245,7 +356,8 @@ const Certificates = () => {
   const handleBulkDownload = async () => {
     if (!certificatesList.length) return;
     const zip = new JSZip();
-    const folder = zip.folder(certificatesList[0]?.activity?.journal?.client?.shipName || "Certificates");
+    const folderName = "MCBG Certificates";
+    const folder = zip.folder(folderName);
     setLoading(true);
     try {
       await Promise.all(
@@ -258,11 +370,44 @@ const Certificates = () => {
         })
       );
       const content = await zip.generateAsync({ type: "blob" });
-      saveAs(content, `${certificatesList[0]?.activity?.journal?.client?.shipName || "Certificates"}.zip`);
+      saveAs(content, `${folderName}.zip`);
       toast.success("All files downloaded successfully as a zip!");
     } catch (error) {
       console.error(error);
       toast.error("Failed to download all files.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBulkDownloadSelected = async (selectedIds) => {
+    if (selectedIds.length === 0) return;
+
+    const zip = new JSZip();
+    const folderName = "MCBG Certificates";
+    const folder = zip.folder(folderName);
+    setLoading(true);
+
+    try {
+      // Filter to get only selected certificates
+      const selectedCerts = certificatesList.filter((cert) => selectedIds.includes(cert.id));
+
+      await Promise.all(
+        selectedCerts.map(async (cert) => {
+          if (!cert.generatedDoc) return;
+          const res = await fetch(cert.generatedDoc);
+          const blob = await res.blob();
+          const fileName = `${cert.generatedDoc.split("/").pop()}`;
+          folder.file(fileName, blob);
+        })
+      );
+
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, `${folderName}_Selected.zip`);
+      toast.success(`${selectedCerts.length} selected files downloaded successfully as a zip!`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to download selected files.");
     } finally {
       setLoading(false);
     }
@@ -274,7 +419,7 @@ const Certificates = () => {
   const handleBulkDownloadReports = async () => {
     if (!reportsList.length) return;
     const zip = new JSZip();
-    const folder = zip.folder(reportsList[0]?.client?.shipName || "Reports");
+    const folder = zip.folder("MCBG Reports");
     setLoading(true);
     try {
       await Promise.all(
@@ -282,12 +427,31 @@ const Certificates = () => {
           if (!report.generatedDoc) return;
           const res = await fetch(report.generatedDoc);
           const blob = await res.blob();
-          const fileName = `${report.client?.shipName || "Report"}_${report.generatedDoc.split("/").pop()}`;
+
+          const file = report.generatedDoc.split("/").pop();
+          const matches = file.match(/MCB[A-Z0-9]+/gi);
+          const reportNo = matches ? matches[matches.length - 1] : null;
+          const shipName = report.client?.shipName || report.ship?.name || "Unknown Ship";
+
+          // Determine proper filename format (same as individual download)
+          const fileName = (() => {
+            if (/status[_ ]?report/i.test(file)) {
+              return `MCBG Survey Status - ${shipName}.pdf`;
+            }
+            if (/survey[_ ]?report/i.test(file)) {
+              return `Survey Report${reportNo ? ` - ${reportNo}` : ""} - ${shipName}.pdf`;
+            }
+            if (/narrative[_ ]?report/i.test(file)) {
+              return `Narrative Report${reportNo ? ` - ${reportNo}` : ""} - ${shipName}.pdf`;
+            }
+            return file.replace(/_/g, " ").replace(/\.[^/.]+$/, "") + ".pdf";
+          })();
+
           folder.file(fileName, blob);
         })
       );
       const content = await zip.generateAsync({ type: "blob" });
-      saveAs(content, `${reportsList[0]?.client?.shipName || "Reports"}.zip`);
+      saveAs(content, "MCBG Reports.zip");
       toast.success("All reports downloaded successfully as a zip!");
     } catch (error) {
       console.error(error);
@@ -295,6 +459,25 @@ const Certificates = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const resolveSelectedRows = () => {
+    let masterList = [];
+
+    if (selectedFilter === "Certificates") masterList = certificatesList;
+    if (selectedFilter === "Archive Documents") masterList = certificatesList;
+    if (selectedFilter === "Reports") masterList = reportsList;
+    if (selectedFilter === "Checklist") masterList = checkList;
+
+    const selectedIds = selectedFilter === "Certificates" ? selectedCertificates : selectedFilter === "Archive Documents" ? selectedArchives : selectedFilter === "Reports" ? selectedReports : [];
+
+    return selectedIds.map((id) => {
+      const fullRow = masterList.find((item) => item.id === id);
+      return {
+        ...fullRow,
+        shipName: fullRow?.shipName || fullRow?.vesselName || "", // adjust your field
+      };
+    });
   };
 
   return (
@@ -306,23 +489,118 @@ const Certificates = () => {
           </Typography>
         </Stack>
       </CommonCard>
-
       <CommonCard>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
           <Stack direction="row" spacing={2}>
             {tabs.map((tab) => (
-              <Chip key={tab} label={tab} color={selectedFilter === tab ? "primary" : "default"} onClick={() => setSelectedFilter(tab)} />
+              <Chip
+                key={tab}
+                label={tab}
+                color={selectedFilter === tab ? "primary" : "default"}
+                onClick={() => {
+                  setSelectedFilter(tab);
+
+                  setPage(1);
+                }}
+              />
             ))}
           </Stack>
           {hasArchivePermission && (
-            <Stack>
-              <CommonButton variant="contained" onClick={selectedFilter === "Reports" ? handleBulkDownloadReports : handleBulkDownload} text="Download All">
-                Download All
-              </CommonButton>
-            </Stack>
+            <Box>
+              <IconButton aria-label="more" aria-controls="options-menu" aria-haspopup="true" onClick={(e) => setAnchorEl(e.currentTarget)}>
+                <MoreVertIcon />
+              </IconButton>
+
+              <Menu
+                id="options-menu"
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={() => setAnchorEl(null)}
+                PaperProps={{
+                  sx: { width: 200 },
+                }}
+              >
+                <MenuItem
+                  onClick={() => {
+                    setAnchorEl(null);
+
+                    if (selectedFilter === "Reports") {
+                      handleBulkDownloadReports();
+                    } else {
+                      const selectedIds = selectedFilter === "Certificates" ? selectedCertificates : selectedArchives;
+
+                      if (selectedIds.length > 0) {
+                        handleBulkDownloadSelected(selectedIds);
+                      } else {
+                        handleBulkDownload();
+                      }
+                    }
+                  }}
+                >
+                  <ListItemIcon>
+                    <DownloadOutlined fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText primary="Download" />
+                  {selectedFilter === "Certificates" && selectedCertificates.length > 0 ? `(${selectedCertificates.length})` : selectedFilter === "Archive Documents" && selectedArchives.length > 0 ? `(${selectedArchives.length})` : ""}
+                </MenuItem>
+
+                {(selectedCertificates.length > 0 || selectedArchives.length > 0) && (
+                  <MenuItem
+                    onClick={async () => {
+                      setAnchorEl(null);
+                      try {
+                        setLoading(true);
+                        const idsToRevoke = selectedFilter === "Certificates" ? selectedCertificates : selectedArchives;
+
+                        const res = await markAsRevoked({ reportDetailIds: idsToRevoke });
+                        if (res.data.status === "success") {
+                          toast.success(res.data.message);
+                          if (selectedFilter === "Certificates") setSelectedCertificates([]);
+                          else setSelectedArchives([]);
+                          fetchCertificatesData();
+                        } else {
+                          toast.error(res.data.message || "Failed to revoke documents.");
+                        }
+                      } catch (err) {
+                        console.error(err);
+                        toast.error("Error revoking documents.");
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                  >
+                    <ListItemIcon>
+                      <BlockIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText primary="Revoke" />
+                    {`(${selectedFilter === "Certificates" ? selectedCertificates.length : selectedArchives.length})`}
+                  </MenuItem>
+                )}
+                <MenuItem
+                  onClick={() => {
+                    setAnchorEl(null);
+                    setOpenEmailDialog(true);
+                  }}
+                >
+                  <ListItemIcon>
+                    <EmailIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText primary="Send Email" />
+                </MenuItem>
+              </Menu>
+            </Box>
           )}
         </Box>
-        <CommonInput placeholder="Search" fullWidth value={search} onChange={(e) => setSearch(e.target.value)} sx={{ mb: 2 }} />
+        <CommonInput
+          placeholder="Search"
+          fullWidth
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          sx={{ mb: 2 }}
+        />
         <Box sx={{ width: "100%", overflowX: "auto", height: "70vh" }}>
           {loading ? (
             <Box display="flex" justifyContent="center" alignItems="center" height="300px">
@@ -333,15 +611,12 @@ const Certificates = () => {
               {selectedFilter === "Reports" && (
                 <TableContainer component={Paper}>
                   <Table sx={{ marginTop: 2 }}>
-                    <TableHead>
-                      <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                        {[
-                          { label: "No.", key: null, width: "10%" },
-                          { label: "Ship Name", key: "client.shipName", width: "15%" },
-                          { label: "Document", key: "generatedDoc" },
-                          { label: "Created Date", key: "createdAt", width: "15%" },
-                          { label: "Actions", key: null },
-                        ].map((col) => (
+                    <TableHead sx={{ padding: 0 }}>
+                      <TableRow sx={{ backgroundColor: "#f5f5f5", padding: 0 }}>
+                        <TableCell sx={{ width: 50 }}>
+                          <Checkbox checked={selectedReports.length === sortedReports.length && sortedReports.length > 0} onChange={() => handleSelectAllReports(sortedReports)} sx={{ padding: 0 }} />
+                        </TableCell>
+                        {[{ label: "No.", key: null, width: "10%" }, { label: "Ship Name", key: "client.shipName", width: "22%" }, { label: "Document", key: "generatedDoc", width: "35%" }, { label: "Created Date", key: "createdAt", width: "15%" }, { label: "Actions" }].map((col) => (
                           <TableCell
                             key={col.label}
                             sx={{
@@ -364,22 +639,26 @@ const Certificates = () => {
                     <TableBody>
                       {sortedReports.map((row, idx) => (
                         <TableRow key={row.id}>
+                          <TableCell padding="checkbox">
+                            <Checkbox checked={selectedReports.includes(row.id)} onChange={() => handleSelectReport(row.id, row?.createdByUser?.email)} />
+                          </TableCell>
                           <TableCell>{(page - 1) * limit + idx + 1}</TableCell>
                           <TableCell>{row.client?.shipName || "N/A"}</TableCell>
                           <TableCell>
                             {(() => {
                               if (!row.generatedDoc) return "N/A";
 
-                              const fileName = row.generatedDoc.split("/").pop(); // extract filename
+                              const fileName = row.generatedDoc.split("/").pop();
 
-                              // Find the *last* MCB code (e.g. MCB25M002, MCB25N014)
-                              const matches = fileName.match(/MCB[A-Z0-9]+/gi);
+                              const matches = fileName.match(/MCBG?[A-Z0-9]+/gi);
                               const reportNo = matches ? matches[matches.length - 1] : null;
 
                               if (/status[_ ]?report/i.test(fileName)) {
                                 return "Survey Status Report";
                               } else if (/survey[_ ]?report/i.test(fileName)) {
                                 return `Survey Report${reportNo ? ` - ${reportNo}` : ""}`;
+                              } else if (/narrative[_ ]?report/i.test(fileName)) {
+                                return `Narrative Report${reportNo ? ` - ${reportNo}` : ""}`;
                               } else {
                                 return fileName.replace(/_/g, " ").replace(/\.[^/.]+$/, "");
                               }
@@ -394,6 +673,42 @@ const Certificates = () => {
                                   <VisibilityIcon />
                                 </IconButton>
                               </Tooltip>
+                              <Tooltip title="Download Document">
+                                <IconButton
+                                  color="success"
+                                  onClick={() => {
+                                    if (!row.generatedDoc) return;
+
+                                    const file = row.generatedDoc.split("/").pop();
+                                    const matches = file.match(/MCB[A-Z0-9]+/gi);
+                                    const reportNo = matches ? matches[matches.length - 1] : null;
+                                    const shipName = row.client?.shipName || row.ship?.name || "Unknown Ship";
+
+                                    // Determine proper filename format
+                                    const fileName = (() => {
+                                      if (/status[_ ]?report/i.test(file)) {
+                                        return `MCBG Survey Status - ${shipName}.pdf`;
+                                      }
+                                      if (/survey[_ ]?report/i.test(file)) {
+                                        return `Survey Report${reportNo ? ` - ${reportNo}` : ""} - ${shipName}.pdf`;
+                                      }
+                                      return file.replace(/_/g, " ").replace(/\.[^/.]+$/, "") + ".pdf";
+                                    })();
+
+                                    fetch(row.generatedDoc)
+                                      .then((res) => res.blob())
+                                      .then((blob) => saveAs(blob, fileName))
+                                      .catch((err) => {
+                                        console.error(err);
+                                        window.open(row.generatedDoc, "_blank");
+                                      });
+                                  }}
+                                  disabled={!row.generatedDoc}
+                                >
+                                  <GetAppIcon />
+                                </IconButton>
+                              </Tooltip>
+
                               <Tooltip title="Delete Report">
                                 <IconButton
                                   color="error"
@@ -415,18 +730,168 @@ const Certificates = () => {
                 </TableContainer>
               )}
 
+              {selectedFilter === "Checklist" && (
+                <TableContainer component={Paper} sx={{ mt: 2 }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                        <TableCell sx={{ fontWeight: 600 }}>No.</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Ship Name</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Survey Type</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>Report Number</TableCell>
+
+                        <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+
+                    <TableBody>
+                      {checkList.map((item, idx) => (
+                        <TableRow key={item.id}>
+                          {/* Ship Name */}
+                          <TableCell>{(page - 1) * limit + idx + 1}</TableCell>
+
+                          <TableCell>{item?.client?.shipName || "N/A"}</TableCell>
+
+                          {/* Report Number */}
+                          <TableCell>{item?.surveyType?.name || "N/A"}</TableCell>
+
+                          <TableCell>{item?.journal?.journalTypeId || "N/A"}</TableCell>
+
+                          {/* Checklist title */}
+
+                          {/* Checklist description */}
+
+                          <TableCell>
+                            <Tooltip title="Preview Checklist">
+                              <IconButton
+                                color="info"
+                                onClick={() => {
+                                  getSelectedCheckList(item.id);
+
+                                  const notesArray = item?.checkListData?.notes ? item.checkListData.notes.split(/\d+\s*/).filter(Boolean) : [];
+
+                                  const html = `
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; color: #000; }
+    .logo-title { text-align: center; font-weight: bold; font-size: 26px; padding-bottom: 5px; }
+    .subtitle { text-align: center; font-size: 18px; margin-top: -5px; }
+    .survey-type { text-align: center; font-size: 16px; font-weight: 600; margin-top: 5px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; margin-top: 20px; font-size: 14px; row-gap: 8px; }
+    .label { font-weight: 600; margin-bottom: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    table, th, td { border: 1px solid #000; }
+    th { text-align: center; font-weight: 600; font-size: 14px; background-color: #f0f0f0; }
+    td { padding: 6px; font-size: 13px; }
+    .notes-title { font-weight: 600; margin-top: 25px; font-size: 14px; }
+    .notes-table td { font-size: 12px; }
+  </style>
+</head>
+<body>
+
+  <div class="logo-title" style="margin-bottom:10px">Indian Register of Shipping</div>
+  <div class="subtitle" style="margin-bottom:10px">SAFETY CONSTRUCTION SURVEY CHECKLIST</div>
+
+  <div class="survey-type" style="margin-bottom:10px">Type of Survey: ${item?.surveyType?.name || "—"}</div>
+
+  <div class="grid">
+    <div><span class="label">Name of Ship:</span> ${item?.client?.shipName || "................"}</div>
+    <div><span class="label">I.R. No.:</span> ${item?.reportNo || "................"}</div>
+    <div><span class="label">IMO No.:</span> ${item?.checkListData?.header?.imoNumber || "................"}</div>
+    <div><span class="label">Port of Survey:</span> ${item?.checkListData?.header?.portOfSurvey || "................"}</div>
+  </div>
+
+  <div class="notes-title">NOTES:</div>
+  <table class="notes-table">
+    ${notesArray.length > 0 ? notesArray.map((note, index) => `<tr><td>${index + 1}</td><td>${note.trim()}</td></tr>`).join("") : ""}
+  </table>
+
+  <table>
+    <tr>
+      <th style="width: 60px;">Sr. No.</th>
+      <th>Item</th>
+      <th style="width: 120px;">Y / N / NO / NA / P</th>
+    </tr>
+
+    ${
+      item?.checkListData?.checkList
+        ?.map(
+          (row, index) => `
+            <tr>
+              <td style="text-align:center;">${row.number || index + 1}</td>
+              <td>${row.item || ""}</td>
+              <td style="text-align:center;">${row.selected || "—"}</td>
+            </tr>
+          `
+        )
+        .join("") || ""
+    }
+  </table>
+
+  <p style="font-size:12px; text-align:center; margin-top:30px;">
+    Generated by MCBG System
+  </p>
+
+</body>
+</html>
+`;
+
+                                  const blob = new Blob([html], { type: "text/html" });
+                                  const url = URL.createObjectURL(blob);
+
+                                  setPreviewFile(url);
+                                  setOpenPreviewModal(true);
+                                }}
+                              >
+                                <VisibilityIcon />
+                              </IconButton>
+                            </Tooltip>
+
+                            <Tooltip title="Delete Checklist">
+                              <IconButton
+                                color="error"
+                                onClick={() => {
+                                  setSelectedDocument({ id: item.id, type: "checklist" });
+                                  setOpenDialog(true);
+                                }}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </Tooltip>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
               {selectedFilter === "Certificates" && (
                 <TableContainer component={Paper}>
                   <Table sx={{ marginTop: 2 }}>
-                    <TableHead>
+                    <TableHead sx={{ padding: 0 }}>
                       <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                        <TableCell
+                          sx={{
+                            fontWeight: 600,
+                            width: "100px",
+                            whiteSpace: "nowrap",
+                            cursor: "pointer",
+                            userSelect: "none",
+                          }}
+                          onClick={() => handleSelectAllCertificates(sortedCertificates)}
+                        >
+                          <Checkbox checked={selectedCertificates.length === sortedCertificates.length && sortedCertificates.length > 0} onChange={() => handleSelectAllCertificates(sortedCertificates)} sx={{ padding: 0 }} />
+                        </TableCell>
+
                         {[
                           { label: "No.", key: null, width: "100px" },
                           { label: "Report No.", key: "activity.journal.journalTypeId", width: "15%" },
                           { label: "Ship Name", key: "activity.journal.client.shipName", width: "15%" },
-                          { label: "Certificate Type", key: "typeOfCertificate", width: "15%" },
+                          { label: "Certificate Type", key: "typeOfCertificate", width: "5%" },
                           { label: "Survey Type", key: "activity.surveyTypes.name", width: "20%" },
                           { label: "Survey Date", key: "surveyDate", width: "15%" },
+                          { label: "Status", key: "reportStatus", width: "15%" },
                           { label: "Actions", key: null, width: "100px" },
                         ].map((col) => (
                           <TableCell
@@ -449,49 +914,72 @@ const Certificates = () => {
                     </TableHead>
 
                     <TableBody>
-                      {sortedCertificates.map((row, idx) => (
-                        <TableRow key={row.id}>
-                          <TableCell>{(page - 1) * limit + idx + 1}</TableCell>
-                          <TableCell>
-                            {row.amendmentVersion > 0 ? (
-                              <Typography
-                                sx={{
-                                  color: "primary.main",
-                                  textDecoration: "underline",
-                                  cursor: "pointer",
-                                  fontWeight: 500,
-                                }}
-                                onClick={() => {
-                                  setSelectedReportId(row.id);
-                                  setOpenAmdRemarks(true);
-                                }}
-                              >
-                                {row.activity?.journal?.journalTypeId || "N/A"}
-                              </Typography>
-                            ) : (
-                              row.activity?.journal?.journalTypeId || "N/A"
-                            )}
-                          </TableCell>
-                          <TableCell>{row.activity?.journal?.client?.shipName || "N/A"}</TableCell>
-                          <TableCell>{row.typeOfCertificate?.replace("_", " ") || "N/A"}</TableCell>
-                          <TableCell>{row.activity?.surveyTypes?.name || "N/A"}</TableCell>
-                          <TableCell>{formatDate(row.surveyDate)}</TableCell>
-                          <TableCell>
-                            <Stack direction="row" spacing={1}>
-                              <Tooltip title="View Document">
-                                <IconButton color="info" onClick={() => handleViewDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
-                                  <VisibilityIcon />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Download Document">
-                                <IconButton color="success" onClick={() => handleDownloadDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
-                                  <GetAppIcon />
-                                </IconButton>
-                              </Tooltip>
-                            </Stack>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {sortedCertificates.map((row, idx) => {
+                        const today = new Date();
+
+                        const getStatus = (row) => {
+                          const validity = row?.validityDate ? new Date(row.validityDate) : null;
+
+                          if (validity) {
+                            if (validity > today) return "Valid";
+                            if (validity < today) return "Expired";
+                          }
+                        };
+                        return (
+                          <TableRow key={row.id}>
+                            <TableCell padding="checkbox">
+                              <Checkbox checked={selectedCertificates.includes(row.id)} onChange={() => handleSelectCertificate(row.id, row.createdByUser?.email)} />
+                            </TableCell>
+
+                            <TableCell>{(page - 1) * limit + idx + 1}</TableCell>
+                            <TableCell>
+                              {row.amendmentVersion > 0 ? (
+                                <Typography
+                                  sx={{
+                                    color: "primary.main",
+                                    textDecoration: "underline",
+                                    cursor: "pointer",
+                                    fontWeight: 500,
+                                  }}
+                                  onClick={() => {
+                                    setSelectedReportId(row.id);
+                                    setOpenAmdRemarks(true);
+                                  }}
+                                >
+                                  {row.activity?.journal?.journalTypeId || "N/A"}
+                                </Typography>
+                              ) : (
+                                row.activity?.journal?.journalTypeId || "N/A"
+                              )}
+                            </TableCell>
+                            <TableCell>{row.activity?.journal?.client?.shipName || "N/A"}</TableCell>
+                            <TableCell align="center">
+                              {{
+                                full_term: "FT",
+                                short_term: "ST",
+                                intrim: "Interim",
+                              }[row.typeOfCertificate] || "N/A"}
+                            </TableCell>
+                            <TableCell>{row.activity?.surveyTypes?.name || "N/A"}</TableCell>
+                            <TableCell>{formatDate(row.surveyDate)}</TableCell>
+                            <TableCell>{row.reportStatus === "re-classed" ? "Class" : row.reportStatus === "revoked" ? "Revoked" : row.reportStatus || getStatus(row)}</TableCell>
+                            <TableCell>
+                              <Stack direction="row" spacing={1}>
+                                <Tooltip title="View Document">
+                                  <IconButton color="info" onClick={() => handleViewDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
+                                    <VisibilityIcon />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Download Document">
+                                  <IconButton color="success" onClick={() => handleDownloadDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
+                                    <GetAppIcon />
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </TableContainer>
@@ -502,6 +990,27 @@ const Certificates = () => {
                   <Table sx={{ marginTop: 2 }}>
                     <TableHead>
                       <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                        <TableCell
+                          sx={{
+                            fontWeight: 600,
+                            width: "100px",
+                            whiteSpace: "nowrap",
+                            cursor: "pointer",
+                            userSelect: "none",
+                          }}
+                          onClick={() => handleSelectAllArchives(sortedCertificates)}
+                        >
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              textDecoration: "underline",
+                              color: selectedArchives.length === sortedCertificates.length && sortedCertificates.length > 0 ? "primary.main" : "text.primary",
+                            }}
+                          >
+                            <Checkbox checked={selectedArchives.length === sortedCertificates.length && sortedCertificates.length > 0} onChange={() => handleSelectAllArchives(sortedCertificates)} sx={{ padding: 0 }} />
+                          </Typography>
+                        </TableCell>
+
                         {[
                           { label: "No.", key: null, width: "100px" },
                           { label: "Report No.", key: "activity.journal.journalTypeId", width: "15%" },
@@ -509,6 +1018,7 @@ const Certificates = () => {
                           { label: "Certificate Type", key: "typeOfCertificate", width: "15%" },
                           { label: "Survey Type", key: "activity.surveyTypes.name", width: "20%" },
                           { label: "Survey Date", key: "surveyDate", width: "15%" },
+                          { label: "Status", key: "reportStatus", width: "15%" },
                           { label: "Actions", key: null, width: "100px" },
                         ].map((col) => (
                           <TableCell
@@ -531,51 +1041,73 @@ const Certificates = () => {
                     </TableHead>
 
                     <TableBody>
-                      {sortedCertificates.map((row, idx) => (
-                        <TableRow key={row.id}>
-                          <TableCell>{(page - 1) * limit + idx + 1}</TableCell>
-                          <TableCell>
-                            {row.amendmentVersion > 0 ? (
-                              <Typography
-                                sx={{
-                                  color: "primary.main",
-                                  textDecoration: "underline",
-                                  cursor: "pointer",
-                                  fontWeight: 500,
-                                }}
-                                onClick={() => {
-                                  setSelectedReportId(row.id);
-                                  setOpenAmdRemarks(true);
-                                }}
-                              >
-                                {row.activity?.journal?.journalTypeId || "N/A"}
-                              </Typography>
-                            ) : (
-                              row.activity?.journal?.journalTypeId || "N/A"
-                            )}
-                          </TableCell>
-                          <TableCell>{row.activity?.journal?.client?.shipName || "N/A"}</TableCell>
-                          <TableCell>{row.typeOfCertificate?.replace("_", " ") || "N/A"}</TableCell>
-                          <TableCell>{row.activity?.surveyTypes?.name || "N/A"}</TableCell>
-                          <TableCell>{formatDate(row.surveyDate)}</TableCell>
-                          <TableCell>
-                            <Stack direction="row" spacing={1}>
-                              <Tooltip title="View Document">
-                                <IconButton color="info" onClick={() => handleViewDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
-                                  <VisibilityIcon />
-                                </IconButton>
-                              </Tooltip>
-                              {hasArchivePermission && (
-                                <Tooltip title="Download Document">
-                                  <IconButton color="success" onClick={() => handleDownloadDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
-                                    <GetAppIcon />
+                      {sortedCertificates.map((row, idx) => {
+                        const today = new Date();
+                        const getStatus = (row) => {
+                          const validity = row?.validityDate ? new Date(row.validityDate) : null;
+
+                          if (validity) {
+                            if (validity > today) return "valid";
+                            if (validity < today) return "expired";
+                          }
+                        };
+                        return (
+                          <TableRow key={row.id}>
+                            <TableCell padding="checkbox">
+                              <Checkbox checked={selectedArchives.includes(row.id)} onChange={() => handleSelectArchive(row.id, row?.createdByUser?.email)} />
+                            </TableCell>
+
+                            <TableCell>{(page - 1) * limit + idx + 1}</TableCell>
+                            <TableCell>
+                              {row.amendmentVersion > 0 ? (
+                                <Typography
+                                  sx={{
+                                    color: "primary.main",
+                                    textDecoration: "underline",
+                                    cursor: "pointer",
+                                    fontWeight: 500,
+                                  }}
+                                  onClick={() => {
+                                    setSelectedReportId(row.id);
+                                    setOpenAmdRemarks(true);
+                                  }}
+                                >
+                                  {row.activity?.journal?.journalTypeId || "N/A"}
+                                </Typography>
+                              ) : (
+                                row.activity?.journal?.journalTypeId || "N/A"
+                              )}
+                            </TableCell>
+                            <TableCell>{row.activity?.journal?.client?.shipName || "N/A"}</TableCell>
+                            <TableCell>
+                              {{
+                                full_term: "FT",
+                                short_term: "ST",
+                                intrim: "Interim",
+                              }[row.typeOfCertificate] || "N/A"}
+                            </TableCell>
+                            <TableCell>{row.activity?.surveyTypes?.name || "N/A"}</TableCell>
+                            <TableCell>{formatDate(row.surveyDate)}</TableCell>
+                            <TableCell>{row.reportStatus === "re-classed" ? "Class" : row.reportStatus === "revoked" ? "Revoke" : row.reportStatus || getStatus(row)}</TableCell>
+                            <TableCell>
+                              <Stack direction="row" spacing={1}>
+                                <Tooltip title="View Document">
+                                  <IconButton color="info" onClick={() => handleViewDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
+                                    <VisibilityIcon />
                                   </IconButton>
                                 </Tooltip>
-                              )}
-                            </Stack>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                                {hasArchivePermission && (
+                                  <Tooltip title="Download Document">
+                                    <IconButton color="success" onClick={() => handleDownloadDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
+                                      <GetAppIcon />
+                                    </IconButton>
+                                  </Tooltip>
+                                )}
+                              </Stack>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </TableContainer>
@@ -584,7 +1116,7 @@ const Certificates = () => {
           )}
         </Box>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mt={2}>
-          <Typography>Total Count: {count}</Typography>
+          <Typography sx={{ fontWeight: "bold" }}>Total Count: {count}</Typography>
           <Stack direction="row" spacing={2} alignItems="center">
             <CommonButton
               text={showAll ? "Show Paginated" : "Show All"}
@@ -600,10 +1132,10 @@ const Certificates = () => {
           </Stack>
         </Stack>
       </CommonCard>
-
       <DocumentPreview open={openPreviewModal} fileUrl={previewFile} onClose={() => setOpenPreviewModal(false)} />
       <CommonConfirmationDialog open={openDialog} onCancel={handleCancelDelete} onConfirm={handleConfirmDelete} title="Are you sure you want to delete this survey status report?" description="This action cannot be undone." />
-      <ShowAmdRemarksDialog open={openAmdRemarks} onClose={() => setOpenAmdRemarks(false)} reportDetailId={selectedReportId} hasArchivePermission={hasArchivePermission} />
+      <ShowAmdRemarksDialog open={openAmdRemarks} onClose={() => setOpenAmdRemarks(false)} reportDetailId={selectedReportId} hasArchivePermission={hasArchivePermission} selectedFilter={selectedFilter} />
+      <SendEmailDialog open={openEmailDialog} onClose={() => setOpenEmailDialog(false)} selectedItems={resolveSelectedRows()} zipType={zipType} allItems={selectedFilter === "Certificates" ? certificatesList : selectedFilter === "Archive Documents" ? certificatesList : selectedFilter === "Reports" ? reportsList : []} createdUserEmail={createdUserEmail} />
     </Layout>
   );
 };

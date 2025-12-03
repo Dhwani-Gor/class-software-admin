@@ -28,7 +28,7 @@ export const sidemenu_items = [
     to: "/documents",
   },
   {
-    label: "System Variables",
+    label: "System Configuration",
     to: "/system-variables",
   },
   {
@@ -38,6 +38,14 @@ export const sidemenu_items = [
   {
     label: "Additional Fields",
     to: "/additional-fields",
+  },
+  {
+    label: "Machinery",
+    to: "/machine-list",
+  },
+  {
+    label: "Check List",
+    to: "/check-list",
   },
 ];
 

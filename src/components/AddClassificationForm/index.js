@@ -1,24 +1,37 @@
 "use client";
 
 import { addClassificationSurvey, deleteClassificationSurvey, getAllClassificationSurveys, getAllClassificationSurveyType, getAllClients, getSingleClassificationSurveyDetails, getSurveyReportData, updateClassificationSurvey } from "@/api";
-import { Box, DialogActions, FormControl, Grid2, IconButton, InputLabel, MenuItem, Select, TextField, Typography, Alert } from "@mui/material";
-import { useEffect, useState } from "react";
+import { Box, DialogActions, FormControl, Grid2, IconButton, InputLabel, MenuItem, Select, TextField, Typography, Alert, Autocomplete } from "@mui/material";
+import { useEffect, useState, useMemo } from "react";
 import DeleteIcon from "@mui/icons-material/Delete";
 import moment from "moment";
 import CommonButton from "../CommonButton";
 import { toast } from "react-toastify";
 import { calculateDates } from "@/utils/DateCalculation";
 
-const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, onSuccess }) => {
+const ClassificationForm = ({ mode, variableId, selectedShip, onSuccess }) => {
   const [classificationRows, setClassificationRows] = useState([]);
   const [cancelled, setCancelled] = useState(false);
   const [surveyTypes, setSurveyTypes] = useState([]);
   const [existingSurveys, setExistingSurveys] = useState([]);
+
   const [showSSHWarning, setShowSSHWarning] = useState({
     show: false,
     surveyType: "",
     requiredSurvey: "",
   });
+
+  const shipAnniversaryDate = useMemo(() => {
+    if (!existingSurveys.length) return null;
+
+    const annualSurvey = existingSurveys.find((s) => s.surveyName?.toLowerCase().includes("annual survey") && s.dueDate);
+
+    const specialSurveyHull = existingSurveys.find((s) => s.surveyName?.toLowerCase() === "special survey hull" && s.dueDate);
+
+    const referenceDate = annualSurvey?.dueDate || specialSurveyHull?.dueDate;
+
+    return referenceDate ? moment(referenceDate) : null;
+  }, [existingSurveys]);
 
   const surveyTypesRequiringSSH = ["annual survey", "docking survey", "main boiler survey", "auxiliary boiler survey", "thermal oil heating systems survey", "exhaust gas steam generators and economisers survey", "tailshaft condition monitoring annual survey", "intermediate survey"];
 
@@ -37,6 +50,15 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
     rangeTo: "",
     postponed: "",
   });
+
+  useEffect(() => {
+    if (selectedShip?.id && mode === "create") {
+      setExistingSurveys([]);
+      setClassificationRows([createEmptyRow()]);
+
+      getAllClassification();
+    }
+  }, [selectedShip?.id]);
 
   const checkAndShowSSHWarning = (surveyName) => {
     if (!surveyName) return;
@@ -73,6 +95,45 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
     }
   };
 
+  // const getAllClassification = async () => {
+  //   try {
+  //     if (!selectedShip.id) return;
+
+  //     const result = await getAllClassificationSurveys({
+  //       clientId: selectedShip.id,
+  //       page: 1,
+  //       limit: 100,
+  //     });
+
+  //     if (result?.status === 200) {
+  //       const data = result.data.data;
+  //       setExistingSurveys(data);
+
+  //       if (classificationRows.length > 0 && classificationRows[0].surveyName) {
+  //         const updatedRows = classificationRows.map((row) => {
+  //           if (row.surveyName && (row.surveyDate || row.issuanceDate)) {
+  //             const dateToUse = row.issuanceDate || row.surveyDate;
+  //             const { anniversaryDate } = calculateDates(dateToUse, row.surveyName, data);
+
+  //             return {
+  //               ...row,
+  //               anniversaryDate,
+  //               anniversaryDateDisplay: anniversaryDate ? moment(anniversaryDate).format("DD MMM") : "",
+  //             };
+  //           }
+  //           return row;
+  //         });
+  //         setClassificationRows(updatedRows);
+  //       }
+  //     } else {
+  //       toast.error("Something went wrong! Please try again later");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching classification data:", error);
+  //     toast.error(error.message || "Error fetching classification data");
+  //   }
+  // };
+
   const getAllClassification = async () => {
     try {
       if (!selectedShip.id) return;
@@ -86,6 +147,25 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
       if (result?.status === 200) {
         const data = result.data.data;
         setExistingSurveys(data);
+
+        // Only update rows if we're in update mode and have a variableId
+        // For create mode, let the useEffect handle row initialization
+        if (mode === "update" && variableId && classificationRows.length > 0 && classificationRows[0].surveyName) {
+          const updatedRows = classificationRows.map((row) => {
+            if (row.surveyName && (row.surveyDate || row.issuanceDate)) {
+              const dateToUse = row.issuanceDate || row.surveyDate;
+              const { anniversaryDate } = calculateDates(dateToUse, row.surveyName, data);
+
+              return {
+                ...row,
+                anniversaryDate,
+                anniversaryDateDisplay: anniversaryDate ? moment(anniversaryDate).format("DD MMM") : "",
+              };
+            }
+            return row;
+          });
+          setClassificationRows(updatedRows);
+        }
       } else {
         toast.error("Something went wrong! Please try again later");
       }
@@ -94,9 +174,10 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
       toast.error(error.message || "Error fetching classification data");
     }
   };
-
   useEffect(() => {
-    getAllClassification();
+    if (selectedShip?.id) {
+      getAllClassification();
+    }
   }, [selectedShip?.id]);
 
   const fetchAllSurveyTypes = async () => {
@@ -116,40 +197,73 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
       console.log(e);
     }
   };
+
   const handleChange = (section, index, field, value) => {
     const updatedRows = [...classificationRows];
-    updatedRows[index][field] = value;
-
-    if (field === "surveyName") {
-      checkAndShowSSHWarning(value);
-    }
+    const currentRow = { ...updatedRows[index] };
 
     if (field === "surveyDate") {
-      updatedRows[index].issuanceDate = value;
+      currentRow.surveyDate = value;
 
-      if (updatedRows[index].surveyName) {
-        const { dueDate, rangeFrom, rangeTo } = calculateDates(value || new Date().toISOString().split("T")[0], updatedRows[index].surveyName, existingSurveys);
-        updatedRows[index].dueDate = dueDate;
-        updatedRows[index].rangeFrom = rangeFrom;
-        updatedRows[index].rangeTo = rangeTo;
+      if (!currentRow.issuanceDate || currentRow.issuanceDate === classificationRows[index].surveyDate) {
+        currentRow.issuanceDate = value;
+      }
+
+      if (currentRow.surveyName && value) {
+        const { dueDate, rangeFrom, rangeTo, anniversaryDate } = calculateDates(value, currentRow.surveyName, existingSurveys);
+        currentRow.dueDate = dueDate;
+        currentRow.rangeFrom = rangeFrom;
+        currentRow.rangeTo = rangeTo;
+        currentRow.anniversaryDate = anniversaryDate;
+        currentRow.anniversaryDateDisplay = anniversaryDate ? moment(anniversaryDate).format("DD MMM") : "";
       }
     } else if (field === "issuanceDate") {
-      if (updatedRows[index].surveyName) {
-        const { dueDate, rangeFrom, rangeTo } = calculateDates(value || new Date().toISOString().split("T")[0], updatedRows[index].surveyName, existingSurveys);
-        updatedRows[index].dueDate = dueDate;
-        updatedRows[index].rangeFrom = rangeFrom;
-        updatedRows[index].rangeTo = rangeTo;
+      currentRow.issuanceDate = value;
+
+      if (currentRow.surveyName && value) {
+        const { dueDate, rangeFrom, rangeTo, anniversaryDate } = calculateDates(value, currentRow.surveyName, existingSurveys);
+        currentRow.dueDate = dueDate;
+        currentRow.rangeFrom = rangeFrom;
+        currentRow.rangeTo = rangeTo;
+        currentRow.anniversaryDate = anniversaryDate;
+        currentRow.anniversaryDateDisplay = anniversaryDate ? moment(anniversaryDate).format("DD MMM") : "";
+      }
+    } else if (field === "dueDate") {
+      currentRow.dueDate = value;
+
+      const surveyName = currentRow.surveyName?.trim().toLowerCase();
+
+      const noRangeSurveys = ["docking survey", "main boiler survey", "auxiliary boiler survey", "thermal oil heating systems survey", "exhaust gas steam generators and economisers survey"];
+
+      if (surveyName === "tailshaft condition monitoring annual survey") {
+        currentRow.rangeFrom = moment(value).subtract(3, "months").format("YYYY-MM-DD");
+        currentRow.rangeTo = moment(value).add(3, "months").format("YYYY-MM-DD");
+      } else if (surveyName && !noRangeSurveys.includes(surveyName)) {
+        currentRow.rangeFrom = moment(value).subtract(3, "months").format("YYYY-MM-DD");
+        currentRow.rangeTo = moment(value).add(3, "months").format("YYYY-MM-DD");
+      } else {
+        currentRow.rangeFrom = "";
+        currentRow.rangeTo = "";
       }
     } else if (field === "surveyName") {
-      const dateToUse = updatedRows[index].issuanceDate || updatedRows[index].surveyDate;
-      if (dateToUse) {
-        const { dueDate, rangeFrom, rangeTo } = calculateDates(dateToUse, value, existingSurveys);
-        updatedRows[index].dueDate = dueDate;
-        updatedRows[index].rangeFrom = rangeFrom;
-        updatedRows[index].rangeTo = rangeTo;
+      currentRow.surveyName = value;
+      checkAndShowSSHWarning(value);
+
+      // Calculate dates immediately when surveyName changes
+      const dateToUse = currentRow.issuanceDate || currentRow.surveyDate;
+      if (value && dateToUse) {
+        const { dueDate, rangeFrom, rangeTo, anniversaryDate } = calculateDates(dateToUse, value, existingSurveys);
+        currentRow.dueDate = dueDate;
+        currentRow.rangeFrom = rangeFrom;
+        currentRow.rangeTo = rangeTo;
+        currentRow.anniversaryDate = anniversaryDate;
+        currentRow.anniversaryDateDisplay = anniversaryDate ? moment(anniversaryDate).format("DD MMM") : "";
       }
+    } else {
+      currentRow[field] = value;
     }
 
+    updatedRows[index] = currentRow;
     setClassificationRows(updatedRows);
   };
 
@@ -182,17 +296,26 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
       if (result?.status === 200) {
         const data = result.data.data;
 
-        const { dueDate, rangeFrom, rangeTo } = calculateDates(data.issuanceDate, data.surveyName, existingSurveys);
+        const dateToUse = data.issuanceDate || data.surveyDate;
+
+        // Wait for existingSurveys to be loaded before calculating
+        let calculatedData = { dueDate: data.dueDate, rangeFrom: data.rangeFrom, rangeTo: data.rangeTo, anniversaryDate: null };
+
+        if (dateToUse && data.surveyName) {
+          calculatedData = calculateDates(dateToUse, data.surveyName, existingSurveys);
+        }
 
         const formattedRow = {
           id: data.id,
-          surveyName: data.surveyName,
-          surveyDate: data.surveyDate ? data.surveyDate : "",
-          issuanceDate: data.issuanceDate,
-          dueDate: data.dueDate,
-          rangeFrom: data.rangeFrom ? data.rangeFrom : "",
-          rangeTo: data.rangeTo ? data.rangeTo : "",
-          postponed: data.postponed ? data.postponed : "",
+          surveyName: data.surveyName || "",
+          surveyDate: data.surveyDate || "",
+          issuanceDate: data.issuanceDate || "",
+          dueDate: data.dueDate || "",
+          rangeFrom: data.rangeFrom || "",
+          rangeTo: data.rangeTo || "",
+          postponed: data.postponed || "",
+          anniversaryDate: data.anniversaryDate || "",
+          anniversaryDateDisplay: data.anniversaryDate ? moment(data.anniversaryDate).format("DD MMM") : "",
         };
 
         setClassificationRows([formattedRow]);
@@ -204,7 +327,7 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
 
   const handleAddClassification = async () => {
     try {
-      if (mode === "update" && variableId) {
+      if (mode == "update" && variableId) {
         const updatedData = {
           ...classificationRows[0],
           clientId: Number(selectedShip.id),
@@ -231,7 +354,7 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
 
       const payload = classificationRows
         .filter((row) => row.surveyName)
-        .map(({ id, ...rest }) => ({
+        .map(({ id, anniversaryDate, anniversaryDateDisplay, ...rest }) => ({
           clientId: Number(selectedShip.id),
           surveyName: rest.surveyName,
           surveyDate: rest.surveyDate || "",
@@ -266,10 +389,10 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
   }, []);
 
   useEffect(() => {
-    if (mode === "update" && variableId) {
+    if (mode === "update" && variableId && existingSurveys.length > 0) {
       getClassification();
     }
-  }, [mode, variableId]);
+  }, [mode, variableId, existingSurveys]);
 
   useEffect(() => {
     if (selectedShip?.id) {
@@ -279,6 +402,23 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
 
   return (
     <Box spacing={2} sx={{ marginTop: "2rem", width: "100%" }}>
+      <Box display="flex" justifyContent="end" alignItems="center" sx={{ mb: 2 }}>
+        <Box
+          sx={{
+            backgroundColor: "#f5f5f5",
+            borderRadius: "8px",
+            px: 2,
+            py: 0.5,
+            textAlign: "center",
+          }}
+        >
+          <Typography variant="body2" fontWeight="bold" color="primary">
+            Anniversary Date:
+          </Typography>
+          <Typography variant="body1">{classificationRows[0]?.anniversaryDate ? moment(classificationRows[0].anniversaryDate).format("DD/MM") : shipAnniversaryDate ? shipAnniversaryDate.format("DD/MM") : "N/A"}</Typography>
+        </Box>
+      </Box>
+
       <Box sx={{ borderRadius: "15px" }}>
         {selectedShip?.id && (
           <Box sx={{ m: 0, p: 0 }}>
@@ -300,16 +440,18 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
               >
                 <Grid2 container spacing={0.5} marginTop={2.5} alignItems="center">
                   {/* Survey Type */}
-                  <Grid2 size={{ xs: 12, md: 1.6 }}>
+                  <Grid2 size={{ xs: 12, md: 1.8 }}>
                     <FormControl fullWidth>
-                      <InputLabel id={`survey-type-label-${index}`}>Survey Type</InputLabel>
-                      <Select labelId={`survey-type-label-${index}`} id={`survey-type-${index}`} value={row.surveyName || ""} label="Survey Type" onChange={(e) => handleChange("classification", index, "surveyName", e.target.value)}>
-                        {surveyTypes.map((type) => (
-                          <MenuItem key={type.value} value={type.label}>
-                            {type.label}
-                          </MenuItem>
-                        ))}
-                      </Select>
+                      <Autocomplete
+                        options={surveyTypes.slice().sort((a, b) => a.label.localeCompare(b.label))} // Alphabetical order
+                        getOptionLabel={(option) => option.label || ""}
+                        value={surveyTypes.find((type) => type.label === row.surveyName) || null}
+                        onChange={(event, newValue) => {
+                          handleChange("classification", index, "surveyName", newValue ? newValue.label : "");
+                        }}
+                        renderInput={(params) => <TextField {...params} label="Survey Type" variant="outlined" />}
+                        size="small"
+                      />
                     </FormControl>
                   </Grid2>
 
@@ -341,7 +483,7 @@ const ClassificationForm = ({ mode = "create", variableId = null, selectedShip, 
                     <TextField label="Postponed Date" type="date" fullWidth value={row.postponed ? moment(row.postponed).format("YYYY-MM-DD") : ""} onChange={(e) => handleChange("classification", index, "postponed", e.target.value)} InputLabelProps={{ shrink: true }} />
                   </Grid2>
 
-                  {mode !== "update" && row.length > 1 && (
+                  {mode !== "update" && classificationRows.length > 1 && (
                     <Grid2 size={{ xs: 12, md: 0.2 }} display="flex" justifyContent="center">
                       <IconButton onClick={() => handleDeleteRow(index)} color="error" size="small" sx={{ mr: -1 }}>
                         <DeleteIcon />

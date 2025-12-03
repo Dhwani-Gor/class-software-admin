@@ -694,7 +694,7 @@ export const getEndorsedIssuedBy = async (filterKey, filterValue) => {
   return result;
 };
 
-export const getAllIssuedDocuments = async (filterKeys = [], filterValues = [], searchQuery, page, limit, startDate, endDate, markAsArchive) => {
+export const getAllIssuedDocuments = async (filterKeys = [], filterValues = [], searchQuery, page, limit, startDate, endDate, markAsArchive, issuedDocument) => {
   try {
     const params = {};
 
@@ -709,6 +709,7 @@ export const getAllIssuedDocuments = async (filterKeys = [], filterValues = [], 
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
     if (markAsArchive !== undefined) params.markAsArchive = markAsArchive;
+    if (issuedDocument !== undefined) params.issuedDocument = issuedDocument;
 
     const result = await axiosInstance.get("/reportDetails", { params });
     return result;
@@ -924,6 +925,16 @@ export const deleteSurveyReport = async (id) => {
   return result;
 };
 
+export const deleteCheckList = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.delete(`/checklist/${id}`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
 export const getAllClassificationSurveyType = async () => {
   let result;
   try {
@@ -1050,6 +1061,175 @@ export const deleteAdditionalField = async (id) => {
     result = await axiosInstance.delete(`/additionalField/${id}`);
   } catch (error) {
     result = error;
+  }
+  return result;
+};
+
+export const forgotPassword = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`users/forgotPassword`, payload);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const resetPassword = async (token, data) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`users/resetPassword/${token}`, data);
+  } catch (error) {
+    result = error;
+  }
+  return result;
+};
+
+export const uploadNarrativeReports = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/narrativeReport`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+export const markAsRevoked = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/reportDetails/markAsRevoked`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const sendEmail = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/reportDetails/sendReportEmail`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const addMachineList = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/machineList`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const getAllMachineList = async () => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/machineList`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const deleteMachineList = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.delete(`/machineList/${id}`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const updateMachineList = async (id, payload) => {
+  let result;
+  try {
+    result = await axiosInstance.put(`/machineList/${id}`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const getMachineList = async () => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/machineList`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const getMachineById = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/machineList/${id}`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const addCheckList = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.post(`/checkList`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const fetchMachineList = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/machineList/${id}`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const updateMachineryItem = async (id, payload) => {
+  let result;
+  try {
+    result = await axiosInstance.put(`/machineList/update/${id}`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const updateCheckList = async (id, payload) => {
+  let result;
+  try {
+    result = await axiosInstance.put(`/checkList/${id}`, payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const getAllChecklist = async () => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/checkList`);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
+export const getSingleChecklist = async (id) => {
+  let result;
+  try {
+    result = await axiosInstance.get(`/checkList/${id}`);
+  } catch (e) {
+    result = e;
   }
   return result;
 };

@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
@@ -24,15 +24,8 @@ import CommonButton from "@/components/CommonButton";
 import { createDocument, getDocumentDetails, updateDocument } from "@/api";
 import UploadIcon from "@mui/icons-material/Upload";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import { Chip } from "@mui/material";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import * as XLSX from "xlsx";
-
-const documentValidityType = [
-  { value: "interim", label: "Interim" },
-  { value: "short_term", label: "Short Term" },
-  { value: "full_term", label: "Full Term" },
-];
 
 const documentType = [
   { value: "certificate", label: "certificate" },
@@ -57,15 +50,24 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
     fields: false,
   });
   const [additionalFields, setAdditionalFields] = useState([]);
-  const [endorsements, setEndorsements] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+  const [endorsementGroups, setEndorsementGroups] = useState([]);
   const [previewState, setPreviewState] = useState({
     open: false,
     loading: false,
     fileUrl: null,
     title: "",
   });
+  const loadingTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSelectChange = (e) => {
     const { name, value } = e.target;
@@ -86,7 +88,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
     if (documentId) {
       fetchDocumentDetails();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentId]);
 
   const fetchDocumentDetails = async () => {
@@ -96,7 +97,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
       if (result?.status === 200) {
         const documentData = result.data.data;
 
-        // Set file preview and form values
         setPreviewState((prev) => ({
           ...prev,
           open: false,
@@ -114,7 +114,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           interimDocument: mode === "duplicate" ? null : documentData.interimFilePath || null,
         });
 
-        // ✅ Handle additional fields
         let parsedFields = [];
         if (documentData.fields) {
           parsedFields = typeof documentData.fields === "string" ? JSON.parse(documentData.fields) : documentData.fields;
@@ -122,13 +121,27 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
         if (!Array.isArray(parsedFields)) parsedFields = [parsedFields];
         setAdditionalFields(parsedFields);
 
-        // ✅ Handle endorsements (fix)
         let parsedEndorsements = [];
         if (documentData.endorsements) {
           parsedEndorsements = typeof documentData.endorsements === "string" ? JSON.parse(documentData.endorsements) : documentData.endorsements;
         }
         if (!Array.isArray(parsedEndorsements)) parsedEndorsements = [parsedEndorsements];
-        setEndorsements(parsedEndorsements);
+
+        const groups = parsedEndorsements.map((group) => ({
+          mainTitle: group.groupTitle || "",
+          items: Array.isArray(group.endorsements)
+            ? group.endorsements.map((item) => ({
+                title: item.title || "",
+                endorsed_place: item.endorsed_place || "",
+                issuance_date: item.issuance_date || "",
+                validity_date: item.validity_date || "",
+                endorsement_type: item.endorsement_type || "",
+                endorsed_by: item.endorsed_by || "",
+              }))
+            : [],
+        }));
+
+        setEndorsementGroups(groups);
       } else {
         toast.error("Error fetching document details");
       }
@@ -236,11 +249,9 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           return;
         }
 
-        // Check if there are actual changes (order-independent comparison)
         const hasChanges = () => {
           if (additionalFields.length !== importedFields.length) return true;
 
-          // Create normalized versions for comparison (sorted by attribute+label)
           const normalizeFields = (fields) => {
             return fields
               .map((field) => ({
@@ -257,7 +268,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           const normalizedExisting = normalizeFields(additionalFields);
           const normalizedImported = normalizeFields(importedFields);
 
-          // Compare each field
           return !normalizedExisting.every((existingField, index) => {
             const importedField = normalizedImported[index];
             return existingField.attribute === importedField.attribute && existingField.label === importedField.label;
@@ -289,7 +299,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate form before submission
     if (!validateForm()) {
       toast.error("Please fill all required fields");
       return;
@@ -299,44 +308,38 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
       setLoading(true);
       let response;
 
-      // Filter out valid additional fields and endorsements
       const validFields = (additionalFields || []).filter((field) => field.attribute?.toString().trim() && field.label?.toString().trim());
-      const validEndorsements = (endorsements || []).filter((endorsement) => endorsement.title?.toString().trim() || endorsement.endorsedby_1?.toString().trim() || endorsement.endorsed_place?.toString().trim() || endorsement.issuance_date?.toString().trim() || endorsement.validity_date?.toString().trim());
+      const validEndorsements = endorsementGroups
+        .filter((group) => group.mainTitle?.trim() || (group.items || []).some((item) => item.title?.trim() || item.endorsed_by?.trim() || item.endorsed_place?.trim() || item.issuance_date?.trim() || item.validity_date?.trim()))
+        .map((group) => ({
+          groupTitle: group.mainTitle || "",
+          endorsements: (group.items || []).map((item) => ({
+            title: item.title || "",
+            endorsed_place: item.endorsed_place || "",
+            endorsed_by: item.endorsed_by || "",
+            issuance_date: item.issuance_date || "",
+            validity_date: item.validity_date || "",
+            endorsement_type: item.endorsement_type || "",
+          })),
+        }));
 
-      // ---------- CREATE / DUPLICATE DOCUMENT ----------
       if (mode === "create" || mode === "duplicate") {
         const formData = new FormData();
 
-        // Append basic document fields
-        formData.append("name", formValues.name); // For duplicate, name is usually appended with (Copy)
+        formData.append("name", formValues.name);
         formData.append("type", formValues.type);
         formData.append("abbreviation", formValues.abbreviation);
 
-        // Append document files if provided
-        if (formValues.fullTermDocument instanceof File) {
-          formData.append("fullTermDocument", formValues.fullTermDocument);
-        }
-        if (formValues.shortTermDocument instanceof File) {
-          formData.append("shortTermDocument", formValues.shortTermDocument);
-        }
-        if (formValues.interimDocument instanceof File) {
-          formData.append("interimDocument", formValues.interimDocument);
-        }
+        if (formValues.fullTermDocument instanceof File) formData.append("fullTermDocument", formValues.fullTermDocument);
+        if (formValues.shortTermDocument instanceof File) formData.append("shortTermDocument", formValues.shortTermDocument);
+        if (formValues.interimDocument instanceof File) formData.append("interimDocument", formValues.interimDocument);
 
-        // Append additional fields and endorsements separately
-        if (validFields.length > 0) {
-          formData.append("fields", JSON.stringify(validFields));
-        }
-        if (validEndorsements.length > 0) {
-          formData.append("endorsements", JSON.stringify(validEndorsements));
-        } else {
-          formData.append("endorsements", JSON.stringify([]));
-        }
+        if (validFields.length > 0) formData.append("fields", JSON.stringify(validFields));
 
-        // API call to create a new document (used for both new and duplicate)
+        formData.append("endorsements", JSON.stringify(validEndorsements.length > 0 ? validEndorsements : []));
+
         response = await createDocument(formData);
       } else {
-        // ---------- UPDATE DOCUMENT ----------
         const hasFiles = formValues.fullTermDocument instanceof File || formValues.shortTermDocument instanceof File || formValues.interimDocument instanceof File;
 
         if (hasFiles) {
@@ -345,30 +348,18 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           formData.append("type", formValues.type);
           formData.append("abbreviation", formValues.abbreviation);
 
-          if (formValues.fullTermDocument instanceof File) {
-            formData.append("fullTermDocument", formValues.fullTermDocument);
-          }
-          if (formValues.shortTermDocument instanceof File) {
-            formData.append("shortTermDocument", formValues.shortTermDocument);
-          }
-          if (formValues.interimDocument instanceof File) {
-            formData.append("interimDocument", formValues.interimDocument);
-          }
+          if (formValues.fullTermDocument instanceof File) formData.append("fullTermDocument", formValues.fullTermDocument);
+          if (formValues.shortTermDocument instanceof File) formData.append("shortTermDocument", formValues.shortTermDocument);
+          if (formValues.interimDocument instanceof File) formData.append("interimDocument", formValues.interimDocument);
 
           if (editReason) formData.append("reason", editReason);
 
-          if (validFields.length > 0) {
-            formData.append("fields", JSON.stringify(validFields));
-          }
-          if (validEndorsements.length > 0) {
-            formData.append("endorsements", JSON.stringify(validEndorsements));
-          } else {
-            formData.append("endorsements", JSON.stringify([]));
-          }
+          if (validFields.length > 0) formData.append("fields", JSON.stringify(validFields));
+
+          formData.append("endorsements", JSON.stringify(validEndorsements.length > 0 ? validEndorsements : []));
 
           response = await updateDocument(documentId, formData);
         } else {
-          // Update without file uploads (JSON payload)
           const payload = {
             name: formValues.name,
             type: formValues.type,
@@ -376,36 +367,19 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
             ...(editReason && { reason: editReason }),
           };
 
-          if (formValues.fullTermDocument && typeof formValues.fullTermDocument === "string") {
-            payload.fullTermDocument = formValues.fullTermDocument;
-          }
-          if (formValues.shortTermDocument && typeof formValues.shortTermDocument === "string") {
-            payload.shortTermDocument = formValues.shortTermDocument;
-          }
-          if (formValues.interimDocument && typeof formValues.interimDocument === "string") {
-            payload.interimDocument = formValues.interimDocument;
-          }
+          if (formValues.fullTermDocument && typeof formValues.fullTermDocument === "string") payload.fullTermDocument = formValues.fullTermDocument;
+          if (formValues.shortTermDocument && typeof formValues.shortTermDocument === "string") payload.shortTermDocument = formValues.shortTermDocument;
+          if (formValues.interimDocument && typeof formValues.interimDocument === "string") payload.interimDocument = formValues.interimDocument;
 
-          if (validFields.length > 0) {
-            payload.fields = JSON.stringify(validFields);
-          }
-          if (validEndorsements.length > 0) {
-            payload.endorsements = JSON.stringify(validEndorsements);
-          }
+          if (validFields.length > 0) payload.fields = JSON.stringify(validFields);
+          payload.endorsements = JSON.stringify(validEndorsements);
 
           response = await updateDocument(documentId, payload);
         }
       }
 
-      // ---------- HANDLE SUCCESS / ERROR ----------
       if (response?.status === 200 || response?.status === 201) {
-        toast.success(
-          mode === "duplicate"
-            ? "Document duplicated successfully" // Specific message for duplicate
-            : mode === "update"
-            ? "Document updated successfully"
-            : "Document created successfully"
-        );
+        toast.success(mode === "duplicate" ? "Document duplicated successfully" : mode === "update" ? "Document updated successfully" : "Document created successfully");
         router.push("/documents");
       } else {
         toast.error(response?.response?.data?.message || "Something went wrong! Please try again.");
@@ -458,16 +432,12 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
     toast.success("Field removed successfully");
   };
 
-  // Drag and drop handlers for additional fields
   const handleDragStart = (e, index) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = "move";
-    // store the index as string
     try {
       e.dataTransfer.setData("text/plain", String(index));
-    } catch (err) {
-      // ignore if not allowed
-    }
+    } catch (err) {}
   };
 
   const handleDragEnd = () => {
@@ -487,58 +457,19 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
 
   const handleDrop = (e, dropIndex) => {
     e.preventDefault();
-    // If dataTransfer had index, it can be used; but we rely on draggedIndex state
     if (draggedIndex === null || draggedIndex === dropIndex) return;
 
     const updatedFields = [...additionalFields];
     const draggedItem = updatedFields[draggedIndex];
 
-    // Remove the dragged item
     updatedFields.splice(draggedIndex, 1);
 
-    // Insert at new position
     const newIndex = draggedIndex < dropIndex ? dropIndex - 1 : dropIndex;
     updatedFields.splice(newIndex, 0, draggedItem);
 
     setAdditionalFields(updatedFields);
     setDraggedIndex(null);
     setDragOverIndex(null);
-  };
-
-  // Endorsement handlers
-  const handleEndorsementChange = (index, field, value) => {
-    const updatedEndorsements = [...endorsements];
-    updatedEndorsements[index] = {
-      ...updatedEndorsements[index],
-      [field]: value,
-    };
-    setEndorsements(updatedEndorsements);
-  };
-
-  const handleAddEndorsement = () => {
-    const lastEndorsement = endorsements[endorsements.length - 1];
-    if (!endorsements.length || (lastEndorsement && (lastEndorsement.title?.trim() || lastEndorsement.endorsedby_1?.trim() || lastEndorsement.endorsed_place?.trim() || lastEndorsement.issuance_date?.trim()))) {
-      setEndorsements((prev) => [
-        ...prev,
-        {
-          title: "",
-          endorsedby_1: "",
-          endorsed_place: "",
-          issuance_date: "",
-          validity_date: "",
-          endorsement_type: "",
-        },
-      ]);
-    } else {
-      toast.error("Please fill at least one field in the current endorsement before adding another.");
-    }
-  };
-
-  const handleDeleteEndorsement = (index) => {
-    const updatedEndorsements = [...endorsements];
-    updatedEndorsements.splice(index, 1);
-    setEndorsements(updatedEndorsements);
-    toast.success("Endorsement removed successfully");
   };
 
   const getSubmitButtonText = () => {
@@ -558,7 +489,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
           {label}
         </Typography>
         <FormControl fullWidth>
-          {/* outer container is a div (Box) not a label to avoid nested label issues */}
           <Box
             sx={{
               display: "flex",
@@ -630,7 +560,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
                     if (file) {
                       handleFileChange(documentTypeKey, file);
                     }
-                    // clear input value so same file can be reselected if needed
                     e.currentTarget.value = "";
                   }}
                 />
@@ -695,7 +624,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
               )}
             </FormControl>
 
-            {/* Document Upload Sections */}
             <Typography variant="h6" sx={{ mt: 2 }}>
               Document Uploads
             </Typography>
@@ -759,42 +687,164 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
               </Stack>
             </Stack>
 
-            {/* Endorsements Section */}
-            <Stack spacing={2}>
-              {Array.isArray(endorsements) &&
-                endorsements.length > 0 &&
-                endorsements.map((endorsement, index) => (
-                  <Box
-                    key={index}
-                    sx={{
-                      border: "1px solid #e0e0e0",
-                      borderRadius: 2,
-                      p: 2,
-                      backgroundColor: "#f9f9f9",
-                    }}
-                  >
-                    <Stack spacing={2}>
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <Typography variant="subtitle2" color="primary">
-                          Endorsement {index + 1}
-                        </Typography>
-                        <IconButton color="error" onClick={() => handleDeleteEndorsement(index)} aria-label="delete endorsement" size="small">
+            <Stack spacing={3}>
+              <Box
+                sx={{
+                  border: "1px solid #e0e0e0",
+                  borderRadius: 2,
+                  p: 2,
+                }}
+              >
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                  Endorsements
+                </Typography>
+
+                <Stack spacing={3}>
+                  {endorsementGroups.map((group, gIndex) => (
+                    <Box key={gIndex} sx={{}}>
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+                        <TextField
+                          label="Main Title"
+                          value={group.mainTitle}
+                          onChange={(e) => {
+                            const updated = [...endorsementGroups];
+                            updated[gIndex].mainTitle = e.target.value;
+                            setEndorsementGroups(updated);
+                          }}
+                          size="small"
+                          sx={{ flex: 1, mr: 2 }}
+                        />
+                        <IconButton
+                          color="error"
+                          onClick={() => {
+                            const updated = [...endorsementGroups];
+                            updated.splice(gIndex, 1);
+                            setEndorsementGroups(updated);
+                            toast.success("Section removed successfully");
+                          }}
+                        >
                           <DeleteIcon />
                         </IconButton>
                       </Box>
 
-                      <TextField label="Title" value={endorsement.title || ""} onChange={(e) => handleEndorsementChange(index, "title", e.target.value)} fullWidth size="small" />
-                      <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
-                        <TextField label="Endorsed By" value={endorsement.endorsedby_1 || ""} onChange={(e) => handleEndorsementChange(index, "endorsedby_1", e.target.value)} fullWidth size="small" />
-                        <TextField label="Endorsed Place" value={endorsement.endorsed_place || ""} onChange={(e) => handleEndorsementChange(index, "endorsed_place", e.target.value)} fullWidth size="small" />
-                        <TextField label="Issuance Date" value={endorsement.issuance_date || ""} onChange={(e) => handleEndorsementChange(index, "issuance_date", e.target.value)} fullWidth size="small" />
-                        <TextField label="Validity Date" value={endorsement.validity_date || ""} onChange={(e) => handleEndorsementChange(index, "validity_date", e.target.value)} fullWidth size="small" />
-                        <TextField label="endorsement_type" value={endorsement.endorsement_type || ""} onChange={(e) => handleEndorsementChange(index, "endorsement_type", e.target.value)} fullWidth size="small" />
-                      </Box>
-                    </Stack>
-                  </Box>
-                ))}
-              {/* <CommonButton text="Add Endorsement" variant="outlined" onClick={handleAddEndorsement} sx={{ alignSelf: "flex-start" }} /> */}
+                      {group.items.map((item, iIndex) => (
+                        <Box
+                          key={iIndex}
+                          sx={{
+                            border: "1px solid #e0e0e0",
+                            borderRadius: 2,
+                            p: 2,
+                            mb: 2,
+                            backgroundColor: "#fff",
+                          }}
+                        >
+                          <Stack spacing={2}>
+                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <Typography variant="subtitle2" color="primary">
+                                Endorsement {iIndex + 1}
+                              </Typography>
+                              <IconButton
+                                color="error"
+                                onClick={() => {
+                                  const updated = [...endorsementGroups];
+                                  updated[gIndex].items.splice(iIndex, 1);
+                                  setEndorsementGroups(updated);
+                                }}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </Box>
+
+                            <TextField
+                              label="Title"
+                              value={item.title}
+                              onChange={(e) => {
+                                const updated = [...endorsementGroups];
+                                updated[gIndex].items[iIndex].title = e.target.value;
+                                setEndorsementGroups(updated);
+                              }}
+                              size="small"
+                              fullWidth
+                            />
+
+                            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+                              <TextField
+                                label="Endorsed By"
+                                value={item.endorsed_by}
+                                onChange={(e) => {
+                                  const updated = [...endorsementGroups];
+                                  updated[gIndex].items[iIndex].endorsed_by = e.target.value;
+                                  setEndorsementGroups(updated);
+                                }}
+                                size="small"
+                              />
+                              <TextField
+                                label="Endorsed Place"
+                                value={item.endorsed_place}
+                                onChange={(e) => {
+                                  const updated = [...endorsementGroups];
+                                  updated[gIndex].items[iIndex].endorsed_place = e.target.value;
+                                  setEndorsementGroups(updated);
+                                }}
+                                size="small"
+                              />
+                              <TextField
+                                label="Issuance Date"
+                                value={item.issuance_date}
+                                onChange={(e) => {
+                                  const updated = [...endorsementGroups];
+                                  updated[gIndex].items[iIndex].issuance_date = e.target.value;
+                                  setEndorsementGroups(updated);
+                                }}
+                                size="small"
+                              />
+                              <TextField
+                                label="Validity Date"
+                                value={item.validity_date}
+                                onChange={(e) => {
+                                  const updated = [...endorsementGroups];
+                                  updated[gIndex].items[iIndex].validity_date = e.target.value;
+                                  setEndorsementGroups(updated);
+                                }}
+                                size="small"
+                              />
+                              <TextField
+                                label="Endorsement Type"
+                                value={item.endorsement_type}
+                                onChange={(e) => {
+                                  const updated = [...endorsementGroups];
+                                  updated[gIndex].items[iIndex].endorsement_type = e.target.value;
+                                  setEndorsementGroups(updated);
+                                }}
+                                size="small"
+                              />
+                            </Box>
+                          </Stack>
+                        </Box>
+                      ))}
+
+                      <CommonButton
+                        text="Add Endorsement"
+                        variant="outlined"
+                        onClick={() => {
+                          const updated = [...endorsementGroups];
+                          updated[gIndex].items.push({
+                            title: "",
+                            endorsed_place: "",
+                            endorsed_by: "",
+                            issuance_date: "",
+                            validity_date: "",
+                            endorsement_type: "",
+                          });
+                          setEndorsementGroups(updated);
+                        }}
+                      />
+                    </Box>
+                  ))}
+
+                  <CommonButton sx={{ width: "30%" }} text="Add Endorsement Section" variant="outlined" onClick={() => setEndorsementGroups((prev) => [...prev, { mainTitle: "", items: [] }])} />
+                </Stack>
+              </Box>
             </Stack>
 
             <Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mt: 3 }}>
@@ -848,7 +898,6 @@ const DocumentForm = ({ mode, documentId, editReason = "" }) => {
               </Box>
             )}
 
-            {/* only render iframe if fileUrl exists */}
             {previewState.fileUrl ? (
               <iframe
                 src={`https://docs.google.com/gview?url=${encodeURIComponent(previewState.fileUrl)}&embedded=true`}

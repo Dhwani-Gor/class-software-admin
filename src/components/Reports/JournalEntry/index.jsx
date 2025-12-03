@@ -105,9 +105,15 @@ const JournalEntryForm = ({ journalId = null }) => {
   const [selectedJournalType, setSelectedJournalType] = useState(null);
   const [isJournalArchived, setIsJournalArchived] = useState(false);
 
+
   const generateId = () => Date.now() * 1000 + Math.floor(Math.random() * 1000);
 
   const { data } = useAuth()
+  const hasUnlockRights = data?.specialPermission?.includes("JournalUnlockRights");
+  const isArchived = journalData?.journalArchive === true;
+  const isLocked = journalData?.isLocked === true;
+  const isDisabled = !hasUnlockRights && (journalData?.isLocked || journalData?.journalArchive);
+
 
   const {
     control,
@@ -128,7 +134,7 @@ const JournalEntryForm = ({ journalId = null }) => {
   });
 
   const handleOpenModal = () => {
-    if (isJournalLocked || isJournalArchived) return;
+    if (isDisabled) return;
     setEditVisit(null);
     setOpenModal(true);
   };
@@ -222,7 +228,7 @@ const JournalEntryForm = ({ journalId = null }) => {
   };
 
   const handleSaveVisit = (visitData) => {
-    if (isJournalLocked || isJournalArchived) return;
+    if (isDisabled) return;
     if (journalId) {
       if (editVisit) {
         const payload = {
@@ -273,18 +279,18 @@ const JournalEntryForm = ({ journalId = null }) => {
   };
 
   const handleEdit = (visit) => {
-    if (isJournalLocked || isJournalArchived) return;
+    if (isDisabled) return;
     setEditVisit(visit);
     setOpenModal(true);
   };
 
   const handleDelete = (id) => {
-    if (isJournalLocked || isJournalArchived) return;
+    if (isDisabled) return;
     deleteVisitData(id);
   };
 
   const handleOpenActivityModal = () => {
-    if (isJournalLocked || isJournalArchived) return;
+    if (isDisabled) return;
     setEditActivity(null);
     setOpenActivityModal(true);
   };
@@ -378,7 +384,7 @@ const JournalEntryForm = ({ journalId = null }) => {
   };
 
   const handleSaveActivity = (activityData) => {
-    if (isJournalLocked || isJournalArchived) return;
+    if (isDisabled) return;
 
     if (journalId) {
       if (editActivity) {
@@ -434,7 +440,6 @@ const JournalEntryForm = ({ journalId = null }) => {
               const survey = surveyTypes.find((s) => Number(s.id) === Number(surveyId));
               if (!survey) return null;
               return {
-                id: generateId(),
                 typeOfSurvey: surveyId,
                 surveyTypes: { name: survey.name, id: survey.id },
                 initialOfSurveyors: activityData.initialOfSurveyors || [],
@@ -449,7 +454,7 @@ const JournalEntryForm = ({ journalId = null }) => {
   };
 
   const handleActivityDelete = (activity) => {
-    if (isJournalLocked || isJournalArchived) return;
+    if (isDisabled) return;
     deleteActivities(activity)
   };
 
@@ -492,17 +497,22 @@ const JournalEntryForm = ({ journalId = null }) => {
   const fetchSurveyors = async () => {
     try {
       const res = await getAllUsers();
-      if (res?.data?.data) {
-        const flattenedData = res?.data?.data?.filter(
-          (item) => item?.roleId === "2"
-        );
-        const sortedData = flattenedData?.sort((a, b) => a?.id - b?.id);
-        setSurveyors(sortedData);
-      }
+      const users = res?.data?.data || [];
+
+      // ✅ Filter only "inspector" roles
+      const inspectors = users.filter(
+        (user) => user?.role?.name?.toLowerCase() === "inspector"
+      );
+
+      // ✅ Sort by ID (optional)
+      const sortedInspectors = inspectors.sort((a, b) => Number(a.id) - Number(b.id));
+
+      setSurveyors(sortedInspectors);
     } catch (error) {
       console.error("Error fetching Surveyors:", error);
     }
   };
+
 
   const fetchJournal = async () => {
     try {
@@ -511,12 +521,8 @@ const JournalEntryForm = ({ journalId = null }) => {
       if (result?.status === 200) {
         const journalData = result.data.data;
         setJournalData(journalData);
-        setIsJournalLocked(
-          data?.specialPermission?.includes("JournalUnlockRights")
-            ? false
-            : journalData.isLocked
-        );
-        setIsJournalArchived(journalData?.journalArchive === true);
+        setIsJournalLocked(journalData.isLocked);
+        setIsJournalArchived(journalData.journalArchive === true);
 
         setValue("shipWork", journalData.client.shipName);
         setValue("imoNumber", journalData.client.imoNumber);
@@ -576,7 +582,7 @@ const JournalEntryForm = ({ journalId = null }) => {
   // }
 
   const handleSubmitJournal = async (data, lockJournal = false) => {
-    if (isJournalLocked || isJournalArchived) return;
+    if (isDisabled) return;
     try {
       const payload = {
         userId: userInfo?.id,
@@ -615,7 +621,7 @@ const JournalEntryForm = ({ journalId = null }) => {
   };
 
   const onSubmit = (data) => {
-    if (isJournalLocked || isJournalArchived) return;
+    if (isDisabled) return;
     setFormData(data);
 
     if (journalId) {
@@ -674,7 +680,7 @@ const JournalEntryForm = ({ journalId = null }) => {
       {(isShowForm || journalId) && (
         <form onSubmit={handleSubmit(onSubmit)}>
           <CommonCard>
-            {isJournalArchived ? (
+            {isDisabled ? (
               <Box mb={2} pb={2} borderBottom="1px solid #e0e0e0">
                 <Typography
                   fontSize="16px"
@@ -690,7 +696,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                   this Journal, please contact Admin
                 </Typography>
               </Box>
-            ) : isJournalLocked ? (
+            ) : !isArchived && isLocked && !hasUnlockRights ? (
               <Box mb={2} pb={2} borderBottom="1px solid #e0e0e0">
                 <Typography
                   fontSize="16px"
@@ -732,7 +738,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                           name="type"
                           value={field.value}
                           onChange={(e) => {
-                            if (isJournalLocked || isJournalArchived) return;
+                            if (isDisabled) return;
                             field.onChange(e.target.value);
                             setSelectedJournalType(e.target.value);
                           }}
@@ -741,7 +747,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                             <FormControlLabel
                               key={type.id}
                               value={type.value}
-                              disabled={isJournalLocked || isJournalArchived}
+                              disabled={isDisabled}
                               control={
                                 <Radio
                                   sx={{
@@ -762,7 +768,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                   />
                 </Box>
 
-                {!isJournalLocked && !isJournalArchived && (
+                {!isDisabled && (
                   <Box>
                     {/* <CommonButton sx={{ mr: 2 }} type="button" text="Archive Journal" onClick={handleArchiveJournal} /> */}
                     <CommonButton type="submit" text={journalId ? "Update" : "Save"} />
@@ -797,7 +803,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                       placeholder="Name of the ship/works"
                       error={!!errors.shipWork}
                       helperText={errors.shipWork?.message}
-                      disabled={isJournalLocked || isJournalArchived}
+                      disabled={isDisabled}
                     />
                   )}
                 />
@@ -813,7 +819,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                       placeholder="IMO No."
                       error={!!errors.imoNumber}
                       helperText={errors.imoNumber?.message}
-                      disabled={isJournalLocked || isJournalArchived}
+                      disabled={isDisabled}
                     />
                   )}
                 />
@@ -829,7 +835,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                       placeholder="Class ID No."
                       error={!!errors.classId}
                       helperText={errors.classId?.message}
-                      disabled={isJournalLocked || isJournalArchived}
+                      disabled={isDisabled}
                     />
                   )}
                 />
@@ -849,7 +855,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                         placeholder="Requested by"
                         error={!!errors.requestedBy}
                         helperText={errors.requestedBy?.message}
-                        disabled={isJournalLocked || isJournalArchived}
+                        disabled={isDisabled}
                       />
                     )}
                   />
@@ -865,7 +871,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                         label={<>Date <span style={{ color: 'red' }}>*</span></>}
                         error={!!errors.date}
                         helperText={errors.date?.message}
-                        disabled={isJournalLocked || isJournalArchived}
+                        disabled={isDisabled}
                       />
                     )}
                   />
@@ -888,7 +894,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                   sx={{ fontSize: "14px" }}
                   text="Add Visit"
                   onClick={handleOpenModal}
-                  disabled={isJournalLocked || isJournalArchived}
+                  disabled={isDisabled}
                 />
               </Stack>
 
@@ -912,7 +918,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                       {visitList.map((visit, index) => (
                         <TableRow key={visit.id}>
                           <TableCell>{index + 1}</TableCell>
-                          <TableCell align="right">{visit.date}</TableCell>
+                          <TableCell align="right">{moment(visit.date).format("DD-MM-YYYY")}</TableCell>
                           <TableCell align="right">{visit.timeFrom}</TableCell>
                           <TableCell align="right">{visit.timeTo}</TableCell>
                           <TableCell align="right">{visit.location}</TableCell>
@@ -920,13 +926,13 @@ const JournalEntryForm = ({ journalId = null }) => {
                             {visit?.surveyors?.map(s => s.name).join(", ")}
                           </TableCell>
                           <TableCell align="right">
-                            <IconButton onClick={() => handleEdit(visit)} disabled={isJournalArchived || isJournalLocked}>
+                            <IconButton onClick={() => handleEdit(visit)} disabled={isDisabled}>
                               <EditIcon />
                             </IconButton>
                             {!isJournalArchived && (
                               <IconButton
                                 onClick={() => handleDelete(visit.id)}
-                                disabled={isJournalArchived || isJournalLocked}
+                                disabled={isDisabled}
                               >
                                 <DeleteIcon />
                               </IconButton>
@@ -955,7 +961,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                   sx={{ fontSize: "14px" }}
                   text="Add Activity"
                   onClick={handleOpenActivityModal}
-                  disabled={isJournalLocked || isJournalArchived}
+                  disabled={isDisabled}
                 />
               </Stack>
 
@@ -979,7 +985,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                           <TableCell align="right">
 
                             <IconButton
-                              disabled={isJournalArchived || isJournalLocked}
+                              disabled={isDisabled}
                               onClick={() =>
                                 handleActivityDelete(activity)
                               }

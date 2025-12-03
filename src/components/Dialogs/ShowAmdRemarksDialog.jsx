@@ -191,7 +191,7 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId, selectedFilter, h
                                     <TableHead>
                                         <TableRow>
                                             <TableCell>Amended Document</TableCell>
-                                            {data.specialPermission?.includes("showAmedmentRemark") && <TableCell>Remarks</TableCell>}
+                                            {data.specialPermission?.includes("ShowAmedmentRemark") && <TableCell>Remarks</TableCell>}
                                             <TableCell>Action</TableCell>
                                         </TableRow>
                                     </TableHead>
@@ -205,7 +205,7 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId, selectedFilter, h
                                                 <TableRow key={amd.id}>
                                                     <TableCell>{displayReportNo}</TableCell>
 
-                                                    {data.specialPermission?.includes("showAmedmentRemark") && <TableCell>{amd.amdRemarks || "-"}</TableCell>}
+                                                    {data.specialPermission?.includes("ShowAmedmentRemark") && <TableCell>{amd.amdRemarks || "-"}</TableCell>}
 
                                                     <TableCell>
                                                         {amd.amendedDoc ? (
@@ -215,14 +215,29 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId, selectedFilter, h
                                                                         <VisibilityIcon />
                                                                     </IconButton>
                                                                 </Tooltip>
+                                                                {selectedFilter === "Archive Documents" &&
+                                                                    data.specialPermission.includes("Archive Document") && (
+                                                                        <Tooltip title="Delete Document">
+                                                                            <IconButton color="error" onClick={() => handleDelete(amd.id)}>
+                                                                                <DeleteIcon />
+                                                                            </IconButton>
+                                                                        </Tooltip>
+                                                                    )}
 
-                                                                {((hasArchivePermission && (selectedFilter === "Archive Documents" || selectedFilter === "Archive Documents" || selectedFilter === "certificates")) || (!hasArchivePermission && selectedFilter === "certificates")) && (
-                                                                    <Tooltip title="Download Document">
-                                                                        <IconButton color="success" onClick={() => handleDownload(amd.amendedDoc)} disabled={!amd.amendedDoc}>
-                                                                            <GetAppIcon />
-                                                                        </IconButton>
-                                                                    </Tooltip>
-                                                                )}
+                                                                {((hasArchivePermission && selectedFilter === "Archive Documents") ||
+                                                                    (!hasArchivePermission && selectedFilter === "Certificates") ||
+                                                                    (selectedFilter !== "Archive Documents" && selectedFilter === "Certificates")) && (
+
+                                                                        <Tooltip title="Download Document">
+                                                                            <IconButton
+                                                                                color="success"
+                                                                                onClick={() => handleDownload(amd.amendedDoc)}
+                                                                                disabled={!amd.amendedDoc}
+                                                                            >
+                                                                                <GetAppIcon />
+                                                                            </IconButton>
+                                                                        </Tooltip>
+                                                                    )}
 
                                                             </Stack>
                                                         ) : "-"}

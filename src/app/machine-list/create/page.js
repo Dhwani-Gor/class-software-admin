@@ -5,30 +5,30 @@ import Typography from "@mui/material/Typography";
 import Layout from "@/Layout";
 import { IconButton, Stack } from "@mui/material";
 import CommonCard from "@/components/CommonCard";
-import SystemVariableForm from "@/components/SystemVariableForm";
 import { useRouter } from "next/navigation";
 import { ArrowBack } from "@mui/icons-material";
+import MachineryHullManager from "@/components/AddMachineList/page";
 
-const CreateSystemVariable = () => {
+const CreateMachineList = () => {
   const router = useRouter();
 
   return (
     <Layout>
       <CommonCard sx={{ mt: 0, pl: 2 }}>
         <Stack direction={"row"} alignItems={"center"} gap={2}>
-          <IconButton size="small" onClick={() => router.push("/system-variables")}>
+        <IconButton size="small" onClick={() => router.push("/machine-list")}>
             <ArrowBack />
           </IconButton>
           <Typography variant="h6" fontWeight={"700"}>
-            System Configuration
+            Machine List
           </Typography>
         </Stack>
       </CommonCard>
       <Stack>
-        <SystemVariableForm mode="create" />
+        <MachineryHullManager mode="create" />
       </Stack>
     </Layout>
   );
 };
 
-export default CreateSystemVariable;
+export default CreateMachineList;

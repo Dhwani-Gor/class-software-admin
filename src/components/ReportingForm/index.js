@@ -11,8 +11,7 @@ import CommonButton from "@/components/CommonButton";
 import CommonCard from "@/components/CommonCard";
 import Grid2 from "@mui/material/Grid2";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
-import { useRouter } from "next/navigation";
-import { createReportDetail, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument, addUnArchiveDocument, addAmdRemarks, updateActivityDetails } from "@/api";
+import { createReportDetail, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument, addUnArchiveDocument, updateActivityDetails, getSystemVariableDetails, getAllSystemVariables } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { getAllActivities } from "@/api";
@@ -34,31 +33,11 @@ import CommonInput from "@/components/CommonInput";
 import ActivityTable from "./ActivityTable";
 import AmendmentRemarksDialog from "./AmendmentRemarksDialog";
 import EditingReasonDialog from "../Dialogs/EditingReasonDialog";
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider } from "@mui/material";
 import ArchiveHistoryDialog from "../Dialogs/ArchiveHistoryDialog";
 import EndorsementDialog from "../documents/EndorsementDialog";
 import { calculateDates } from "@/utils/DateCalculation";
 
-const reportSchema = yup.object().shape({
-  typesOfSurvey: yup.string().required("Type of survey is required"),
-  typeOfCertificate: yup.string().required("Type of certificate is required"),
-  issuancedate: yup.string().optional(),
-  validitydate: yup.string().optional(),
-  surveydate: yup.string().required("Survey date is required"),
-  endorsementdate: yup.string().optional(),
-  issuedBy: yup.string().required("Issued by is required"),
-  place: yup.string().required("Place is required"),
-  newValidityDate: yup.string().optional(),
-  rangeFrom: yup.string().optional(),
-  rangeTo: yup.string().optional(),
-  assignmentDate: yup.string().optional(),
-  dueDate: yup.string().optional(),
-  postponedDate: yup.string().optional(),
-  certificateBaseDate: yup.string().optional(),
-});
-
 const ReportingForm = () => {
-  const router = useRouter();
   const { data } = useAuth();
   const [loading, setLoading] = useState(false);
   const [clientsList, setClientsList] = useState([]);
@@ -68,7 +47,6 @@ const ReportingForm = () => {
   const [selectedShip, setSelectedShip] = useState({ id: "", shipName: "" });
   const [specialPermission, setSpecialPermission] = useState(false);
   const [filteredJournals, setFilteredJournals] = useState([]);
-  const [showButton, setShowButton] = useState(true);
   const [openEndrosemet, setOpenEndrosemet] = useState(false);
   const [endorsementTitle, setEndorsementTitle] = useState([]);
   const [selectedReportNumber, setSelectedReportNumber] = useState({
@@ -87,7 +65,6 @@ const ReportingForm = () => {
   const [open, setOpen] = useState();
   const [underscoreFields, setUnderscoreFields] = useState([]);
   const [reportName, setReportName] = useState("");
-  const [showEndorsementField, setShowEndorsementField] = useState(false);
   const [showExtraEndorsementField, setShowExtraEndorsementField] = useState(false);
   const [loadingReport, setLoadingReport] = useState(false);
   const [isOpenArchiveModal, setIsOpenArchiveModal] = useState(false);
@@ -97,23 +74,68 @@ const ReportingForm = () => {
   const [amdRemarks, setAmdRemarks] = useState("");
   const [showArchiveHistoryDialog, setShowArchiveHistoryDialog] = useState(false);
   const [archiveHistory, setArchiveHistory] = useState([]);
-  const [endorsementValues, setEndorsementValues] = useState([]);
   const [endorsements, setEndorsements] = useState([]);
   const [surveyType, setSurveyType] = useState(false);
+  const [endorsementDate, setEndorsementDate] = useState(null);
+  const [doingEndorsement, setDoingEndorsement] = useState(false);
+  const [systemVariable, setSystemVariable] = useState([]);
+  const [stampId, setStampId] = useState(null);
+  const [companyLogoId, setCompanyLogoId] = useState(null);
+  const [endorsementStamp, setEndorsementStamp] = useState(null);
 
   useEffect(() => {
-    ``;
+    if (reportDetails) {
+      setEndorsementDate(reportDetails.endorsementDate);
+    }
+  }, [reportDetails]);
+
+  const reportSchema = yup.object().shape({
+    typesOfSurvey: yup.string().required("Type of survey is required"),
+    typeOfCertificate: yup.string(),
+    issuancedate: yup.string().optional(),
+    validitydate: yup.string().when([], {
+      is: () => !surveyType && !hiddenReports.includes(reportName),
+      then: (schema) => schema.required("Validity date is required"),
+      otherwise: (schema) => schema.optional(),
+    }),
+    surveydate: yup.string().when([], {
+      is: () => !surveyType,
+      then: (schema) => schema.required("Survey date is required"),
+    }),
+    endorsementdate: yup.string().optional(),
+    issuedBy: yup.string().when([], {
+      is: () => !surveyType,
+      then: (schema) => schema.required("Issued by is required"),
+      otherwise: (schema) => schema.optional(),
+    }),
+
+    place: yup.string().when([], {
+      is: () => !surveyType,
+      then: (schema) => schema.required("Place is required"),
+      otherwise: (schema) => schema.optional(),
+    }),
+    newValidityDate: yup.string().when([], {
+      is: () => showExtraEndorsementField || reportDetails?.typeOfCertificate === "extended",
+      then: (schema) => schema.required("New validity date is required"),
+      otherwise: (schema) => schema.optional(),
+    }),
+
+    rangeFrom: yup.string().optional(),
+    rangeTo: yup.string().optional(),
+    assignmentDate: yup.string().optional(),
+    dueDate: yup.string().optional(),
+    postponedDate: yup.string().optional(),
+    certificateBaseDate: yup.string().optional(),
+  });
+
+  useEffect(() => {
     if (selectCertificate === "full_term") {
-      setShowEndorsementField(true);
       setShowExtraEndorsementField(false);
     } else if (selectCertificate === "short_term" || selectCertificate === "interim") {
-      setShowEndorsementField(false);
       setShowExtraEndorsementField(false);
     } else if (selectCertificate === "extended") {
-      setShowEndorsementField(true);
       setShowExtraEndorsementField(true);
     } else {
-      setShowEndorsementField(false);
       setShowExtraEndorsementField(false);
     }
   }, [selectCertificate]);
@@ -165,10 +187,10 @@ const ReportingForm = () => {
 
   const {
     control,
-    handleSubmit,
     getValues,
     setValue,
     trigger,
+    watch,
     formState: { errors },
     clearErrors,
   } = useForm({
@@ -203,6 +225,25 @@ const ReportingForm = () => {
     return tableData?.some((activity) => activity.status !== "Completed");
   };
 
+  const getSystemVariable = async () => {
+    const response = await getAllSystemVariables();
+    const vars = response?.data?.data || [];
+
+    if (vars.length > 0) {
+      setSystemVariable(vars);
+
+      const stamp = vars.find((item) => item.name === "company_stamp")?.id || null;
+      const logo = vars.find((item) => item.name === "company_logo")?.id || null;
+
+      setStampId(stamp);
+      setCompanyLogoId(logo);
+      setEndorsementStamp(stamp);
+    }
+  };
+
+  useEffect(() => {
+    getSystemVariable();
+  }, []);
   const handleClientChange = (event) => {
     const selectedId = event.target.value;
     const selectedClient = clientsList.find((client) => client.id === selectedId);
@@ -231,10 +272,9 @@ const ReportingForm = () => {
     setReportDetails(undefined);
     setSelectCertificate("");
     setSelectSurveyor("");
-    setShowEndorsementField(false);
+    setReportName("");
     setShowExtraEndorsementField(false);
 
-    // Reset form values
     setValue("typesOfSurvey", "");
     setValue("typeOfCertificate", "");
     setValue("issuancedate", "");
@@ -253,6 +293,8 @@ const ReportingForm = () => {
     clearErrors();
   };
 
+  const watchedFields = watch(["dueDate", "rangeFrom", "rangeTo", "anniversaryDate"]);
+
   const handleCertificate = (event) => {
     const value = event.target.value;
     setSelectCertificate(value);
@@ -270,70 +312,158 @@ const ReportingForm = () => {
       clearErrors("issuedBy");
     }
   };
+
+  const normalizeName = (name) =>
+    name
+      ?.toLowerCase()
+      .trim()
+      .replace(/\s+/g, " ")
+      .replace(/\(\s+/g, "(")
+      .replace(/\s+\)/g, ")")
+      .replace(/\s*\(\s*/g, " (")
+      .replace(/\s*\)\s*/g, ")");
+
+  const fiveYearSpecials = ["special survey hull", "special survey machinery", "special survey ig system", "special survey (fi-fi)", "special survey (ums)", "continuous survey hull", "continuous survey machinery"];
+
+  const enforceAnniversaryLimit = (date) => {
+    const annivDate = getValues("anniversaryDate");
+    if (!annivDate || !date) return date;
+
+    return moment(date).isAfter(moment(annivDate)) ? moment(annivDate).format("YYYY-MM-DD") : date;
+  };
+
+  const applyAnniversaryDayMonth = (baseDate) => {
+    const anniv = getValues("anniversaryDate");
+    if (!anniv) return baseDate;
+
+    const annivMoment = moment(anniv);
+    const base = moment(baseDate);
+
+    return base.month(annivMoment.month()).date(annivMoment.date()).format("YYYY-MM-DD");
+  };
+
+  const normalize = (str) => str.replace(/\(\s*/g, "(").replace(/\s*\)/g, ")");
+
+  const calculateDueDateBase = (value, surveyType) => {
+    let yearsToAdd = 0;
+    const isFiveYearSpecial = fiveYearSpecials.includes(normalize(surveyType));
+    if (isFiveYearSpecial) {
+      // Add 5 years first
+      let due = moment(value).add(5, "years");
+      // Then subtract 1 day
+      due = due.subtract(1, "day");
+      return due.format("YYYY-MM-DD");
+    }
+
+    if (!isFiveYearSpecial && (surveyType.includes("special") || surveyType.includes("continuous") || surveyType.includes("renewal") || surveyType.includes("intermediate"))) {
+      yearsToAdd = 1;
+    }
+
+    if (surveyType.includes("annual")) yearsToAdd = 1;
+
+    if (surveyType === "docking survey" || surveyType === "main boiler survey" || surveyType === "auxiliary boiler survey" || surveyType === "thermal oil heating systems survey" || surveyType === "exhaust gas steam generators and economisers survey") {
+      yearsToAdd = 2;
+    }
+
+    if (surveyType === "in water survey") yearsToAdd = 3;
+
+    if (surveyType === "tailshaft initial survey" || surveyType === "tailshaft periodical survey" || surveyType === "tailshaft renewal survey") {
+      yearsToAdd = 5;
+    }
+    if (yearsToAdd === 0) {
+      yearsToAdd = 5;
+    }
+
+    return moment(value).add(yearsToAdd, "years").format("YYYY-MM-DD");
+  };
+
+  const applyRangeFromDueDate = (dueDate, surveyType) => {
+    if (!dueDate) return;
+
+    const due = moment(dueDate);
+    let rangeFrom = "";
+    let rangeTo = "";
+
+    const isFiveYearSpecial = fiveYearSpecials.includes(normalize(surveyType));
+    const noRangeSurveys = ["docking survey", "tailshaft initial survey", "tailshaft renewal survey", "tailshaft periodical survey", "main boiler survey", "auxiliary boiler survey", "thermal oil heating systems survey", "exhaust gas steam generators and economisers survey"];
+
+    // Case 1: No range surveys
+    if (noRangeSurveys.includes(normalize(surveyType))) {
+      rangeFrom = "";
+      rangeTo = "";
+    }
+    // Case 2: Five-year special surveys
+    else if (isFiveYearSpecial) {
+      rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
+      rangeTo = dueDate;
+      setValue("validitydate", dueDate);
+    } else if (surveyType?.toLowerCase().includes("annual")) {
+      rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
+      rangeTo = moment(due).add(3, "months").format("YYYY-MM-DD");
+    } else {
+      rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
+      rangeTo = moment(due).add(3, "months").format("YYYY-MM-DD");
+    }
+
+    rangeTo = enforceAnniversaryLimit(rangeTo);
+
+    setValue("rangeFrom", rangeFrom);
+    setValue("rangeTo", rangeTo);
+  };
+
   const handleFieldChange = (fieldName, value) => {
     if (!value) return;
 
     if (errors[fieldName]) clearErrors(fieldName);
 
+    const surveyType = normalizeName(getValues("typesOfSurvey"));
+
     if (fieldName === "surveydate") {
-      // Copy to assignmentDate
       setValue("assignmentDate", value);
 
-      const surveyType = getValues("typesOfSurvey");
-      const issuanceDate = getValues("issuancedate");
+      const baseDue = calculateDueDateBase(value, surveyType);
+      const dueDate = applyAnniversaryDayMonth(baseDue);
 
-      // Format existing surveys from tableData (now includes reportDetail)
-      const existingSurveys = tableData
-        .filter((activity) => activity.reportDetail && activity.surveyTypes?.name)
-        .map((activity) => ({
-          surveyName: activity.surveyTypes.name,
-          surveyDate: activity.reportDetail.surveyDate,
-          issuanceDate: activity.reportDetail.issuanceDate,
-          dueDate: activity.reportDetail.dueDate,
-          rangeFrom: activity.reportDetail.rangeFrom,
-          rangeTo: activity.reportDetail.rangeTo,
-        }));
+      setValue("dueDate", dueDate);
+      applyRangeFromDueDate(dueDate, surveyType);
 
-      console.log("Existing surveys for calculation:", existingSurveys);
-
-      // Recalculate dependent dates
-      const { dueDate, rangeFrom, rangeTo, anniversaryDate } = calculateDates(issuanceDate, surveyType, existingSurveys);
-
-      setValue("dueDate", dueDate ? moment(dueDate).format("YYYY-MM-DD") : "");
-      setValue("rangeFrom", rangeFrom ? moment(rangeFrom).format("YYYY-MM-DD") : "");
-      setValue("rangeTo", rangeTo ? moment(rangeTo).format("YYYY-MM-DD") : "");
-      setValue("anniversaryDate", anniversaryDate ? moment(anniversaryDate).format("YYYY-MM-DD") : "");
+      trigger(["dueDate", "rangeFrom", "rangeTo", "anniversaryDate"]);
     }
 
-    if (fieldName === "issuancedate") {
-      const surveyType = getValues("typesOfSurvey");
+    if (fieldName === "assignmentDate") {
+      const baseDue = calculateDueDateBase(value, surveyType);
+      const dueDate = applyAnniversaryDayMonth(baseDue);
 
-      // Format existing surveys from tableData (now includes reportDetail)
-      const existingSurveys = tableData
-        .filter((activity) => activity.reportDetail && activity.surveyTypes?.name)
-        .map((activity) => ({
-          surveyName: activity.surveyTypes.name,
-          surveyDate: activity.reportDetail.surveyDate,
-          issuanceDate: activity.reportDetail.issuanceDate,
-          dueDate: activity.reportDetail.dueDate,
-          rangeFrom: activity.reportDetail.rangeFrom,
-          rangeTo: activity.reportDetail.rangeTo,
-        }));
+      setValue("dueDate", dueDate);
+      applyRangeFromDueDate(dueDate, surveyType);
 
-      console.log("Existing surveys for calculation:", existingSurveys);
-
-      const { dueDate, rangeFrom, rangeTo, anniversaryDate } = calculateDates(value, surveyType, existingSurveys);
-
-      setValue("dueDate", dueDate ? moment(dueDate).format("YYYY-MM-DD") : "");
-      setValue("rangeFrom", rangeFrom ? moment(rangeFrom).format("YYYY-MM-DD") : "");
-      setValue("rangeTo", rangeTo ? moment(rangeTo).format("YYYY-MM-DD") : "");
-      setValue("anniversaryDate", anniversaryDate ? moment(anniversaryDate).format("YYYY-MM-DD") : "");
+      trigger(["dueDate", "rangeFrom", "rangeTo", "anniversaryDate"]);
     }
+
+    if (fieldName === "dueDate") {
+      applyRangeFromDueDate(value, surveyType);
+    }
+
+    if (fieldName === "rangeFrom") {
+      const dueDate = getValues("dueDate");
+      if (!dueDate) return;
+
+      if (surveyType.includes("annual")) {
+        setValue("rangeTo", moment(dueDate).add(3, "months").format("YYYY-MM-DD"));
+      } else if (surveyType.includes("special") || surveyType.includes("continuous") || surveyType.includes("renewal") || surveyType.includes("intermediate")) {
+        setValue("rangeTo", dueDate);
+      }
+    }
+  };
+
+  const formatToDayMonth = (value) => {
+    if (!value) return "";
+    const [y, m, d] = value.split("-");
+    return `${d}/${m}`;
   };
 
   const handleShowTable = () => {
     setShowTable(true);
-    setShowButton(true);
     getAllActivity(journalId);
   };
 
@@ -347,11 +477,10 @@ const ReportingForm = () => {
         archiveRemarks: remark,
       };
 
-      if (specialPermission && data.specialPermission?.includes("archive/unarchive")) {
+      if (specialPermission && data.specialPermission?.includes("Archive/Unarchive")) {
         const result = await addUnArchiveDocument(payload);
         if (result?.data?.status === "success") {
           setShowTable(false);
-          setShowButton(false);
           fetchAllJournals();
           setIsOpenConfirmModal(false);
           setSelectedReportNumber({});
@@ -362,7 +491,6 @@ const ReportingForm = () => {
       } else {
         const result = await addArchiveDocument(payload);
         if (result?.data?.status === "success") {
-          setShowButton(false);
           setIsOpenConfirmModal(false);
           setShowTable(false);
           fetchAllJournals();
@@ -416,6 +544,7 @@ const ReportingForm = () => {
       surveyDate: values.surveydate ? formatDate(values.surveydate) : null,
       issuedBy: Number(values.issuedBy) || null,
       place: values.place || "",
+      isEndorsement: doingEndorsement ? true : false,
       validityDate: hiddenReports?.includes(reportName) ? "" : values.validitydate ? formatDate(values.validitydate) : "",
       ...((selectCertificate === "full_term" || selectCertificate === "extended") && {
         endorsementDate: values.endorsementdate ? formatDate(values.endorsementdate) : null,
@@ -441,15 +570,13 @@ const ReportingForm = () => {
   const generateReport = async (payload) => {
     try {
       setLoading(true);
-      console.log(payload, "payload");
       const result = await createReportDetail(payload);
 
-      console.log(result, "result");
       if (result?.data?.status === "success") {
         setReportDetails(result?.data?.data);
         toast.success("Report saved successfully.");
       } else {
-        toast.error(result.data.message);
+        toast.error(result?.data?.message);
       }
       setLoading(false);
     } catch (error) {
@@ -462,10 +589,9 @@ const ReportingForm = () => {
     try {
       setLoading(true);
       const result = await updateReportDetail(reportDetails?.id, payload);
-      console.log(result, "result");
       if (result?.data?.status === "success") {
         setReportDetails(result?.data?.data);
-        toast.success("Report updated successfully.");
+        toast.success(result?.data?.message || "Report updated successfully");
       } else {
         toast.error(result?.response?.data?.message);
       }
@@ -477,16 +603,12 @@ const ReportingForm = () => {
   };
 
   const handleFullReportGeneration = async () => {
-    if (endorsements?.length > 0 && reportDetails.endorsementDate !== null) {
-      setEndorsementTitle(endorsements);
-      setOpenEndrosemet(true);
+    setEndorsementTitle(endorsements);
+    await fetchReportDetails(reportDetails?.id);
+    if (reportDetails.lastUnarchivedAt !== null && endorsementDate == null) {
+      setShowAmendmentDialog(true);
     } else {
-      await fetchReportDetails(reportDetails?.id);
-      if (reportDetails.lastUnarchivedAt !== null && !reportDetails?.endorsementDate) {
-        setShowAmendmentDialog(true);
-      } else {
-        setOpen(true);
-      }
+      setOpen(true);
     }
   };
 
@@ -505,10 +627,10 @@ const ReportingForm = () => {
           ...(!isArrayData ? extraFieldsOrEndorsements : {}),
           type: "image",
           amdRemarks,
-          stamp: 6,
+          stamp: stampId,
           companyText: 8,
-          ...(reportName.toLocaleLowerCase() === "certificate of class" && {
-            logo: 7,
+          ...(reportName?.toLocaleLowerCase() === "certificate of class" && {
+            logo: companyLogoId,
           }),
         },
       };
@@ -611,28 +733,7 @@ const ReportingForm = () => {
       if (result?.data?.status === "success") {
         const activities = result?.data?.data;
 
-        // Fetch report details for all activities
-        const activitiesWithReports = await Promise.all(
-          activities.map(async (activity) => {
-            try {
-              const reportResult = await getSelectedActivityReportDetails(activity.id);
-              const reportData = reportResult?.data?.data?.[0];
-              return {
-                ...activity,
-                reportDetail: reportData || null,
-              };
-            } catch (error) {
-              console.warn(`Failed to fetch report for activity ${activity.id}`, error);
-              return {
-                ...activity,
-                reportDetail: null,
-              };
-            }
-          })
-        );
-
-        setTableData(activitiesWithReports);
-        console.log(activitiesWithReports, "table data with reports");
+        setTableData(activities);
         setArchiveHistory(result.data?.data[0]?.journal?.journalRemarks);
       } else {
         toast.error("Something went wrong ! Please try again after some time");
@@ -684,56 +785,21 @@ const ReportingForm = () => {
     value: surveyor.id,
   }));
 
-  // STEP 3: Update handleReportClick to use the new structure
   const handleReportClick = async (row) => {
     try {
       setLoading(true);
+      const matchedActivity = tableData?.find((item) => item?.surveyTypes?.id == row?.surveyTypes?.id);
+      const classificationFlag = matchedActivity?.surveyTypes?.classificationSurvey;
+      setSurveyType(classificationFlag ?? false);
       const result = await getSelectedActivityReportDetails(row?.id);
       const reportData = result?.data?.data[0];
-      setSurveyType(result?.data?.data[0]?.activity?.surveyTypes?.classificationSurvey);
       setReportDetails(reportData);
+      setEndorsements(reportData?.activity?.surveyTypes?.report?.endorsements);
       setReportName(row?.surveyTypes?.report?.name);
-
-      // setEndorsements(reportData?.activity?.surveyTypes?.report?.endorsements);
 
       setSelectedRow(row);
       setShowForm(true);
       clearErrors();
-
-      const surveyType = row.surveyTypes?.name;
-      const issuanceDate = reportData?.issuanceDate;
-
-      // Format existing surveys from tableData (now includes reportDetail)
-      // console.log(tableData, "tableData");
-      // const existingSurveys = [
-      //   {
-      //     surveyName: "Special Survey (Fi-Fi)",
-      //     surveyDate: "2025-10-25T00:00:00.000Z",
-      //     issuanceDate: "2025-10-18T00:00:00.000Z",
-      //     dueDate: "2030-10-25T00:00:00.000Z",
-      //     rangeFrom: "2030-07-25T00:00:00.000Z",
-      //     rangeTo: "2030-10-25T00:00:00.000Z",
-      //   },
-      // ];
-
-      // const result1 = calculateDates("2025-10-06", "Annual Survey ( Fi-Fi)", existingSurveys);
-      // console.log(result1, "result1");
-
-      // // Auto-calculate dates if backend doesn't provide them
-      // const { dueDate, rangeFrom, rangeTo, anniversaryDate } = calculateDates(issuanceDate, surveyType, existingSurveys);
-      // console.log(
-      //   {
-      //     dueDate,
-      //     rangeFrom,
-      //     rangeTo,
-      //     anniversaryDate,
-      //   },
-      //   "calculateDates"
-      // );
-      // console.log("Before setValue:", {
-      //   surveydate: getValues("surveydate"),
-      //   issuancedate: getValues("issuancedate"),
-      // });
       const data = extractUnderscoreFields(row);
       setUnderscoreFields(data);
       setValue("typesOfSurvey", getSurveyTitle(row.surveyTypes?.name));
@@ -826,7 +892,7 @@ const ReportingForm = () => {
 
             {selectedShip?.id && (
               <Box mt={2} width="100%" display="block">
-                {data?.specialPermission?.includes("archive/unarchive") && <FormControlLabel control={<Checkbox checked={specialPermission} onChange={handleSpecialPermission} color="primary" />} label="Show Archived Reports" sx={{ mb: 2, display: "block" }} />}
+                {data?.specialPermission?.includes("Archive/Unarchive") && <FormControlLabel control={<Checkbox checked={specialPermission} onChange={handleSpecialPermission} color="primary" />} label="Show Archived Reports" sx={{ mb: 2, display: "block" }} />}
                 <Box display="flex">
                   <FormControl fullWidth sx={{ maxWidth: 300 }}>
                     <Typography variant="body1" mb={1} display="block">
@@ -853,7 +919,7 @@ const ReportingForm = () => {
             {selectedShip.id && selectedReportNumber.journalTypeId && (
               <>
                 <CommonButton onClick={handleShowTable} sx={{ marginTop: 3 }} text="Continue" />
-                {selectedShip.id && selectedReportNumber.journalTypeId && data?.specialPermission?.includes("archive/unarchive") && <CommonButton onClick={handleContinue} sx={{ marginTop: 3, marginLeft: 2 }} disabled={!tableData?.length > 0} text={specialPermission ? "Unarchive" : "Archive"} />}
+                {selectedShip.id && selectedReportNumber.journalTypeId && data?.specialPermission?.includes("Archive/Unarchive") && <CommonButton onClick={handleContinue} sx={{ marginTop: 3, marginLeft: 2 }} disabled={!tableData?.length > 0} text={specialPermission ? "Unarchive" : "Archive"} />}
                 {archiveHistory?.length > 0 && <CommonButton onClick={() => setShowArchiveHistoryDialog(true)} sx={{ marginTop: 3, marginLeft: 2 }} text="Show Archive Remarks History" />}
               </>
             )}
@@ -870,23 +936,8 @@ const ReportingForm = () => {
 
             <Grid2 container spacing={2}>
               {/* Row 1 */}
-              <Grid2 item size={{ md: 3 }}>
-                <Controller
-                  name="typesOfSurvey"
-                  control={control}
-                  render={({ field }) => (
-                    <CommonInput
-                      {...field}
-                      disabled
-                      label={
-                        <>
-                          Type of Survey <span style={{ color: "red" }}>*</span>
-                        </>
-                      }
-                      placeholder="Type of Survey"
-                    />
-                  )}
-                />
+              <Grid2 item size={{ xs: 12, sm: 6, md: 3 }}>
+                <Controller name="typesOfSurvey" control={control} render={({ field }) => <CommonInput {...field} disabled label={<>Type of Survey {!surveyType && <span style={{ color: "red" }}>*</span>}</>} placeholder="Type of Survey" />} />
                 {errors.typesOfSurvey && (
                   <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
                     {errors.typesOfSurvey.message}
@@ -894,16 +945,14 @@ const ReportingForm = () => {
                 )}
               </Grid2>
 
-              <Grid2 item size={{ md: 3 }}>
+              <Grid2 item size={{ xs: 12, sm: 6, md: 3 }}>
                 {/* {!surveyType && ( */}
                 <FormControl fullWidth>
                   <Typography variant="body1" fontWeight={"500"} mb={1.5}>
-                    Type of Certificate <span style={{ color: "red" }}>*</span>
+                    Type of Certificate {!surveyType && <span style={{ color: "red" }}>*</span>}
                   </Typography>
                   <Select value={selectCertificate} onChange={handleCertificate} displayEmpty error={!!errors.typeOfCertificate}>
-                    <MenuItem value="" disabled>
-                      Select Certificate
-                    </MenuItem>
+                    <MenuItem value="">&nbsp;</MenuItem>
                     {certificateList.map((report) => (
                       <MenuItem key={report.value} value={report.value}>
                         {report.label}
@@ -918,12 +967,12 @@ const ReportingForm = () => {
                 </FormControl>
                 {/* )} */}
               </Grid2>
-              <Grid2 size={{ md: 3 }}>
-                <Controller name="anniversaryDate" control={control} render={({ field }) => <CommonInput {...field} type="date" label="Anniversary Date" disabled />} />
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
+                <Controller name="anniversaryDate" control={control} render={({ field }) => <CommonInput {...field} type="text" label="Anniversary Date" value={formatToDayMonth(field.value)} disabled />} />
               </Grid2>
-              <Grid2 size={{ md: 3 }}></Grid2>
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}></Grid2>
 
-              <Grid2 size={{ md: 3 }}>
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
                 <Controller
                   name="issuancedate"
                   control={control}
@@ -931,7 +980,7 @@ const ReportingForm = () => {
                     <CommonInput
                       {...field}
                       type="date"
-                      label="Issuance Date"
+                      label={<>Issuance Date {!surveyType && <span style={{ color: "red" }}>*</span>}</>}
                       onChange={(e) => {
                         field.onChange(e);
                         handleFieldChange("issuancedate", e.target.value);
@@ -941,8 +990,8 @@ const ReportingForm = () => {
                 />
               </Grid2>
               {/* )} */}
-              {!hiddenReports.includes(reportName) && (
-                <Grid2 size={{ md: 3 }}>
+              {!hiddenReports.map((r) => r?.toLowerCase()).includes(reportName?.toLowerCase()) && (
+                <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
                   <Controller
                     name="validitydate"
                     control={control}
@@ -950,7 +999,7 @@ const ReportingForm = () => {
                       <CommonInput
                         {...field}
                         type="date"
-                        label="Validity Date"
+                        label={<>Validity Date {!surveyType && <span style={{ color: "red" }}>*</span>}</>}
                         error={!!errors.validitydate}
                         helperText={errors.validitydate?.message}
                         onChange={(e) => {
@@ -960,10 +1009,15 @@ const ReportingForm = () => {
                       />
                     )}
                   />
+                  {/* {!hiddenReports.includes(reportName) && !surveyType && errors.validitydate && (
+                    <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                      {errors.validitydate.message}
+                    </Typography>
+                  )} */}
                 </Grid2>
               )}
 
-              <Grid2 size={{ md: 3 }}>
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
                 <Controller
                   name="certificateBaseDate"
                   control={control}
@@ -974,14 +1028,14 @@ const ReportingForm = () => {
                       label="Date on which certificate is based"
                       onChange={(e) => {
                         field.onChange(e);
-                        handleFieldChange("basedDate", e.target.value);
+                        handleFieldChange("certificateBaseDate", e.target.value);
                       }}
                     />
                   )}
                 />
               </Grid2>
 
-              <Grid2 size={{ md: 3 }}>
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
                 <Controller
                   name="surveydate"
                   control={control}
@@ -989,11 +1043,7 @@ const ReportingForm = () => {
                     <CommonInput
                       {...field}
                       type="date"
-                      label={
-                        <>
-                          Survey Date <span style={{ color: "red" }}>*</span>
-                        </>
-                      }
+                      label={<>Survey Date {!surveyType && <span style={{ color: "red" }}>*</span>}</>}
                       onChange={(e) => {
                         field.onChange(e);
                         handleFieldChange("surveydate", e.target.value);
@@ -1001,217 +1051,204 @@ const ReportingForm = () => {
                     />
                   )}
                 />
-                {errors.surveydate && (
+                {errors.surveydate && !surveyType && (
                   <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
                     {errors.surveydate.message}
                   </Typography>
                 )}
               </Grid2>
-              {/* Row 3 — Remaining Fields */}
 
-              <Grid2 container spacing={2} sx={{ mt: 0 }}>
-                {/* Survey Date */}
-
-                {/* Assignment Date */}
-                <Grid2 size={{ md: 3 }}>
-                  <Controller
-                    name="assignmentDate"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        type="date"
-                        label="Assignment Date"
-                        onChange={(e) => {
-                          field.onChange(e);
-                          handleFieldChange("assignmentDate", e.target.value);
-                        }}
-                      />
-                    )}
-                  />
-                </Grid2>
-
-                {/* Due Date */}
-                <Grid2 size={{ md: 3 }}>
-                  <Controller
-                    name="dueDate"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        type="date"
-                        label="Due Date"
-                        onChange={(e) => {
-                          field.onChange(e);
-                          handleFieldChange("dueDate", e.target.value);
-                        }}
-                      />
-                    )}
-                  />
-                </Grid2>
-
-                {/* Range From */}
-                <Grid2 size={{ md: 3 }}>
-                  <Controller
-                    name="rangeFrom"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        type="date"
-                        label="Range From"
-                        onChange={(e) => {
-                          field.onChange(e);
-                          handleFieldChange("rangeFrom", e.target.value);
-                        }}
-                      />
-                    )}
-                  />
-                </Grid2>
-
-                {/* Range To */}
-                <Grid2 size={{ md: 3 }}>
-                  <Controller
-                    name="rangeTo"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        type="date"
-                        label="Range To"
-                        onChange={(e) => {
-                          field.onChange(e);
-                          handleFieldChange("rangeTo", e.target.value);
-                        }}
-                      />
-                    )}
-                  />
-                </Grid2>
-
-                {/* Postponed Date */}
-                <Grid2 size={{ md: 3 }}>
-                  <Controller
-                    name="postponedDate"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        type="date"
-                        label="Postponed Date"
-                        onChange={(e) => {
-                          field.onChange(e);
-                          handleFieldChange("postponedDate", e.target.value);
-                        }}
-                      />
-                    )}
-                  />
-                </Grid2>
-                {showEndorsementField && (
-                  <Grid2 size={{ md: 3 }}>
-                    <Controller
-                      name="endorsementdate"
-                      control={control}
-                      render={({ field }) => (
-                        <CommonInput
-                          {...field}
-                          type="date"
-                          label="Endorsement Date"
-                          onChange={(e) => {
-                            field.onChange(e);
-                            handleFieldChange("endorsementdate", e.target.value);
-                          }}
-                        />
-                      )}
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
+                <Controller
+                  name="assignmentDate"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label="Assignment Date"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("assignmentDate", e.target.value);
+                      }}
                     />
-                  </Grid2>
-                )}
-                {(showExtraEndorsementField || reportDetails?.typeOfCertificate === "extended") && (
-                  <Grid2 size={{ md: 3 }}>
-                    <Controller
-                      name="newValidityDate"
-                      control={control}
-                      render={({ field }) => (
-                        <CommonInput
-                          {...field}
-                          type="date"
-                          label={
-                            <>
-                              New Validity Date <span style={{ color: "red" }}>*</span>
-                            </>
-                          }
-                          onChange={(e) => {
-                            field.onChange(e);
-                            handleFieldChange("newValidityDate", e.target.value);
-                          }}
-                        />
-                      )}
-                    />
-                    {errors.newValidityDate && (
-                      <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                        {errors.newValidityDate.message}
-                      </Typography>
-                    )}
-                  </Grid2>
-                )}
+                  )}
+                />
+              </Grid2>
 
-                {/* Endorsed / Issued By */}
-                <Grid2 item size={{ md: 3 }}>
-                  <FormControl fullWidth>
-                    <Typography variant="body1" mb={1.5} fontWeight={500}>
-                      Endorsed / Issued By <span style={{ color: "red" }}>*</span>
-                    </Typography>
-                    <Select value={selectSurveyor} onChange={handleSurveyor} displayEmpty name="issuedBy" error={!!errors.issuedBy}>
-                      <MenuItem value="" disabled>
-                        Select Endorsed / Issued By
-                      </MenuItem>
-                      {surveyorOptions.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    {errors.issuedBy && (
-                      <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                        {errors.issuedBy.message}
-                      </Typography>
-                    )}
-                  </FormControl>
-                </Grid2>
-                <Grid2 item size={{ md: 3 }}>
+              {/* Due Date */}
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
+                <Controller
+                  name="dueDate"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label="Due Date"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("dueDate", e.target.value);
+                      }}
+                    />
+                  )}
+                />
+              </Grid2>
+
+              {/* Range From */}
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
+                <Controller
+                  name="rangeFrom"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label="Range From"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("rangeFrom", e.target.value);
+                      }}
+                    />
+                  )}
+                />
+              </Grid2>
+
+              {/* Range To */}
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
+                <Controller
+                  name="rangeTo"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label="Range To"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("rangeTo", e.target.value);
+                      }}
+                    />
+                  )}
+                />
+              </Grid2>
+
+              {/* Postponed Date */}
+              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
+                <Controller
+                  name="postponedDate"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      type="date"
+                      label="Postponed Date"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("postponedDate", e.target.value);
+                      }}
+                    />
+                  )}
+                />
+              </Grid2>
+              {(showExtraEndorsementField || reportDetails?.typeOfCertificate === "extended") && (
+                <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
                   <Controller
-                    name="place"
+                    name="newValidityDate"
                     control={control}
                     render={({ field }) => (
                       <CommonInput
                         {...field}
+                        type="date"
                         label={
                           <>
-                            Place of Issuance / Endorsement <span style={{ color: "red" }}>*</span>
+                            New Validity Date <span style={{ color: "red" }}>*</span>
                           </>
                         }
-                        placeholder="Enter place name"
                         onChange={(e) => {
                           field.onChange(e);
-                          handleFieldChange("place", e.target.value);
+                          handleFieldChange("newValidityDate", e.target.value);
                         }}
                       />
                     )}
                   />
-                  {errors.place && (
+                  {errors.newValidityDate && (
                     <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
-                      {errors.place.message}
+                      {errors.newValidityDate.message}
                     </Typography>
                   )}
                 </Grid2>
+              )}
+
+              {/* Endorsed / Issued By */}
+              <Grid2 item size={{ xs: 12, sm: 6, md: 3 }}>
+                <FormControl fullWidth>
+                  <Typography variant="body1" mb={1.5} fontWeight={500}>
+                    Issued By {!surveyType && <span style={{ color: "red" }}>*</span>}
+                  </Typography>
+                  <Select value={selectSurveyor} onChange={handleSurveyor} displayEmpty name="issuedBy" error={!!errors.issuedBy}>
+                    <MenuItem value="">&nbsp;</MenuItem>
+                    {surveyorOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {errors.issuedBy && (
+                    <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                      {errors.issuedBy.message}
+                    </Typography>
+                  )}
+                </FormControl>
               </Grid2>
-
-              {/* Place of Issuance */}
+              <Grid2 item size={{ xs: 12, sm: 6, md: 3 }}>
+                <Controller
+                  name="place"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      label={<>Place of Issuance {!surveyType && <span style={{ color: "red" }}>*</span>}</>}
+                      placeholder="Enter place name"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange("place", e.target.value);
+                      }}
+                    />
+                  )}
+                />
+                {errors.place && (
+                  <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
+                    {errors.place.message}
+                  </Typography>
+                )}
+              </Grid2>
             </Grid2>
+            {selectCertificate === "full_term" && (
+              <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 3 }}>
+                <FormControlLabel control={<Checkbox checked={doingEndorsement} onChange={(e) => setDoingEndorsement(e.target.checked)} />} label="Endorse Certificate" />
+              </Stack>
+            )}
 
-            {/* Action Buttons */}
             <Stack direction="row" gap={"20px"}>
               <CommonButton onClick={handleGenerateReport} sx={{ marginTop: 3 }} text="Save" isLoading={loading} />
-              {selectedRow?.status === "Completed" && <CommonButton onClick={handleFullReportGeneration} sx={{ marginTop: 3 }} text="Generate Certificate" isLoading={loading} disabled={!reportDetails || surveyType} />}
+
+              {selectedRow?.status === "Completed" && (
+                <CommonButton
+                  onClick={() => {
+                    if (doingEndorsement) {
+                      setEndorsementTitle(endorsements);
+                      setOpenEndrosemet(true);
+                    } else {
+                      handleFullReportGeneration();
+                    }
+                  }}
+                  sx={{ marginTop: 3 }}
+                  text="Generate Certificate"
+                  isLoading={loading}
+                  disabled={!reportDetails}
+                />
+              )}
             </Stack>
           </CommonCard>
         </Box>
@@ -1256,48 +1293,21 @@ const ReportingForm = () => {
         }}
         title={fullScreenRemarksVisible && typeof fullScreenRemarksVisible === "object" ? `Remarks for ${fullScreenRemarksVisible.surveyTypes?.name}` : "Remarks"}
       />
-      {reportDetails?.typeOfCertificate === "full_term" && openEndrosemet && !!reportDetails?.endorsementDate && (
+      {reportDetails?.typeOfCertificate === "full_term" && openEndrosemet && (
         <EndorsementDialog
           open={openEndrosemet}
           onClose={() => setOpenEndrosemet(false)}
           onSubmit={(values) => {
-            setEndorsementValues(values);
             handleSubmitReport(values);
           }}
           endorsementList={endorsementTitle}
           reportDetailsId={reportDetails?.id}
           endorsedIssuedBy={surveyorOptions}
+          surveyorOptions={surveyorOptions}
+          endorsementStamp={endorsementStamp}
         />
       )}
       <AmendmentRemarksDialog open={showAmendmentDialog} onClose={() => setShowAmendmentDialog(false)} onSubmit={handleAmendmentSubmit} isLoading={continueBtnLoading} />
-      {/* <Dialog open={showArchiveHistoryDialog} onClose={() => setShowArchiveHistoryDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Archive Remarks History</DialogTitle>
-        <DialogContent dividers>
-          {archiveHistory.length > 0 ? (
-            archiveHistory.map((remark, index) => (
-              <Box key={remark.id || index} mb={2}>
-                <Typography variant="body1">
-                  <b>Remark {index + 1}:</b> {remark.remark || "-"}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {remark.journalTypeId}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {moment(remark.createdAt).format("DD MMM YYYY, HH:mm")}
-                </Typography>
-                {index < archiveHistory.length - 1 && <Divider sx={{ my: 1 }} />}
-              </Box>
-            ))
-          ) : (
-            <Typography variant="body2" color="text.secondary">
-              No remarks history found.
-            </Typography>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowArchiveHistoryDialog(false)}>Close</Button>
-        </DialogActions>
-      </Dialog> */}
       <ArchiveHistoryDialog open={showArchiveHistoryDialog} archiveHistory={archiveHistory} onClose={() => setShowArchiveHistoryDialog(false)} shipName={shipName} />
     </Box>
   );

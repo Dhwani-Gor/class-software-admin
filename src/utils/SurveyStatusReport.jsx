@@ -1,6 +1,6 @@
 import { Editor } from "@tinymce/tinymce-react";
 import { useEffect, useState, useCallback } from "react";
-import { fetchAdditionalDetails, getAllListClassificationSurveys, getAllSystemVariables, getSpecificClient, getSurveyReportData, uploadSurveyReport } from "../api";
+import { fetchAdditionalDetails, getAllListClassificationSurveys, getAllMachineList, getAllSystemVariables, getMachineById, getMachineList, getSpecificClient, getSurveyReportData, uploadSurveyReport } from "../api";
 import { toast } from "react-toastify";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import html2canvas from "html2canvas";
@@ -11,12 +11,9 @@ import Loader from "@/components/Loader";
 import { addYears, subMonths, format } from "date-fns";
 import { useRouter } from "next/navigation";
 
-const currentDate = new Date();
-
 const TextEditor = ({ id }) => {
   const router = useRouter();
   const [reportDetails, setReportDetails] = useState([]);
-  console.log(reportDetails, "report details");
   const [clientData, setClientData] = useState();
   const [loading, setLoading] = useState(true);
   const [editorContent, setEditorContent] = useState("");
@@ -24,15 +21,20 @@ const TextEditor = ({ id }) => {
   const [additionalFieldData, setAdditionalFieldData] = useState([]);
   const [statutoryData, setStatutoryData] = useState([]);
   const [auditsData, setAuditsData] = useState([]);
-  console.log(statutoryData, "statutory date");
+  const [machineList, setMachineList] = useState([]);
   const [systemVariables, setSystemVariables] = useState();
-  const today = moment();
   const companyName = systemVariables?.data?.find((item) => item.name === "company_name")?.information || "-";
   const companyLogo = systemVariables?.data?.find((item) => item.name === "company_logo")?.information || "-";
 
   useEffect(() => {
     getSystemVariables();
+    fetchMachineList();
   }, []);
+
+  const fetchMachineList = async () => {
+    const response = await getMachineById(id);
+    setMachineList(response?.data?.data);
+  };
 
   const getAllClassification = async () => {
     const response = await getAllListClassificationSurveys({ clientId: id });
@@ -62,30 +64,50 @@ const TextEditor = ({ id }) => {
 
   const getCurrentShipStatus = () => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    if (!clientData?.classHistory || clientData.classHistory.length === 0) {
-      return "Class";
+    const historyList = clientData?.classHistory;
+    if (!Array.isArray(historyList) || historyList.length === 0) {
+      return "";
     }
 
-    // Find the relevant classHistory entry
-    for (const history of clientData.classHistory) {
-      const shipStatus = history.shipStatus?.toLowerCase();
+    const reversedHistory = [...historyList].reverse();
+
+    for (const history of reversedHistory) {
+      const shipStatus = history.shipStatus?.toLowerCase().trim();
       const fromDate = history.from_date ? new Date(history.from_date) : null;
       const toDate = history.to_date ? new Date(history.to_date) : null;
 
-      if (shipStatus === "withdrawn") {
-        // Case: no dates
-        if (!fromDate && !toDate) return "Class";
+      if (!fromDate) continue;
 
-        // Case: current date between from and to
-        if (fromDate && toDate && today >= fromDate && today <= toDate) return "Withdrawn";
+      fromDate.setHours(0, 0, 0, 0);
+      if (toDate) {
+        toDate.setHours(0, 0, 0, 0);
+      }
 
-        // Case: toDate not there
-        if (!toDate) return "Class";
+      const isWithinRange = !toDate
+        ? today >= fromDate
+        : today >= fromDate && today <= toDate;
+
+      if (!isWithinRange) continue;
+
+      switch (shipStatus) {
+        case "class":
+        case "in class":
+        case "re-classed":
+          return "In Operation, Class Valid";
+
+        case "withdrawn":
+          return "Withdrawn";
+
+        case "suspended":
+          return "Suspended";
+
+        default:
+          continue;
       }
     }
 
-    // Default: Class
     return "Class";
   };
 
@@ -127,7 +149,7 @@ const TextEditor = ({ id }) => {
 
       h1 { font-size: 28px !important; font-weight: bold !important; color: black !important; }
       h2 { font-size: 22px !important; font-weight: 600 !important; letter-spacing: 0.5px !important; }
-  h4 { 
+      h4 { 
         font-size: 15px !important; 
         font-weight: 600 !important; 
         letter-spacing: 0.3px !important; 
@@ -135,6 +157,12 @@ const TextEditor = ({ id }) => {
         break-inside: avoid !important;
         page-break-after: avoid !important;
         break-after: avoid !important;
+      }
+      h4 + table,
+      h4 + div,
+      h4 + p {
+        page-break-before: avoid !important;
+        break-before: avoid !important;
       }
       p, div, span { font-size: 13px !important; line-height: 1.6 !important; }
       p.subtitle { font-size: 13px !important; line-height: 1.6 !important; }
@@ -255,14 +283,12 @@ const TextEditor = ({ id }) => {
     `;
       contentDocument.head.appendChild(style);
 
-      // Handle diamond icons
       const diamondIcons = contentDocument.querySelectorAll("span.expiring1m");
       diamondIcons.forEach((icon) => {
         const text = icon.textContent;
         icon.innerHTML = `<span>${text}</span>`;
       });
 
-      // Prevent page break for table rows
       const tableRows = contentDocument.querySelectorAll("table tr");
       tableRows.forEach((row) => {
         row.classList.add("no-break");
@@ -317,9 +343,28 @@ const TextEditor = ({ id }) => {
       const scaleFactor = usableWidth / imgWidth;
       const baseSliceHeight = Math.floor(usableHeight / scaleFactor);
 
+      // const getTableRowPositions = () => {
+      //   const rows = contentDocument.querySelectorAll("table tr");
+      //   const positions = [];
+      //   rows.forEach((row) => {
+      //     const rect = row.getBoundingClientRect();
+      //     const bodyRect = contentBody.getBoundingClientRect();
+      //     const relativeTop = rect.top - bodyRect.top + contentBody.scrollTop;
+      //     const relativeBottom = relativeTop + rect.height;
+      //     positions.push({
+      //       top: Math.floor(relativeTop * 2),
+      //       bottom: Math.floor(relativeBottom * 2),
+      //       height: Math.floor(rect.height * 2),
+      //     });
+      //   });
+      //   return positions;
+      // };
       const getTableRowPositions = () => {
         const rows = contentDocument.querySelectorAll("table tr");
+        const headings = contentDocument.querySelectorAll("h4");
         const positions = [];
+
+        // Add table rows
         rows.forEach((row) => {
           const rect = row.getBoundingClientRect();
           const bodyRect = contentBody.getBoundingClientRect();
@@ -329,11 +374,35 @@ const TextEditor = ({ id }) => {
             top: Math.floor(relativeTop * 2),
             bottom: Math.floor(relativeBottom * 2),
             height: Math.floor(rect.height * 2),
+            type: 'table-row'
           });
         });
-        return positions;
-      };
 
+        // Add h4 headings with following element
+        headings.forEach((heading) => {
+          const rect = heading.getBoundingClientRect();
+          const bodyRect = contentBody.getBoundingClientRect();
+          const relativeTop = rect.top - bodyRect.top + contentBody.scrollTop;
+
+          // Include next element (table/div) with heading
+          const nextElement = heading.nextElementSibling;
+          let combinedHeight = rect.height;
+          if (nextElement) {
+            const nextRect = nextElement.getBoundingClientRect();
+            combinedHeight = (nextRect.bottom - rect.top);
+          }
+
+          const relativeBottom = relativeTop + combinedHeight;
+          positions.push({
+            top: Math.floor(relativeTop * 2),
+            bottom: Math.floor(relativeBottom * 2),
+            height: Math.floor(combinedHeight * 2),
+            type: 'heading-block'
+          });
+        });
+
+        return positions.sort((a, b) => a.top - b.top);
+      };
       const rowPositions = getTableRowPositions();
 
       const getOptimalSliceHeight = (startY, maxSliceHeight) => {
@@ -357,7 +426,9 @@ const TextEditor = ({ id }) => {
 
       const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
       const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const italic = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
 
+      // Main page generation loop
       while (currentY < imgHeight) {
         const maxSliceHeight = Math.min(baseSliceHeight, imgHeight - currentY);
         const sliceHeight = getOptimalSliceHeight(currentY, maxSliceHeight);
@@ -436,15 +507,74 @@ const TextEditor = ({ id }) => {
         pageIndex++;
       }
 
+      if (pageIndex > 1) {
+        const lastPage = pdfDoc.getPage(pageIndex - 1);
+
+        const disclaimerTitle = "Disclaimer :-";
+        const disclaimerText =
+          "Information provided in ship survey status by MCBG Class is solely provided for the convenience of Owners or Managers as a guide to their ship's survey status and in no way substitute for advice from MCBG Class. Neither MCBG Class, nor any of its employees, assures any responsibility for the accuracy or legal liability for any loss or damage that may be sustained as a result of using their services.";
+
+        const textX = 50;
+        const footerGap = 60;
+        let textY = footerHeight + footerGap;
+
+        // Title
+        lastPage.drawText(disclaimerTitle, {
+          x: textX,
+          y: textY + 14,
+          size: 10,
+          color: rgb(0.15, 0.15, 0.15),
+          font: fontBold,
+        });
+
+        // Word wrapping for disclaimer paragraph
+        const maxWidth = 480;
+        const words = disclaimerText.split(" ");
+        let line = "";
+        let lineHeight = 10;
+
+        for (const word of words) {
+          const testLine = line + word + " ";
+          const lineWidth = fontRegular.widthOfTextAtSize(testLine, 9);
+
+          if (lineWidth > maxWidth) {
+            lastPage.drawText(line.trim(), {
+              x: textX + 10,
+              y: textY,
+              size: 9,
+              color: rgb(0.5, 0.5, 0.5),
+              font: italic,
+              fontWeight: 100,
+            });
+            line = word + " ";
+            textY -= lineHeight;
+          } else {
+            line = testLine;
+          }
+        }
+
+        if (line.trim().length > 0) {
+          lastPage.drawText(line.trim(), {
+            x: textX + 10,
+            y: textY,
+            size: 9,
+            color: rgb(0.5, 0.5, 0.5),
+            font: italic,
+            fontWeight: 100,
+          });
+        }
+      }
+
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes], { type: "application/pdf" });
 
-      const fileName = `MCBG Survey Status Report - ${clientData?.imoNumber}-${clientData?.shipName}-${moment().format("DD-MM-YYYY")}.pdf`;
+      const fileName = `MCBG Survey Status-${clientData?.shipName}.pdf`;
       const file = new File([blob], fileName, { type: "application/pdf" });
 
       const formData = new FormData();
       formData.append("clientId", id);
       formData.append("generatedDoc", file);
+      formData.append("type", "survey-status");
 
       const res = await uploadSurveyReport(formData);
       if (res) {
@@ -475,7 +605,7 @@ const TextEditor = ({ id }) => {
       return "status-icon expiring3m";
     }
 
-    const daysDiff = due.diff(today, "days");
+    const daysDiff = due.diff(moment(today, "YYYY-MM-DD"), "days");
     if (daysDiff < 0) {
       return "status-icon expired";
     }
@@ -535,70 +665,124 @@ const TextEditor = ({ id }) => {
   };
 
   const populateSurveyRows = (surveyDataList) => {
-    if (!surveyDataList || surveyDataList.length === 0) return { statutory: [], audits: [] };
+    if (!surveyDataList || surveyDataList.length === 0)
+      return { statutory: [], audits: [] };
 
-    const surveyMap = {};
+    const result = { statutory: [], audits: [] };
 
-    surveyDataList.forEach((survey) => {
-      const surveyName = survey.activity?.surveyTypes?.report?.name || "";
-      if (!surveyName) return;
+    // 1) Filter generated & non-revoked & valid report
+    const validSurveys = surveyDataList.filter((s) =>
+      s.isGenerated === true &&
+      s.activity?.surveyTypes?.report &&
+      s.reportStatus !== "revoked"
+    );
 
-      if (!surveyMap[surveyName]) {
-        surveyMap[surveyName] = survey;
-      } else {
-        const existing = surveyMap[surveyName];
-        const existingDate = new Date(existing.updatedAt);
-        const currentDate = new Date(survey.updatedAt);
-        if (currentDate > existingDate) surveyMap[surveyName] = survey;
+    const surveyMap = new Map();
+
+    // Helper: Extract latest endorsement/issuance date inside survey.data
+    const extractLatestInnerIssuanceDate = (survey) => {
+      if (!survey?.data) return null;
+
+      const keys = Object.keys(survey.data).filter(
+        (k) =>
+          k.toLowerCase().startsWith("issuance_date_") ||
+          k.toLowerCase().startsWith("endorsement_date_")
+      );
+
+      if (!keys.length) return null;
+
+      const dateValues = keys
+        .map((k) => survey.data[k])
+        .map((v) => {
+          if (typeof v !== "string") return null;
+
+          // convert DD/MM/YYYY → YYYY-MM-DD
+          if (v.includes("/") && !v.includes("-")) {
+            const [d, m, y] = v.split("/");
+            return `${y}-${m}-${d}`;
+          }
+          return v;
+        })
+        .filter((v) => v && !isNaN(new Date(v).getTime()));
+
+      if (!dateValues.length) return null;
+
+      dateValues.sort((a, b) => new Date(b) - new Date(a));
+
+      return dateValues[0];
+    };
+
+    validSurveys.forEach((survey) => {
+      const certificateName = survey.activity.surveyTypes.report.name;
+      const isStatutory = survey.activity.surveyTypes.statutorySurvey === true;
+      const isAudit = survey.activity.surveyTypes.audit === true;
+
+      const groupKey = `${certificateName}_${isStatutory ? "statutory" : "audit"}`;
+
+      // Get fallback surveyDate from the certificate
+      const certSurveyDate = survey.surveyDate
+        ? new Date(survey.surveyDate)
+        : null;
+
+      // Get latest endorsement/issuance date
+      const latestInnerDateString = extractLatestInnerIssuanceDate(survey);
+      const latestInnerDate = latestInnerDateString
+        ? new Date(latestInnerDateString)
+        : null;
+
+      const finalSurveyDate = latestInnerDate || certSurveyDate;
+
+      const latestDue = survey.dueDate || "";
+      const latestRangeFrom = survey.rangeFrom || "";
+      const latestRangeTo = survey.rangeTo || "";
+
+      const newRow = {
+        surveyName: certificateName,
+        surveyDate: finalSurveyDate ? format(finalSurveyDate, "yyyy-MM-dd") : "",
+        dueDate: latestDue ? format(new Date(latestDue), "yyyy-MM-dd") : "",
+        rangeFrom: latestRangeFrom
+          ? format(new Date(latestRangeFrom), "yyyy-MM-dd")
+          : "",
+        rangeTo: latestRangeTo
+          ? format(new Date(latestRangeTo), "yyyy-MM-dd")
+          : "",
+        postponedDate: survey.postponedDate || "",
+        typeOfCertificate: survey.typeOfCertificate || "",
+      };
+
+      if (!surveyMap.has(groupKey)) {
+        surveyMap.set(groupKey, {
+          row: newRow,
+          isStatutory,
+          isAudit,
+          compareDate: finalSurveyDate,
+        });
+        return;
+      }
+
+      // Check if new one is more recent
+      const existing = surveyMap.get(groupKey);
+      const existingDate = existing.compareDate;
+
+      if (finalSurveyDate && (!existingDate || finalSurveyDate > existingDate)) {
+        surveyMap.set(groupKey, {
+          row: newRow,
+          isStatutory,
+          isAudit,
+          compareDate: finalSurveyDate,
+        });
       }
     });
 
-    const uniqueSurveys = Object.values(surveyMap);
-
-    const result = {
-      statutory: [],
-      audits: [],
-    };
-
-    uniqueSurveys.forEach((survey) => {
-      const surveyName = survey.activity?.surveyTypes?.report?.name || "";
-      const surveyDate = survey.surveyDate ? format(new Date(survey.surveyDate), "yyyy-MM-dd") : "";
-      const validityDate = survey.validityDate ? format(new Date(survey.validityDate), "yyyy-MM-dd") : "";
-      const issuanceDate = survey.issuanceDate ? format(new Date(survey.issuanceDate), "yyyy-MM-dd") : "";
-      const typeOfCertificate = survey.typeOfCertificate || "";
-      const isAudit = survey.activity?.surveyTypes?.audit === true;
-
-      let dueDate = "";
-      let rangeFrom = "";
-      let rangeTo = "";
-
-      if (issuanceDate) {
-        const { dueDate: d, rangeFrom: r, rangeTo: t } = calculateDates(issuanceDate);
-        dueDate = d;
-        rangeFrom = r;
-        rangeTo = t;
-      }
-
-      const surveyRow = {
-        surveyName,
-        surveyDate,
-        validityDate,
-        dueDate,
-        rangeFrom,
-        rangeTo,
-        postponedDate: "",
-        typeOfCertificate,
-      };
-
-      if (isAudit) {
-        result.audits.push(surveyRow);
-      } else {
-        result.statutory.push(surveyRow);
-      }
+    // Convert map → final output
+    surveyMap.forEach(({ row, isStatutory, isAudit }) => {
+      if (isStatutory) result.statutory.push(row);
+      else if (isAudit) result.audits.push(row);
     });
 
     return result;
   };
+
 
   useEffect(() => {
     const surveyData = populateSurveyRows(reportDetails);
@@ -632,7 +816,7 @@ const TextEditor = ({ id }) => {
       const date = parseDate(dateStr);
       if (!date) return "status-icon expiring3m";
 
-      const daysDiff = date.diff(currentToday, "days");
+      const daysDiff = moment.isMoment(date) ? date.diff(currentToday, "days") : 0;
 
       if (daysDiff < 0) {
         return "status-icon expired";
@@ -650,7 +834,7 @@ const TextEditor = ({ id }) => {
       const date = parseDate(dateStr);
       if (!date) return "";
 
-      const daysDiff = date.diff(currentToday, "days");
+      const daysDiff = moment.isMoment(date) ? date.diff(currentToday, "days") : 0;
 
       if (daysDiff < 0) {
         return "";
@@ -716,15 +900,6 @@ const TextEditor = ({ id }) => {
     });
   };
 
-  const formatSurveyName = (name) => {
-    if (!name) return "";
-    return name
-      .replace(/_/g, " ")
-      .toLowerCase()
-      .replace(/\b\w/g, (c) => c.toUpperCase());
-  };
-
-  // Generate table rows for each section
   const getSectionTitle = (key) => {
     switch (key) {
       case "coc":
@@ -746,7 +921,6 @@ const TextEditor = ({ id }) => {
   function mergeClassificationSurveys(classificationData, reportDetailsList) {
     const combined = [];
 
-    // Step 1: Extract from classificationData
     if (classificationData?.length) {
       classificationData.forEach((row) => {
         combined.push({
@@ -762,14 +936,12 @@ const TextEditor = ({ id }) => {
       });
     }
 
-    // Step 2: Extract from reportDetails (only valid classification survey types with non-null report)
     if (reportDetailsList?.length) {
       reportDetailsList.forEach((r) => {
         const surveyType = r?.activity?.surveyTypes;
         const isClassification = surveyType?.classificationSurvey === true;
-        const hasValidReport = surveyType?.report?.name;
 
-        if (isClassification && hasValidReport) {
+        if (isClassification) {
           combined.push({
             name: surveyType.name,
             type: "classification",
@@ -784,7 +956,6 @@ const TextEditor = ({ id }) => {
       });
     }
 
-    // Step 3: Remove duplicates — keep latest by surveyDate
     const latestByName = combined.reduce((acc, curr) => {
       const existing = acc[curr.name];
       if (!existing) {
@@ -794,29 +965,27 @@ const TextEditor = ({ id }) => {
         const currentDate = new Date(curr.surveyDate);
 
         if (currentDate > existingDate) {
-          acc[curr.name] = curr; // keep latest record
+          acc[curr.name] = curr;
         }
       }
       return acc;
     }, {});
 
-    return Object.values(latestByName);
+    return Object.values(latestByName).sort((a, b) => new Date(b.surveyDate) - new Date(a.surveyDate));
   }
 
-  // Usage example
   const finalClassificationData = mergeClassificationSurveys(classificationData, reportDetails);
 
   const classificationRows =
     finalClassificationData.length > 0
       ? finalClassificationData
-          .map((row) => {
-            const rangeFrom = row.rangeFrom ? moment(row.rangeFrom).format("DD/MM/YYYY") : "";
-            const rangeTo = row.rangeTo ? moment(row.rangeTo).format("DD/MM/YYYY") : "";
-            const dueDate = row.dueDate ? moment(row.dueDate).format("DD/MM/YYYY") : "-";
-            const surveyDate = row.surveyDate ? moment(row.surveyDate).format("DD/MM/YYYY") : "-";
-            const postponed = row.postponed ? moment(row.postponed).format("DD/MM/YYYY") : "-";
-
-            return `
+        .map((row) => {
+          const rangeFrom = row.rangeFrom ? moment(row.rangeFrom).format("DD/MM/YYYY") : "";
+          const rangeTo = row.rangeTo ? moment(row.rangeTo).format("DD/MM/YYYY") : "";
+          const dueDate = row.dueDate ? moment(row.dueDate).format("DD/MM/YYYY") : "-";
+          const surveyDate = row.surveyDate ? moment(row.surveyDate).format("DD/MM/YYYY") : "-";
+          const postponed = row.postponed ? moment(row.postponed).format("DD/MM/YYYY") : "-";
+          return `
 <tr>
 <td>${row.name}</td>
 <td>${surveyDate}</td>
@@ -825,8 +994,8 @@ const TextEditor = ({ id }) => {
 <td>${postponed}</td>
 </tr>
 `;
-          })
-          .join("")
+        })
+        .join("")
       : `<tr><td colspan="5">No classification surveys available</td></tr>`;
 
   const classificationSurveyTableHtml = `
@@ -843,6 +1012,7 @@ ${classificationRows}
 </table>
 `;
 
+
   const sectionOrder = ["coc", "statutory", "memoranda", "additional", "compliance", "pcsFsi"];
 
   const additionalFieldsHtml = sectionOrder
@@ -850,7 +1020,6 @@ ${classificationRows}
       const title = getSectionTitle(key);
       const section = additionalFieldData?.find((s) => s.sectionKey === key) || {};
 
-      // Handle empty or missing data
       if (!section?.data || section?.data?.length === 0) {
         return `
         <h4 class="no-break" style="
@@ -868,10 +1037,8 @@ ${classificationRows}
       `;
       }
 
-      // Filter out rows with action: "Deleted"
       const filteredData = section?.data?.filter((item) => item.action !== "Deleted");
 
-      // If all rows were deleted, show "No recommendation" message
       if (filteredData?.length === 0) {
         return `
         <h4 class="no-break" style="
@@ -896,10 +1063,9 @@ ${classificationRows}
             <td>${item.type || "-"}</td>
             <td>${item.code || "-"}</td>
             <td>${item.journalTypeId || "-"}</td>
-            <td>${item.dueDate || "-"}</td>
+            <td>${item.dueDate !== null && moment(item.dueDate).format("DD/MM/YYYY") || "-"}</td>
           </tr>
-          ${
-            item.description
+          ${item.description
               ? `<tr>
                   <td colspan="4" style="
                     padding: 6px 8px;
@@ -911,7 +1077,7 @@ ${classificationRows}
                   </td>
                 </tr>`
               : ""
-          }
+            }
         `
         )
         .join("");
@@ -941,6 +1107,40 @@ ${classificationRows}
     })
     .join("");
 
+
+  const rows = Object.values(machineList?.machineData || {})
+    .flatMap(section => section?.items || []);
+
+  const machineListHtml = `
+<table style="width:100%; border-collapse:collapse; font-size:14px;">
+  <thead>
+    <tr style="background-color:#f2f2f2; text-align:left;">
+      <th style="padding:6px;">Code</th>
+      <th style="padding:6px;">Postponed Date</th>
+      <th style="padding:6px;">Cycle</th>
+      <th style="padding:6px;">Assignment Date</th>
+      <th style="padding:6px;">Next Due Date</th>
+      <th style="padding:6px;">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${rows
+      .map(
+        (item) => `
+      <tr>
+        <td>${item.rowId || "-"}</td>
+        <td>${item.postponedDate ? moment(item.postponedDate).format("DD/MM/YYYY") : "-"}</td>
+        <td>5</td>
+        <td>${item.assignmentDate ? moment(item.assignmentDate).format("DD/MM/YYYY") : "-"}</td>
+        <td>${item.dueDate ? moment(item.dueDate).format("DD/MM/YYYY") : "-"}</td>
+        <td>${item.label || "-"}</td>
+      </tr>`
+      )
+      .join("")}
+  </tbody>
+</table>
+`;
+
   // Final HTML
   const finalHtml = `
     <div>
@@ -954,30 +1154,90 @@ ${classificationRows}
     ${additionalFieldsHtml}
   `;
 
-  const generateHtmlContent = useCallback(() => {
-    const certificateOfClassRow = reportDetails?.find((cert) => cert?.activity?.surveyTypes?.report?.name?.toLowerCase() === "certificate of class");
+  const calculateDueDate = (cert) => {
+    if (cert?.activity?.surveyTypes?.report?.name === "full_term") {
+      return moment(cert.surveyDate).add(5, "years");
+    }
+    if (cert?.activity?.surveyTypes?.report?.name === "short_term") {
+      return moment(cert.surveyDate).add(3, "months");
+    }
+    if (cert?.activity?.surveyTypes?.report?.name === "interim") {
+      return moment(cert.surveyDate).add(6, "months");
+    }
+    return null;
+  };
 
-    const otherCertificates = reportDetails?.filter((cert) => cert?.activity?.surveyTypes?.report?.name && cert?.activity?.surveyTypes?.report?.name?.toLowerCase() !== "certificate of class");
+
+  const generateHtmlContent = useCallback(() => {
+
+    const validReportDetails = reportDetails?.filter(
+      (cert) => cert?.reportStatus !== "revoked"
+    );
+    const certificateOfClassRow = validReportDetails
+      ?.filter((cert) => cert?.activity?.surveyTypes?.report?.name?.toLowerCase() === "certificate of class")
+      ?.sort((a, b) => new Date(b.issuanceDate || b.validityDate) - new Date(a.issuanceDate || a.validityDate))?.[0];
+    const otherCertificatesRaw = validReportDetails?.filter(
+      (cert) =>
+        cert?.activity?.surveyTypes?.report?.name &&
+        cert?.activity?.surveyTypes?.report?.name?.toLowerCase() !== "certificate of class"
+    );
+
+    const uniqueCertificatesMap = new Map();
+
+    otherCertificatesRaw?.forEach((cert) => {
+      const name = cert.activity.surveyTypes.report.name?.toLowerCase();
+      const existing = uniqueCertificatesMap.get(name);
+
+      const existingDue = existing ? calculateDueDate(existing) : null;
+      const currentSurvey = moment(cert.surveyDate);
+
+      if (!existing) {
+        uniqueCertificatesMap.set(name, cert);
+      } else {
+        if (existingDue && currentSurvey.isAfter(existingDue)) {
+          uniqueCertificatesMap.set(name, cert);
+        }
+        else if (currentSurvey.isBefore(existing.surveyDate)) {
+          uniqueCertificatesMap.set(name, cert);
+        }
+      }
+
+    });
+
+
+    const otherCertificates = Array.from(uniqueCertificatesMap.values());
 
     const formatCertificateRow = (cert) => {
-      // ✅ Skip if report is missing
       if (!cert?.activity?.surveyTypes?.report?.name) return "";
 
-      const name = cert.activity.surveyTypes.report.name;
-      const issued = cert.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : "";
-      const expiry = cert.validityDate;
+      const fullCert = cert;
+      const reportName = fullCert.activity.surveyTypes.report.name;
+      const typeLabel = fullCert.activity.surveyTypes.name || "";
+
+      const surveyDate = fullCert.surveyDate;
+      const surveyDateFormatted = surveyDate
+        ? moment(surveyDate).format("DD/MM/YYYY")
+        : "";
+
+      const expiry = fullCert.validityDate;
       const expiryFormatted = expiry ? moment(expiry).format("YYYY-MM-DD") : null;
 
-      const type = cert.typeOfCertificate === "short_term" ? "ST" : cert.typeOfCertificate === "full_term" ? "FT" : cert.typeOfCertificate === "intrim" ? "IT" : cert.typeOfCertificate === "extended" ? "ET" : cert.typeOfCertificate || "-";
+      const type =
+        fullCert.typeOfCertificate === "short_term" ? "ST" :
+          fullCert.typeOfCertificate === "full_term" ? "FT" :
+            fullCert.typeOfCertificate === "intrim" ? "IT" :
+              fullCert.typeOfCertificate === "extended" ? "ET" :
+                fullCert.typeOfCertificate || "-";
 
-      const status = "";
       const currentDate = new Date().toISOString().split("T")[0];
+      const status = "";
+
 
       return `
 <tr>
-  <td>${name}</td>
-  <td>${getClassName(expiryFormatted, currentDate) ? `<span class="${getClassName(expiryFormatted, currentDate)}">C</span>` : ""}</td>
-  <td>${issued}</td>
+  <td>${reportName}</td>
+  <td>${getClassName(expiryFormatted, currentDate) ? `<span style="align-content: center; text-align: center;" class="${getClassName(expiryFormatted, currentDate)}">c</span>` : ""}</td>
+  <td>${surveyDateFormatted}</td>
   <td>${expiry ? moment(expiry).format("DD/MM/YYYY") : ""}</td>
   <td></td>
   <td>${type}</td>
@@ -985,8 +1245,12 @@ ${classificationRows}
 </tr>`;
     };
 
-    // ✅ Build table rows (filter out skipped entries)
-    const certificateRows = [certificateOfClassRow ? formatCertificateRow(certificateOfClassRow) : "", ...(otherCertificates?.map(formatCertificateRow) || [])].filter((row) => row && row.trim() !== "").join("");
+    const certificateRows = [
+      certificateOfClassRow ? formatCertificateRow(certificateOfClassRow) : "",
+      ...otherCertificates.map(formatCertificateRow),
+    ]
+      .filter((row) => row && row.trim() !== "")
+      .join("");
 
     const certificatesTableHtml = `
 <h4 class="no-break" style="margin-top: -100px; color:white; background: linear-gradient(to right, #9013fe, #4a90e2);">
@@ -1015,44 +1279,159 @@ ${classificationRows}
 </div>
 `;
 
+    const filterLatestBySurveyType = (data) => {
+      if (!Array.isArray(data)) return [];
+
+      const map = {};
+
+      data.forEach((row) => {
+        const type = (
+          row.surveyTypeName ||
+          row.surveyName ||
+          row.activity?.surveyTypes?.name ||
+          ""
+        ).trim().toLowerCase();
+        const date = row.assignmentDate ? new Date(row.assignmentDate) : null;
+
+        if (!type) return;
+
+        if (!map[type]) {
+          map[type] = row;
+        } else {
+          const existingDate = map[type].assignmentDate ? new Date(map[type].assignmentDate) : null;
+          if (date && (!existingDate || date > existingDate)) {
+            map[type] = row;
+          }
+        }
+      });
+
+      return Object.values(map);
+    };
+
     const buildSurveyTable = (data, title) => {
-      if (!data?.length) return "";
+      const message = title?.toLowerCase().includes("audits")
+        ? "No audits data found"
+        : "No statutory data found";
+      const excluded = [
+        "certificate of class",
+        "register of lifting appliances and cargo handling gear",
+        "confirmation of compliance - seemp - part ii",
+        "confirmation of compliance - seemp - part iii",
+        "engine international air pollution prevention statement of compliance"
+      ];
+
+      const getLatestEndorsementDate = (row) => {
+        const dateKeys = Object.keys(row).filter(
+          (k) =>
+            k.toLowerCase().startsWith("issuance_date_") ||
+            k.toLowerCase().startsWith("endorsement_date_")
+        );
+
+        const dates = dateKeys
+          .map((key) => row[key])
+          .filter((d) => d)
+          .sort((a, b) => new Date(b) - new Date(a));
+
+        return dates.length ? dates[0] : row.surveyDate;
+      };
+
+
+      const getSurveyDisplayName = (row) => {
+        const certName = row.surveyName || "-";
+        const typeNameRaw = (row.surveyTypeName || "").trim();
+        const lower = typeNameRaw.toLowerCase();
+
+        const mappings = [
+          ["intermediate", "Intermediate Survey"],
+          ["annual", "Annual Survey"],
+          ["periodical", "Periodical Survey"],
+          ["renewal", "Renewal Survey"],
+          ["general examination", "General Examination Survey"],
+          ["change of flag", "Change of Flag Survey"],
+          ["initial", "Initial Survey"],
+          ["additional", "Additional Survey"],
+        ];
+
+        let typeLabel = "";
+        for (const [key, label] of mappings) {
+          if (lower.includes(key)) { typeLabel = label; break; }
+        }
+
+        if (!typeLabel && typeNameRaw) {
+          const toTitle = (s) =>
+            s.replace(/\s+/g, " ")
+              .trim()
+              .toLowerCase()
+              .replace(/\b\w/g, (c) => c.toUpperCase());
+
+          const cleaned = typeNameRaw
+            .replace(/^iopp\s*/i, "")
+            .replace(/\s*survey\s*$/i, "")
+            .trim();
+
+          typeLabel = cleaned ? `${toTitle(cleaned)}` : "";
+        }
+
+        return certName;
+      };
 
       const rows = data
-        .filter((row) => row.surveyName.toLowerCase() !== "certificate of class")
+        .filter(
+          (row) =>
+            !excluded.includes((row.surveyName || "").trim().toLowerCase())
+        )
         .map((row) => {
+          const surveyDate = getLatestEndorsementDate(row);
           const currentDate = new Date().toISOString().split("T")[0];
-          const dueDate = row.dueDate || row.validityDate;
+          const dueDate = row.dueDate;
+          const rangeFrom = row.rangeFrom;
+          const rangeTo = row.rangeTo;
+
+
           return `
-        <tr>
-          <td>${row.surveyName}</td>
-          <td>${getClassRangeIcon(currentDate, row.rangeFrom, row.rangeTo) ? `<span class="${getClassRangeIcon(currentDate, row.rangeFrom, row.rangeTo)}">C</span>` : ""}</td>
-          <td>${row.surveyDate ? moment(row.surveyDate).format("DD/MM/YYYY") : ""}</td>
-          <td>${row.typeOfCertificate === "full_term" ? (dueDate ? moment(dueDate).format("DD/MM/YYYY") : "") : row.validityDate ? moment(row.validityDate).format("DD/MM/YYYY") : ""}</td>
-          <td>${row.typeOfCertificate === "full_term" ? `${row.rangeFrom ? moment(row.rangeFrom).format("DD/MM/YYYY") : ""} - ${row.rangeTo ? moment(row.rangeTo).format("DD/MM/YYYY") : ""}` : ""}</td>
-          <td>${row.postponedDate}</td>
-        </tr>`;
+      <tr>
+        <td>${getSurveyDisplayName(row)}</td>
+        <td>${getClassRangeIcon(currentDate, rangeFrom, rangeTo)
+              ? `<span class="${getClassRangeIcon(currentDate, rangeFrom, rangeTo)}">S</span>`
+              : ""
+            }</td>
+        <td>${surveyDate ? moment(surveyDate).format("DD/MM/YYYY") : ""}</td>
+        <td>${dueDate
+              ? moment(dueDate).format("DD/MM/YYYY")
+              : ""
+            }</td>
+        <td>${rangeFrom && rangeTo
+              ? `${rangeFrom ? moment(rangeFrom).format("DD/MM/YYYY") : ""} - ${rangeTo ? moment(rangeTo).format("DD/MM/YYYY") : ""}`
+              : ""
+            }</td>
+        <td>${row.postponedDate || ""}</td>
+      </tr>`;
         })
         .join("");
 
       return `
-    <div class="section-title" style="margin-top: 20px; font-size: 16px; font-weight: bold;">${title}</div>
-    <table>
-      <tr>
-        <th>Survey Name</th>
-        <th></th>
-        <th>Survey Date</th>
-        <th>Due Date</th>
-        <th>Range (from, to)</th>
-        <th>Postponed</th>
-      </tr>
-      ${rows}
-    </table>
+  <div class="section-title" style="margin-top: 20px; font-size: 16px; font-weight: bold;">${title}</div>
+  <table>
+    <tr>
+      <th>Survey Name</th>
+      <th></th>
+      <th>Survey Date</th>
+      <th>Due Date</th>
+      <th>Range (from, to)</th>
+      <th>Postponed</th>
+      
+    </tr>
+    ${rows.length === 0 ? `<tr><td colspan="6">${message}</td></tr>` : ""}
+    ${rows}
+  </table>
   `;
     };
 
-    const statutorySurveyTableHtml = buildSurveyTable(statutoryData, "Statutory Surveys");
-    const auditSurveyTableHtml = buildSurveyTable(auditsData, "Audit Surveys");
+    const statutoryFiltered = filterLatestBySurveyType(statutoryData);
+    const auditsFiltered = filterLatestBySurveyType(auditsData);
+
+    const statutorySurveyTableHtml = buildSurveyTable(statutoryFiltered, "Statutory Surveys");
+    const auditSurveyTableHtml = buildSurveyTable(auditsFiltered, "Audits / Inspections");
 
     const htmlString = `
 <div class="page">
@@ -1191,7 +1570,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   <tbody>
     <tr>
       <td><em><strong>Classification Status:</strong></em></td>
-      <td>Active</td>
+      <td>${currentStatus === "In Operation, Class Valid" ? "Active" : currentStatus || ""}</td>
     </tr>
     <tr>
       <td><em><strong>Hull Notation:</strong></em></td>
@@ -1220,19 +1599,19 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   </thead>
   <tbody>
     ${(() => {
-      const defaultRows = [{ shipStatus: "Class" }, { shipStatus: "Withdrawn" }, { shipStatus: "Re-classed" }];
+        const defaultRows = [{ shipStatus: "Class" }, { shipStatus: "Withdrawn" }, { shipStatus: "Re-classed" }, { shipStatus: "Suspended" }];
 
-      // Merge response data with defaults
-      const data = defaultRows.map((def) => {
-        const found = clientData?.classHistory?.find((item) => item.shipStatus?.toLowerCase() === def.shipStatus.toLowerCase());
-        return { ...def, ...found };
-      });
+        // Merge response data with defaults
+        const data = defaultRows.map((def) => {
+          const found = clientData?.classHistory?.find((item) => item.shipStatus?.toLowerCase() === def.shipStatus.toLowerCase());
+          return { ...def, ...found };
+        });
 
-      // Generate table rows
-      return (
-        data
-          ?.map(
-            (history) => `
+        // Generate table rows
+        return (
+          data
+            ?.map(
+              (history) => `
             <tr>
               <td style="padding:6px; border:1px solid #ddd;">${history.shipStatus || "-"}</td>
               <td style="padding:6px; border:1px solid #ddd;">${history.reason || "-"}</td>
@@ -1245,10 +1624,10 @@ This may not indicate certificates issued, surveys carried out or conditions of 
               <td style="padding:6px; border:1px solid #ddd;">${history.remarks || "-"}</td>
             </tr>
           `
-          )
-          .join("") || `<tr><td colspan="5" style="padding:6px; border:1px solid #ddd;">-</td></tr>`
-      );
-    })()}
+            )
+            .join("") || `<tr><td colspan="5" style="padding:6px; border:1px solid #ddd;">-</td></tr>`
+        );
+      })()}
   </tbody>
 </table>
 
@@ -1269,23 +1648,23 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 <tbody>
 <tr>
 <td><em><strong>Gross Tonnage:</strong></em> ${clientData?.grossTonnage || "-"}</td>
-<td><strong>Ship Builder:</strong> ${clientData?.shipBuilder || "-"}</td>
+<td><em><strong>Ship Builder:</strong></em> ${clientData?.shipBuilder || "-"}</td>
 </tr>
 <tr>
 <td><em><strong>Net Tonnage:</strong></em> ${clientData?.netTonnage || "-"}</td>
-<td><strong>Country of build:</strong> ${clientData?.countryOfBuild || "-"}</td>
+<td><em><strong>Country of build:</strong></em> ${clientData?.countryOfBuild || "-"}</td>
 </tr>
 <tr>
 <td><em><strong>Deadweight:</strong></em> ${clientData?.deadweight || "-"}</td>
-<td><strong>Date of build:</strong> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : "-"}</td>
+<td><em><strong>Date of build:</strong></em> ${clientData?.dateOfBuild ? moment(clientData?.dateOfBuild).format("DD/MM/YYYY") : "-"}</td>
 </tr>
 <tr>
-<td><strong>Keel Laid Date:</strong> ${clientData?.keelLaidDate ? moment(clientData?.keelLaidDate).format("DD/MM/YYYY") : "-"}</td>
-<td><strong>Date of building contract:</strong> ${clientData?.dateOfBuildingContract ? moment(clientData?.dateOfBuildingContract).format("DD/MM/YYYY") : "-"}</td>
+<td><em><strong>Keel Laid Date:</strong></em> ${clientData?.keelLaidDate ? moment(clientData?.keelLaidDate).format("DD/MM/YYYY") : "-"}</td>
+<td><em><strong>Date of building contract:</strong></em> ${clientData?.dateOfBuildingContract ? moment(clientData?.dateOfBuildingContract).format("DD/MM/YYYY") : "-"}</td>
 </tr>
 <tr>
 <td><em><strong>Length of ship:</strong></em> ${clientData?.lengthOfShip || "-"}</td>
-<td><strong>Area of operation:</strong> ${clientData?.areaOfOperation || "-"}</td>
+<td><em><strong>Area of operation:</strong></em> ${clientData?.areaOfOperation || "-"}</td>
 </tr>
 <tr>
 <td><em><strong>Date of delivery:</strong></em> ${clientData?.dateOfDelivery ? moment(clientData?.dateOfDelivery).format("DD/MM/YYYY") : "-"}</td>
@@ -1313,7 +1692,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
       </tr>
     <tr>
       <td><em><strong>No of Engines:</strong></em> ${clientData?.machineList.no_of_engines || "-"}</td>
-      <td><strong>Engine Built:</strong> ${clientData?.machineList.engine_built ? moment(clientData?.machineList.engine_built).format("DD/MM/YYYY") : "-"}</td>
+      <td><em><strong>Engine Built:</strong></em> ${clientData?.machineList.engine_built ? moment(clientData?.machineList.engine_built).format("DD/MM/YYYY") : "-"}</td>
     </tr>
     
     <tr>
@@ -1321,8 +1700,8 @@ This may not indicate certificates issued, surveys carried out or conditions of 
       <td colspan="2" style="width:50%;"><em><strong>Electrical Installation:</strong></em> ${clientData?.machineList.electrical_installation || "-"}</td>
     </tr>
     <tr>
-      <td><strong>Engine Builder:</strong> ${clientData?.machineList.engine_builder || "-"}</td>
-      <td><strong>Boiler:</strong> ${clientData?.machineList.boilers || "-"}</td>
+      <td><em><strong>Engine Builder:</strong></em> ${clientData?.machineList.engine_builder || "-"}</td>
+      <td><em><strong>Boiler:</strong></em> ${clientData?.machineList.boilers || "-"}</td>
     </tr>
     <tr>
 <td>
@@ -1391,7 +1770,7 @@ ${auditSurveyTableHtml}
 
 ${additionalFieldsHtml}
 </div>
-
+</div>
 `;
   }, [clientData, reportDetails, classificationData, statutoryData]);
 

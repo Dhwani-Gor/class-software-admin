@@ -17,10 +17,11 @@ import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import CommonInput from "../CommonInput";
 import CommonButton from "../CommonButton";
-import { createClient, getSpecificClient, searchinvoicing_detail, searchmanager_detail, searchowner_detail, updateClient } from "@/api";
-import { Accordion, AccordionDetails, AccordionSummary, Typography, IconButton, TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from "@mui/material";
+import { createClient, getAllClients, getSpecificClient, searchinvoicing_detail, searchmanager_detail, searchowner_detail, updateClient } from "@/api";
+import { Accordion, AccordionDetails, AccordionSummary, Typography, IconButton, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, MenuItem } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DeleteIcon from "@mui/icons-material/Delete";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 
 const requiredFields = ["shipName", "imoNumber", "classId", "flag", "portOfRegistry", "grossTonnage", "netTonnage", "lengthOfShip", "shipBuilder", "countryOfBuild", "dateOfBuild", "callSign", "officialNo", "deadweight", "typeOfShip", "dateOfDelivery"];
 
@@ -94,6 +95,8 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
   const [ownerInputValue, setOwnerInputValue] = useState("");
   const [managerOptions, setManagerOptions] = useState([]);
   const [managerInputValue, setManagerInputValue] = useState("");
+  const [classId, setClassId] = useState();
+
   const [isSearching, setIsSearching] = useState({
     owner: false,
     manager: false,
@@ -104,11 +107,9 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
   const [shipName, setShipName] = useState("");
 
   // Class History State
-  const [classHistory, setClassHistory] = useState([
-    { shipStatus: "Class", reason: "", remarks: "", from_date: "", to_date: "" },
-    { shipStatus: "Withdrawn", reason: "", remarks: "", from_date: "", to_date: "" },
-    { shipStatus: "Re-classed", reason: "", remarks: "", from_date: "", to_date: "" },
-  ]);
+  const [classHistory, setClassHistory] = useState(() => {
+    return [{ shipStatus: "", reason: "", remarks: "", from_date: "", to_date: "" }];
+  });
 
   // Machine List State
   const [machineList, setMachineList] = useState({
@@ -129,6 +130,27 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
 
   const dispatch = useDispatch();
   const router = useRouter();
+
+  const fetchClients = async () => {
+    try {
+      setLoading(true);
+      const result = await getAllClients(1, 10, "");
+      if (result?.status === 200) {
+        setClassId(result.data.results);
+      } else {
+        toast.error("Something went wrong ! Please try again after some time");
+      }
+
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
 
   const {
     control,
@@ -180,11 +202,7 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
         speed_knots: null,
         rpm: null,
       },
-      classHistory: [
-        { shipStatus: "Class", reason: "", remarks: "", from_date: "", to_date: "" },
-        { shipStatus: "Withdrawn", reason: "", remarks: "", from_date: "", to_date: "" },
-        { shipStatus: "Re-classed", reason: "", remarks: "", from_date: "", to_date: "" },
-      ],
+      classHistory: [{ shipStatus: "", reason: "", remarks: "", from_date: "", to_date: "" }],
       ownerDetails: {
         nameOfCompany: "",
         companyAddress: "",
@@ -210,7 +228,27 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
     },
   });
 
-  const formatFieldText = (field) => field.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase());
+  useEffect(() => {
+    const now = new Date();
+
+    const year = String(now.getFullYear()).slice(-2);
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+
+    const totalRecords = Number(classId) || 0;
+    const nextNumber = (totalRecords + 1).toString().padStart(3, "0");
+
+    const generatedId = `${year}${month}${nextNumber}`;
+
+    setValue("classId", generatedId);
+  }, [setValue, classId]);
+
+  const handleAddRow = () => {
+    setClassHistory([...classHistory, { shipStatus: "", reason: "", remarks: "", from_date: "", to_date: "" }]);
+  };
+
+  const handleDeleteRow = (index) => {
+    setClassHistory(classHistory.filter((_, i) => i !== index));
+  };
 
   useEffect(() => {
     const ownerDetails = getValues("ownerDetails");
@@ -354,27 +392,33 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
         setValue("invoicingDetails.nameOfCompany", normalizedData.invoicingDetails.nameOfCompany);
 
         if (result.data.data.classHistory && Array.isArray(result.data.data.classHistory)) {
-          const loadedHistory = result.data.data.classHistory.map((item) => ({
-            shipStatus: normalizeValue(item.shipStatus),
-            reason: normalizeValue(item.reason),
-            remarks: normalizeValue(item.remarks),
-            from_date: normalizeValue(item.from_date),
-            to_date: normalizeValue(item.to_date),
-          }));
-          const defaultStatuses = ["Class", "Withdrawn", "Re-classed"];
-          const mergedHistory = defaultStatuses.map((status, index) => {
-            const existing = loadedHistory.find((h) => h.shipStatus === status);
-            return (
-              existing || {
-                shipStatus: status,
-                reason: "",
-                remarks: "",
-                from_date: "",
-                to_date: "",
-              }
-            );
-          });
-          setClassHistory(mergedHistory);
+          const loadedHistory =
+            result.data.data.classHistory && result.data.data.classHistory.length
+              ? result.data.data.classHistory.map((item) => ({
+                  shipStatus: normalizeValue(item.shipStatus),
+                  reason: normalizeValue(item.reason),
+                  remarks: normalizeValue(item.remarks),
+                  from_date: normalizeValue(item.from_date),
+                  to_date: normalizeValue(item.to_date),
+                }))
+              : [{ shipStatus: "", reason: "", remarks: "", from_date: "", to_date: "" }];
+
+          setClassHistory(loadedHistory);
+
+          // const defaultStatuses = ["Class", "Withdrawn", "Re-classed"];
+          // const mergedHistory = defaultStatuses.map((status, index) => {
+          //   const existing = loadedHistory.find((h) => h.shipStatus === status);
+          //   return (
+          //     existing || {
+          //       shipStatus: status,
+          //       reason: "",
+          //       remarks: "",
+          //       from_date: "",
+          //       to_date: "",
+          //     }
+          //   );
+          // });
+          // setClassHistory(mergedHistory);
         }
 
         if (result.data.data.machineList) {
@@ -1050,7 +1094,23 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
           <Grid2 container spacing={3}>
             {["shipName", "imoNumber", "classId", "flag", "portOfRegistry", "grossTonnage", "netTonnage", "lengthOfShip", "shipBuilder", "countryOfBuild", "areaOfOperation", "carryingCapacity", "classSymbol", "hullNotation", "machineryNotation", "descriptiveNotation", "typeOfShip"].map((field) => (
               <Grid2 key={field} size={{ xs: 4 }}>
-                <Controller name={field} control={control} render={({ field: controllerField }) => <CommonInput {...controllerField} fullWidth type="text" variant="standard" label={renderLabel(field)} placeholder={`Enter ${field.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}`} disabled={!editingAllowed} error={Boolean(errors?.[field])} helperText={errors?.[field]?.message} />} />
+                <Controller
+                  name={field}
+                  control={control}
+                  render={({ field: controllerField }) => (
+                    <CommonInput
+                      {...controllerField}
+                      fullWidth
+                      type="text"
+                      variant="standard"
+                      label={renderLabel(field)}
+                      placeholder={`Enter ${field.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}`}
+                      disabled={field === "classId" || !editingAllowed} // <-- disable manual entry for classId
+                      error={Boolean(errors?.[field])}
+                      helperText={errors?.[field]?.message}
+                    />
+                  )}
+                />
               </Grid2>
             ))}
 
@@ -1120,6 +1180,7 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
 
   const renderClassHistorySection = () => {
     const [expanded, setExpanded] = useState(false);
+    const shipStatusOptions = ["Class", "Withdrawn", "Re-classed", "Suspended"];
 
     return (
       <Accordion
@@ -1152,6 +1213,7 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
                   <TableCell sx={{ fontWeight: 600 }}>Remarks</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>From Date</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>To Date</TableCell>
+                  <TableCell></TableCell>
                 </TableRow>
               </TableHead>
 
@@ -1159,16 +1221,13 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
                 {classHistory.map((item, index) => (
                   <TableRow key={index} sx={{ verticalAlign: "top" }}>
                     <TableCell sx={{ width: "20%" }}>
-                      <CommonInput
-                        fullWidth
-                        variant="standard"
-                        value={item.shipStatus || ""}
-                        disabled
-                        inputProps={{
-                          readOnly: true,
-                          style: { color: "#000" },
-                        }}
-                      />
+                      <CommonInput select fullWidth variant="standard" value={item.shipStatus || ""} onChange={(e) => handleClassHistoryChange(index, "shipStatus", e.target.value)} disabled={!editingAllowed}>
+                        {shipStatusOptions.map((status) => (
+                          <MenuItem key={status} value={status}>
+                            {status}
+                          </MenuItem>
+                        ))}
+                      </CommonInput>
                     </TableCell>
 
                     <TableCell sx={{ width: "20%" }}>
@@ -1186,11 +1245,27 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
                     <TableCell sx={{ width: "17.5%" }}>
                       <CommonInput fullWidth variant="standard" type="date" value={item.to_date || ""} disabled={!editingAllowed} onChange={(e) => handleClassHistoryChange(index, "to_date", e.target.value)} InputLabelProps={{ shrink: true }} />
                     </TableCell>
+
+                    <TableCell sx={{ width: "5%", textAlign: "center" }}>
+                      {editingAllowed && classHistory.length > 1 && (
+                        <IconButton onClick={() => handleDeleteRow(index)} color="error">
+                          <DeleteIcon />
+                        </IconButton>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </TableContainer>
+
+          {editingAllowed && (
+            <Box display="flex" justifyContent="flex-end" mt={2}>
+              <IconButton color="primary" onClick={handleAddRow}>
+                <AddCircleOutlineIcon />
+              </IconButton>
+            </Box>
+          )}
         </AccordionDetails>
       </Accordion>
     );

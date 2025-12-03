@@ -1,6 +1,6 @@
 import { Editor } from "@tinymce/tinymce-react";
 import { useEffect, useState, useCallback } from "react";
-import { fetchAdditionalDetails, getAllSystemVariables, getSpecificClient, getSurveyReportDataByJournalId, getVisitDetails, uploadSurveyReport } from "../api";
+import { fetchAdditionalDetails, fetchJournalList, getAllSystemVariables, getSpecificClient, getSurveyReportDataByJournalId, getVisitDetails, uploadSurveyReport } from "../api";
 import { toast } from "react-toastify";
 import { PDFDocument } from "pdf-lib";
 import html2canvas from "html2canvas";
@@ -23,7 +23,8 @@ const SurveyReport = ({ id, reportNumber }) => {
   const [journalId, setJournalId] = useState("");
   const [additionalFieldData, setAdditionalFieldData] = useState([]);
   const [places, setPlaces] = useState([]);
-  console.log(places, "places");
+  const [isLastVisit, setIsLastVisit] = useState(false);
+  const [journalList, setJournalList] = useState([]);
   const currentDate = new Date();
 
   const formatSurveyName = (name) => {
@@ -43,36 +44,32 @@ const SurveyReport = ({ id, reportNumber }) => {
     }
   };
 
+  const getSystemVariables = async () => {
+    try {
+      const response = await getAllSystemVariables();
+      if (response?.status === 200) {
+        setSystemVariables(response?.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   useEffect(() => {
     getAdditionalFields();
-    const getSystemVariables = async () => {
-      try {
-        const response = await getAllSystemVariables();
-        if (response?.status === 200) {
-          setSystemVariables(response?.data);
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
     getSystemVariables();
+    getAllJournals();
   }, [id]);
 
-  const matchesReportNumber = (item, reportNumber) => {
-    if (!reportNumber) return true;
-    const ref = item?.referenceNo?.toString() || "";
-    const journalTypeId = item?.journalTypeId?.toString() || "";
-
-    if (ref && ref === reportNumber) return true;
-    if (journalTypeId && journalTypeId === reportNumber) return true;
-
-    if (ref && reportNumber.includes(ref)) return true;
-
-    const digits = (reportNumber.match(/\d+/g) || []).join("");
-    if (digits && ref && digits === ref) return true;
-
-    return false;
+  const getAllJournals = async () => {
+    try {
+      const response = await fetchJournalList(id);
+      if (response?.status === 200) {
+        setJournalList(response?.data?.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const generateHtmlContent = useCallback(
@@ -84,12 +81,9 @@ const SurveyReport = ({ id, reportNumber }) => {
       const companyLogo = systemVariables?.data?.find((i) => i.name === "company_logo")?.information || "-";
       const stamp = systemVariables?.data?.find((i) => i.name === "company_stamp")?.information || "-";
       const issuer = reportDetailsInput?.map((i) => i?.issuer?.name);
+      console.log(reportDetailsInput, "reportDetailsInput")
       const portOfSurvey = reportDetailsInput?.map((i) => i?.place?.toLowerCase());
-      console.log(
-        reportDetailsInput.map((i) => i?.place?.toLowerCase()),
-        "reportDetailsInput"
-      );
-      console.log(portOfSurvey, "port of survey");
+
       const uniquePorts = [...new Set(portOfSurvey)].join(",").toUpperCase();
       const uniqueSurveyors = [...new Set(issuer)].join(",").toUpperCase();
 
@@ -101,8 +95,8 @@ const SurveyReport = ({ id, reportNumber }) => {
     </tr>
   `;
 
-        const validCerts = reportDetailsInput.filter((cert) => cert?.activity?.surveyTypes?.classificationSurvey === true && cert?.activity?.surveyTypes?.report && cert?.activity?.surveyTypes?.report?.name);
-
+        const validCerts = reportDetailsInput.filter((cert) => cert?.activity?.surveyTypes?.classificationSurvey === true);
+        console.log(validCerts, "valid certs")
         if (!validCerts.length) {
           return `
 
@@ -114,16 +108,24 @@ const SurveyReport = ({ id, reportNumber }) => {
         }
 
         const latestMap = {};
-        validCerts.forEach((cert) => {
-          const reportName = cert?.activity?.surveyTypes?.report?.name;
-          if (!reportName) return;
-          if (!latestMap[reportName] || new Date(cert?.issuanceDate || 0) > new Date(latestMap[reportName]?.issuanceDate || 0)) {
+        validCerts.forEach((cert, index) => {
+          let reportName = cert?.activity?.surveyTypes?.report?.name;
+
+          if (!reportName) {
+            reportName = `no_report_${index}`;
+          }
+
+          if (
+            !latestMap[reportName] ||
+            new Date(cert?.issuanceDate || 0) >
+            new Date(latestMap[reportName]?.issuanceDate || 0)
+          ) {
             latestMap[reportName] = cert;
           }
         });
 
+
         const rows = Object.values(latestMap)
-          .filter((cert) => cert?.activity?.surveyTypes?.report?.name)
           .map((cert) => {
             const formattedName = formatSurveyName(cert?.activity?.surveyTypes?.name);
             const status = cert?.activity?.status || "";
@@ -131,7 +133,10 @@ const SurveyReport = ({ id, reportNumber }) => {
         <tr>
           <td style="text-align:left;padding:6px;">${formattedName}</td>
           <td style="text-align:center;padding:6px;">${status}</td>
-          <td style="text-align:center;padding:6px;">${lastVisit ? moment(lastVisit).format("DD/MM/YYYY") : ""}</td>
+<td style="text-align:center; padding:6px;">
+  ${isLastVisit === true || isLastVisit === "true" ? moment(lastVisit).format("DD/MM/YYYY") : "-"}
+</td>
+
         </tr>
       `;
           });
@@ -159,10 +164,10 @@ const SurveyReport = ({ id, reportNumber }) => {
       const surveyRows =
         latestReports && latestReports.length > 0
           ? latestReports
-              .map((cert) => {
-                const type = cert?.typeOfCertificate === "short_term" ? "ST" : cert?.typeOfCertificate === "full_term" ? "FT" : cert?.typeOfCertificate === "intrim" ? "IT" : cert?.typeOfCertificate === "extended" ? "ET" : cert?.typeOfCertificate || "[Type]";
+            .map((cert) => {
+              const type = cert?.typeOfCertificate === "short_term" ? "ST" : cert?.typeOfCertificate === "full_term" ? "FT" : cert?.typeOfCertificate === "intrim" ? "IT" : cert?.typeOfCertificate === "extended" ? "ET" : cert?.typeOfCertificate || "[Type]";
 
-                return `
+              return `
             <tr>
               <td>${cert?.activity?.surveyTypes?.report?.name || "-"}</td>
               <td style="text-align:center;">${type}</td>
@@ -172,8 +177,8 @@ const SurveyReport = ({ id, reportNumber }) => {
               <td style="text-align:center;">${cert?.validityDate ? moment(cert.validityDate).format("DD/MM/YYYY") : "-"}</td>
             </tr>
           `;
-              })
-              .join("")
+            })
+            .join("")
           : `
        <tr>
         <td colspan="6" style="text-align:center;padding:6px;">No Records</td>
@@ -183,32 +188,8 @@ const SurveyReport = ({ id, reportNumber }) => {
       const renderAdditionalFields = () => {
         if (!Array.isArray(additionalFieldDataInput) || !additionalFieldDataInput.length) return "";
 
-        const sectionOrder = ["coc", "statutory", "memoranda", "additional", "compliance", "pcsfsi", "psc/fsi"];
+        const sectionOrder = ["coc", "statutory", "memoranda", "additional", "compliance", "pcsfsi"];
 
-        const titleForKey = (k) => {
-          if (!k) return "Other";
-          const key = k.toLowerCase();
-
-          switch (key) {
-            case "coc":
-              return "Condition of Class";
-            case "statutory":
-              return "Statutory";
-            case "memoranda":
-              return "Memoranda";
-            case "additional":
-              return "Additional Information";
-            case "compliance":
-              return "Compliance to New Regulations";
-            case "pcsfsi":
-            case "psc/fsi":
-              return "PSC / FSI Deficiency";
-            default:
-              return k.toUpperCase();
-          }
-        };
-
-        // Sort sections based on defined order
         const sortedSections = [...additionalFieldDataInput].sort((a, b) => {
           const idxA = sectionOrder.indexOf(a.sectionKey?.toLowerCase());
           const idxB = sectionOrder.indexOf(b.sectionKey?.toLowerCase());
@@ -218,46 +199,76 @@ const SurveyReport = ({ id, reportNumber }) => {
           return idxA - idxB;
         });
 
-        const sectionsHtml = sortedSections
-          .map((section) => {
-            const rows = Array.isArray(section.data) ? section.data : section.data || [];
-            const matchedRows = rows.filter((r) => matchesReportNumber(r, reportNumber));
+        const titleForKey = (k) => {
+          if (!k) return "Other";
+          const key = k.toLowerCase();
+          switch (key) {
+            case "coc": return "Condition of Class";
+            case "statutory": return "Statutory";
+            case "memoranda": return "Memoranda";
+            case "additional": return "Additional Information";
+            case "compliance": return "Compliance to New Regulations";
+            case "pcsfsi": return "PSC / FSI Deficiency";
+            default: return k.toUpperCase();
+          }
+        };
 
-            if (!matchedRows.length) return "";
+        const sectionsHtml = sortedSections.map((section) => {
+          const allEntries = [];
 
-            const rowsHtml = matchedRows
-              .map((r) => {
-                const due = r?.dueDate ? moment(r.dueDate).format("DD/MM/YYYY") : "-";
-                const status = r?.action || "-";
-                return `
-            <tr>
-              <td style="padding:8px;border:1px solid #ccc;text-align:left;">${formatValue(r?.code)}</td>
-              <td style="padding:8px;border:1px solid #ccc;text-align:left;">${formatValue(r?.description)}</td>
-              <td style="padding:8px;border:1px solid #ccc;text-align:center;">${status}</td>
-              <td style="padding:8px;border:1px solid #ccc;text-align:center;">${due}</td>
-            </tr>
-          `;
-              })
-              .join("");
+          section.data?.forEach((entry) => {
+            const combined = [entry, ...(entry.history || [])].map((e) => ({
+              ...e,
+              parentCode: entry.code,
+              createdAt: e.createdAt || entry.createdAt || null,
+              journalTypeId: e.journalTypeId || entry.journalTypeId || null,
+            }));
+            allEntries.push(...combined);
+          });
 
-            return `
-        <h3 style="margin-top:18px;margin-bottom:8px;font-size:16px;color:#003366;">
-          ${titleForKey(section.sectionKey)}
-        </h3>
-        <table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:13px;">
-          <thead>
-            <tr>
-              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:left;width:10%;">Code</th>
-              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:left;width:60%">Description</th>
-              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:15%">Status</th>
-              <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:25%">Due Date</th>
-            </tr>
-          </thead>
-          <tbody>${rowsHtml}</tbody>
-        </table>
-      `;
-          })
-          .join("");
+          const relatedEntries = allEntries.filter((r) => {
+            return (
+              r.journalTypeId === reportNumber ||
+              r.referenceNo === reportNumber ||
+              (reportDetails?.[0]?.activity?.journal?.journalTypeId &&
+                r.journalTypeId === reportDetails[0].activity.journal.journalTypeId)
+            );
+          });
+
+          if (!relatedEntries.length) return "";
+
+          const rowsHtml = relatedEntries
+            .map((r) => {
+              const due = r?.dueDate ? moment(r.dueDate).format("DD/MM/YYYY") : "-";
+              const status = r?.action || "-";
+              return `
+          <tr>
+            <td style="padding:8px;border:1px solid #ccc;text-align:left;">${formatValue(r?.code)}</td>
+            <td style="padding:8px;border:1px solid #ccc;text-align:left;">${formatValue(r?.description)}</td>
+            <td style="padding:8px;border:1px solid #ccc;text-align:center;">${status}</td>
+            <td style="padding:8px;border:1px solid #ccc;text-align:center;">${due}</td>
+          </tr>
+        `;
+            })
+            .join("");
+
+          return `
+      <h3 style="margin-top:18px;margin-bottom:8px;font-size:16px;color:#003366;">
+        ${titleForKey(section.sectionKey)}
+      </h3>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:13px;">
+        <thead>
+          <tr>
+            <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:left;width:10%;">Code</th>
+            <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:left;width:60%">Description</th>
+            <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:15%">Status</th>
+            <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;text-align:center;width:25%">Due Date</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    `;
+        }).join("");
 
         return sectionsHtml;
       };
@@ -268,7 +279,7 @@ const SurveyReport = ({ id, reportNumber }) => {
             <td style="padding:8px;border:1px solid #ccc;width:30%;">Ship's Name</td>
             <td style="padding:8px;border:1px solid #ccc;">${formatValue(clientData?.shipName)}</td>
             <td style="padding:8px;border:1px solid #ccc;width:15%;">Report No</td>
-            <td style="padding:8px;border:1px solid #ccc;">${reportDetailsInput[0]?.activity?.journal?.journalTypeId || "—"}</td>
+            <td style="padding:8px;border:1px solid #ccc;">${reportDetailsInput[0]?.activity?.journal?.journalTypeId || journalList.filter((i) => i.id === reportNumber)[0]?.journalTypeId}</td>
           </tr>
           <tr>
             <td style="padding:8px;border:1px solid #ccc;">Date of Build</td>
@@ -286,7 +297,7 @@ const SurveyReport = ({ id, reportNumber }) => {
             <td style="padding:8px;border:1px solid #ccc;">First Visit</td>
             <td style="padding:8px;border:1px solid #ccc;">${firstVisit ? moment(firstVisit).format("DD/MM/YYYY") : "—"}</td>
             <td style="padding:8px;border:1px solid #ccc;">Last Visit</td>
-            <td style="padding:8px;border:1px solid #ccc;">${lastVisit ? moment(lastVisit).format("DD/MM/YYYY") : "—"}</td>
+            <td style="padding:8px;border:1px solid #ccc;">${isLastVisit === true || isLastVisit === "true" ? moment(lastVisit).format("DD/MM/YYYY") : "-"}</td>
           </tr>
           <tr>
             <td style="padding:8px;border:1px solid #ccc;">No. of Visits</td>
@@ -394,11 +405,11 @@ of Class recommended now or previously, being dealt with as recommended.</p>
             setJournalId(uniqueJournalId);
             const visitResponse = await getVisitDetails("journalId", uniqueJournalId);
             const visits = visitResponse?.data?.data;
-            console.log(visits, "visits");
             if (visits?.length) {
-              setFirstVisit(visits[0]?.date);
-              setLastVisit(visits[visits.length - 1]?.date);
+              setLastVisit(visits[0]?.date);
+              setFirstVisit(visits[visits.length - 1]?.date);
               setNumOfVisit(visits.length);
+              setIsLastVisit(visits[0].journal?.isLocked);
               const places = visits.map((visit) => visit?.location?.replace(/\s*\(.*?\)\s*/g, "").trim()).filter(Boolean);
               setPlaces(places);
             }
@@ -650,7 +661,7 @@ of Class recommended now or previously, being dealt with as recommended.</p>
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `MCBG Survey Report - ${clientData?.imoNumber}-${clientData?.shipName}-${reportDetails[0]?.activity?.journal?.journalTypeId}-${moment(currentDate).format("DD-MM-YYYY")}.pdf`;
+      link.download = `Survey Report-${reportDetails[0]?.activity?.journal?.journalTypeId}-${clientData?.shipName}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

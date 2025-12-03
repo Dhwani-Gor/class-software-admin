@@ -96,7 +96,7 @@ const SurveyTypes = () => {
       if (res) {
         toast.success("Survey type deleted successfully");
       }
-      fetchAllSurveyTypes(page, limit, debouncedSearch);
+      fetchAllSurveyTypes(debouncedSearch, page, limit);
     } catch (e) {
       console.error("Error deleting Survey Type:", e.response?.data || e.message);
       toast.error("Failed to delete Survey Type.");

@@ -34,6 +34,7 @@ const roles = [
 const schema = yup.object().shape({
   name: yup.string().required("Name is required"),
   username: yup.string().required("User Name is required"),
+  email: yup.string().required("Email is required"),
   password: yup.string().when("$isUpdate", {
     is: false,
     then: (schema) => schema.required("Password is required"),
@@ -54,6 +55,12 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [isFormReady, setIsFormReady] = useState(false);
   const dispatch = useDispatch();
+  const [roleShipMap, setRoleShipMap] = useState({
+    agent: [],
+    inspector: [],
+    staff: [],
+  });
+
   const router = useRouter();
   const isUpdate = !!userId;
 
@@ -71,6 +78,7 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
       name: "",
       username: "",
       password: "",
+      email: "",
       confirmPassword: "",
       role: "",
       reportingRights: false,
@@ -89,10 +97,22 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
   }, []);
 
   useEffect(() => {
-    if (userRole !== "agent") {
-      setValue("clientIds", []);
-    }
-  }, [userRole, setValue]);
+    if (!isFormReady) return;
+
+    const currentRole = userRole;
+    const currentShips = getValues("clientIds");
+
+    setRoleShipMap((prev) => ({
+      ...prev,
+      [currentRole]: currentShips,
+    }));
+  }, [watch("clientIds")]);
+
+  useEffect(() => {
+    if (!isFormReady) return;
+    const savedShips = roleShipMap[userRole] || [];
+    setValue("clientIds", savedShips);
+  }, [userRole, isFormReady]);
 
   const fetchClients = async () => {
     try {
@@ -107,6 +127,13 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
     }
   };
 
+  useEffect(() => {
+    if (clientsList.length > 0 && userId && isFormReady) {
+      const currentClientIds = getValues("clientIds");
+      setValue("clientIds", currentClientIds);
+    }
+  }, [clientsList]);
+
   const fetchUserDetails = async () => {
     if (!userId || permissionData.length === 0) return;
 
@@ -116,11 +143,9 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
       const data = res?.data?.data;
       if (!data) return;
 
-      // Map backend permission names/descriptions to form values
       const mappedPermissions =
         data.permissionModule
           ?.map((backendValue) => {
-            // Try matching with both 'name' (value) and 'description' (label)
             const match = permissionData.find((m) => m.value === backendValue || m.label === backendValue);
             return match?.value;
           })
@@ -134,18 +159,27 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
           })
           .filter(Boolean) || [];
 
-      // Reset form with all data including mapped permissions
+      const clientIds = data.clients?.map((c) => c.id) || [];
+
       reset({
         name: data.name || "",
         username: data.username || "",
+        email: data.email || "",
         role: data.role || "",
         reportingRights: data.reportingRights || false,
         dataEntryRights: data.dataEntryRights || false,
         journalUnlockRights: data.journalUnlockRights || false,
-        clientIds: data.clients?.map((c) => c.id) || [],
         permissionModule: mappedPermissions,
         specialPermission: mappedSpecial,
+        clientIds: clientIds,
       });
+
+      if (data.role) {
+        setRoleShipMap((prev) => ({
+          ...prev,
+          [data.role]: clientIds,
+        }));
+      }
 
       setIsFormReady(true);
     } catch (error) {
@@ -156,7 +190,6 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
     }
   };
 
-  // Fetch user details only after permission data is loaded
   useEffect(() => {
     if (mode === "update" && userId && permissionData.length > 0 && specialPermissionData.length > 0) {
       fetchUserDetails();
@@ -180,13 +213,12 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
     const payload = {
       ...data,
       roleId,
-      ...(data.role === "agent" ? {} : { clientIds: [] }),
+      clientIds: data.clientIds && data.clientIds.length > 0 ? data.clientIds : [],
     };
 
     try {
       if (userId) {
         let res = await updateInspectorDetail(userId, payload);
-        console.log(res, "res");
         if (res?.data?.status === "success") {
           toast.success(res?.data?.message);
         } else {
@@ -272,6 +304,31 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
                 />
               </Grid2>
 
+              <Grid2 size={{ xs: 12 }}>
+                <Controller
+                  name="email"
+                  control={control}
+                  render={({ field }) => (
+                    <CommonInput
+                      {...field}
+                      fullWidth
+                      variant="standard"
+                      label={
+                        <span>
+                          Email <span style={{ color: "red" }}>*</span>
+                        </span>
+                      }
+                      placeholder="Enter Email"
+                      error={Boolean(errors.email)}
+                      helperText={errors.email?.message}
+                      autoComplete="off"
+                      InputProps={{
+                        style: { color: "black" },
+                      }}
+                    />
+                  )}
+                />
+              </Grid2>
               {!userId && (
                 <>
                   <Grid2 size={{ xs: 12 }}>
@@ -350,30 +407,26 @@ const AddInspectorForm = ({ mode = "create", userId = null, defaultValues = {}, 
                   )}
                 />
               </Grid2>
-              {userRole === "agent" && (
-                <Grid2 size={{ xs: 12 }}>
-                  <Typography>
-                    Select the Ship <span style={{ color: "red" }}>*</span>
-                  </Typography>
-                  <Controller
-                    name="clientIds"
-                    control={control}
-                    render={({ field }) => (
-                      <Autocomplete
-                        {...field}
-                        multiple
-                        options={clientsList}
-                        getOptionLabel={(option) => option.shipName || ""}
-                        value={clientsList.filter((item) => field.value?.includes(item.id)) || []}
-                        onChange={(_, newValue) => {
-                          field.onChange(newValue.map((item) => item.id));
-                        }}
-                        renderInput={(params) => <TextField {...params} variant="standard" error={Boolean(errors.clientIds)} helperText={errors.clientIds?.message} fullWidth />}
-                      />
-                    )}
-                  />
-                </Grid2>
-              )}
+              <Grid2 size={{ xs: 12 }}>
+                <Typography>Select the Ship</Typography>
+                <Controller
+                  name="clientIds"
+                  control={control}
+                  render={({ field }) => (
+                    <Autocomplete
+                      {...field}
+                      multiple
+                      options={clientsList}
+                      getOptionLabel={(option) => option.shipName || ""}
+                      value={clientsList.filter((item) => field.value?.includes(item.id)) || []}
+                      onChange={(_, newValue) => {
+                        field.onChange(newValue.map((item) => item.id));
+                      }}
+                      renderInput={(params) => <TextField {...params} variant="standard" error={Boolean(errors.clientIds)} helperText={errors.clientIds?.message} fullWidth />}
+                    />
+                  )}
+                />
+              </Grid2>
             </Grid2>
 
             <Box>

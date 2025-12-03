@@ -12,14 +12,6 @@ const AdditionalField = async () => {
             <Typography variant="h4" fontWeight={700}>
               Additional Fields
             </Typography>
-            {/* <CommonButton
-                    sx={{ textTransform: "capitalize" }}
-                    text="Add Classification"
-                    variant="contained"
-                    onClick={() => {
-                      router.push("/classification/create");
-                    }}
-                  /> */}
           </Stack>
         </CommonCard>
         <AdditionalFieldsList />

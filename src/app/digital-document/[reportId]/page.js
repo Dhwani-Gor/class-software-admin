@@ -19,6 +19,7 @@ const DigitalDocument = ({ params }) => {
   const [isIOS, setIsIOS] = useState(false);
   const [companyName, setCompanyName] = useState("");
   const [companyLogo, setCompanyLogo] = useState("");
+  const [revoked, setRevoked] = useState("");
 
   useEffect(() => {
     const checkDevice = () => {
@@ -38,6 +39,15 @@ const DigitalDocument = ({ params }) => {
   };
 
   const getCertificateStatus = (validityDate) => {
+    if (revoked && revoked.trim() !== "") {
+      return {
+        status: "REVOKED",
+        color: "#ff9800",
+        icon: Warning,
+        message: "Certificate has been revoked",
+      };
+    }
+
     if (!validityDate) {
       return {
         status: "Valid",
@@ -47,6 +57,7 @@ const DigitalDocument = ({ params }) => {
       };
     }
 
+    // ✅ Otherwise, check validity
     const currentDate = new Date();
     const validity = new Date(validityDate);
 
@@ -63,7 +74,7 @@ const DigitalDocument = ({ params }) => {
     } else {
       return {
         status: "EXPIRED",
-        color: "#ff9800",
+        color: "red",
         icon: Warning,
         message: "Certificate has expired",
       };
@@ -85,6 +96,7 @@ const DigitalDocument = ({ params }) => {
       const result = await getAllActivityReportDetails("id", params?.reportId);
       if (result?.status === 200 && result?.data?.data && result.data.data.length > 0) {
         const reportData = result.data.data[0];
+        setRevoked(reportData?.reportStatus);
         setReportDetails(reportData);
       } else {
         throw new Error("Report not found or invalid response");
@@ -351,14 +363,16 @@ const DigitalDocument = ({ params }) => {
                 </Typography>
               </Stack>
 
-              <Stack direction="row" justifyContent="space-between">
-                <Typography variant="body2" color="text.secondary">
-                  Valid Till
-                </Typography>
-                <Typography variant="body2" fontWeight="500" color={certificateStatus.status === "EXPIRED" ? "error.main" : "text.primary"}>
-                  {isHiddenReport(reportDetails?.activity?.surveyTypes?.report?.name) ? "N/A" : formatDate(reportDetails.validityDate)}{" "}
-                </Typography>
-              </Stack>
+              {!revoked && (
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography variant="body2" color="text.secondary">
+                    Valid Till
+                  </Typography>
+                  <Typography variant="body2" fontWeight="500" color={certificateStatus.status === "EXPIRED" ? "error.main" : "text.primary"}>
+                    {isHiddenReport(reportDetails?.activity?.surveyTypes?.report?.name) ? "N/A" : formatDate(reportDetails.validityDate)}{" "}
+                  </Typography>
+                </Stack>
+              )}
 
               {downloadError && (
                 <Alert severity="error" size="small">
