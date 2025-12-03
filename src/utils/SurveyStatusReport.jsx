@@ -1152,7 +1152,6 @@ ${classificationRows}
     </div>
 
     ${additionalFieldsHtml}
-    ${machineListHtml}
   `;
 
   const calculateDueDate = (cert) => {
@@ -1771,9 +1770,6 @@ ${auditSurveyTableHtml}
 
 ${additionalFieldsHtml}
 </div>
-<h2 style="margin-top: 10px; color:black">Machine List</h2>
-
-${machineListHtml}
 </div>
 `;
   }, [clientData, reportDetails, classificationData, statutoryData]);
