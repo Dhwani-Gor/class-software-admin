@@ -237,6 +237,7 @@ const MachineList = () => {
                     <Box sx={{ display: "flex", gap: 2 }}>
                         <CommonButton
                             text="Edit Machinery"
+                            disabled={!selectedShipId}
                             variant="contained"
                             sx={{ textTransform: "capitalize" }}
                             onClick={() => router.push(`/machine-list/${selectedShipId}`)}
