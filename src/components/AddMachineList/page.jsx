@@ -360,7 +360,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             const firstItem = rowItems[0];
 
                             // Collect all unique positions for this row
-                            const positions = [...new Set(rowItems.map(i => i.positionCode))].filter(Boolean);
+                            const positions = [...new Set(rowItems.map(i => i.positionCode))]?.filter(Boolean);
 
                             populatedData[rowKey] = {
                                 xMark: "X",

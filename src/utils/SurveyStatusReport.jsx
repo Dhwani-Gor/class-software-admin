@@ -1128,7 +1128,7 @@ ${classificationRows}
       .map(
         (item) => `
       <tr>
-        <td>${item.rowId || "-"}</td>
+        <td>${item.generatedCode || "-"}</td>
         <td>${item.postponedDate ? moment(item.postponedDate).format("DD/MM/YYYY") : "-"}</td>
         <td>5</td>
         <td>${item.assignmentDate ? moment(item.assignmentDate).format("DD/MM/YYYY") : "-"}</td>
@@ -1152,6 +1152,7 @@ ${classificationRows}
     </div>
 
     ${additionalFieldsHtml}
+    ${machineListHtml}
   `;
 
   const calculateDueDate = (cert) => {
@@ -1770,7 +1771,11 @@ ${auditSurveyTableHtml}
 
 ${additionalFieldsHtml}
 </div>
+<h2 style="margin-top: 10px; color:black">Machine List</h2>
+${machineListHtml}
 </div>
+
+
 `;
   }, [clientData, reportDetails, classificationData, statutoryData]);
 
