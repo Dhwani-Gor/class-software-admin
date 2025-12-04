@@ -119,18 +119,34 @@ const MachineryHullManager = ({ mode, shipId }) => {
 
         const labelToUse = data.label || row.label || "";
 
+        // Check if this row uses from/to instead of cylinders
+        const hasFromTo = row.hasFromTo;
+        const fromValue = parseInt(data.from) || 1;
+        const toValue = parseInt(data.to) || 1;
+
+        // Determine repetition count
+        let repetitions = 1;
+        if (hasFromTo) {
+            // For from/to rows, repeat based on range
+            repetitions = Math.max(1, toValue - fromValue + 1);
+        } else if (row.repeatPerCylinder !== false && isMachineryList && ["01", "02", "03"].includes(String(row.id).padStart(2, "0"))) {
+            // Only first 3 rows in machinery_list repeat per cylinder
+            repetitions = numCyl;
+        }
+
         // Loop based on section type
         if (isMachineryList) {
             // ✔ Include global position
             globalPositions.forEach((globalPos) => {
                 rowPositions.forEach((rowPos) => {
-                    for (let cyl = 1; cyl <= numCyl; cyl++) {
+                    for (let i = 1; i <= repetitions; i++) {
+                        const occurrence = hasFromTo ? (fromValue + i - 1) : i;
 
                         const code =
                             `${String(sectionNum).padStart(2, "0")}` +
                             `${globalPos}` +
-                            `${row.id}` +
-                            `${String(cyl).padStart(2, "0")}` +
+                            `${String(row.id).padStart(2, "0")}` +
+                            `${String(occurrence).padStart(2, "0")}` +
                             `${rowPos}`;
 
                         instances.push({
@@ -138,24 +154,27 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             assignmentDate: data.assignmentDate || new Date().toISOString().split("T")[0],
                             dueDate: data.dueDate || calculateDueDate(data.assignmentDate || new Date()),
                             generatedCode: code,
-                            occurrence: cyl,
+                            occurrence: occurrence,
                             positionCode: rowPos,
                             globalPositionCode: globalPos,
-                            content: row.content?.replace("{cyl}", cyl),
+                            content: hasFromTo ? labelToUse : (row.content?.replace("{cyl}", occurrence) || labelToUse),
                             label: labelToUse,
+                            from: hasFromTo ? fromValue : null,
+                            to: hasFromTo ? toValue : null,
                         });
                     }
                 });
             });
         } else {
-            // ❗ No global position
+            // ❗ No global position for other sections
             rowPositions.forEach((rowPos) => {
-                for (let cyl = 1; cyl <= numCyl; cyl++) {
+                for (let i = 1; i <= repetitions; i++) {
+                    const occurrence = hasFromTo ? (fromValue + i - 1) : i;
 
                     const code =
                         `${String(sectionNum).padStart(2, "0")}` +
-                        `${row.id}` +
-                        `${String(cyl).padStart(2, "0")}` +
+                        `${String(row.id).padStart(2, "0")}` +
+                        `${String(occurrence).padStart(2, "0")}` +
                         `${rowPos}`;
 
                     instances.push({
@@ -163,10 +182,12 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         assignmentDate: data.assignmentDate || new Date().toISOString().split("T")[0],
                         dueDate: data.dueDate || calculateDueDate(data.assignmentDate || new Date()),
                         generatedCode: code,
-                        occurrence: cyl,
+                        occurrence: occurrence,
                         positionCode: rowPos,
-                        content: row.content?.replace("{cyl}", cyl),
+                        content: hasFromTo ? labelToUse : (row.content?.replace("{cyl}", occurrence) || labelToUse),
                         label: labelToUse,
+                        from: hasFromTo ? fromValue : null,
+                        to: hasFromTo ? toValue : null,
                     });
                 }
             });
