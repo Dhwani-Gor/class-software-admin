@@ -672,7 +672,6 @@ const TextEditor = ({ id }) => {
 
     // 1) Filter generated & non-revoked & valid report
     const validSurveys = surveyDataList.filter((s) =>
-      s.isGenerated === true &&
       s.activity?.surveyTypes?.report &&
       s.reportStatus !== "revoked"
     );
