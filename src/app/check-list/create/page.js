@@ -38,7 +38,7 @@ const CheckListCreate = () => {
             : (data[0]?.checkListData?.notes || "")
                 .split("\n")
                 .map((n) => n.trim())
-                .filter(Boolean)
+                ?.filter(Boolean)
         );
         setRows(
           data[0]?.checkListData?.checkList?.map((item) => ({
