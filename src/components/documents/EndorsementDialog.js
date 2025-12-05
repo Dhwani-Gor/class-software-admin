@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Radio, FormControlLabel, Box, Typography, RadioGroup as MuiRadioGroup, TextField, FormControl, InputLabel, Select, MenuItem, Stack, Divider } from "@mui/material";
 import { getSelectedReportDetails } from "@/api";
 import CommonButton from "../CommonButton";
+import CommonInput from "../CommonInput";
 
 const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsementList = [], reportDetailsId, surveyorOptions = [] }) => {
   const [selectedEndorsement, setSelectedEndorsement] = useState(null);
@@ -9,9 +10,9 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
   const [radioValues, setRadioValues] = useState({});
   const [endorsementInputs, setEndorsementInputs] = useState({});
   const [issuedBy, setIssuedBy] = useState("");
+  const [remarks, setRemarks] = useState("");
 
-  // Fetch report details
-  const fetchReportDetails = async () => {
+    const fetchReportDetails = async () => {
     if (!reportDetailsId) return;
     try {
       const response = await getSelectedReportDetails(reportDetailsId);
@@ -28,6 +29,7 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
       setRadioValues({});
       setEndorsementInputs({});
       setIssuedBy("");
+      setRemarks(""); // reset remarks
     }
   }, [open, reportDetailsId]);
 
@@ -80,7 +82,7 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
           const isDateField = key.toLowerCase().includes("date");
 
           return (
-            <TextField
+            <CommonInput
               key={key}
               label={label}
               type={isDateField ? "date" : "text"}
@@ -94,15 +96,17 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
                   [key]: e.target.value,
                 }))
               }
-              sx={{ flex: 1, minWidth: 200 }}
+              sx={{ flex: 1, minWidth: 100 }}
             />
           );
         })}
 
         {/* Issued By Dropdown (also in the same row) */}
-        <FormControl size="small" sx={{ flex: 1, minWidth: 200 }}>
-          <InputLabel>Issued By</InputLabel>
-          <Select value={issuedBy} label="Issued By" onChange={(e) => setIssuedBy(e.target.value)}>
+        <FormControl size="small" sx={{ flex: 1 }}>
+          <Typography variant="body2" fontWeight={500} sx={{ mb: 2 }}>
+            Issued By
+          </Typography>
+          <Select value={issuedBy} onChange={(e) => setIssuedBy(e.target.value)} sx={{ width: "20%" }}>
             {surveyorOptions.map((option) => (
               <MenuItem key={option.value} value={option.value}>
                 {option.label}
@@ -213,12 +217,9 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
     flattenedData.isEndorsement = true;
     if (num === "2") {
       const rd = reportDetails?.data || {};
-
-      const endorsement1Filled = rd.endorsed_by_1 || rd.issuance_place_1 || rd.issuance_date_1;
-
-      if (!endorsement1Filled) {
-        flattenedData.not_applicable = "Survey Carried out earlier";
-      }
+    }
+    if (remarks.trim() !== "") {
+      flattenedData[`endorsement_remarks_${num}`] = remarks.trim();
     }
     if (endorsementStamp) {
       flattenedData[`endorsement_stamp_${num}`] = endorsementStamp;
@@ -267,6 +268,7 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
                         <>
                           {renderEndorsementFields(item)}
                           {renderDynamicInputs(item)}
+                          <TextField label="Remarks" multiline rows={2} fullWidth sx={{ mt: 2 }} value={remarks} onChange={(e) => setRemarks(e.target.value)} />
                         </>
                       )}
                     </Box>

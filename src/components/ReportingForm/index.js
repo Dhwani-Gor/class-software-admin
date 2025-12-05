@@ -163,6 +163,7 @@ const ReportingForm = () => {
       reportDetails: reportDetails?.data,
     };
 
+    console.log(trimmedReportName, "trimmedReportName");
     switch (trimmedReportName) {
       case "INTERNATIONAL TONNAGE CERTIFICATE":
         return <InternationalTonnage {...commonProps} />;
