@@ -1497,7 +1497,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   line-height: 1.8;
 ">
   <p><strong style="font-size:18px;">Reg. Owner:</strong><span style="font-size:18px; fontWeight: 700; margin-left: 70px; color:black">${clientData?.ownerDetails?.companyName || "-"}</span></p>
-  <p><strong style="font-size:18px;">Reg. No:</strong><span style="font-size:18px; fontWeight: 700; margin-left: 105px; color:black">${clientData?.registrationNumber || "-"}</span></p>
+  <p><strong style="font-size:18px;">Class Id:</strong><span style="font-size:18px; fontWeight: 700; margin-left: 105px; color:black">${clientData?.classId || "-"}</span></p>
   <p><strong style="font-size:18px;">IMO Number:</strong><span style="font-size:18px; fontWeight: 700; margin-left: 60px; color:black">${clientData?.imoNumber || "-"}</span></p>
   <p><strong style="font-size:18px;">Vessel Type:</strong><span style="font-size:18px; fontWeight: 700; margin-left: 74px; color:black">${clientData?.typeOfShip || "-"}</span></p>
   <p><strong style="font-size:18px;">Gross Tonnage:</strong><span style="font-size:18px; fontWeight: 700; margin-left: 48px; color:black">${clientData?.grossTonnage || "-"}</span></p>
@@ -1554,7 +1554,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 <td><em><strong>Call Sign:</strong></em></td>
 <td>${clientData?.callSign || "-"}</td>
 <td><em><strong>Official Number:</strong></em></td>
-<td>${clientData?.officialNumber || "-"}</td>
+<td>${clientData?.officialNo || "-"}</td>
 </tr>
 </tbody>
 </table>
