@@ -9,6 +9,7 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
   const [radioValues, setRadioValues] = useState({});
   const [endorsementInputs, setEndorsementInputs] = useState({});
   const [issuedBy, setIssuedBy] = useState("");
+  const [remarks, setRemarks] = useState("");
 
   // Fetch report details
   const fetchReportDetails = async () => {
@@ -28,6 +29,7 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
       setRadioValues({});
       setEndorsementInputs({});
       setIssuedBy("");
+      setRemarks(""); // reset remarks
     }
   }, [open, reportDetailsId]);
 
@@ -213,12 +215,9 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
     flattenedData.isEndorsement = true;
     if (num === "2") {
       const rd = reportDetails?.data || {};
-
-      const endorsement1Filled = rd.endorsed_by_1 || rd.issuance_place_1 || rd.issuance_date_1;
-
-      if (!endorsement1Filled) {
-        flattenedData.not_applicable = "Survey Carried out earlier";
-      }
+    }
+    if (remarks.trim() !== "") {
+      flattenedData[`endorsement_remarks_${num}`] = remarks.trim();
     }
     if (endorsementStamp) {
       flattenedData[`endorsement_stamp_${num}`] = endorsementStamp;
@@ -267,6 +266,7 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
                         <>
                           {renderEndorsementFields(item)}
                           {renderDynamicInputs(item)}
+                          <TextField label="Remarks" multiline rows={2} fullWidth sx={{ mt: 2 }} value={remarks} onChange={(e) => setRemarks(e.target.value)} />
                         </>
                       )}
                     </Box>
