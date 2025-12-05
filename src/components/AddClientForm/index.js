@@ -408,21 +408,6 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
               : [{ shipStatus: "", reason: "", remarks: "", from_date: "", to_date: "" }];
 
           setClassHistory(loadedHistory);
-
-          // const defaultStatuses = ["Class", "Withdrawn", "Re-classed"];
-          // const mergedHistory = defaultStatuses.map((status, index) => {
-          //   const existing = loadedHistory.find((h) => h.shipStatus === status);
-          //   return (
-          //     existing || {
-          //       shipStatus: status,
-          //       reason: "",
-          //       remarks: "",
-          //       from_date: "",
-          //       to_date: "",
-          //     }
-          //   );
-          // });
-          // setClassHistory(mergedHistory);
         }
 
         if (result.data.data.machineList) {
