@@ -70,6 +70,7 @@ const Clients = () => {
 
   const handleSearchChange = (event) => {
     setSearch(event.target.value);
+    setPage(1);
   };
 
   const handleDeleteClick = (clientId) => {

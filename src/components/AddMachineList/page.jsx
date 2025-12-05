@@ -308,9 +308,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
             } else {
                 toast.error(result?.data?.message);
             }
-            setLoading(false);
         } catch (error) {
-            setLoading(false);
             toast.error(error?.message || "Failed to fetch clients");
         }
     };
@@ -318,7 +316,6 @@ const MachineryHullManager = ({ mode, shipId }) => {
     const fetchMachineData = async (shipId) => {
         try {
             const result = await getMachineById(shipId);
-
             if (result?.data?.status === "success") {
                 const data = result.data.data;
 
@@ -329,11 +326,9 @@ const MachineryHullManager = ({ mode, shipId }) => {
 
                 const populatedData = {};
                 const restoredDynamicRows = { machinery: {}, hull: {} };
-                const processedRows = new Set(); // Track unique row combinations
+                const processedRows = new Set();
 
-                // Parse machineData from backend
                 Object.entries(data.machineData || {}).forEach(([sectionId, section]) => {
-                    // Detect if section belongs to machinery or hull
                     const sectionType =
                         MACHINERY_SECTIONS[section.sectionNumber]?.sectionId === sectionId
                             ? "machinery"
@@ -370,17 +365,14 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         rowMap.get(rowId).push(item);
                     });
 
-                    // Process each unique row
                     rowMap.forEach((rowItems, rowId) => {
                         const rowKey = `${sectionType}-${section.sectionNumber}-${rowId}`;
 
                         if (!processedRows.has(rowKey)) {
                             processedRows.add(rowKey);
 
-                            // Get first item as reference (all items in same row have same dates/label)
                             const firstItem = rowItems[0];
 
-                            // Collect all unique positions for this row
                             const positions = [...new Set(rowItems.map(i => i.positionCode))].filter(Boolean);
 
                             populatedData[rowKey] = {
@@ -777,10 +769,6 @@ const MachineryHullManager = ({ mode, shipId }) => {
         );
     };
 
-    // Listing View
-
-
-    // Form View
     const renderFormView = () => {
         const currentSections = tabValue === 0 ? MACHINERY_SECTIONS : HULL_SECTIONS;
         const sectionType = tabValue === 0 ? "machinery" : "hull";
