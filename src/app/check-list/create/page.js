@@ -339,7 +339,7 @@ const CheckListCreate = () => {
 
       {!loading && checkListData && (
         <>
-          <Box
+          {/* <Box
             sx={{
               borderColor: "divider",
               borderRadius: 2,
@@ -364,7 +364,7 @@ const CheckListCreate = () => {
                 cursor: "text",
               }}
             />
-          </Box>
+          </Box> */}
           <CommonButton variant="contained" onClick={handleSubmit(onSubmit)} text={buttonText} />
         </>
       )}
