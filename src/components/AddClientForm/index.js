@@ -134,7 +134,8 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
   const fetchClients = async () => {
     try {
       setLoading(true);
-      const result = await getAllClients(1, 10, "");
+      const result = await getAllClients();
+      console.log(result, "result");
       if (result?.status === 200) {
         setClassId(result.data.results);
       } else {
@@ -228,19 +229,22 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
     },
   });
 
+  console.log(mode);
   useEffect(() => {
-    const now = new Date();
+    if (mode === "create") {
+      const now = new Date();
 
-    const year = String(now.getFullYear()).slice(-2);
-    const month = String(now.getMonth() + 1).padStart(2, "0");
+      const year = String(now.getFullYear()).slice(-2);
+      const month = String(now.getMonth() + 1).padStart(2, "0");
 
-    const totalRecords = Number(classId) || 0;
-    const nextNumber = (totalRecords + 1).toString().padStart(3, "0");
+      const totalRecords = Number(classId) || 0;
+      const nextNumber = (totalRecords + 1).toString().padStart(3, "0");
 
-    const generatedId = `${year}${month}${nextNumber}`;
+      const generatedId = `${year}${month}${nextNumber}`;
 
-    setValue("classId", generatedId);
-  }, [setValue, classId]);
+      setValue("classId", generatedId);
+    }
+  }, [setValue, classId, mode]);
 
   const handleAddRow = () => {
     setClassHistory([...classHistory, { shipStatus: "", reason: "", remarks: "", from_date: "", to_date: "" }]);
