@@ -9,6 +9,53 @@ import { addCheckList, fetchJournalList, getAllActivities, getAllChecklist, getA
 import CommonButton from "@/components/CommonButton";
 import CommonCard from "@/components/CommonCard";
 
+// Matches long dotted/underscore placeholders that usually exist in DOCX templates
+const PLACEHOLDER_REGEX = /([_.]{3,})/g;
+
+// Turn placeholders (.... / ____) into input elements so users can type values
+const transformPlaceholdersToInputs = (htmlString) => {
+  if (!htmlString || /data-placeholder-input/.test(htmlString)) return htmlString || "";
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlString, "text/html");
+
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, null);
+  const nodesToProcess = [];
+
+  // Collect first to avoid mutating while walking
+  while (walker.nextNode()) {
+    nodesToProcess.push(walker.currentNode);
+  }
+
+  nodesToProcess.forEach((textNode) => {
+    const text = textNode.textContent;
+    if (!PLACEHOLDER_REGEX.test(text)) return;
+
+    const fragments = text.split(PLACEHOLDER_REGEX);
+    const matches = text.match(PLACEHOLDER_REGEX) || [];
+    const fragment = doc.createDocumentFragment();
+
+    fragments.forEach((part, idx) => {
+      if (part) fragment.appendChild(doc.createTextNode(part));
+
+      const match = matches[idx];
+      if (match) {
+        const input = doc.createElement("input");
+        input.setAttribute("type", "text");
+        input.setAttribute("data-placeholder-input", "true");
+        // Preserve approximate width that the dots/underscores occupied
+        input.setAttribute("style", `border:none;border-bottom:1px solid #000;outline:none;width:${Math.max(6, match.length)}ch;padding:2px 4px;margin:0 2px;background:transparent;`);
+        input.setAttribute("aria-label", "Fill value");
+        fragment.appendChild(input);
+      }
+    });
+
+    textNode.replaceWith(fragment);
+  });
+
+  return doc.body.innerHTML;
+};
+
 const CheckListCreate = () => {
   const [clientsList, setClientsList] = useState([]);
   const [documentTitle, setDocumentTitle] = useState("");
@@ -20,8 +67,12 @@ const CheckListCreate = () => {
 
   const [buttonText, setButtonText] = useState("Submit");
 
+  // Add a ref to track if we're loading a new document
+  const isLoadingNewDocument = useRef(false);
+
   const fetchExistingChecklist = async () => {
-    if (!selectedShip?.id || !selectedReportNumber?.id || !selectedSurveyType) return;
+    // Don't fetch existing checklist if we're loading a new document
+    if (!selectedShip?.id || !selectedReportNumber?.id || !selectedSurveyType || isLoadingNewDocument.current) return;
 
     try {
       setLoading(true);
@@ -38,7 +89,8 @@ const CheckListCreate = () => {
 
           // Set the HTML content from existing checklist
           if (matchingChecklist.checkListData?.checkList) {
-            setCheckListData(matchingChecklist.checkListData.checkList);
+            const normalized = transformPlaceholdersToInputs(matchingChecklist.checkListData.checkList);
+            setCheckListData(normalized);
           }
 
           // Set notes if available
@@ -79,9 +131,15 @@ const CheckListCreate = () => {
   const shouldInjectHTML = useRef(true);
 
   const handleContentChange = () => {
-    if (editableRef.current) {
-      setEditedContent(editableRef.current.innerHTML);
-    }
+    if (!editableRef.current) return;
+
+    // Ensure input values are persisted in HTML before saving
+    const inputs = editableRef.current.querySelectorAll("input[data-placeholder-input]");
+    inputs.forEach((input) => {
+      input.setAttribute("value", input.value);
+    });
+
+    setEditedContent(editableRef.current.innerHTML);
   };
 
   useEffect(() => {
@@ -179,7 +237,7 @@ const CheckListCreate = () => {
   };
 
   useEffect(() => {
-    if (file) {
+    if (file && isLoadingNewDocument.current) {
       handleFileUpload(file);
     }
   }, [file]);
@@ -194,22 +252,37 @@ const CheckListCreate = () => {
 
       const result = await mammoth.convertToHtml({ arrayBuffer });
 
-      setCheckListData(result.value);
+      const htmlWithInputs = transformPlaceholdersToInputs(result.value);
+      setCheckListData(htmlWithInputs);
 
       toast.success("Checklist loaded.");
+
+      // Reset the flag after document is loaded
+      isLoadingNewDocument.current = false;
     } catch (error) {
       console.error("Error parsing file:", error);
       toast.error(`Error: ${error.message}`);
+      isLoadingNewDocument.current = false;
     } finally {
       setLoading(false);
     }
   };
 
   const onSubmit = async () => {
+    let contentForSave = editedContent;
+
+    // Make sure latest input values are reflected in saved HTML
+    if (editableRef.current) {
+      const inputs = editableRef.current.querySelectorAll("input[data-placeholder-input]");
+      inputs.forEach((input) => input.setAttribute("value", input.value));
+      contentForSave = editableRef.current.innerHTML;
+      setEditedContent(contentForSave);
+    }
+
     const surveyId = control._formValues?.typeOfSurvey;
 
     const checkListDataPayload = {
-      checkList: editedContent,
+      checkList: contentForSave,
     };
 
     const payload = {
@@ -315,15 +388,19 @@ const CheckListCreate = () => {
                       setCheckListData("");
                       setEditedContent("");
                       shouldInjectHTML.current = true;
+                      setButtonText("Submit");
 
                       if (newValue) {
                         const selectedSurvey = surveyType?.find((s) => Number(s.surveyTypes?.id) === newValue.value);
 
                         if (selectedSurvey?.surveyTypes?.checkListDocument) {
+                          // Set flag that we're loading a new document
+                          isLoadingNewDocument.current = true;
                           setFile(selectedSurvey.surveyTypes.checkListDocument);
                         } else {
                           toast.error("No checklist is attached for this activity.");
                           setFile(null);
+                          isLoadingNewDocument.current = false;
                         }
                       }
                     }}
