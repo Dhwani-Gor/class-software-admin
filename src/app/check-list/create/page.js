@@ -85,10 +85,8 @@ const CheckListCreate = () => {
   };
 
   useEffect(() => {
-    if (checkListData) {
-      setEditedContent(checkListData);
-      shouldInjectHTML.current = true;
-    }
+    setEditedContent(checkListData || "");
+    shouldInjectHTML.current = true;
   }, [checkListData]);
 
   useEffect(() => {
@@ -134,10 +132,12 @@ const CheckListCreate = () => {
     fetchClients();
   }, []);
 
-  const surveyOptions = surveyType?.map((item) => ({
-    label: item?.surveyTypes?.name,
-    value: Number(item?.surveyTypes?.id),
-  }));
+  const surveyOptions = Array.isArray(surveyType)
+    ? surveyType.map((item) => ({
+        label: item?.surveyTypes?.name,
+        value: Number(item?.surveyTypes?.id),
+      }))
+    : [];
 
   const handleShipChange = (event) => {
     const selectedId = event.target.value;
@@ -179,7 +179,7 @@ const CheckListCreate = () => {
   };
 
   useEffect(() => {
-    if (file && !existingChecklist) {
+    if (file) {
       handleFileUpload(file);
     }
   }, [file]);
@@ -304,19 +304,24 @@ const CheckListCreate = () => {
                 defaultValue={null}
                 render={({ field }) => (
                   <Autocomplete
-                    options={surveyOptions?.sort((a, b) => a.label?.localeCompare(b.label))}
+                    options={surveyOptions.length ? [...surveyOptions].sort((a, b) => a.label.localeCompare(b.label)) : []}
                     value={surveyOptions?.find((o) => o.value === field.value) || null}
                     onChange={(event, newValue) => {
                       field.onChange(newValue ? newValue.value : null);
                       setSelectedSurveyType(newValue ? newValue.value : null);
 
+                      // FULL RESET
+                      setExistingChecklist(null);
+                      setCheckListData("");
+                      setEditedContent("");
+                      shouldInjectHTML.current = true;
+
                       if (newValue) {
                         const selectedSurvey = surveyType?.find((s) => Number(s.surveyTypes?.id) === newValue.value);
 
-                        // Only load from file if no existing checklist is found
-                        if (selectedSurvey?.surveyTypes?.checkListDocument && !existingChecklist) {
+                        if (selectedSurvey?.surveyTypes?.checkListDocument) {
                           setFile(selectedSurvey.surveyTypes.checkListDocument);
-                        } else if (!selectedSurvey?.surveyTypes?.checkListDocument && !existingChecklist) {
+                        } else {
                           toast.error("No checklist is attached for this activity.");
                           setFile(null);
                         }

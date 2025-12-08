@@ -377,6 +377,16 @@ const ReportingForm = () => {
     return moment(value).add(yearsToAdd, "years").format("YYYY-MM-DD");
   };
 
+  const isWithinExistingRange = (value) => {
+    const rangeFrom = getValues("rangeFrom");
+    const rangeTo = getValues("rangeTo");
+
+    if (!rangeFrom || !rangeTo) return false;
+
+    const v = moment(value, "YYYY-MM-DD");
+    return v.isSameOrAfter(moment(rangeFrom, "YYYY-MM-DD")) && v.isSameOrBefore(moment(rangeTo, "YYYY-MM-DD"));
+  };
+
   const applyRangeFromDueDate = (dueDate, surveyType) => {
     if (!dueDate) return;
 
@@ -387,13 +397,10 @@ const ReportingForm = () => {
     const isFiveYearSpecial = fiveYearSpecials.includes(normalize(surveyType));
     const noRangeSurveys = ["docking survey", "tailshaft initial survey", "tailshaft renewal survey", "tailshaft periodical survey", "main boiler survey", "auxiliary boiler survey", "thermal oil heating systems survey", "exhaust gas steam generators and economisers survey"];
 
-    // Case 1: No range surveys
     if (noRangeSurveys.includes(normalize(surveyType))) {
       rangeFrom = "";
       rangeTo = "";
-    }
-    // Case 2: Five-year special surveys
-    else if (isFiveYearSpecial) {
+    } else if (isFiveYearSpecial) {
       rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
       rangeTo = dueDate;
       setValue("validitydate", dueDate);
@@ -418,6 +425,12 @@ const ReportingForm = () => {
 
     const surveyType = normalizeName(getValues("typesOfSurvey"));
 
+    const skipAutoCalc = fieldName === "surveydate" || fieldName === "assignmentDate" ? isWithinExistingRange(value) : false;
+
+    if (skipAutoCalc) {
+      setValue(fieldName, value);
+      return;
+    }
     if (fieldName === "surveydate") {
       setValue("assignmentDate", value);
 
@@ -965,7 +978,6 @@ const ReportingForm = () => {
                     </Typography>
                   )}
                 </FormControl>
-                {/* )} */}
               </Grid2>
               <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
                 <Controller name="anniversaryDate" control={control} render={({ field }) => <CommonInput {...field} type="text" label="Anniversary Date" value={formatToDayMonth(field.value)} disabled />} />
@@ -1095,7 +1107,6 @@ const ReportingForm = () => {
                 />
               </Grid2>
 
-              {/* Range From */}
               <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
                 <Controller
                   name="rangeFrom"
