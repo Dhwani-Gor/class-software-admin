@@ -337,27 +337,13 @@ const MachineryHullManager = ({ mode, shipId }) => {
                     const currentSections = sectionType === "machinery" ? MACHINERY_SECTIONS : HULL_SECTIONS;
                     const sectionConfig = currentSections[section.sectionNumber];
 
-                    // Group items by row to get unique rows only
                     const rowMap = new Map();
 
                     section.items.forEach((item) => {
-                        // Extract rowId from generatedCode
-                        // Format: SSPPRROOcc where:
-                        // SS = section (2 digits)
-                        // PP = position (1-2 chars: C, S, SL, etc.)
-                        // RR = row (2 digits)
-                        // OO = occurrence (2 digits)
+
                         const generatedCode = item.generatedCode || "";
-
-                        // Position can be 1 or 2 characters (C, S, SL, etc.)
-                        // So we need to find where the row ID starts
-                        // Remove section number (first 2 chars)
-                        const afterSection = generatedCode.substring(2);
-
-                        // Find the row ID: it's the 2 digits before the last 2 digits
-                        // Last 2 digits = occurrence
-                        // Previous 2 digits = row ID
-                        const rowId = afterSection.substring(afterSection.length - 4, afterSection.length - 2);
+                        const afterPosition = generatedCode.substring(3);
+                        const rowId = afterPosition.substring(0, 2);
 
                         if (!rowMap.has(rowId)) {
                             rowMap.set(rowId, []);
