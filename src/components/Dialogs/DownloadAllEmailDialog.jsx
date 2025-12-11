@@ -20,7 +20,7 @@ import { toast } from "react-toastify"
 import CommonButton from "../CommonButton";
 import { useAuth } from "@/hooks/useAuth";
 
-const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, createdUserEmail }) => {
+const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, createdUserEmail, prefix }) => {
     const shipName = [
         ...new Set(
             selectedItems?.map(
@@ -86,7 +86,7 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, crea
 
         try {
             const zip = new JSZip();
-            const folderName = zipType === "reports" ? "MCBG Reports" : "MCBG Certificates";
+            const folderName = zipType === "reports" ? `${prefix} Reports` : `${prefix} Certificates`;
             const folder = zip.folder(folderName);
 
             const selectedIds = selectedItems.map((s) => String(s.id));
@@ -274,7 +274,7 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, crea
                                 mb: 1,
                             }}
                         >
-                            {zipType === "reports" ? "MCBG Reports.zip" : "MCBG Certificates.zip"}
+                            {zipType === "reports" ? `${prefix} Reports.zip` : `${prefix} Certificates.zip`}
                         </Typography>
                     </Box>
                 </Stack>

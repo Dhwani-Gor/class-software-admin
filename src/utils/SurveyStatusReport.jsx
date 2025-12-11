@@ -25,6 +25,7 @@ const TextEditor = ({ id }) => {
   const [systemVariables, setSystemVariables] = useState();
   const companyName = systemVariables?.data?.find((item) => item.name === "company_name")?.information || "-";
   const companyLogo = systemVariables?.data?.find((item) => item.name === "company_logo")?.information || "-";
+  const prefix = systemVariables?.data?.find((item) => item.name === "report_no_prefix")?.information || "-";
 
   useEffect(() => {
     getSystemVariables();
@@ -512,7 +513,7 @@ const TextEditor = ({ id }) => {
 
         const disclaimerTitle = "Disclaimer :-";
         const disclaimerText =
-          "Information provided in ship survey status by MCBG Class is solely provided for the convenience of Owners or Managers as a guide to their ship's survey status and in no way substitute for advice from MCBG Class. Neither MCBG Class, nor any of its employees, assures any responsibility for the accuracy or legal liability for any loss or damage that may be sustained as a result of using their services.";
+          `Information provided in ship survey status by ${prefix} Class is solely provided for the convenience of Owners or Managers as a guide to their ship's survey status and in no way substitute for advice from ${prefix} Class. Neither ${prefix} Class, nor any of its employees, assures any responsibility for the accuracy or legal liability for any loss or damage that may be sustained as a result of using their services.`;
 
         const textX = 50;
         const footerGap = 60;
@@ -568,7 +569,7 @@ const TextEditor = ({ id }) => {
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes], { type: "application/pdf" });
 
-      const fileName = `MCBG Survey Status-${clientData?.shipName}.pdf`;
+      const fileName = `${prefix} Survey Status-${clientData?.shipName}.pdf`;
       const file = new File([blob], fileName, { type: "application/pdf" });
 
       const formData = new FormData();
@@ -1440,7 +1441,7 @@ ${certificatesTableHtml}
 <h2 style="margin-top: 40px; color:black">Surveys/ Audits/ Inspections Status</h2>
 <p class="subtitle">
 The Conditions of Class / Statutory Status below shows the information available at the time the report is printed.
-This may not indicate certificates issued, surveys carried out or conditions of class / recommendations issued but not yet reported to MCBG Head Office.
+This may not indicate certificates issued, surveys carried out or conditions of class / recommendations issued but not yet reported to ${prefix} Head Office.
 </p>
 
 `;

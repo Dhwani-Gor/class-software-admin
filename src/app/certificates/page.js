@@ -67,6 +67,8 @@ const Certificates = () => {
   const [selectedCheckList, setSelectedCheckList] = useState(null);
   const [checkListPreview, setCheckListPreview] = useState(false);
   const [checkListPreviewFile, setChecklistPreviewFile] = useState();
+  const [systemVariables, setSystemVariables] = useState();
+  const prefix = systemVariables?.data?.find((item) => item.name === "report_no_prefix")?.information || "-";
 
   const handleSort = (key) => {
     setSortConfig((prev) => {
@@ -159,6 +161,20 @@ const Certificates = () => {
     }
   };
 
+  const getSystemVariables = async () => {
+    try {
+      const response = await getAllSystemVariables();
+      if (response?.status === 200) {
+        setSystemVariables(response?.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    getSystemVariables();
+  }, []);
   const getCheckList = async () => {
     setLoading(true);
     try {
@@ -359,7 +375,7 @@ const Certificates = () => {
   const handleBulkDownload = async () => {
     if (!certificatesList.length) return;
     const zip = new JSZip();
-    const folderName = "MCBG Certificates";
+    const folderName = `${prefix} Certificates`;
     const folder = zip.folder(folderName);
     setLoading(true);
     try {
@@ -387,7 +403,7 @@ const Certificates = () => {
     if (selectedIds.length === 0) return;
 
     const zip = new JSZip();
-    const folderName = "MCBG Certificates";
+    const folderName = `${prefix} Certificates`;
     const folder = zip.folder(folderName);
     setLoading(true);
 
@@ -422,7 +438,7 @@ const Certificates = () => {
   const handleBulkDownloadReports = async () => {
     if (!reportsList.length) return;
     const zip = new JSZip();
-    const folder = zip.folder("MCBG Reports");
+    const folder = zip.folder(`${prefix} Reports`);
     setLoading(true);
     try {
       await Promise.all(
@@ -439,7 +455,7 @@ const Certificates = () => {
           // Determine proper filename format (same as individual download)
           const fileName = (() => {
             if (/status[_ ]?report/i.test(file)) {
-              return `MCBG Survey Status - ${shipName}.pdf`;
+              return `${prefix} Survey Status - ${shipName}.pdf`;
             }
             if (/survey[_ ]?report/i.test(file)) {
               return `Survey Report${reportNo ? ` - ${reportNo}` : ""} - ${shipName}.pdf`;
@@ -454,7 +470,7 @@ const Certificates = () => {
         })
       );
       const content = await zip.generateAsync({ type: "blob" });
-      saveAs(content, "MCBG Reports.zip");
+      saveAs(content, `${prefix} Reports.zip`);
       toast.success("All reports downloaded successfully as a zip!");
     } catch (error) {
       console.error(error);
@@ -652,8 +668,9 @@ const Certificates = () => {
                               if (!row.generatedDoc) return "N/A";
 
                               const fileName = row.generatedDoc.split("/").pop();
+                              const regex = new RegExp(`${prefix}[A-Z0-9]+`, "gi");
+                              const matches = file.match(regex);
 
-                              const matches = fileName.match(/MCBG?[A-Z0-9]+/gi);
                               const reportNo = matches ? matches[matches.length - 1] : null;
 
                               if (/status[_ ]?report/i.test(fileName)) {
@@ -683,14 +700,15 @@ const Certificates = () => {
                                     if (!row.generatedDoc) return;
 
                                     const file = row.generatedDoc.split("/").pop();
-                                    const matches = file.match(/MCB[A-Z0-9]+/gi);
+                                    const regex = new RegExp(`${prefix}[A-Z0-9]+`, "gi");
+                                    const matches = file.match(regex);
                                     const reportNo = matches ? matches[matches.length - 1] : null;
                                     const shipName = row.client?.shipName || row.ship?.name || "Unknown Ship";
 
                                     // Determine proper filename format
                                     const fileName = (() => {
                                       if (/status[_ ]?report/i.test(file)) {
-                                        return `MCBG Survey Status - ${shipName}.pdf`;
+                                        return `${prefix} Survey Status - ${shipName}.pdf`;
                                       }
                                       if (/survey[_ ]?report/i.test(file)) {
                                         return `Survey Report${reportNo ? ` - ${reportNo}` : ""} - ${shipName}.pdf`;
@@ -1069,7 +1087,7 @@ const Certificates = () => {
       <DocumentPreview open={openPreviewModal} fileUrl={previewFile} onClose={() => setOpenPreviewModal(false)} />
       <CommonConfirmationDialog open={openDialog} onCancel={handleCancelDelete} onConfirm={handleConfirmDelete} title="Are you sure you want to delete this survey status report?" description="This action cannot be undone." />
       <ShowAmdRemarksDialog open={openAmdRemarks} onClose={() => setOpenAmdRemarks(false)} reportDetailId={selectedReportId} hasArchivePermission={hasArchivePermission} selectedFilter={selectedFilter} />
-      <SendEmailDialog open={openEmailDialog} onClose={() => setOpenEmailDialog(false)} selectedItems={resolveSelectedRows()} zipType={zipType} allItems={selectedFilter === "Certificates" ? certificatesList : selectedFilter === "Archive Documents" ? certificatesList : selectedFilter === "Reports" ? reportsList : []} createdUserEmail={createdUserEmail} />
+      <SendEmailDialog open={openEmailDialog} onClose={() => setOpenEmailDialog(false)} selectedItems={resolveSelectedRows()} zipType={zipType} allItems={selectedFilter === "Certificates" ? certificatesList : selectedFilter === "Archive Documents" ? certificatesList : selectedFilter === "Reports" ? reportsList : []} createdUserEmail={createdUserEmail} prefix={prefix} />
       <ChecklistPreviewModal
         open={checkListPreview}
         onClose={() => {
