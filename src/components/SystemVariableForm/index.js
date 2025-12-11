@@ -279,8 +279,8 @@ const SystemVariableForm = ({ mode = "create", variableId = null }) => {
           {formData.type === "text" && (
             <Box>
               <CommonInput style={{ marginBottom: "16px" }} label="Information" placeholder="Enter information" fullWidth multiline value={formData.information} onChange={(e) => handleInputChange("information", e.target.value)} error={!!errors.information} helperText={errors.information} required />
-              <CommonInput style={{ marginBottom: "16px" }} label="Subject" placeholder="Enter subject" fullWidth value={formData.subject} onChange={(e) => handleInputChange("subject", e.target.value)} error={!!errors.subject} helperText={errors.subject} required />
-              <CommonInput label="Message" placeholder="Enter message" fullWidth multiline value={formData.message} onChange={(e) => handleInputChange("message", e.target.value)} error={!!errors.message} helperText={errors.message} required />
+              <CommonInput style={{ marginBottom: "16px" }} label="Subject" placeholder="Enter subject" fullWidth value={formData.subject} onChange={(e) => handleInputChange("subject", e.target.value)} error={!!errors.subject} helperText={errors.subject} />
+              <CommonInput label="Message" placeholder="Enter message" fullWidth multiline value={formData.message} onChange={(e) => handleInputChange("message", e.target.value)} error={!!errors.message} helperText={errors.message} />
             </Box>
           )}
 
