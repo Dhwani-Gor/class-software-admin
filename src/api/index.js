@@ -1233,3 +1233,43 @@ export const getSingleChecklist = async (id) => {
   }
   return result;
 };
+
+export const getNotificationList = async () => {
+  try {
+    return await axiosInstance.get("/notification");
+  } catch (error) {
+    return error;
+  }
+};
+
+export const deleteNotification = async (id) => {
+  try {
+    return await axiosInstance.delete(`/notification/${id}`);
+  } catch (error) {
+    return error;
+  }
+};
+
+export const deleteAllNotification = async (id) => {
+  try {
+    return await axiosInstance.delete(`/notification/${id}?type=all`);
+  } catch (error) {
+    return error;
+  }
+};
+
+export const markNotificationRead = async (id) => {
+  try {
+    return await axiosInstance.get(`/notification/read/${id}`);
+  } catch (error) {
+    return error;
+  }
+};
+
+export const readAllNotification = async (id) => {
+  try {
+    return await axiosInstance.get(`/notification/read?type=all`);
+  } catch (error) {
+    return error;
+  }
+};

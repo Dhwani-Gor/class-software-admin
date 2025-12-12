@@ -1,6 +1,6 @@
 "use client";
-import React, { useState } from "react";
-import { Box, AppBar, Toolbar, IconButton, Typography, Divider, Menu, MenuItem, Avatar, Tooltip } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { Box, AppBar, Toolbar, IconButton, Typography, Badge, List, ListItem, ListItemText, ListItemSecondaryAction, Button, Divider, Menu, MenuItem, Avatar, Tooltip } from "@mui/material";
 import { Stack, styled } from "@mui/system";
 import MenuIcon from "@mui/icons-material/Menu";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -11,6 +11,10 @@ import Logo from "../../public/assets/logo.svg";
 import Image from "next/image";
 import SidebarComponent from "./Sidebar";
 import { useAuth } from "@/hooks/useAuth";
+import { deleteAllNotification, deleteNotification, getNotificationList, markNotificationRead, readAllNotification } from "@/api";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import DeleteIcon from "@mui/icons-material/Delete";
+import DoneAllIcon from "@mui/icons-material/DoneAll";
 
 const MainContent = styled(Box)(({ theme }) => ({
   flexGrow: 1,
@@ -36,9 +40,42 @@ const Layout = ({ children }) => {
   const userInfo = useSelector((state) => state.auth.userInfo);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [notifAnchor, setNotifAnchor] = useState(null);
 
   const toggleSidebar = () => {
     setSidebarOpen(!isSidebarOpen);
+  };
+
+  useEffect(() => {
+    loadNotifications();
+  }, []);
+
+  const loadNotifications = async () => {
+    const res = await getNotificationList();
+    console.log(res, "res");
+
+    if (res?.data?.success) {
+      setNotifications(res.data.data);
+    }
+  };
+
+  const handleNotifClick = (event) => {
+    setNotifAnchor(event.currentTarget);
+  };
+
+  const handleNotifClose = () => {
+    setNotifAnchor(null);
+  };
+
+  const handleDelete = async (id) => {
+    await deleteNotification(id);
+    loadNotifications();
+  };
+
+  const handleMarkRead = async (id) => {
+    await markNotificationRead(id);
+    loadNotifications();
   };
 
   const handleMenuClick = (event) => {
@@ -68,6 +105,133 @@ const Layout = ({ children }) => {
           </Box>
 
           <Box display="flex" alignItems="center">
+            {/* 🔔 Notification Icon */}
+            <IconButton color="inherit" onClick={handleNotifClick}>
+              <Badge badgeContent={notifications?.unreadCount || 0} color="error">
+                <NotificationsIcon />
+              </Badge>
+            </IconButton>
+
+            {/* 🔔 Notification Dropdown */}
+            <Menu anchorEl={notifAnchor} open={Boolean(notifAnchor)} onClose={handleNotifClose} PaperProps={{ style: { width: 380, maxHeight: 460 } }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" px={2} py={1}>
+                <Typography variant="h6" fontWeight={600}>
+                  Notifications
+                </Typography>
+
+                {/* Action Buttons */}
+                <Box display="flex" gap={1}>
+                  <Tooltip title="Mark all as read">
+                    <IconButton
+                      size="small"
+                      onClick={async () => {
+                        await readAllNotification(userInfo?.id);
+                        loadNotifications();
+                      }}
+                    >
+                      <DoneAllIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+
+                  <Tooltip title="Delete all">
+                    <IconButton
+                      size="small"
+                      onClick={async () => {
+                        await deleteAllNotification(userInfo?.id);
+                        loadNotifications();
+                      }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </Box>
+
+              <Divider />
+
+              {/* <List sx={{ maxHeight: 390, overflowY: "auto" }}>
+                {notifications?.data?.length === 0 && (
+                  <ListItem>
+                    <ListItemText primary="No notifications" />
+                  </ListItem>
+                )} */}
+
+              {notifications?.data?.map((item) => (
+                <ListItem
+                  key={item.id}
+                  sx={{
+                    background: item.isRead ? "transparent" : "#e8f4ff",
+                    borderBottom: "1px solid #eee",
+                  }}
+                >
+                  <ListItemText
+                    primary={item.title}
+                    secondary={
+                      <>
+                        {item.body}
+                        <br />
+                        <Typography variant="caption" color="textSecondary">
+                          {new Date(item.createdAt).toLocaleString()}
+                        </Typography>
+                      </>
+                    }
+                    onClick={() => {
+                      if (item.webRedirectUrl) window.open(item.webRedirectUrl, "_blank");
+                      handleMarkRead(item.id);
+                    }}
+                    sx={{ cursor: "pointer" }}
+                  />
+
+                  <ListItemSecondaryAction sx={{ display: "flex", gap: 1 }}>
+                    {!item.isRead && (
+                      <Tooltip title="Mark as read">
+                        <IconButton size="small" onClick={() => handleMarkRead(item.id)}>
+                          <DoneAllIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+
+                    <Tooltip title="Delete">
+                      <IconButton size="small" onClick={() => handleDelete(item.id)}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              ))}
+              {/* </List> */}
+            </Menu>
+
+            {/* <Menu anchorEl={notifAnchor} open={Boolean(notifAnchor)} onClose={handleNotifClose} PaperProps={{ style: { width: 350, maxHeight: 400 } }}> */}
+            {/* <List>
+                {notifications.length === 0 && (
+                  <ListItem>
+                    <ListItemText primary="No notifications" />
+                  </ListItem>
+                )} */}
+
+            {notifications.map((item) => (
+              <ListItem key={item.id} sx={{ background: item.isRead ? "transparent" : "#e3f2fd" }}>
+                <ListItemText primary={item.title} secondary={item.message} />
+
+                <ListItemSecondaryAction>
+                  {/* Mark Read */}
+                  {!item.isRead && (
+                    <IconButton edge="end" onClick={() => handleMarkRead(item.id)}>
+                      <DoneAllIcon fontSize="small" />
+                    </IconButton>
+                  )}
+
+                  {/* Delete */}
+                  <IconButton edge="end" onClick={() => handleDelete(item.id)}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </ListItemSecondaryAction>
+              </ListItem>
+            ))}
+            {/* </List> */}
+            {/* </Menu> */}
+
             <Tooltip title="User Menu">
               <Avatar
                 onClick={handleMenuClick}

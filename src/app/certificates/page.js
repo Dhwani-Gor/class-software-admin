@@ -448,7 +448,8 @@ const Certificates = () => {
           const blob = await res.blob();
 
           const file = report.generatedDoc.split("/").pop();
-          const matches = file.match(/MCB[A-Z0-9]+/gi);
+          const regex = new RegExp(`${prefix}[A-Z0-9]+`, "gi");
+          const matches = file.match(regex);
           const reportNo = matches ? matches[matches.length - 1] : null;
           const shipName = report.client?.shipName || report.ship?.name || "Unknown Ship";
 
@@ -669,6 +670,8 @@ const Certificates = () => {
 
                               const fileName = row.generatedDoc.split("/").pop();
                               const regex = new RegExp(`${prefix}[A-Z0-9]+`, "gi");
+                              const file = row.generatedDoc.split("/").pop();
+
                               const matches = file.match(regex);
 
                               const reportNo = matches ? matches[matches.length - 1] : null;
