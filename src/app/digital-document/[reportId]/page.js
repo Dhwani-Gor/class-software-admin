@@ -39,7 +39,7 @@ const DigitalDocument = ({ params }) => {
   };
 
   const getCertificateStatus = (validityDate) => {
-    if (revoked && revoked.trim() !== "") {
+    if (revoked == "revoked" && revoked.trim() !== "") {
       return {
         status: "REVOKED",
         color: "#ff9800",
