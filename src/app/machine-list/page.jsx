@@ -61,7 +61,7 @@ const MachineList = () => {
         dueDate: "",
         assignmentDate: "",
         postponedDate: "",
-        xMark: "",
+        status: "",
         positionCode: "",
         machineSection: ""
     });
@@ -80,7 +80,7 @@ const MachineList = () => {
             dueDate: moment(item.dueDate).format("YYYY-MM-DD"),
             assignmentDate: moment(item.assignmentDate).format("YYYY-MM-DD"),
             postponedDate: moment(item.postponedDate).format("YYYY-MM-DD"),
-            xMark: item.xMark || "",
+            status: item.status || "",
             positionCode: item.positionCode || "",
             machineSection: sectionKey     // ← STORE SECTION KEY
         });
@@ -102,7 +102,7 @@ const MachineList = () => {
                 dueDate: editForm.dueDate,
                 assignmentDate: editForm.assignmentDate,
                 postponedDate: editForm.postponedDate,
-                xMark: editForm.xMark,
+                status: editForm.status,
                 positionCode: editForm.positionCode
             }
         };
@@ -479,9 +479,9 @@ const MachineList = () => {
                     {/* <FormControl fullWidth sx={{ mt: 2 }}>
                         <Typography>X Mark</Typography>
                         <Select
-                            value={editForm.xMark}
+                            value={editForm.status}
                             onChange={(e) =>
-                                setEditForm({ ...editForm, xMark: e.target.value })
+                                setEditForm({ ...editForm, status: e.target.value })
                             }
                         >
                             <MenuItem value="Y">Y</MenuItem>
@@ -492,9 +492,9 @@ const MachineList = () => {
                     <FormControl fullWidth sx={{ mt: 2, mb: 2 }}>
                         <Typography>Status</Typography>
                         <Select
-                            value={editForm.xMark}
+                            value={editForm.status}
                             onChange={(e) =>
-                                setEditForm({ ...editForm, xMark: e.target.value })
+                                setEditForm({ ...editForm, status: e.target.value })
                             }
                         >
                             <MenuItem value="credited">Credited</MenuItem>

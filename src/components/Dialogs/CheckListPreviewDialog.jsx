@@ -13,10 +13,10 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import DownloadIcon from '@mui/icons-material/Download';
-import { getAllSystemVariables } from '@/api';
 import CommonButton from '../CommonButton';
+import html2pdf from 'html2pdf.js';
+import { getAllSystemVariables } from '@/api';
 
-// Helper function to extract ship details from HTML
 const extractShipDetailsFromHTML = (htmlString) => {
   try {
     const parser = new DOMParser();
@@ -29,13 +29,12 @@ const extractShipDetailsFromHTML = (htmlString) => {
       portOfSurvey: ''
     };
 
-    // Extract from table cells
     const tables = doc.querySelectorAll('table');
     if (tables.length > 0) {
       const firstTable = tables[0];
       const cells = firstTable.querySelectorAll('td');
 
-      cells.forEach(cell => {
+      cells.forEach((cell) => {
         const text = cell.textContent || '';
 
         if (text.includes('Name of Ship:')) {
@@ -74,222 +73,197 @@ const extractShipDetailsFromHTML = (htmlString) => {
 
 export const generateChecklistHTML = (item, companyName, companyLogo) => {
   const originalHTML = item?.checkListData?.checkList || '';
+  const surveyType = item?.typeOfSurveyName || "Survey";
+  const reportTitle = "Survey Checklist Report";
 
   return `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Survey Checklist Report</title>
+  <title>${reportTitle}</title>
   <style>
     @page {
-      margin: 20mm;
       size: A4;
+      margin: 10mm;
     }
-    
+
     * {
-      box-sizing: border-box;
-    }
-    
-    body { 
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
-      padding: 40px;
-      color: #000;
-      background: white;
-      line-height: 1.6;
-      font-size: 14px;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
     }
     
-    /* Header Section - Only show if company data exists */
+    body {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #000;
+      background: #ffffff;
+      width: 210mm;
+      margin: 0 auto;
+    }
+
+     /* Prevent page breaks within elements */
+    table {
+      page-break-inside: auto;
+    }
+    
+    tr {
+      page-break-inside: avoid;
+      page-break-after: auto;
+    }
+    
+    thead {
+      display: table-header-group;
+    }
+    
+    tfoot {
+      display: table-footer-group;
+    }
+
+    img, h1, h2, h3, h4, h5, h6 {
+      page-break-inside: avoid;
+      page-break-after: avoid;
+    }
+
+    p, li, div {
+      page-break-inside: avoid;
+    }
+
     .document-header {
+      padding: 20px;
+      margin-bottom: 20px;
       border-bottom: 3px solid #1976d2;
-      padding-bottom: 20px;
-      margin-bottom: 30px;
       ${!companyName && !companyLogo ? 'display: none;' : ''}
     }
-    
-    .header-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 0;
+
+    .header-layout {
+      display: table;
+      width: 100%;
     }
-    
+
+    .header-left, .header-center, .header-right {
+      display: table-cell;
+      vertical-align: middle;
+    }
+
+    .header-left, .header-right {
+      width: 20%;
+    }
+
+    .header-center {
+      width: 60%;
+      text-align: center;
+    }
+
     .company-logo {
-      max-height: 80px;
-      max-width: 140px;
-      object-fit: contain;
-      flex-shrink: 0;
+      max-height: 70px;
+      max-width: 120px;
     }
-    
-    .company-info {
-      text-align: right;
-      flex: 1;
-    }
-    
-    .company-name {
-      font-size: 24px;
+
+    .survey-title {
+      font-size: 22px;
       font-weight: 700;
       color: #1976d2;
-      margin: 0;
+      margin-bottom: 5px;
     }
-    
-    /* Content Section */
-    .content-section {
-      margin-top: 0;
-    }
-    
-    img {
-      max-width: 100%;
-      height: auto;
-    }
-    
-    p { 
-      margin: 10px 0;
-      font-size: 14px;
-    }
-    
-    h1 {
-      font-size: 18px;
-      margin: 15px 0;
+
+    .report-title {
+      font-size: 16px;
       font-weight: 600;
+      color: #333;
     }
-    
-    h2, h3, h4 {
-      margin: 12px 0;
-      font-weight: 600;
+
+    .content-wrapper {
+      padding: 0 20px 20px 20px;
     }
-    
-    strong { 
-      font-weight: 600;
-      color: #212529;
-    }
-    
-    em {
-      font-style: italic;
-    }
-    
-    /* Table Styles */
+
     table { 
       width: 100%; 
       border-collapse: collapse; 
-      margin: 20px 0;
-      background: white;
+      margin: 15px 0; 
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     
-    table, th, td { 
-      border: 1px solid #dee2e6;
+    th, td { 
+      border: 1px solid #ddd; 
+      padding: 8px; 
+      text-align: left;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     
     th { 
-      background: #f8f9fa;
-      padding: 12px 10px;
-      font-weight: 600;
-      text-align: left;
-      color: #212529;
-      font-size: 13px;
+      font-weight: 600; 
     }
     
-    td { 
-      padding: 10px;
-      font-size: 13px;
-      color: #495057;
-      vertical-align: top;
+    tbody tr:nth-child(even) { 
     }
-    
-    tbody tr:nth-child(even) {
-      background-color: #fafafa;
+
+    /* Prevent awkward splits inside common blocks */
+    table, tr, td, th, img, p, div {
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
-    
-    /* Lists */
-    ol, ul {
-      margin: 15px 0;
-      padding-left: 25px;
+
+    /* Prevent awkward splits inside common blocks */
+    table, tr, td, th, img, p, div, ul, ol, li, h1, h2, h3, h4, h5, h6 {
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
-    
-    li {
-      margin: 8px 0;
+
+    p, li {
       line-height: 1.6;
-    }
-    
-    sup {
-      vertical-align: super;
-      font-size: smaller;
-    }
-    
-    /* Print Styles */
-    @media print {
-      body {
-        padding: 20px;
-      }
-      
-      .document-header {
-        page-break-after: avoid;
-      }
-      
-      table {
-        page-break-inside: avoid;
-      }
-      
-      tr {
-        page-break-inside: avoid;
-      }
+      page-break-after: avoid;
+      page-break-before: avoid;
+      break-after: avoid-page;
+      break-before: avoid-page;
     }
   </style>
 </head>
 <body>
   ${companyName || companyLogo ? `
-  <!-- Document Header -->
   <div class="document-header">
-    <div class="header-top">
-      ${companyLogo ? `<img src="${companyLogo}" alt="Company Logo" class="company-logo" />` : ''}
-      ${companyName ? `
-      <div class="company-info">
-        <h1 class="company-name">${companyName}</h1>
+    <div class="header-layout">
+      <div class="header-left">
+        ${companyLogo ? `<img src="${companyLogo}" class="company-logo" />` : ''}
       </div>
-      ` : ''}
+      <div class="header-center">
+        <div class="survey-title">${surveyType}</div>
+        <div class="report-title">${reportTitle}</div>
+      </div>
+      <div class="header-right"></div>
     </div>
   </div>
   ` : ''}
   
-  <!-- Main Content -->
-  <div class="content-section">
+  <div class="content-wrapper">
     ${originalHTML}
   </div>
-
 </body>
-</html>`;
+</html>
+`;
 };
 
-
-const cleanHTMLContent = (htmlString) => {
-  try {
-    // Remove [Logo] and [Class name] placeholders
-    let cleaned = htmlString.replace(/\[Logo\]/gi, '');
-    cleaned = cleaned.replace(/\[Class name\]/gi, '');
-    return cleaned;
-  } catch (error) {
-    console.error('Error cleaning HTML:', error);
-    return htmlString;
-  }
-};
-
-// Preview Modal Component
-export const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, checklistData }) => {
+export const ChecklistPreviewModal = ({
+  open,
+  onClose,
+  previewUrl: initialPreviewUrl,
+  checklistData
+}) => {
   const [downloading, setDownloading] = useState(false);
   const [companyName, setCompanyName] = useState('');
   const [companyLogo, setCompanyLogo] = useState('');
   const [loading, setLoading] = useState(true);
   const [previewUrl, setPreviewUrl] = useState(initialPreviewUrl);
-  console.log(previewUrl, "preview url")
 
   useEffect(() => {
     if (open && checklistData) {
       getSystemVariables();
     }
   }, [open, checklistData]);
-
 
   const getSystemVariables = async () => {
     try {
@@ -298,22 +272,21 @@ export const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPrevie
 
       if (response?.status === 200) {
         const data = response?.data?.data;
-
         const nameVar = data.find((item) => item.name === "company_name");
         const logoVar = data.find((item) => item.name === "company_logo");
 
         const fetchedName = nameVar?.information || '';
         const fetchedLogo = logoVar?.information || '';
 
-        setCompanyName(fetchedName);
-        setCompanyLogo(fetchedLogo);
+        const logoAsDataUri = await convertImageToBase64(fetchedLogo);
 
-        // Regenerate HTML with company data
+        setCompanyName(fetchedName);
+        setCompanyLogo(logoAsDataUri || fetchedLogo);
+
         if (checklistData) {
-          const html = generateChecklistHTML(checklistData, fetchedName, fetchedLogo);
+          const html = generateChecklistHTML(checklistData, fetchedName, logoAsDataUri || fetchedLogo);
           const blob = new Blob([html], { type: 'text/html' });
 
-          // Revoke old URL if exists
           if (previewUrl && previewUrl !== initialPreviewUrl) {
             URL.revokeObjectURL(previewUrl);
           }
@@ -321,11 +294,9 @@ export const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPrevie
           const url = URL.createObjectURL(blob);
           setPreviewUrl(url);
         }
-      } else {
-        console.warn("API call returned status:", response?.status);
       }
     } catch (error) {
-      console.error("Error fetching system variables:", error);
+      console.error("Error:", error);
     } finally {
       setLoading(false);
     }
@@ -340,7 +311,6 @@ export const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPrevie
       const date = new Date().toISOString().split('T')[0];
       const filename = `Survey_Checklist_${shipName}_${reportNo}_${date}.html`;
 
-      // Generate fresh HTML with current company data for download
       const html = generateChecklistHTML(checklistData, companyName, companyLogo);
       const blob = new Blob([html], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
@@ -352,11 +322,160 @@ export const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPrevie
       link.click();
       document.body.removeChild(link);
 
-      // Clean up the temporary URL
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Download failed:', error);
-      alert('Failed to download the report. Please try again.');
+      console.error('Error downloading:', error);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const convertImageToBase64 = (url) => {
+    return new Promise((resolve) => {
+      if (!url) {
+        resolve(null);
+        return;
+      }
+
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          const dataURL = canvas.toDataURL('image/png');
+          resolve(dataURL);
+        } catch (error) {
+          console.error('Error converting image:', error);
+          resolve(null);
+        }
+      };
+
+      img.onerror = () => {
+        console.error('Error loading image:', url);
+        resolve(null);
+      };
+
+      img.src = url;
+    });
+  };
+
+  const handleDownloadPDF = async () => {
+    let element = null;
+
+    try {
+      setDownloading(true);
+
+      const originalHTML = checklistData?.checkListData?.checkList || '';
+
+      if (!originalHTML || originalHTML.trim().length === 0) {
+        alert('No content available to generate PDF');
+        setDownloading(false);
+        return;
+      }
+
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'absolute';
+      iframe.style.left = '-9999px';
+      iframe.style.width = '210mm'; // A4 width
+      iframe.style.height = '297mm'; // A4 height
+      iframe.style.background = '#ffffff';
+      document.body.appendChild(iframe);
+
+      // Generate the full HTML
+      const fullHTML = generateChecklistHTML(checklistData, companyName, companyLogo);
+
+      // Write HTML to iframe
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+      iframeDoc.open();
+      iframeDoc.write(fullHTML);
+      iframeDoc.close();
+      iframeDoc.documentElement.style.background = '#ffffff';
+      iframeDoc.body.style.background = '#ffffff';
+
+      // Wait for iframe to load completely
+      await new Promise((resolve) => {
+        iframe.onload = resolve;
+        setTimeout(resolve, 1000); // Fallback timeout
+      });
+
+      // Wait for images to load
+      const images = iframeDoc.getElementsByTagName('img');
+      if (images.length > 0) {
+        await Promise.all(
+          Array.from(images).map(img => {
+            if (img.complete) return Promise.resolve();
+            return new Promise(resolve => {
+              img.onload = resolve;
+              img.onerror = resolve;
+              setTimeout(resolve, 2000);
+            });
+          })
+        );
+      }
+
+      // Additional wait for layout
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const shipName = checklistData?.client?.shipName || 'Unknown';
+      const reportNo = checklistData?.journal?.journalTypeId || 'Report';
+      const date = new Date().toISOString().split('T')[0];
+      const fileName = `Survey_Checklist_${shipName}_${reportNo}_${date}.pdf`;
+
+      // Get the body from iframe for PDF generation
+      const content = iframeDoc.body;
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: fileName,
+        image: {
+          type: 'jpeg',
+          quality: 1
+        },
+        html2canvas: {
+          scale: 3,
+          useCORS: true,
+          logging: false,
+          allowTaint: false,
+          backgroundColor: '#ffffff',
+          scrollY: 0,
+          scrollX: 0,
+          letterRendering: true,
+          removeContainer: false,
+          imageTimeout: 0,
+          windowWidth: 794,
+          windowHeight: iframeDoc.documentElement.scrollHeight
+        },
+        jsPDF: {
+          unit: 'mm',
+          format: 'a4',
+          orientation: 'portrait',
+          compress: false
+        },
+        pagebreak: {
+          mode: ['css', 'legacy'],
+          before: '.page-break-before',
+          after: '.page-break-after',
+          avoid: ['tr', 'img', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']
+        }
+      };
+
+      // Generate PDF from iframe content
+      await html2pdf().set(opt).from(content).save();
+
+      // Cleanup
+      document.body.removeChild(iframe);
+
+    } catch (err) {
+      console.error("PDF Error:", err);
+      alert('Error generating PDF: ' + err.message);
+
+      if (element && element.parentNode) {
+        document.body.removeChild(element);
+      }
     } finally {
       setDownloading(false);
     }
@@ -368,110 +487,55 @@ export const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPrevie
       onClose={onClose}
       maxWidth="lg"
       fullWidth
-      PaperProps={{
-        sx: {
-          height: '90vh',
-          maxHeight: '90vh'
-        }
-      }}
+      PaperProps={{ sx: { height: '90vh', maxHeight: '90vh' } }}
     >
-      <DialogTitle sx={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderBottom: '1px solid #e0e0e0',
-        pr: 1,
-        py: 2
-      }}>
-        <Typography variant="h6" component="div">
-          Survey Checklist Report Preview
-        </Typography>
+      <DialogTitle
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          borderBottom: '1px solid #e0e0e0'
+        }}
+      >
+        <Typography variant="h6">Survey Checklist Report Preview</Typography>
+
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Tooltip title="Download Report">
-            <IconButton
-              onClick={handleDownload}
-              disabled={downloading || loading}
-              color="primary"
-              size="medium"
-            >
-              {downloading ? (
-                <CircularProgress size={24} />
-              ) : (
-                <DownloadIcon />
-              )}
+          <Tooltip title="Download HTML">
+            <IconButton onClick={handleDownload} disabled={downloading || loading}>
+              <DownloadIcon />
             </IconButton>
           </Tooltip>
-          <IconButton
-            onClick={onClose}
-            size="medium"
-            sx={{
-              '&:hover': {
-                backgroundColor: 'rgba(0, 0, 0, 0.04)'
-              }
-            }}
-          >
+
+          <IconButton onClick={onClose}>
             <CloseIcon />
           </IconButton>
         </Box>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
+      <DialogContent sx={{ p: 0 }}>
         {loading ? (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              flexDirection: 'column',
-              gap: 2
-            }}
-          >
+          <Box sx={{ display: 'flex', justifyContent: 'center', height: '100%', alignItems: 'center' }}>
             <CircularProgress />
-            <Typography color="text.secondary">Loading report...</Typography>
           </Box>
         ) : previewUrl ? (
           <Box
             component="iframe"
             src={previewUrl}
-            sx={{
-              width: '100%',
-              height: '100%',
-              border: 'none'
-            }}
-            title="Checklist Preview"
+            sx={{ width: '100%', height: '100%', border: 'none' }}
           />
         ) : (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              color: 'text.secondary'
-            }}
-          >
-            <Typography>No preview available</Typography>
-          </Box>
+          <Typography>No Preview Available</Typography>
         )}
       </DialogContent>
 
-      <DialogActions sx={{ borderTop: '1px solid #e0e0e0', padding: 2, gap: 1 }}>
+      <DialogActions sx={{ borderTop: '1px solid #e0e0e0' }}>
+        <CommonButton onClick={onClose} variant="outlined" text="Cancel" />
         <CommonButton
-          onClick={onClose}
-          variant="outlined"
-          sx={{ textTransform: 'none' }}
-          text="Cancel"
-        />
-        <CommonButton
-          onClick={handleDownload}
+          onClick={handleDownloadPDF}
           variant="contained"
-          startIcon={downloading ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
+          startIcon={<DownloadIcon />}
           disabled={downloading || loading}
-          sx={{ textTransform: 'none' }}
-          text={downloading ? 'Downloading...' : 'Download Report'}
+          text={downloading ? 'Downloading...' : 'Download PDF'}
         />
-
       </DialogActions>
     </Dialog>
   );

@@ -49,8 +49,8 @@ const MachineryHullManager = ({ mode, shipId }) => {
     const STATIC_ROWS_SECTION_01 = [
         { id: "01", content: "No {cyl} Cyl, Cvr, Pstn, Rod, Vlvs & gears", hasPosition: true, hasFromTo: false },
         { id: "02", content: "No {cyl}, Con Rod, Top end & Guides", hasPosition: true, hasFromTo: false },
-        { id: "03", content: "No {cyl} Crankpin, Bearing & webs", hasPosition: true, hasFromTo: false }
-    ];
+        { id: "03", content: "No {cyl} Crankpin, Bearing & webs", hasPosition: true, hasFromTo: false },
+];
 
     // const generateRowInstances = (sectionNum, row, data, isMachineryList = false) => {
     //     const instances = [];
