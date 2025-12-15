@@ -50,7 +50,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
         { id: "01", content: "No {cyl} Cyl, Cvr, Pstn, Rod, Vlvs & gears", hasPosition: true, hasFromTo: false },
         { id: "02", content: "No {cyl}, Con Rod, Top end & Guides", hasPosition: true, hasFromTo: false },
         { id: "03", content: "No {cyl} Crankpin, Bearing & webs", hasPosition: true, hasFromTo: false },
-];
+    ];
 
     // const generateRowInstances = (sectionNum, row, data, isMachineryList = false) => {
     //     const instances = [];
@@ -157,10 +157,13 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             occurrence: occurrence,
                             positionCode: rowPos,
                             globalPositionCode: globalPos,
+                            postponedDate: data.postponedDate || null,
                             content: hasFromTo ? labelToUse : (row.content?.replace("{cyl}", occurrence) || labelToUse),
                             label: labelToUse,
                             from: hasFromTo ? fromValue : null,
                             to: hasFromTo ? toValue : null,
+                            fromFrameNo: data.isFrom ? data.fromFrameNo : null,
+                            uptoFrameNo: row.isFrom ? data.uptoFrameNo : null
                         });
                     }
                 });
@@ -184,10 +187,13 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         generatedCode: code,
                         occurrence: occurrence,
                         positionCode: rowPos,
+                        postponedDate: data.postponedDate,
                         content: hasFromTo ? labelToUse : (row.content?.replace("{cyl}", occurrence) || labelToUse),
                         label: labelToUse,
                         from: hasFromTo ? fromValue : null,
                         to: hasFromTo ? toValue : null,
+                        fromFrameNo: row.isFrom ? data.fromFrameNo : null,
+                        uptoFrameNo: row.isFrom ? data.uptoFrameNo : null
                     });
                 }
             });
@@ -597,8 +603,8 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 label="From"
                                 disabled={!isChecked}
                                 InputLabelProps={{ shrink: true }}
-                                value={formData[fieldKey]?.from || ""}
-                                onChange={(e) => updateField(sectionType, sectionNum, row.id, "from", e.target.value)}
+                                value={formData[fieldKey]?.fromFrameNo || ""}
+                                onChange={(e) => updateField(sectionType, sectionNum, row.id, "fromFrameNo", e.target.value)}
                             />
                         ) : (
                             <Box sx={{ height: "40px" }} />
@@ -629,9 +635,9 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 label="Upto"
                                 disabled={!isChecked}
                                 InputLabelProps={{ shrink: true }}
-                                value={formData[fieldKey]?.postponedDate || ""}
+                                value={formData[fieldKey]?.uptoFrameNo || ""}
                                 onChange={(e) =>
-                                    updateField(sectionType, sectionNum, row.id, "postponedDate", e.target.value)
+                                    updateField(sectionType, sectionNum, row.id, "uptoFrameNo", e.target.value)
                                 }
                             />
                         ) : (
