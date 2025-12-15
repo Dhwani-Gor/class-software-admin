@@ -1116,6 +1116,7 @@ ${classificationRows}
   <thead>
     <tr style="background-color:#f2f2f2; text-align:left;">
       <th style="padding:6px;">Code</th>
+      <th style="padding:6pxl">Status</th>
       <th style="padding:6px;">Postponed Date</th>
       <th style="padding:6px;">Cycle</th>
       <th style="padding:6px;">Assignment Date</th>
