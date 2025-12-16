@@ -19,7 +19,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Pagination from "@mui/material/Pagination";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import { deleteCheckList, deleteSurveyReport, deleteSurveyStatusReport, getAllChecklist, getAllIssuedDocuments, getAllReports, getJournalsList, getSingleChecklist, markAsRevoked } from "@/api";
+import { deleteCheckList, deleteSurveyReport, deleteSurveyStatusReport, getAllChecklist, getAllIssuedDocuments, getAllReports, getAllSystemVariables, getJournalsList, getSingleChecklist, markAsRevoked } from "@/api";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { Menu } from "@mui/material";
 import SendEmailDialog from "@/components/Dialogs/DownloadAllEmailDialog";
@@ -68,7 +68,7 @@ const Certificates = () => {
   const [checkListPreview, setCheckListPreview] = useState(false);
   const [checkListPreviewFile, setChecklistPreviewFile] = useState();
   const [systemVariables, setSystemVariables] = useState();
-  const prefix = systemVariables?.data?.find((item) => item.name === "report_no_prefix")?.information || "-";
+  const prefix = systemVariables?.find((item) => item.name === "report_no_prefix")?.information || "-";
 
   const handleSort = (key) => {
     setSortConfig((prev) => {
@@ -164,7 +164,7 @@ const Certificates = () => {
   const getSystemVariables = async () => {
     try {
       const response = await getAllSystemVariables();
-      if (response?.status === 200) {
+      if (response?.status === "success") {
         setSystemVariables(response?.data);
       }
     } catch (error) {
@@ -451,7 +451,7 @@ const Certificates = () => {
           const regex = new RegExp(`${prefix}[A-Z0-9]+`, "gi");
           const matches = file.match(regex);
           const reportNo = matches ? matches[matches.length - 1] : null;
-          const shipName = report.client?.shipName || report.ship?.name || "Unknown Ship";
+          const shipName = report.client?.shipName || report.ship?.name || "";
 
           // Determine proper filename format (same as individual download)
           const fileName = (() => {
@@ -917,7 +917,7 @@ const Certificates = () => {
                             </TableCell>
                             <TableCell>{row.activity?.surveyTypes?.name || "N/A"}</TableCell>
                             <TableCell>{formatDate(row.surveyDate)}</TableCell>
-                            <TableCell>{row.reportStatus === "re-classed" ? "Class" : row.reportStatus === "revoked" ? "Revoked" : row.reportStatus || getStatus(row)}</TableCell>
+                            <TableCell>{["re-classed", "class"].includes(row.reportStatus) ? "Valid" : row.reportStatus === "revoked" ? "Revoked" : row.reportStatus || getStatus(row)}</TableCell>
                             <TableCell>
                               <Stack direction="row" spacing={1}>
                                 <Tooltip title="View Document">
@@ -1043,7 +1043,7 @@ const Certificates = () => {
                             </TableCell>
                             <TableCell>{row.activity?.surveyTypes?.name || "N/A"}</TableCell>
                             <TableCell>{formatDate(row.surveyDate)}</TableCell>
-                            <TableCell>{row.reportStatus === "re-classed" ? "Class" : row.reportStatus === "revoked" ? "Revoke" : row.reportStatus || getStatus(row)}</TableCell>
+                            <TableCell>{["re-classed", "class"].includes(row.reportStatus) ? "Valid" : row.reportStatus === "revoked" ? "Revoked" : row.reportStatus || getStatus(row)}</TableCell>
                             <TableCell>
                               <Stack direction="row" spacing={1}>
                                 <Tooltip title="View Document">

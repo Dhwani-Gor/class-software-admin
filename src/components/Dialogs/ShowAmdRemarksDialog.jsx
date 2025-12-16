@@ -25,6 +25,7 @@ import GetAppIcon from "@mui/icons-material/GetApp";
 import { fetchAmdReamrks } from "@/api";
 import { useAuth } from "@/hooks/useAuth";
 import DocumentPreview from "./DocumentPreview";
+import { getAllSystemVariables } from "@/api";
 
 const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId, selectedFilter, hasArchivePermission }) => {
     const { data } = useAuth();
@@ -34,8 +35,18 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId, selectedFilter, h
     // State for preview
     const [openPreviewModal, setOpenPreviewModal] = useState(false);
     const [previewFile, setPreviewFile] = useState("");
+    const [systemVariables, setSystemVariables] = useState([])
 
+    const prefix = systemVariables?.find((item) => item.name === "report_no_prefix")?.information || "-";
+
+    const fetchSystemVariables = async () => {
+        let res = await getAllSystemVariables();
+        if (res?.data?.status == "success") {
+            setSystemVariables(res.data.data)
+        }
+    }
     useEffect(() => {
+        fetchSystemVariables()
         if (open && reportDetailId) {
             loadAmendments();
         }
@@ -107,9 +118,16 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId, selectedFilter, h
         certificateType = "Interim";
     }
 
-    const extractReportNumber = (fileNameRaw) => {
-        if (!fileNameRaw) return "-";
-        const fileName = fileNameRaw.split("/").pop().replace(/\.pdf$/i, "");
+    const extractReportNumber = (fileNameRaw, prefix) => {
+        if (!fileNameRaw || !prefix) return "-";
+
+        const fileName = fileNameRaw
+            .split("/")
+            .pop()
+            .replace(/\.pdf$/i, "");
+
+        // Escape prefix to safely use in RegExp
+        const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
         const amdMatch = fileName.match(/AMD\((\d+)\)/i);
         let reportNo = null;
@@ -117,22 +135,29 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId, selectedFilter, h
         if (amdMatch) {
             const amdIndex = fileName.search(/AMD\(\d+\)/i);
             const beforeAmd = fileName.slice(0, amdIndex);
-            const mcbs = beforeAmd.match(/MCB[0-9A-Z-]*/ig);
-            if (mcbs && mcbs.length) {
-                reportNo = `${mcbs[mcbs.length - 1]}-AMD`;
+
+            const prefixRegex = new RegExp(`${escapedPrefix}[0-9A-Z-]*`, "ig");
+            const matches = beforeAmd.match(prefixRegex);
+
+            if (matches?.length) {
+                reportNo = `${matches[matches.length - 1]}-AMD`;
             }
         }
 
         if (!reportNo) {
-            const allMcbs = fileName.match(/MCB[0-9A-Z-]*/ig);
-            if (allMcbs && allMcbs.length) {
-                reportNo = allMcbs[allMcbs.length - 1];
+            const prefixRegex = new RegExp(`${escapedPrefix}[0-9A-Z-]*`, "ig");
+            const matches = fileName.match(prefixRegex);
+
+            if (matches?.length) {
+                reportNo = matches[matches.length - 1];
             }
         }
 
         if (!reportNo) return "-";
+
         return amdMatch ? `${reportNo}-(${amdMatch[1]})` : reportNo;
     };
+
 
     return (
         <>
@@ -199,7 +224,7 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId, selectedFilter, h
                                     <TableBody>
                                         {amendments.map((amd) => {
                                             const rawFileName = amd.amendedDoc?.split("/").pop() || "";
-                                            const displayReportNo = extractReportNumber(rawFileName);
+                                            const displayReportNo = extractReportNumber(rawFileName, prefix);
 
                                             return (
                                                 <TableRow key={amd.id}>
@@ -208,7 +233,7 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId, selectedFilter, h
                                                     {data.specialPermission?.includes("ShowAmedmentRemark") && <TableCell>{amd.amdRemarks || "-"}</TableCell>}
 
                                                     <TableCell>
-                                                        {amd.amendedDoc ? (
+                                                        {amd.amendedDoc !== null && (
                                                             <Stack direction="row" spacing={1}>
                                                                 <Tooltip title="View Document">
                                                                     <IconButton color="info" onClick={() => handleView(amd.amendedDoc)}>
@@ -240,7 +265,7 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId, selectedFilter, h
                                                                     )}
 
                                                             </Stack>
-                                                        ) : "-"}
+                                                        )}
                                                     </TableCell>
                                                 </TableRow>
                                             );
