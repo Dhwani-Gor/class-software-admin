@@ -1109,14 +1109,23 @@ ${classificationRows}
 
 
   const rows = Object.values(machineList?.machineData || {})
-    .flatMap(section => section?.items || []);
+    .flatMap(section => {
+      const sectionName = section?.sectionName || '';
+      const items = section?.items || [];
+
+      // Add section name as first row, then all items
+      return [
+        { isSectionHeader: true, sectionName },
+        ...items
+      ];
+    });
 
   const machineListHtml = `
 <table style="width:100%; border-collapse:collapse; font-size:14px;">
   <thead>
     <tr style="background-color:#f2f2f2; text-align:left;">
       <th style="padding:6px;">Code</th>
-      <th style="padding:6pxl">Status</th>
+      <th style="padding:6px;">Status</th>
       <th style="padding:6px;">Postponed Date</th>
       <th style="padding:6px;">Cycle</th>
       <th style="padding:6px;">Assignment Date</th>
@@ -1126,18 +1135,27 @@ ${classificationRows}
   </thead>
   <tbody>
     ${rows
-      .map(
-        (item) => `
-      <tr>
-        <td>${item.generatedCode || "-"}</td>
-        <td>${item.status || "-"}</td>
-        <td>${item.postponedDate ? moment(item.postponedDate).format("DD/MM/YYYY") : "-"}</td>
-        <td>5</td>
-        <td>${item.assignmentDate ? moment(item.assignmentDate).format("DD/MM/YYYY") : "-"}</td>
-        <td>${item.dueDate ? moment(item.dueDate).format("DD/MM/YYYY") : "-"}</td>
-        <td>${item.label || "-"}</td>
-      </tr>`
-      )
+      .map((item) => {
+        if (item.isSectionHeader) {
+          return `
+            <tr>
+              <td colspan="7" style="padding:8px; background-color:#e8f4f8; font-weight:bold; font-size:15px;">
+                ${item.sectionName}
+              </td>
+            </tr>`;
+        }
+
+        return `
+          <tr>
+            <td style="padding:6px;">${item.generatedCode || "-"}</td>
+            <td style="padding:6px;">${item.xMark || "-"}</td>
+            <td style="padding:6px;">${item.postponedDate ? moment(item.postponedDate).format("DD/MM/YYYY") : "-"}</td>
+            <td style="padding:6px;">5</td>
+            <td style="padding:6px;">${item.assignmentDate ? moment(item.assignmentDate).format("DD/MM/YYYY") : "-"}</td>
+            <td style="padding:6px;">${item.dueDate ? moment(item.dueDate).format("DD/MM/YYYY") : "-"}</td>
+            <td style="padding:6px;">${item.label || "-"}</td>
+          </tr>`;
+      })
       .join("")}
   </tbody>
 </table>

@@ -363,7 +363,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                 id: shipId,
                 shipName: selectedClient ? selectedClient.shipName : "",
             });
-            fetchMachineData(shipId);
+            getMachineById(shipId);
         }
     }, [shipId, clientsList]);
 
