@@ -743,8 +743,8 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             variant="outlined"
                             sx={{ mr: 2 }}
                             onClick={() => {
-                                setView('list');
                                 resetForm();
+                                router.push('/machine-list');
                             }}
                             text="cancel"
                         >
