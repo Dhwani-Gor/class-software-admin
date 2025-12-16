@@ -27,9 +27,9 @@ export const MACHINERY_SECTIONS = {
     sectionName: "Main Engine",
     codeId: "01",
     rows: [
-      { id: "01", label: "Cyl, Cvr, Pstn, Rod, Vlvs & gears", hasFromTo: false, isDue: false, isFrom: false, content: "No {cyl} Cyl, Cvr, Pstn, Rod, Vlvs & gears", repeatPerCylinder: true },
-      { id: "02", label: "Con Rod, Top end & Guides", hasFromTo: false, isDue: false, isFrom: false, content: "No {cyl}, Con Rod, Top end & Guides", repeatPerCylinder: true },
-      { id: "03", label: "Crankpin, Bearing & webs", hasFromTo: false, isDue: false, isFrom: false, content: "No {cyl} Crankpin, Bearing & webs", repeatPerCylinder: true },
+      { id: "01", label: "Cyl, Cvr, Pstn, Rod, Vlvs & gears", hasFromTo: false, isDue: false, isFrom: false, content: "No {cyl} Cyl, Cvr, Pstn, Rod, Vlvs & gears", repeatPerCylinder: true, isDue: true },
+      { id: "02", label: "Con Rod, Top end & Guides", hasFromTo: false, isDue: false, isFrom: false, content: "No {cyl}, Con Rod, Top end & Guides", repeatPerCylinder: true, isDue: true },
+      { id: "03", label: "Crankpin, Bearing & webs", hasFromTo: false, isDue: false, isFrom: false, content: "No {cyl} Crankpin, Bearing & webs", repeatPerCylinder: true, isDue: true },
       { id: "04", label: "Main journal and bearing", hasFromTo: true, isDue: true, isFrom: false, repeatPerCylinder: false },
       { id: "05", label: "O.F. injection pump, h.p .o.f. pipes & shielding", hasFromTo: true, isDue: true, isFrom: false, repeatPerCylinder: false },
       { id: "06", label: "O.F. injection pump and complete o.f. system for common rail system", hasFromTo: true, isDue: true, isFrom: false, repeatPerCylinder: false },

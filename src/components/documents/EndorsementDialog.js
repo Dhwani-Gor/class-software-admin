@@ -12,7 +12,7 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
   const [issuedBy, setIssuedBy] = useState("");
   const [remarks, setRemarks] = useState("");
 
-    const fetchReportDetails = async () => {
+  const fetchReportDetails = async () => {
     if (!reportDetailsId) return;
     try {
       const response = await getSelectedReportDetails(reportDetailsId);
@@ -285,7 +285,7 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
 
       <DialogActions>
         <CommonButton onClick={onClose} text="Cancel" variant="outlined" />
-        <CommonButton onClick={handleSubmit} text="Submit" variant="contained" disabled={!selectedEndorsement || !issuedBy} />
+        <CommonButton onClick={handleSubmit} text="Submit" variant="contained" />
       </DialogActions>
     </Dialog>
   );

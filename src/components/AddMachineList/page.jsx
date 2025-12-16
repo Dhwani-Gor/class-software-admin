@@ -24,7 +24,7 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { toast } from "react-toastify";
-import { addMachineList, getAllClients, getMachineById, updateMachineList, updateMachineryItem } from "@/api";
+import { addMachineList, getAllClients, getMachineById, updateMachineryItem } from "@/api";
 import CommonButton from "../CommonButton";
 import { MACHINERY_SECTIONS, HULL_SECTIONS, POSITION_OPTIONS } from "@/utils/MachineList";
 import { useRouter } from "next/navigation";
@@ -50,6 +50,8 @@ const MachineryHullManager = ({ mode, shipId }) => {
         { id: "01", content: "No {cyl} Cyl, Cvr, Pstn, Rod, Vlvs & gears", hasPosition: true, hasFromTo: false },
         { id: "02", content: "No {cyl}, Con Rod, Top end & Guides", hasPosition: true, hasFromTo: false },
         { id: "03", content: "No {cyl} Crankpin, Bearing & webs", hasPosition: true, hasFromTo: false },
+        { id: "04", label: "Main journal and bearing", hasFromTo: true, isDue: true, isFrom: false, repeatPerCylinder: false },
+        { id: "05", label: "O.F. injection pump, h.p .o.f. pipes & shielding", hasFromTo: true, isDue: true, isFrom: false, repeatPerCylinder: false },
     ];
 
     // const generateRowInstances = (sectionNum, row, data, isMachineryList = false) => {
@@ -149,6 +151,16 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             `${String(occurrence).padStart(2, "0")}` +
                             `${rowPos}`;
 
+                        // Generate content based on row type
+                        let contentText;
+                        if (hasFromTo) {
+                            // For from/to rows: "No 1 Main journal...", "No 2 Main journal..."
+                            contentText = `No ${occurrence} ${labelToUse}`;
+                        } else {
+                            // For cylinder rows: "No 1, Con Rod..."
+                            contentText = row.content?.replace("{cyl}", occurrence) || labelToUse;
+                        }
+
                         instances.push({
                             xMark: "X",
                             assignmentDate: data.assignmentDate || new Date().toISOString().split("T")[0],
@@ -158,12 +170,12 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             positionCode: rowPos,
                             globalPositionCode: globalPos,
                             postponedDate: data.postponedDate || null,
-                            content: hasFromTo ? labelToUse : (row.content?.replace("{cyl}", occurrence) || labelToUse),
+                            content: contentText,
                             label: labelToUse,
                             from: hasFromTo ? fromValue : null,
                             to: hasFromTo ? toValue : null,
-                            fromFrameNo: data.isFrom ? data.fromFrameNo : null,
-                            uptoFrameNo: row.isFrom ? data.uptoFrameNo : null
+                            fromFrameNo: data.fromFrameNo || null,
+                            uptoFrameNo: data.uptoFrameNo || null
                         });
                     }
                 });
@@ -180,6 +192,14 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         `${String(occurrence).padStart(2, "0")}` +
                         `${rowPos}`;
 
+                    // Generate content based on row type
+                    let contentText;
+                    if (hasFromTo) {
+                        contentText = `No ${occurrence} ${labelToUse}`;
+                    } else {
+                        contentText = row.content?.replace("{cyl}", occurrence) || labelToUse;
+                    }
+
                     instances.push({
                         xMark: "X",
                         assignmentDate: data.assignmentDate || new Date().toISOString().split("T")[0],
@@ -188,12 +208,12 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         occurrence: occurrence,
                         positionCode: rowPos,
                         postponedDate: data.postponedDate,
-                        content: hasFromTo ? labelToUse : (row.content?.replace("{cyl}", occurrence) || labelToUse),
+                        content: contentText,
                         label: labelToUse,
                         from: hasFromTo ? fromValue : null,
                         to: hasFromTo ? toValue : null,
-                        fromFrameNo: row.isFrom ? data.fromFrameNo : null,
-                        uptoFrameNo: row.isFrom ? data.uptoFrameNo : null
+                        fromFrameNo: data.fromFrameNo || null,
+                        uptoFrameNo: data.uptoFrameNo || null
                     });
                 }
             });
@@ -319,96 +339,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
         }
     };
 
-    const fetchMachineData = async (shipId) => {
-        try {
-            const result = await getMachineById(shipId);
-            if (result?.data?.status === "success") {
-                const data = result.data.data;
 
-                setShipType(data.engineType);
-                setNoOfCylinders(data.numberOfCylinders);
-                setPosition(data.globalPosition || []);
-                setEngineUnitsCountedFrom(data.engineUnitsCountedFrom || "flywheel_end");
-
-                const populatedData = {};
-                const restoredDynamicRows = { machinery: {}, hull: {} };
-                const processedRows = new Set();
-
-                Object.entries(data.machineData || {}).forEach(([sectionId, section]) => {
-                    const sectionType =
-                        MACHINERY_SECTIONS[section.sectionNumber]?.sectionId === sectionId
-                            ? "machinery"
-                            : "hull";
-
-                    const currentSections = sectionType === "machinery" ? MACHINERY_SECTIONS : HULL_SECTIONS;
-                    const sectionConfig = currentSections[section.sectionNumber];
-
-                    const rowMap = new Map();
-
-                    section.items.forEach((item) => {
-
-                        const generatedCode = item.generatedCode || "";
-                        const afterPosition = generatedCode.substring(3);
-                        const rowId = afterPosition.substring(0, 2);
-
-                        if (!rowMap.has(rowId)) {
-                            rowMap.set(rowId, []);
-                        }
-                        rowMap.get(rowId).push(item);
-                    });
-
-                    rowMap.forEach((rowItems, rowId) => {
-                        const rowKey = `${sectionType}-${section.sectionNumber}-${rowId}`;
-
-                        if (!processedRows.has(rowKey)) {
-                            processedRows.add(rowKey);
-
-                            const firstItem = rowItems[0];
-
-                            const positions = [...new Set(rowItems.map(i => i.positionCode))].filter(Boolean);
-
-                            populatedData[rowKey] = {
-                                xMark: "X",
-                                label: firstItem.label || "",
-                                position: positions,
-                                from: firstItem.from,
-                                to: firstItem.to,
-                                assignmentDate: firstItem.assignmentDate,
-                                dueDate: firstItem.dueDate,
-                                postponedDate: firstItem.postponedDate
-                            };
-
-                            const isDefaultRow = sectionConfig?.rows.some(r => String(r.id).padStart(2, "0") === rowId);
-
-                            if (!isDefaultRow && firstItem.label) {
-                                if (!restoredDynamicRows[sectionType][section.sectionNumber]) {
-                                    restoredDynamicRows[sectionType][section.sectionNumber] = [];
-                                }
-
-                                const alreadyAdded = restoredDynamicRows[sectionType][section.sectionNumber]
-                                    .some(r => String(r.id).padStart(2, "0") === rowId);
-
-                                if (!alreadyAdded) {
-                                    restoredDynamicRows[sectionType][section.sectionNumber].push({
-                                        id: parseInt(rowId),
-                                        label: firstItem.label || "",
-                                        hasPosition: positions.length > 0,
-                                        hasFromTo: firstItem.from !== null || firstItem.to !== null,
-                                        isDue: firstItem.dueDate !== null,
-                                        isFrom: false
-                                    });
-                                }
-                            }
-                        }
-                    });
-                });
-                setFormData(populatedData);
-                setDynamicRows(restoredDynamicRows);
-            }
-        } catch (error) {
-            toast.error(error?.message || "Failed to fetch machine data");
-        }
-    };
 
     useEffect(() => {
         fetchClients();
