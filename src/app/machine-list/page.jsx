@@ -66,6 +66,8 @@ const MachineList = () => {
         machineSection: ""
     });
 
+    console.log(editForm, "edit form")
+
     const [openDialog, setOpenDialog] = useState(false);
     const [selectedMachineId, setSelectedMachineId] = useState(null);
 
@@ -79,8 +81,9 @@ const MachineList = () => {
             position: item.position,
             dueDate: moment(item.dueDate).format("YYYY-MM-DD"),
             assignmentDate: moment(item.assignmentDate).format("YYYY-MM-DD"),
-            postponedDate: moment(item.postponedDate).format("YYYY-MM-DD"),
-            status: item.status || "",
+            postponedDate: item.postponedDate
+                ? moment(item.postponedDate).format("YYYY-MM-DD")
+                : "",
             positionCode: item.positionCode || "",
             machineSection: sectionKey     // ← STORE SECTION KEY
         });

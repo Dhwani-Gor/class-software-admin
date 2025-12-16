@@ -1148,12 +1148,12 @@ ${classificationRows}
         return `
           <tr>
             <td style="padding:6px;">${item.generatedCode || "-"}</td>
-            <td style="padding:6px;">${item.xMark || "-"}</td>
+            <td style="padding:6px;">${item.status !== undefined ? item.status : '-'}</td>
             <td style="padding:6px;">${item.postponedDate ? moment(item.postponedDate).format("DD/MM/YYYY") : "-"}</td>
             <td style="padding:6px;">5</td>
             <td style="padding:6px;">${item.assignmentDate ? moment(item.assignmentDate).format("DD/MM/YYYY") : "-"}</td>
             <td style="padding:6px;">${item.dueDate ? moment(item.dueDate).format("DD/MM/YYYY") : "-"}</td>
-            <td style="padding:6px;">${item.label || "-"}</td>
+            <td style="padding:6px;">${item.content || "-"}</td>
           </tr>`;
       })
       .join("")}
