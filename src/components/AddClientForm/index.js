@@ -97,6 +97,7 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
   const [managerInputValue, setManagerInputValue] = useState("");
   const [classId, setClassId] = useState();
 
+  console.log(classId, "class id");
   const [isSearching, setIsSearching] = useState({
     owner: false,
     manager: false,
@@ -128,16 +129,14 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
   const [manuallyEditedManager, setManuallyEditedManager] = useState(false);
   const [manuallyEditedInvoice, setManuallyEditedInvoice] = useState(false);
 
-  const dispatch = useDispatch();
   const router = useRouter();
 
   const fetchClients = async () => {
     try {
       setLoading(true);
       const result = await getAllClients();
-      console.log(result, "result");
-      if (result?.status === 200) {
-        setClassId(result.data.results);
+      if (result?.data?.status === "success") {
+        setClassId(result?.data?.data[0]?.classId);
       } else {
         toast.error("Something went wrong ! Please try again after some time");
       }
@@ -231,20 +230,23 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
 
   console.log(mode);
   useEffect(() => {
-    if (mode === "create") {
+    if (mode === "create" && classId) {
       const now = new Date();
 
       const year = String(now.getFullYear()).slice(-2);
       const month = String(now.getMonth() + 1).padStart(2, "0");
 
-      const totalRecords = Number(classId) || 0;
-      const nextNumber = (totalRecords + 1).toString().padStart(3, "0");
+      // Extract last 3 digits only
+      const lastSequence = parseInt(classId.slice(-3), 10) || 0;
+      const nextSequence = lastSequence + 1;
+
+      const nextNumber = String(nextSequence).padStart(3, "0");
 
       const generatedId = `${year}${month}${nextNumber}`;
 
       setValue("classId", generatedId);
     }
-  }, [setValue, classId, mode]);
+  }, [mode, classId, setValue]);
 
   const handleAddRow = () => {
     setClassHistory([...classHistory, { shipStatus: "", reason: "", remarks: "", from_date: "", to_date: "" }]);
