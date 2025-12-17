@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Box, Select, MenuItem, FormControl, TextField, Autocomplete, Stack, CircularProgress } from "@mui/material";
+import { Box, Select, MenuItem, FormControl, TextField, Autocomplete, Stack, CircularProgress, Typography } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import mammoth from "mammoth";
 import { toast } from "react-toastify";
@@ -129,19 +129,17 @@ const prepopulateFields = (html, clientData) => {
 const CheckListCreate = () => {
   const { control, handleSubmit } = useForm();
   const editorRef = useRef(null);
-
   const [clients, setClients] = useState([]);
   const [journals, setJournals] = useState([]);
   const [surveyTypes, setSurveyTypes] = useState([]);
-
   const [selectedShip, setSelectedShip] = useState(null);
   const [selectedJournal, setSelectedJournal] = useState(null);
   const [selectedSurvey, setSelectedSurvey] = useState(null);
-
   const [clientData, setClientData] = useState(null);
   const [htmlContent, setHtmlContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [systemVariables, setSystemVariables] = useState([]);
+  const [noChecklist, setNoChecklist] = useState(false);
 
   /* =======================
      FETCH DATA
@@ -204,8 +202,15 @@ const CheckListCreate = () => {
   };
 
   const loadChecklistDoc = async (docUrl) => {
+    if (!docUrl) {
+      setHtmlContent("");
+      setNoChecklist(true);
+      return;
+    }
+
     try {
       setLoading(true);
+      setNoChecklist(false);
 
       const response = await fetch(docUrl);
       const blob = await response.blob();
@@ -259,6 +264,9 @@ const CheckListCreate = () => {
   return (
     <CommonCard>
       <Stack spacing={3}>
+        <Typography variant="body1" fontWeight="bold">
+          Select Ship
+        </Typography>
         <FormControl sx={{ maxWidth: 400 }}>
           <Select value={selectedShip?.id || ""} onChange={(e) => setSelectedShip(clients.find((c) => c.id === e.target.value))} displayEmpty size="small">
             <MenuItem value="">
@@ -273,42 +281,97 @@ const CheckListCreate = () => {
         </FormControl>
 
         {selectedShip && (
-          <FormControl sx={{ maxWidth: 400 }}>
-            <Select value={selectedJournal?.id || ""} onChange={(e) => setSelectedJournal(journals.find((j) => j.id === e.target.value))} displayEmpty size="small">
-              <MenuItem value="">
-                <em>Select Report</em>
-              </MenuItem>
-              {journals.map((j) => (
-                <MenuItem key={j.id} value={j.id}>
-                  {j.journalTypeId}
+          <>
+            <Typography variant="body1" fontWeight="bold">
+              Select Report
+            </Typography>
+            <FormControl sx={{ maxWidth: 400 }}>
+              <Select
+                value={selectedJournal?.id || ""}
+                onChange={(e) => {
+                  const journal = journals.find((j) => j.id === e.target.value);
+
+                  setSelectedJournal(journal);
+
+                  // ✅ RESET DEPENDENT STATE
+                  setSelectedSurvey(null);
+                  setSurveyTypes([]);
+                  setHtmlContent("");
+                  setNoChecklist(false);
+
+                  // clear TinyMCE content safely
+                  editorRef.current?.setContent("");
+                }}
+                displayEmpty
+                size="small"
+              >
+                <MenuItem value="">
+                  <em>Select Report</em>
                 </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+                {journals.map((j) => (
+                  <MenuItem key={j.id} value={j.id}>
+                    {j.journalTypeId}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </>
         )}
 
         {selectedJournal && (
-          <Controller
-            name="survey"
-            control={control}
-            render={() => (
-              <Autocomplete
-                options={surveyTypes.map((s) => ({
-                  label: s.surveyTypes.name,
-                  value: s.surveyTypes.id,
-                  doc: s.surveyTypes.checkListDocument,
-                }))}
-                onChange={(_, val) => {
-                  setSelectedSurvey(val?.value);
-                  if (val?.doc) loadChecklistDoc(val.doc);
-                }}
-                renderInput={(params) => <TextField {...params} size="small" />}
-              />
-            )}
-          />
+          <>
+            <Typography variant="body1" fontWeight="bold">
+              Select Survey Type
+            </Typography>
+            <Controller
+              name="survey"
+              control={control}
+              render={() => (
+                <Autocomplete
+                  size="small"
+                  options={surveyTypes.map((s) => ({
+                    label: s.surveyTypes.name,
+                    value: s.surveyTypes.id,
+                    doc: s.surveyTypes.checkListDocument,
+                  }))}
+                  value={
+                    surveyTypes
+                      .map((s) => ({
+                        label: s.surveyTypes.name,
+                        value: s.surveyTypes.id,
+                        doc: s.surveyTypes.checkListDocument,
+                      }))
+                      .find((opt) => opt.value === selectedSurvey) || null
+                  }
+                  onChange={(_, val) => {
+                    setSelectedSurvey(val?.value || null);
+
+                    // ✅ ALWAYS clear previous checklist
+                    setHtmlContent("");
+                    editorRef.current?.setContent("");
+
+                    if (!val?.doc) {
+                      // ✅ checklist is null
+                      setNoChecklist(true);
+                      return;
+                    }
+
+                    setNoChecklist(false);
+                    loadChecklistDoc(val.doc);
+                  }}
+                  renderInput={(params) => <TextField {...params} size="small" />}
+                />
+              )}
+            />
+          </>
         )}
 
         {loading && <CircularProgress />}
+        {noChecklist && (
+          <Typography textAlign="center" fontWeight="bold">
+            No checklist attached
+          </Typography>
+        )}
 
         {!loading && htmlContent && (
           <>
@@ -331,7 +394,7 @@ const CheckListCreate = () => {
               }}
             />
 
-            <CommonButton text="Submit" variant="contained" onClick={handleSubmit(onSubmit)} />
+            {htmlContent && <CommonButton text="Submit" variant="contained" onClick={handleSubmit(onSubmit)} />}
           </>
         )}
       </Stack>
