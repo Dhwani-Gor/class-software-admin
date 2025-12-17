@@ -64,7 +64,9 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
         timeFrom: defaultValues.timeFrom || "",
         timeTo: defaultValues.timeTo || "",
         location: defaultValues.location || "",
-        initialOfSurveyors: isEdit ? [] : [],
+        initialOfSurveyors: defaultValues.surveyors
+          ? defaultValues.surveyors.map((s) => parseInt(s.id, 10))
+          : [],
       });
 
       if (defaultValues.location) {
