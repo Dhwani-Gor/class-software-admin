@@ -468,7 +468,7 @@ const CheckListCreate = () => {
               initialValue={htmlContent}
               init={{
                 height: 600,
-                menubar: false,
+                menubar: true,
                 branding: false,
                 forced_root_block: false,
                 plugins: ["table", "lists", "paste", "code"],
