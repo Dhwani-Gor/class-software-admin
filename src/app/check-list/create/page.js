@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Box, Typography, Select, MenuItem, FormControl, TextField, Autocomplete, Stack, CircularProgress } from "@mui/material";
+import { Box, Select, MenuItem, FormControl, TextField, Autocomplete, Stack, CircularProgress } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import mammoth from "mammoth";
 import { toast } from "react-toastify";
+import { Editor } from "@tinymce/tinymce-react";
 
-import { getAllClients, fetchJournalList, getAllActivities, getSpecificClient, addCheckList, updateCheckList, getAllChecklist, getAllSystemVariables } from "@/api";
+import { getAllClients, fetchJournalList, getAllActivities, getSpecificClient, addCheckList, updateCheckList, getAllSystemVariables } from "@/api";
 
 import CommonButton from "@/components/CommonButton";
 import CommonCard from "@/components/CommonCard";
@@ -22,53 +23,61 @@ const LABEL_FIELD_MAP = {
   portOfSurvey: ["port of survey", "survey port"],
 };
 
+/* =======================
+   COMPANY HEADER
+======================= */
+
 const injectCompanyHeader = (html, systemVariables) => {
   if (!systemVariables?.company_name && !systemVariables?.company_logo) return html;
 
   const container = document.createElement("div");
   container.innerHTML = html;
 
-  // Prevent duplicate header
-  if (container.querySelector('[data-company-header="true"]')) {
-    return html;
-  }
+  if (container.querySelector('[data-company-header="true"]')) return html;
 
   const header = document.createElement("div");
   header.setAttribute("data-company-header", "true");
   header.style.display = "flex";
   header.style.alignItems = "center";
-  header.style.justifyContent = "space-between";
   header.style.marginBottom = "24px";
   header.style.borderBottom = "1px solid #ccc";
   header.style.paddingBottom = "12px";
 
-  // Logo
+  const left = document.createElement("div");
+  left.style.flex = "1";
+
   if (systemVariables.company_logo) {
     const logo = document.createElement("img");
     logo.src = systemVariables.company_logo;
-    logo.alt = "Company Logo";
     logo.style.height = "80px";
-    logo.style.objectFit = "contain";
-    header.appendChild(logo);
+    left.appendChild(logo);
   }
 
-  // Company Name
-  if (systemVariables.company_name) {
-    const name = document.createElement("div");
-    name.textContent = systemVariables.company_name;
-    name.style.fontSize = "18px";
-    name.style.fontWeight = "700";
-    name.style.textAlign = "right";
-    header.appendChild(name);
-  }
+  const center = document.createElement("div");
+  center.style.flex = "1";
+  center.style.textAlign = "center";
+  center.style.fontWeight = "700";
+  center.style.fontSize = "20px";
+  center.textContent = "Survey Checklist Report";
 
+  const right = document.createElement("div");
+  right.style.flex = "1";
+  right.style.textAlign = "right";
+  right.style.fontWeight = "700";
+  right.style.fontSize = "18px";
+  right.textContent = systemVariables.company_name || "";
+
+  header.append(left, center, right);
   container.prepend(header);
 
   return container.innerHTML;
 };
 
+/* =======================
+   CLIENT VALUE
+======================= */
+
 const getClientValue = (field, client) => {
-  console.log(client, "client");
   switch (field) {
     case "shipName":
       return client?.shipName || "";
@@ -84,7 +93,7 @@ const getClientValue = (field, client) => {
 };
 
 /* =======================
-   TEXT-ONLY AUTO FILL
+   AUTO-FILL TEXT
 ======================= */
 
 const prepopulateFields = (html, clientData) => {
@@ -93,9 +102,9 @@ const prepopulateFields = (html, clientData) => {
   const container = document.createElement("div");
   container.innerHTML = html;
 
-  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
-
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
   let node;
+
   while ((node = walker.nextNode())) {
     let text = node.textContent;
 
@@ -105,7 +114,6 @@ const prepopulateFields = (html, clientData) => {
 
       labels.forEach((label) => {
         const regex = new RegExp(`(${label}\\s*:?\\s*)([_\\.\\-\\s]*)$`, "i");
-
         if (regex.test(text.trim())) {
           text = text.replace(regex, `$1${value}`);
         }
@@ -118,15 +126,9 @@ const prepopulateFields = (html, clientData) => {
   return container.innerHTML;
 };
 
-/* =======================
-   COMPONENT
-======================= */
-
 const CheckListCreate = () => {
   const { control, handleSubmit } = useForm();
-
-  const editableRef = useRef(null);
-  const isLoadingDoc = useRef(false);
+  const editorRef = useRef(null);
 
   const [clients, setClients] = useState([]);
   const [journals, setJournals] = useState([]);
@@ -139,32 +141,25 @@ const CheckListCreate = () => {
   const [clientData, setClientData] = useState(null);
   const [htmlContent, setHtmlContent] = useState("");
   const [loading, setLoading] = useState(false);
-  const [existingChecklist, setExistingChecklist] = useState(null);
-  const [systemVariables, setSystemVariables] = useState(null);
-  console.log(systemVariables, "system variables");
+  const [systemVariables, setSystemVariables] = useState([]);
 
-  const companyName = systemVariables?.find((item) => item.name === "company_name")?.information || "-";
-  const companyLogo = systemVariables?.find((item) => item.name === "company_logo")?.information || "-";
-  console.log(companyName, companyLogo, "test");
   /* =======================
      FETCH DATA
   ======================= */
 
   useEffect(() => {
-    fetchSystemVariables();
+    getAllSystemVariables().then((res) => {
+      if (res?.data?.status === "success") {
+        setSystemVariables(res.data.data);
+      }
+    });
+
     getAllClients().then((res) => {
       if (res?.data?.status === "success") {
         setClients(res.data.data);
       }
     });
   }, []);
-
-  const fetchSystemVariables = async () => {
-    let res = await getAllSystemVariables();
-    if (res?.data?.status === "success") {
-      setSystemVariables(res.data.data);
-    }
-  };
 
   useEffect(() => {
     if (!selectedShip) return;
@@ -193,12 +188,19 @@ const CheckListCreate = () => {
   }, [selectedJournal]);
 
   /* =======================
-     LOAD DOCUMENT
-  =======================
-   */
-  const normalizedSystemVariables = {
-    company_name: companyName,
-    company_logo: companyLogo,
+     LOAD DOC
+  ======================= */
+  const normalizeEmptyTableCells = (html) => {
+    const container = document.createElement("div");
+    container.innerHTML = html;
+
+    container.querySelectorAll("td, th").forEach((cell) => {
+      if (!cell.textContent.trim()) {
+        cell.innerHTML = "&nbsp;";
+      }
+    });
+
+    return container.innerHTML;
   };
 
   const loadChecklistDoc = async (docUrl) => {
@@ -208,26 +210,23 @@ const CheckListCreate = () => {
       const response = await fetch(docUrl);
       const blob = await response.blob();
       const buffer = await blob.arrayBuffer();
-
       const result = await mammoth.convertToHtml({ arrayBuffer: buffer });
 
       let html = result.value;
 
-      // ✅ 1. Inject company logo + name at TOP
-      html = injectCompanyHeader(html, normalizedSystemVariables);
+      const company_name = systemVariables.find((v) => v.name === "company_name")?.information;
+      const company_logo = systemVariables.find((v) => v.name === "company_logo")?.information;
 
-      // ✅ 2. Auto-fill Name of Ship, IMO, Port, etc.
+      html = injectCompanyHeader(html, { company_name, company_logo });
       html = prepopulateFields(html, clientData);
+      html = normalizeEmptyTableCells(html);
 
       setHtmlContent(html);
-
-      toast.success("Checklist loaded with company header & client data");
-    } catch (err) {
-      console.error(err);
+      toast.success("Checklist loaded successfully");
+    } catch {
       toast.error("Failed to load checklist");
     } finally {
       setLoading(false);
-      isLoadingDoc.current = false;
     }
   };
 
@@ -241,16 +240,13 @@ const CheckListCreate = () => {
       reportNo: selectedJournal.id,
       typeOfSurvey: [String(selectedSurvey)],
       checkListData: {
-        checkList: editableRef.current.innerHTML,
+        checkList: editorRef.current.getContent(),
       },
     };
 
     try {
-      const res = existingChecklist ? await updateCheckList(existingChecklist.id, payload) : await addCheckList(payload);
-
-      if (res?.data?.status === "success") {
-        toast.success("Checklist saved successfully");
-      }
+      await addCheckList(payload);
+      toast.success("Checklist saved successfully");
     } catch {
       toast.error("Save failed");
     }
@@ -263,7 +259,6 @@ const CheckListCreate = () => {
   return (
     <CommonCard>
       <Stack spacing={3}>
-        {/* Ship */}
         <FormControl sx={{ maxWidth: 400 }}>
           <Select value={selectedShip?.id || ""} onChange={(e) => setSelectedShip(clients.find((c) => c.id === e.target.value))} displayEmpty size="small">
             <MenuItem value="">
@@ -277,7 +272,6 @@ const CheckListCreate = () => {
           </Select>
         </FormControl>
 
-        {/* Report */}
         {selectedShip && (
           <FormControl sx={{ maxWidth: 400 }}>
             <Select value={selectedJournal?.id || ""} onChange={(e) => setSelectedJournal(journals.find((j) => j.id === e.target.value))} displayEmpty size="small">
@@ -293,12 +287,11 @@ const CheckListCreate = () => {
           </FormControl>
         )}
 
-        {/* Survey */}
         {selectedJournal && (
           <Controller
             name="survey"
             control={control}
-            render={({ field }) => (
+            render={() => (
               <Autocomplete
                 options={surveyTypes.map((s) => ({
                   label: s.surveyTypes.name,
@@ -317,21 +310,27 @@ const CheckListCreate = () => {
 
         {loading && <CircularProgress />}
 
-        {/* Editor */}
         {!loading && htmlContent && (
           <>
-            <Box
-              ref={editableRef}
-              contentEditable
-              suppressContentEditableWarning
-              dangerouslySetInnerHTML={{ __html: htmlContent }}
-              sx={{
-                border: "1px solid #ccc",
-                minHeight: 400,
-                p: 2,
-                borderRadius: 2,
+            <Editor
+              apiKey="p9j94lg0okz82u9rr4v3zhap0pimbq1hob48rzesv3c5dylj"
+              onInit={(evt, editor) => (editorRef.current = editor)}
+              initialValue={htmlContent}
+              init={{
+                height: 600,
+                menubar: false,
+                branding: false,
+                forced_root_block: false,
+                plugins: ["table", "lists", "paste", "code"],
+                toolbar: "undo redo | bold italic underline | alignleft aligncenter alignright | bullist numlist | table | code",
+                content_style: `
+    body { font-family: Arial; font-size: 14px; }
+    table { border-collapse: collapse; width: 100%; }
+    td, th { border: 1px solid #000; padding: 6px; }
+  `,
               }}
             />
+
             <CommonButton text="Submit" variant="contained" onClick={handleSubmit(onSubmit)} />
           </>
         )}
