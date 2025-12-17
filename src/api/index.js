@@ -1266,9 +1266,23 @@ export const markNotificationRead = async (id) => {
   }
 };
 
-export const readAllNotification = async (id) => {
+export const readAllNotification = async () => {
   try {
     return await axiosInstance.get(`/notification/read?type=all`);
+  } catch (error) {
+    return error;
+  }
+};
+
+export const issuedDocumentSearch = async (search, page, limit) => {
+  try {
+    return await axiosInstance.get("reportDetails/search", {
+      params: {
+        search,
+        page,
+        limit,
+      },
+    });
   } catch (error) {
     return error;
   }
