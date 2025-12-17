@@ -472,7 +472,7 @@ const CheckListCreate = () => {
                 branding: false,
                 forced_root_block: false,
                 plugins: ["table", "lists", "paste", "code"],
-                toolbar: "undo redo | bold italic underline | alignleft aligncenter alignright | bullist numlist | table | code",
+                toolbar: "undo redo | formatselect | bold italic | alignleft aligncenter alignright | outdent indent | link image | code fullscreen",
                 content_style: `
     body { font-family: Arial; font-size: 14px; }
     table { border-collapse: collapse; width: 100%; }
