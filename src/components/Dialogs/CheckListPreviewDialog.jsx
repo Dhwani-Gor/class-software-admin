@@ -71,7 +71,7 @@ const extractShipDetailsFromHTML = (htmlString) => {
   }
 };
 
-export const generateChecklistHTML = (item, companyName, companyLogo) => {
+export const generateChecklistHTML = (item) => {
   const originalHTML = item?.checkListData?.checkList || '';
   const surveyType = item?.typeOfSurveyName || "Survey";
   const reportTitle = "Survey Checklist Report";
@@ -94,7 +94,7 @@ export const generateChecklistHTML = (item, companyName, companyLogo) => {
       box-sizing: border-box;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
     }
-    
+
     body {
       font-size: 14px;
       line-height: 1.6;
@@ -104,141 +104,35 @@ export const generateChecklistHTML = (item, companyName, companyLogo) => {
       margin: 0 auto;
     }
 
-     /* Prevent page breaks within elements */
     table {
-      page-break-inside: auto;
-    }
-    
-    tr {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
       page-break-inside: avoid;
-      page-break-after: auto;
     }
-    
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+      page-break-inside: avoid;
+    }
+
     thead {
       display: table-header-group;
     }
-    
-    tfoot {
-      display: table-footer-group;
-    }
 
-    img, h1, h2, h3, h4, h5, h6 {
-      page-break-inside: avoid;
-      page-break-after: avoid;
-    }
-
-    p, li, div {
+    tr {
       page-break-inside: avoid;
     }
 
-    .document-header {
-      padding: 20px;
-      margin-bottom: 20px;
-      border-bottom: 3px solid #1976d2;
-      ${!companyName && !companyLogo ? 'display: none;' : ''}
-    }
-
-    .header-layout {
-      display: table;
-      width: 100%;
-    }
-
-    .header-left, .header-center, .header-right {
-      display: table-cell;
-      vertical-align: middle;
-    }
-
-    .header-left, .header-right {
-      width: 20%;
-    }
-
-    .header-center {
-      width: 60%;
-      text-align: center;
-    }
-
-    .company-logo {
-      max-height: 70px;
-      max-width: 120px;
-    }
-
-    .survey-title {
-      font-size: 22px;
-      font-weight: 700;
-      color: #1976d2;
-      margin-bottom: 5px;
-    }
-
-    .report-title {
-      font-size: 16px;
-      font-weight: 600;
-      color: #333;
-    }
-
-    .content-wrapper {
-      padding: 0 20px 20px 20px;
-    }
-
-    table { 
-      width: 100%; 
-      border-collapse: collapse; 
-      margin: 15px 0; 
+    img, p, div, h1, h2, h3, h4, h5, h6 {
       page-break-inside: avoid;
-      break-inside: avoid;
-    }
-    
-    th, td { 
-      border: 1px solid #ddd; 
-      padding: 8px; 
-      text-align: left;
-      page-break-inside: avoid;
-      break-inside: avoid;
-    }
-    
-    th { 
-      font-weight: 600; 
-    }
-    
-    tbody tr:nth-child(even) { 
-    }
-
-    /* Prevent awkward splits inside common blocks */
-    table, tr, td, th, img, p, div {
-      page-break-inside: avoid;
-      break-inside: avoid;
-    }
-
-    /* Prevent awkward splits inside common blocks */
-    table, tr, td, th, img, p, div, ul, ol, li, h1, h2, h3, h4, h5, h6 {
-      page-break-inside: avoid;
-      break-inside: avoid;
-    }
-
-    p, li {
-      line-height: 1.6;
-      page-break-after: avoid;
-      page-break-before: avoid;
-      break-after: avoid-page;
-      break-before: avoid-page;
     }
   </style>
 </head>
+
 <body>
-  ${companyName || companyLogo ? `
-  <div class="document-header">
-    <div class="header-layout">
-      <div class="header-left">
-        ${companyLogo ? `<img src="${companyLogo}" class="company-logo" />` : ''}
-      </div>
-      <div class="header-center">
-        <div class="survey-title">${surveyType}</div>
-        <div class="report-title">${reportTitle}</div>
-      </div>
-      <div class="header-right"></div>
-    </div>
-  </div>
-  ` : ''}
-  
   <div class="content-wrapper">
     ${originalHTML}
   </div>
@@ -246,6 +140,7 @@ export const generateChecklistHTML = (item, companyName, companyLogo) => {
 </html>
 `;
 };
+
 
 export const ChecklistPreviewModal = ({
   open,
