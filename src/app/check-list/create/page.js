@@ -21,6 +21,19 @@ const LABEL_FIELD_MAP = {
   classNumber: ["class number", "class no", "class no."],
   imoNumber: ["imo number", "imo no", "imo no."],
   portOfSurvey: ["port of survey", "survey port"],
+
+  grossTonnage: ["gross tonnage", "g.t.", "gt"],
+  keelLaidDate: ["date keel laid", "keel laid date"],
+  officialNumber: ["official number", "official no"],
+  portOfRegistry: ["port of registery"],
+  surveyType: ["type of survey", "survey type"],
+  shipType: ["type of ship", "ship type"],
+  flag: ["flag", "flag state"],
+  firstSurveyDate: ["first date of survey", "first survey date"],
+  lastSurveyDate: ["last date of survey", "last survey date"],
+  reportNo: ["report no", "report number"],
+  companyName: ["company name", "class name"],
+  logo: ["logo"],
 };
 
 /* =======================
@@ -77,16 +90,53 @@ const injectCompanyHeader = (html, systemVariables) => {
    CLIENT VALUE
 ======================= */
 
-const getClientValue = (field, client) => {
+const getClientValue = (field, client, extra = {}) => {
   switch (field) {
     case "shipName":
       return client?.shipName || "";
+
     case "classNumber":
       return client?.classId || "";
+
     case "imoNumber":
       return client?.imoNumber || "";
+
     case "portOfSurvey":
       return client?.portOfSurvey || "";
+
+    case "grossTonnage":
+      return client?.grossTonnage || "";
+
+    case "keelLaidDate":
+      return client?.keelLaidDate || "";
+
+    case "officialNumber":
+      return client?.officialNo || "";
+
+    case "surveyType":
+      return extra?.surveyTypeName || "";
+
+    case "shipType":
+      return client?.shipType || "";
+
+    case "flag":
+      return client?.flag || "";
+
+    case "firstSurveyDate":
+      return extra?.firstSurveyDate || "";
+
+    case "lastSurveyDate":
+      return extra?.lastSurveyDate || "";
+
+    case "reportNo":
+      return extra?.reportNo || "";
+
+    case "portOfRegistry":
+      return client?.portOfRegistry || "";
+
+    case "companyName":
+      return extra?.companyName || "";
+
     default:
       return "";
   }
@@ -96,8 +146,8 @@ const getClientValue = (field, client) => {
    AUTO-FILL TEXT
 ======================= */
 
-const prepopulateFields = (html, clientData) => {
-  if (!clientData) return html;
+const prepopulateFields = (html, clientData, extraData = {}) => {
+  if (!clientData && !extraData) return html;
 
   const container = document.createElement("div");
   container.innerHTML = html;
@@ -109,7 +159,7 @@ const prepopulateFields = (html, clientData) => {
     let text = node.textContent;
 
     Object.entries(LABEL_FIELD_MAP).forEach(([field, labels]) => {
-      const value = getClientValue(field, clientData);
+      const value = getClientValue(field, clientData, extraData);
       if (!value) return;
 
       labels.forEach((label) => {
@@ -126,6 +176,11 @@ const prepopulateFields = (html, clientData) => {
   return container.innerHTML;
 };
 
+const replaceLogoPlaceholder = (html, logoUrl) => {
+  if (!logoUrl) return html;
+
+  return html.replace(/(\blogo\b\s*:?)/i, `$1 <img src="${logoUrl}" style="height:60px; vertical-align:middle;" />`);
+};
 const CheckListCreate = () => {
   const { control, handleSubmit } = useForm();
   const editorRef = useRef(null);
@@ -282,6 +337,7 @@ const CheckListCreate = () => {
 
       html = injectCompanyHeader(html, { company_name, company_logo });
       html = prepopulateFields(html, clientData);
+      html = replaceLogoPlaceholder(html, company_logo);
       html = normalizeEmptyTableCells(html);
 
       setHtmlContent(html);
