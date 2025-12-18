@@ -1,6 +1,6 @@
 import { Editor } from "@tinymce/tinymce-react";
 import { useEffect, useState, useCallback } from "react";
-import { fetchAdditionalDetails, getAllListClassificationSurveys, getAllMachineList, getAllSystemVariables, getMachineById, getMachineList, getSpecificClient, getSurveyReportData, uploadSurveyReport } from "../api";
+import { fetchAdditionalDetails, getAllListClassificationSurveys, getAllSystemVariables, getMachineById, getSpecificClient, getSurveyReportData, uploadSurveyReport } from "../api";
 import { toast } from "react-toastify";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import html2canvas from "html2canvas";
@@ -1148,7 +1148,18 @@ ${classificationRows}
         return `
           <tr>
             <td style="padding:6px;">${item.generatedCode || "-"}</td>
-            <td style="padding:6px;">${item.status !== undefined ? item.status : '-'}</td>
+<td style="padding:6px;">
+  ${item.status !== undefined
+            ? item?.status === "credited"
+              ? "Credited"
+              : item?.status === "waived off"
+                ? "Waived Off"
+                : item?.status === "postponed"
+                  ? "Postponed"
+                  : "-"
+            : "-"
+          }
+</td>
             <td style="padding:6px;">${item.postponedDate ? moment(item.postponedDate).format("DD/MM/YYYY") : "-"}</td>
             <td style="padding:6px;">5</td>
             <td style="padding:6px;">${item.assignmentDate ? moment(item.assignmentDate).format("DD/MM/YYYY") : "-"}</td>

@@ -50,7 +50,7 @@ const NarrativeReport = ({ id, reportNumber }) => {
           fetchAdditionalDetails(id),
           fetchJournalList(id)
         ]);
-
+        console.log(additionalResult, "addresult")
         if (additionalResult?.status === 200) setAdditionalDetails(additionalResult.data.data);
         if (clientResult?.status === 200) setClientData(clientResult.data.data);
         if (reportResult?.status === 200) setReportDetails(reportResult.data.data || []);
@@ -85,15 +85,6 @@ const NarrativeReport = ({ id, reportNumber }) => {
     loadAllData();
   }, [id, reportNumber]);
 
-  const sectionNames = {
-    coc: "Condition of Class",
-    statutory: "Statutory",
-    memoranda: "Memoranda",
-    additional: "Additional Information",
-    compliance: "Compliance to New Regulations",
-    pcsfsi: "PSC / FSI Deficiency",
-    "psc/fsi": "PSC / FSI Deficiency",
-  };
   const generateHtml = useCallback(() => {
     if (!clientData || !reportDetails || !systemVariables) return "";
 

@@ -30,7 +30,6 @@ import { MACHINERY_SECTIONS, HULL_SECTIONS, POSITION_OPTIONS } from "@/utils/Mac
 import { useRouter } from "next/navigation";
 
 const MachineryHullManager = ({ mode, shipId }) => {
-    const [view, setView] = useState('form');
     const [tabValue, setTabValue] = useState(0);
     const [formData, setFormData] = useState({});
     const [shipType, setShipType] = useState();
@@ -358,12 +357,26 @@ const MachineryHullManager = ({ mode, shipId }) => {
     useEffect(() => {
         if (shipId && clientsList.length > 0) {
             setEditingId(shipId);
+
             const selectedClient = clientsList.find((client) => client.id === shipId);
             setSelectedShip({
                 id: shipId,
                 shipName: selectedClient ? selectedClient.shipName : "",
             });
-            getMachineById(shipId);
+
+            (async () => {
+                const res = await getMachineById(shipId);
+                if (res?.data?.status === "success") {
+                    const data = res.data.data;
+
+                    // ✅ FIX: set engine type so RadioGroup reflects selection
+                    setShipType(data.engineType);
+
+                    setNoOfCylinders(data.numberOfCylinders);
+                    setPosition(data.globalPosition || []);
+                    setEngineUnitsCountedFrom(data.engineUnitsCountedFrom || "flywheel_end");
+                }
+            })();
         }
     }, [shipId, clientsList]);
 
