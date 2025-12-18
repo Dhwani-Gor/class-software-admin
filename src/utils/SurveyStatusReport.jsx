@@ -1554,6 +1554,9 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 <tr class="toc-section">
 <td><strong>4. Additional Notes</strong></td>
 </tr>
+<tr class="toc-section">
+<td><strong>5. List of Surveyable Items</strong></td>
+</tr>
 
 </table>
 </div>

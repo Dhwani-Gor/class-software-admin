@@ -303,7 +303,9 @@ const MachineryHullManager = ({ mode, shipId }) => {
 
     const handleAddRow = (sectionType, sectionNum) => {
         setDynamicRows((prev) => {
-            const currentSections = sectionType === "machinery" ? MACHINERY_SECTIONS : HULL_SECTIONS;
+            const currentSections =
+                sectionType === "machinery" ? MACHINERY_SECTIONS : HULL_SECTIONS;
+
             const section = currentSections[sectionNum];
             const currentDynamicRows = prev[sectionType][sectionNum] || [];
 
@@ -311,9 +313,26 @@ const MachineryHullManager = ({ mode, shipId }) => {
                 ...section.rows.map((r) => r.id),
                 ...currentDynamicRows.map((r) => r.id),
             ];
+
             const nextId = Math.max(...existingIds, 0) + 1;
 
-            const newRow = { id: nextId, label: "", hasPosition: true, isDue: true, isFrom: false };
+            const newRow =
+                sectionType === "hull"
+                    ? {
+                        id: nextId,
+                        label: "",
+                        hasPosition: false,
+                        isFrom: true,
+                        isDue: false,
+                    }
+                    : {
+                        id: nextId,
+                        label: "",
+                        hasPosition: true,
+                        isDue: true,
+                        isFrom: false,
+                    };
+
             return {
                 ...prev,
                 [sectionType]: {
