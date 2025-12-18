@@ -19,7 +19,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Pagination from "@mui/material/Pagination";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import { deleteCheckList, deleteSurveyReport, deleteSurveyStatusReport, getAllChecklist, getAllIssuedDocuments, getAllReports, getAllSystemVariables, getJournalsList, getSingleChecklist, markAsRevoked } from "@/api";
+import { deleteCheckList, deleteSurveyReport, deleteSurveyStatusReport, getAllChecklist, getAllIssuedDocuments, getAllReports, getAllSystemVariables, getJournalsList, getSingleChecklist, issuedDocumentSearch, markAsRevoked } from "@/api";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { Menu } from "@mui/material";
 import SendEmailDialog from "@/components/Dialogs/DownloadAllEmailDialog";
@@ -69,6 +69,7 @@ const Certificates = () => {
   const [checkListPreviewFile, setChecklistPreviewFile] = useState();
   const [systemVariables, setSystemVariables] = useState();
   const prefix = systemVariables?.find((item) => item.name === "report_no_prefix")?.information || "-";
+  const isSearchMode = debouncedSearch.trim().length > 0;
 
   const handleSort = (key) => {
     setSortConfig((prev) => {
@@ -241,32 +242,41 @@ const Certificates = () => {
   const fetchCertificatesData = async () => {
     setLoading(true);
     try {
-      const filterKeys = [];
-      const filterValues = [];
-      if (selectedReportNumber) {
-        filterKeys.push("activity.journal.journalTypeId");
-        filterValues.push(selectedReportNumber);
-      }
-      if (placeFilter) {
-        filterKeys.push("place");
-        filterValues.push(placeFilter);
-      }
-      if (statusFilter) {
-        filterKeys.push("activity.status");
-        filterValues.push(statusFilter);
-      }
-      const searchQuery = debouncedSearch.trim();
-      const markAsArchive = selectedFilter === "Archive Documents";
-      const issuedDocument = selectedFilter === "Certificates" || selectedFilter === "Archive Documents" ? true : false;
-      const res = showAll ? await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, undefined, undefined, startDate, endDate, markAsArchive, issuedDocument) : await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, page, limit, startDate, endDate, markAsArchive, issuedDocument);
-      const data = res?.data;
-      if (data?.status === "success" && Array.isArray(data?.data)) {
-        setCertificatesList(data.data);
-        setTotalRows(data.results);
-        setTotalCount(data.results);
+      let data;
+      if (isSearchMode) {
+        const res = showAll ? await issuedDocumentSearch(debouncedSearch) : await issuedDocumentSearch(debouncedSearch, page, limit);
+        data = res?.data;
+        setCertificatesList(data?.data);
+        setTotalCount(data?.results);
+        setTotalRows(data?.results);
       } else {
-        setCertificatesList([]);
-        setTotalRows(0);
+        const filterKeys = [];
+        const filterValues = [];
+        if (selectedReportNumber) {
+          filterKeys.push("activity.journal.journalTypeId");
+          filterValues.push(selectedReportNumber);
+        }
+        if (placeFilter) {
+          filterKeys.push("place");
+          filterValues.push(placeFilter);
+        }
+        if (statusFilter) {
+          filterKeys.push("activity.status");
+          filterValues.push(statusFilter);
+        }
+        const searchQuery = debouncedSearch.trim();
+        const markAsArchive = selectedFilter === "Archive Documents";
+        const issuedDocument = selectedFilter === "Certificates" || selectedFilter === "Archive Documents" ? true : false;
+        const res = showAll ? await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, undefined, undefined, startDate, endDate, markAsArchive, issuedDocument) : await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, page, limit, startDate, endDate, markAsArchive, issuedDocument);
+        const data = res?.data;
+        if (data?.status === "success" && Array.isArray(data?.data)) {
+          setCertificatesList(data.data);
+          setTotalRows(data.results);
+          setTotalCount(data.results);
+        } else {
+          setCertificatesList([]);
+          setTotalRows(0);
+        }
       }
     } catch (error) {
       console.error(error);
@@ -836,7 +846,7 @@ const Certificates = () => {
                           }}
                           onClick={() => handleSelectAllCertificates(sortedCertificates)}
                         >
-                          <Checkbox checked={selectedCertificates.length === sortedCertificates.length && sortedCertificates.length > 0} onChange={() => handleSelectAllCertificates(sortedCertificates)} sx={{ padding: 0 }} />
+                          <Checkbox checked={selectedCertificates.length === sortedCertificates?.length && sortedCertificates.length > 0} onChange={() => handleSelectAllCertificates(sortedCertificates)} sx={{ padding: 0 }} />
                         </TableCell>
 
                         {[
@@ -869,72 +879,73 @@ const Certificates = () => {
                     </TableHead>
 
                     <TableBody>
-                      {sortedCertificates.map((row, idx) => {
-                        const today = new Date();
+                      {sortedCertificates &&
+                        sortedCertificates.map((row, idx) => {
+                          const today = new Date();
 
-                        const getStatus = (row) => {
-                          const validity = row?.validityDate ? new Date(row.validityDate) : null;
+                          const getStatus = (row) => {
+                            const validity = row?.validityDate ? new Date(row.validityDate) : null;
 
-                          if (validity) {
-                            if (validity > today) return "Valid";
-                            if (validity < today) return "Expired";
-                          }
-                        };
-                        return (
-                          <TableRow key={row.id}>
-                            <TableCell padding="checkbox">
-                              <Checkbox checked={selectedCertificates.includes(row.id)} onChange={() => handleSelectCertificate(row.id, row.createdByUser?.email)} />
-                            </TableCell>
+                            if (validity) {
+                              if (validity > today) return "Valid";
+                              if (validity < today) return "Expired";
+                            }
+                          };
+                          return (
+                            <TableRow key={row.id}>
+                              <TableCell padding="checkbox">
+                                <Checkbox checked={selectedCertificates.includes(row.id)} onChange={() => handleSelectCertificate(row.id, row.createdByUser?.email)} />
+                              </TableCell>
 
-                            <TableCell>{(page - 1) * limit + idx + 1}</TableCell>
-                            <TableCell>
-                              {row.amendmentVersion > 0 ? (
-                                <Typography
-                                  sx={{
-                                    color: "primary.main",
-                                    textDecoration: "underline",
-                                    cursor: "pointer",
-                                    fontWeight: 500,
-                                  }}
-                                  onClick={() => {
-                                    setSelectedReportId(row.id);
-                                    setOpenAmdRemarks(true);
-                                  }}
-                                >
-                                  {row.activity?.journal?.journalTypeId || "N/A"}
-                                </Typography>
-                              ) : (
-                                row.activity?.journal?.journalTypeId || "N/A"
-                              )}
-                            </TableCell>
-                            <TableCell>{row.activity?.journal?.client?.shipName || "N/A"}</TableCell>
-                            <TableCell align="center">
-                              {{
-                                full_term: "FT",
-                                short_term: "ST",
-                                intrim: "Interim",
-                              }[row.typeOfCertificate] || "N/A"}
-                            </TableCell>
-                            <TableCell>{row.activity?.surveyTypes?.name || "N/A"}</TableCell>
-                            <TableCell>{formatDate(row.surveyDate)}</TableCell>
-                            <TableCell>{["re-classed", "class"].includes(row.reportStatus) ? "Valid" : row.reportStatus === "revoked" ? "Revoked" : row.reportStatus || getStatus(row)}</TableCell>
-                            <TableCell>
-                              <Stack direction="row" spacing={1}>
-                                <Tooltip title="View Document">
-                                  <IconButton color="info" onClick={() => handleViewDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
-                                    <VisibilityIcon />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Download Document">
-                                  <IconButton color="success" onClick={() => handleDownloadDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
-                                    <GetAppIcon />
-                                  </IconButton>
-                                </Tooltip>
-                              </Stack>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
+                              <TableCell>{(page - 1) * limit + idx + 1}</TableCell>
+                              <TableCell>
+                                {row.amendmentVersion > 0 ? (
+                                  <Typography
+                                    sx={{
+                                      color: "primary.main",
+                                      textDecoration: "underline",
+                                      cursor: "pointer",
+                                      fontWeight: 500,
+                                    }}
+                                    onClick={() => {
+                                      setSelectedReportId(row.id);
+                                      setOpenAmdRemarks(true);
+                                    }}
+                                  >
+                                    {row.activity?.journal?.journalTypeId || "N/A"}
+                                  </Typography>
+                                ) : (
+                                  row.activity?.journal?.journalTypeId || "N/A"
+                                )}
+                              </TableCell>
+                              <TableCell>{row.activity?.journal?.client?.shipName || "N/A"}</TableCell>
+                              <TableCell align="center">
+                                {{
+                                  full_term: "FT",
+                                  short_term: "ST",
+                                  intrim: "Interim",
+                                }[row.typeOfCertificate] || "N/A"}
+                              </TableCell>
+                              <TableCell>{row.activity?.surveyTypes?.name || "N/A"}</TableCell>
+                              <TableCell>{formatDate(row.surveyDate)}</TableCell>
+                              <TableCell>{["re-classed", "class"].includes(row.reportStatus) ? "Valid" : row.reportStatus === "revoked" ? "Revoked" : row.reportStatus || getStatus(row)}</TableCell>
+                              <TableCell>
+                                <Stack direction="row" spacing={1}>
+                                  <Tooltip title="View Document">
+                                    <IconButton color="info" onClick={() => handleViewDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
+                                      <VisibilityIcon />
+                                    </IconButton>
+                                  </Tooltip>
+                                  <Tooltip title="Download Document">
+                                    <IconButton color="success" onClick={() => handleDownloadDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
+                                      <GetAppIcon />
+                                    </IconButton>
+                                  </Tooltip>
+                                </Stack>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                     </TableBody>
                   </Table>
                 </TableContainer>

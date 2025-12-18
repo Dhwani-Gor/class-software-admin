@@ -85,7 +85,8 @@ const MachineList = () => {
                 ? moment(item.postponedDate).format("YYYY-MM-DD")
                 : "",
             positionCode: item.positionCode || "",
-            machineSection: sectionKey     // ← STORE SECTION KEY
+            status: item.status || "",
+        machineSection: sectionKey
         });
 
         setOpenEditDialog(true);
