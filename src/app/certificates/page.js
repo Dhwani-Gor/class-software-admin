@@ -90,10 +90,6 @@ const Certificates = () => {
     }
   };
 
-  // useEffect(() => {
-  //   getSelectedCheckList();
-  // }, [selectedFilter === "Checklist"]);
-  // === Handlers for Certificates ===
   const handleSelectAllCertificates = (rows) => {
     if (selectedCertificates.length === rows.length) {
       setSelectedCertificates([]);
@@ -197,12 +193,6 @@ const Certificates = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (selectedFilter === "Checklist") {
-      getCheckList();
-    }
-  }, [selectedFilter, page, limit, debouncedSearch, showAll]);
 
   useEffect(() => {
     if (selectedFilter === "Checklist") {
@@ -342,8 +332,13 @@ const Certificates = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedFilter === "Reports") fetchReportsData();
-    else fetchCertificatesData();
+    if (selectedFilter === "Reports") {
+      fetchReportsData();
+    }
+
+    if (selectedFilter === "Certificates" || selectedFilter === "Archive Documents") {
+      fetchCertificatesData();
+    }
   }, [selectedFilter, page, limit, debouncedSearch, selectedReportNumber, placeFilter, statusFilter, startDate, endDate, showAll]);
 
   useEffect(() => {
@@ -364,6 +359,13 @@ const Certificates = () => {
     setPreviewFile(viewerUrl);
     setOpenPreviewModal(true);
   };
+
+  useEffect(() => {
+    if (selectedFilter === "Checklist") {
+      setTotalRows(0);
+      setTotalCount(0);
+    }
+  }, [selectedFilter]);
 
   const handleDownloadDocument = async (url) => {
     if (!url) return;
@@ -1084,17 +1086,19 @@ const Certificates = () => {
         <Stack direction="row" justifyContent="space-between" alignItems="center" mt={2}>
           <Typography sx={{ fontWeight: "bold" }}>Total Count: {count}</Typography>
           <Stack direction="row" spacing={2} alignItems="center">
-            <CommonButton
-              text={showAll ? "Show Paginated" : "Show All"}
-              variant="outlined"
-              size="small"
-              sx={{ textTransform: "uppercase", padding: "6px 6px", fontSize: "14px" }}
-              onClick={() => {
-                setShowAll((prev) => !prev);
-                setPage(1);
-              }}
-            />
-            {!showAll && <Pagination count={Math.ceil(totalRows / limit)} page={page} onChange={handlePageChange} color="primary" variant="outlined" shape="rounded" sx={{ marginTop: "10px" }} />}{" "}
+            {showAll && (
+              <CommonButton
+                text={showAll ? "Show Paginated" : "Show All"}
+                variant="outlined"
+                size="small"
+                sx={{ textTransform: "uppercase", padding: "6px 6px", fontSize: "14px" }}
+                onClick={() => {
+                  setShowAll((prev) => !prev);
+                  setPage(1);
+                }}
+              />
+            )}
+            {!showAll && checkList?.length > 0 && <Pagination count={Math.ceil(totalRows / limit)} page={page} onChange={handlePageChange} color="primary" variant="outlined" shape="rounded" sx={{ marginTop: "10px" }} />}{" "}
           </Stack>
         </Stack>
       </CommonCard>

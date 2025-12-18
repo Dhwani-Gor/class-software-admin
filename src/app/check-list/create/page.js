@@ -7,7 +7,7 @@ import mammoth from "mammoth";
 import { toast } from "react-toastify";
 import { Editor } from "@tinymce/tinymce-react";
 
-import { getAllClients, fetchJournalList, getAllActivities, getSpecificClient, addCheckList, updateCheckList, getAllSystemVariables, getSingleChecklist, getAllChecklist } from "@/api";
+import { getAllClients, fetchJournalList, getAllActivities, getSpecificClient, addCheckList, updateCheckList, getAllSystemVariables, getSingleChecklist, getAllChecklist, getVisitDetails } from "@/api";
 
 import CommonButton from "@/components/CommonButton";
 import CommonCard from "@/components/CommonCard";
@@ -86,9 +86,12 @@ const injectCompanyHeader = (html, systemVariables) => {
   return container.innerHTML;
 };
 
+
 /* =======================
    CLIENT VALUE
 ======================= */
+
+
 
 const getClientValue = (field, client, extra = {}) => {
   switch (field) {

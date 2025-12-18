@@ -66,8 +66,6 @@ const MachineList = () => {
         machineSection: ""
     });
 
-    console.log(editForm, "edit form")
-
     const [openDialog, setOpenDialog] = useState(false);
     const [selectedMachineId, setSelectedMachineId] = useState(null);
 
@@ -86,7 +84,7 @@ const MachineList = () => {
                 : "",
             positionCode: item.positionCode || "",
             status: item.status || "",
-        machineSection: sectionKey
+            machineSection: sectionKey
         });
 
         setOpenEditDialog(true);
