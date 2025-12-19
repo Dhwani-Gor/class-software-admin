@@ -281,23 +281,48 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
 
     const allData = {};
 
-    // Process each selected endorsement
     selectedEndorsements.forEach((selectedEndorsement) => {
       const flattenedData = {};
       const numberMatch = selectedEndorsement.title.match(/\d+/);
       const num = numberMatch ? numberMatch[0] : "";
 
-      Object.entries(selectedEndorsement).forEach(([key, value]) => {
-        if (key === "title") return;
+      // Only process actual input fields, not placeholder values
+      const inputFields = ["endorsed_place", "issuance_place", "issuance_date", "validity_date"];
+      inputFields.forEach((key) => {
+        const inputKey = `${selectedEndorsement.title}_${key}`;
+        let finalValue = endorsementInputs[inputKey] ?? "";
 
+        // Format dates if entered
+        if (key.toLowerCase().includes("date") && finalValue) {
+          const date = new Date(finalValue);
+          if (!isNaN(date)) {
+            const day = String(date.getDate()).padStart(2, "0");
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const year = date.getFullYear();
+            finalValue = `${day}/${month}/${year}`;
+          } else {
+            finalValue = "";
+          }
+        }
+
+        // Map keys to numbered keys
+        let newKey = key;
+        if (key === "endorsed_place") newKey = `issuance_place_${num}`;
+        else if (key === "issuance_date") newKey = `issuance_date_${num}`;
+        else if (key === "validity_date") newKey = `validity_date_${num}`;
+
+        flattenedData[newKey] = finalValue;
+      });
+
+      // Handle strikethrough radio fields
+      Object.entries(selectedEndorsement).forEach(([key, value]) => {
         if (typeof value === "string" && value.startsWith("_st_")) {
           const [, raw] = value.split("_st_");
           const optionsRaw = raw.split("_");
-
           const options = optionsRaw.map((opt) => opt.replace(/-/g, " ").replace(/\d+$/, ""));
           const selectedOption = radioValues[`${selectedEndorsement.title}_${value}`];
-          let formattedValue;
 
+          let formattedValue = "";
           if (!selectedOption) {
             formattedValue = options.join(" / ");
           } else {
@@ -306,47 +331,27 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
           }
 
           flattenedData[value] = formattedValue;
-          return;
         }
-
-        const inputKey = `${selectedEndorsement.title}_${key}`;
-        let finalValue = endorsementInputs[inputKey] ?? value ?? "";
-
-        if (key.toLowerCase().includes("date") && finalValue) {
-          const date = new Date(finalValue);
-          if (!isNaN(date)) {
-            const day = String(date.getDate()).padStart(2, "0");
-            const month = String(date.getMonth() + 1).padStart(2, "0");
-            const year = date.getFullYear();
-            finalValue = `${day}/${month}/${year}`;
-          }
-        }
-
-        let newKey = key;
-        if (key === "endorsed_place") newKey = `issuance_place_${num}`;
-        else if (key === "issuance_date") newKey = `issuance_date_${num}`;
-        else if (key === "endorsed_by") newKey = `endorsed_by_${num}`;
-        else if (key === "validity_date") newKey = `validity_date_${num}`;
-
-        flattenedData[newKey] = finalValue;
       });
 
+      // Issued By dropdown
       const issuedBy = issuedByValues[selectedEndorsement.title];
       if (issuedBy) {
         const selectedSurveyor = surveyorOptions.find((s) => s.value === issuedBy);
         flattenedData[`endorsed_by_${num}`] = selectedSurveyor?.label || "";
+      } else {
+        flattenedData[`endorsed_by_${num}`] = ""; // send empty string if not selected
       }
 
+      // Remarks
       const remarks = remarksValues[selectedEndorsement.title];
-      if (remarks && remarks.trim() !== "") {
-        flattenedData[`endorsement_remarks_${num}`] = remarks.trim();
-      }
+      flattenedData[`endorsement_remarks_${num}`] = remarks?.trim() ?? "";
 
+      // Endorsement stamp
       if (endorsementStamp) {
         flattenedData[`endorsement_stamp_${num}`] = endorsementStamp;
       }
 
-      // Merge all data together
       Object.assign(allData, flattenedData);
     });
 

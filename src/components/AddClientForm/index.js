@@ -131,20 +131,22 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
 
   const router = useRouter();
 
-  const fetchClients = async () => {
-    try {
-      setLoading(true);
-      const result = await getAllClients();
-      if (result?.data?.status === "success") {
-        setClassId(result?.data?.data[0]?.classId);
-      } else {
-        toast.error("Something went wrong ! Please try again after some time");
-      }
+  const getMaxClassId = (records) => {
+    return records.reduce((max, item) => {
+      if (!item?.classId) return max;
 
-      setLoading(false);
-    } catch (error) {
-      setLoading(false);
-      toast.error(error);
+      return Number(item.classId) > Number(max || 0) ? item.classId : max;
+    }, null);
+  };
+
+  const fetchClients = async () => {
+    const result = await getAllClients();
+
+    if (result?.data?.status === "success") {
+      const records = result.data.data || [];
+      const maxClassId = getMaxClassId(records);
+
+      setClassId(maxClassId);
     }
   };
 
@@ -230,23 +232,17 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
 
   console.log(mode);
   useEffect(() => {
-    if (mode === "create" && classId) {
-      const now = new Date();
+    if (mode !== "create" || !classId) return;
 
-      const year = String(now.getFullYear()).slice(-2);
-      const month = String(now.getMonth() + 1).padStart(2, "0");
+    const now = new Date();
+    const year = String(now.getFullYear()).slice(-2);
+    const month = String(now.getMonth() + 1).padStart(2, "0");
 
-      // Extract last 3 digits only
-      const lastSequence = parseInt(classId.slice(-3), 10) || 0;
-      const nextSequence = lastSequence + 1;
+    const seq = parseInt(classId.slice(-3), 10) + 1;
+    const nextSeq = String(seq).padStart(3, "0");
 
-      const nextNumber = String(nextSequence).padStart(3, "0");
-
-      const generatedId = `${year}${month}${nextNumber}`;
-
-      setValue("classId", generatedId);
-    }
-  }, [mode, classId, setValue]);
+    setValue("classId", `${year}${month}${nextSeq}`);
+  }, [mode, classId]);
 
   const handleAddRow = () => {
     setClassHistory([...classHistory, { shipStatus: "", reason: "", remarks: "", from_date: "", to_date: "" }]);
