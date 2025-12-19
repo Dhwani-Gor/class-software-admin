@@ -559,7 +559,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             />
                         ) : row.isFrom ? (
                             <TextField
-                                type="date"
+                                type="text"
                                 size="small"
                                 variant="standard"
                                 fullWidth
@@ -592,7 +592,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         ) : row.isFrom ? (
                             <TextField
                                 variant="standard"
-                                type="date"
+                                type="text"
                                 size="small"
                                 fullWidth
                                 label="Upto"
