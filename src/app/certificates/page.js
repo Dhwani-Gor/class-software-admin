@@ -1098,7 +1098,7 @@ const Certificates = () => {
                 }}
               />
             )}
-            {!showAll && checkList?.length > 0 && <Pagination count={Math.ceil(totalRows / limit)} page={page} onChange={handlePageChange} color="primary" variant="outlined" shape="rounded" sx={{ marginTop: "10px" }} />}{" "}
+            {!showAll && <Pagination count={Math.ceil(totalRows / limit)} page={page} onChange={handlePageChange} color="primary" variant="outlined" shape="rounded" sx={{ marginTop: "10px" }} />}{" "}
           </Stack>
         </Stack>
       </CommonCard>
