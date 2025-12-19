@@ -284,13 +284,13 @@ const TextEditor = ({ id }) => {
     `;
       contentDocument.head.appendChild(style);
 
-      const diamondIcons = contentDocument.querySelectorAll("span.expiring1m");
+      const diamondIcons = contentDocument?.querySelectorAll("span.expiring1m");
       diamondIcons.forEach((icon) => {
         const text = icon.textContent;
         icon.innerHTML = `<span>${text}</span>`;
       });
 
-      const tableRows = contentDocument.querySelectorAll("table tr");
+      const tableRows = contentDocument?.querySelectorAll("table tr");
       tableRows.forEach((row) => {
         row.classList.add("no-break");
         row.style.pageBreakInside = "avoid";
@@ -298,7 +298,7 @@ const TextEditor = ({ id }) => {
       });
 
       // Prevent page break for h4 headings
-      const headings = contentDocument.querySelectorAll("h4");
+      const headings = contentDocument?.querySelectorAll("h4");
       headings.forEach((heading) => {
         heading.classList.add("no-break");
         heading.style.pageBreakInside = "avoid";
@@ -361,8 +361,8 @@ const TextEditor = ({ id }) => {
       //   return positions;
       // };
       const getTableRowPositions = () => {
-        const rows = contentDocument.querySelectorAll("table tr");
-        const headings = contentDocument.querySelectorAll("h4");
+        const rows = contentDocument?.querySelectorAll("table tr");
+        const headings = contentDocument?.querySelectorAll("h4");
         const positions = [];
 
         // Add table rows
@@ -850,9 +850,9 @@ const TextEditor = ({ id }) => {
 
     const certificateTables = editorDoc.querySelectorAll("table");
     certificateTables.forEach((table) => {
-      const rows = table.querySelectorAll("tbody tr");
+      const rows = table?.querySelectorAll("tbody tr");
       rows.forEach((row) => {
-        const cells = row.querySelectorAll("td");
+        const cells = row?.querySelectorAll("td");
         if (cells.length >= 4) {
           const iconCell = cells[1];
           const expiryCell = cells[3];
@@ -875,9 +875,9 @@ const TextEditor = ({ id }) => {
     });
 
     certificateTables.forEach((table) => {
-      const rows = table.querySelectorAll("tr");
+      const rows = table?.querySelectorAll("tr");
       rows.forEach((row) => {
-        const cells = row.querySelectorAll("td");
+        const cells = row?.querySelectorAll("td");
         if (cells.length >= 7) {
           const lastCell = cells[1];
           const dueDateCell = cells[4];
@@ -1107,18 +1107,50 @@ ${classificationRows}
     })
     .join("");
 
+  const machineData = machineList?.machineData || [];
 
-  const rows = Object.values(machineList?.machineData || {})
-    .flatMap(section => {
-      const sectionName = section?.sectionName || '';
-      const items = section?.items || [];
+  const machineSections = machineData && machineData
+    ?.filter(section => Number(section.sectionNumber) < 31)
+    .sort((a, b) => Number(a.sectionNumber) - Number(b.sectionNumber));
 
-      // Add section name as first row, then all items
-      return [
-        { isSectionHeader: true, sectionName },
-        ...items
-      ];
+  const hullSections = machineData
+    .filter(section => Number(section.sectionNumber) >= 31)
+    .sort((a, b) => Number(a.sectionNumber) - Number(b.sectionNumber));
+
+  const rows = [];
+
+  /* ---------------- MACHINE LIST ---------------- */
+  if (machineSections.length > 0) {
+    rows.push({
+      isSectionHeader: true,
+      sectionName: "List of machinery items"
     });
+  }
+
+  machineSections.forEach(section => {
+    rows.push({
+      isSectionHeader: true,
+      sectionName: section.sectionName
+    });
+
+    (section.items || []).forEach(item => rows.push(item));
+  });
+
+  if (hullSections.length > 0) {
+    rows.push({
+      isSectionHeader: true,
+      sectionName: "List of hull items"
+    });
+
+    hullSections.forEach(section => {
+      rows.push({
+        isSubSectionHeader: true,
+        sectionName: `${section.sectionNumber} - ${section.sectionName}`
+      });
+
+      (section.items || []).forEach(item => rows.push(item));
+    });
+  }
 
   const machineListHtml = `
 <table style="width:100%; border-collapse:collapse; font-size:14px;">
@@ -1135,35 +1167,50 @@ ${classificationRows}
   </thead>
   <tbody>
     ${rows
-      .map((item) => {
+      .map(item => {
         if (item.isSectionHeader) {
           return `
             <tr>
-              <td colspan="7" style="padding:8px; background-color:#e8f4f8; font-weight:bold; font-size:15px;">
+              <td colspan="7"
+                  style="padding:8px; font-weight:bold; font-size:15px;">
                 ${item.sectionName}
               </td>
             </tr>`;
         }
 
+        if (item.isSubSectionHeader) {
+          return `
+              <tr>
+                <td colspan="7"
+                    style="padding:8px; background-color:#f6f6f6; font-weight:bold;">
+                  ${item.sectionName}
+                </td>
+              </tr>`;
+        }
+
         return `
           <tr>
             <td style="padding:6px;">${item.generatedCode || "-"}</td>
-<td style="padding:6px;">
-  ${item.status !== undefined
-            ? item?.status === "credited"
-              ? "Credited"
-              : item?.status === "waived off"
-                ? "Waived Off"
-                : item?.status === "postponed"
-                  ? "Postponed"
-                  : "-"
-            : "-"
+            <td style="padding:6px;">
+              ${item.status === "credited"
+            ? "Credited"
+            : item.status === "waived off"
+              ? "Waived Off"
+              : item.status === "postponed"
+                ? "Postponed"
+                : "-"
           }
-</td>
-            <td style="padding:6px;">${item.postponedDate ? moment(item.postponedDate).format("DD/MM/YYYY") : "-"}</td>
+            </td>
+            <td style="padding:6px;">
+              ${item.postponedDate ? moment(item.postponedDate).format("DD/MM/YYYY") : "-"}
+            </td>
             <td style="padding:6px;">5</td>
-            <td style="padding:6px;">${item.assignmentDate ? moment(item.assignmentDate).format("DD/MM/YYYY") : "-"}</td>
-            <td style="padding:6px;">${item.dueDate ? moment(item.dueDate).format("DD/MM/YYYY") : "-"}</td>
+            <td style="padding:6px;">
+              ${item.assignmentDate ? moment(item.assignmentDate).format("DD/MM/YYYY") : "-"}
+            </td>
+            <td style="padding:6px;">
+              ${item.dueDate ? moment(item.dueDate).format("DD/MM/YYYY") : "-"}
+            </td>
             <td style="padding:6px;">${item.content || "-"}</td>
           </tr>`;
       })
