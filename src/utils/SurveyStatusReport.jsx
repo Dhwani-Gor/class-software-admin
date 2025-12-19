@@ -1107,18 +1107,52 @@ ${classificationRows}
     })
     .join("");
 
+  const machineData = machineList?.machineData || [];
 
-  const rows = Object.values(machineList?.machineData || {})
-    .flatMap(section => {
-      const sectionName = section?.sectionName || '';
-      const items = section?.items || [];
+  // Machine sections (< 31)
+  const machineSections = machineData
+    .filter(section => Number(section.sectionNumber) < 31)
+    .sort((a, b) => Number(a.sectionNumber) - Number(b.sectionNumber));
 
-      // Add section name as first row, then all items
-      return [
-        { isSectionHeader: true, sectionName },
-        ...items
-      ];
+  // Hull sections (>= 31)
+  const hullSections = machineData
+    .filter(section => Number(section.sectionNumber) >= 31)
+    .sort((a, b) => Number(a.sectionNumber) - Number(b.sectionNumber));
+
+  const rows = [];
+
+  /* ---------------- MACHINE LIST ---------------- */
+  if (machineSections.length > 0) {
+    rows.push({
+      isSectionHeader: true,
+      sectionName: "List of machinery items"
     });
+  }
+
+  machineSections.forEach(section => {
+    rows.push({
+      isSectionHeader: true,
+      sectionName: section.sectionName
+    });
+
+    (section.items || []).forEach(item => rows.push(item));
+  });
+
+  if (hullSections.length > 0) {
+    rows.push({
+      isSectionHeader: true,
+      sectionName: "List of hull items"
+    });
+
+    hullSections.forEach(section => {
+      rows.push({
+        isSubSectionHeader: true,
+        sectionName: `${section.sectionNumber} - ${section.sectionName}`
+      });
+
+      (section.items || []).forEach(item => rows.push(item));
+    });
+  }
 
   const machineListHtml = `
 <table style="width:100%; border-collapse:collapse; font-size:14px;">
@@ -1135,35 +1169,53 @@ ${classificationRows}
   </thead>
   <tbody>
     ${rows
-      .map((item) => {
+      .map(item => {
+        /* ---------- MAIN SECTION HEADER ---------- */
         if (item.isSectionHeader) {
           return `
             <tr>
-              <td colspan="7" style="padding:8px; background-color:#e8f4f8; font-weight:bold; font-size:15px;">
+              <td colspan="7"
+                  style="padding:8px; font-weight:bold; font-size:15px;">
                 ${item.sectionName}
               </td>
             </tr>`;
         }
 
+        /* ---------- HULL SUB-SECTION HEADER ---------- */
+        if (item.isSubSectionHeader) {
+          return `
+            <tr>
+              <td colspan="7"
+                  style="padding:8px; background-color:#f6f6f6; font-weight:bold;">
+                ${item.sectionName}
+              </td>
+            </tr>`;
+        }
+
+        /* ---------- NORMAL ITEM ROW ---------- */
         return `
           <tr>
             <td style="padding:6px;">${item.generatedCode || "-"}</td>
-<td style="padding:6px;">
-  ${item.status !== undefined
-            ? item?.status === "credited"
-              ? "Credited"
-              : item?.status === "waived off"
-                ? "Waived Off"
-                : item?.status === "postponed"
-                  ? "Postponed"
-                  : "-"
-            : "-"
+            <td style="padding:6px;">
+              ${item.status === "credited"
+            ? "Credited"
+            : item.status === "waived off"
+              ? "Waived Off"
+              : item.status === "postponed"
+                ? "Postponed"
+                : "-"
           }
-</td>
-            <td style="padding:6px;">${item.postponedDate ? moment(item.postponedDate).format("DD/MM/YYYY") : "-"}</td>
+            </td>
+            <td style="padding:6px;">
+              ${item.postponedDate ? moment(item.postponedDate).format("DD/MM/YYYY") : "-"}
+            </td>
             <td style="padding:6px;">5</td>
-            <td style="padding:6px;">${item.assignmentDate ? moment(item.assignmentDate).format("DD/MM/YYYY") : "-"}</td>
-            <td style="padding:6px;">${item.dueDate ? moment(item.dueDate).format("DD/MM/YYYY") : "-"}</td>
+            <td style="padding:6px;">
+              ${item.assignmentDate ? moment(item.assignmentDate).format("DD/MM/YYYY") : "-"}
+            </td>
+            <td style="padding:6px;">
+              ${item.dueDate ? moment(item.dueDate).format("DD/MM/YYYY") : "-"}
+            </td>
             <td style="padding:6px;">${item.content || "-"}</td>
           </tr>`;
       })

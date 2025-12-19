@@ -111,9 +111,9 @@ export const MACHINERY_SECTIONS = {
     sectionName: "Shafting Arrangement",
     rows: [
       { id: "01", label: "Shafting Arrangement", hasPosition: true, isDue: true, isFrom: false, repeatPerCylinder: false },
-      { id: "01", label: "Thrust shaft and bearings", hasPosition: true, isDue: true, isFrom: false, repeatPerCylinder: false },
-      { id: "02", label: "Intermediate shaft and bearing/s", hasPosition: true, isDue: true, isFrom: false, repeatPerCylinder: false },
-      { id: "03", label: "Coupling/clutch for shafting", hasPosition: true, isDue: true, isFrom: false, repeatPerCylinder: false },
+      { id: "02", label: "Thrust shaft and bearings", hasPosition: true, isDue: true, isFrom: false, repeatPerCylinder: false },
+      { id: "03", label: "Intermediate shaft and bearing/s", hasPosition: true, isDue: true, isFrom: false, repeatPerCylinder: false },
+      { id: "04", label: "Coupling/clutch for shafting", hasPosition: true, isDue: true, isFrom: false, repeatPerCylinder: false },
     ],
   },
   6: {

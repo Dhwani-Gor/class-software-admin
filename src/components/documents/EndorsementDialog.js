@@ -43,8 +43,7 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
     if (!numberMatch) return false;
     const num = numberMatch[0];
 
-    // Check if any of the key fields have values
-    const fieldsToCheck = [`endorsed_by_${num}`, `issuance_place_${num}`, `issuance_date_${num}`];
+    const fieldsToCheck = [`endorsed_by_${num}`, `issuance_place_${num}`, `issuance_date_${num}`, `validity_date_${num}`, `endorsement_remarks_${num}`, `endorsement_stamp_${num}`];
 
     return fieldsToCheck.some((field) => {
       const val = reportDetails.data[field];
