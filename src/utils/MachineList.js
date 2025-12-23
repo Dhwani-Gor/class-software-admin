@@ -579,6 +579,7 @@ export const HULL_SECTIONS = {
         isDue: false,
         isFrom: false,
         repeatPerCylinder: false,
+        isTankRow: true,
       },
       {
         id: "03",
@@ -587,6 +588,7 @@ export const HULL_SECTIONS = {
         isDue: false,
         isFrom: false,
         repeatPerCylinder: false,
+        isTankRow: true,
       },
       {
         id: "04",
@@ -595,6 +597,7 @@ export const HULL_SECTIONS = {
         isDue: false,
         isFrom: false,
         repeatPerCylinder: false,
+        isTankRow: true,
       },
       {
         id: "05",
@@ -603,6 +606,7 @@ export const HULL_SECTIONS = {
         isDue: false,
         isFrom: false,
         repeatPerCylinder: false,
+        isTankRow: true,
       },
       {
         id: "06",
@@ -611,6 +615,7 @@ export const HULL_SECTIONS = {
         isDue: false,
         isFrom: false,
         repeatPerCylinder: false,
+        isTankRow: true,
       },
       {
         id: "07",
@@ -619,6 +624,7 @@ export const HULL_SECTIONS = {
         isDue: false,
         isFrom: false,
         repeatPerCylinder: false,
+        isTankRow: true,
       },
       {
         id: "08",
@@ -627,6 +633,7 @@ export const HULL_SECTIONS = {
         isDue: false,
         isFrom: false,
         repeatPerCylinder: false,
+        isTankRow: true,
       },
       {
         id: "09",
@@ -635,6 +642,7 @@ export const HULL_SECTIONS = {
         isDue: false,
         isFrom: false,
         repeatPerCylinder: false,
+        isTankRow: true,
       },
       {
         id: "10",
@@ -643,6 +651,7 @@ export const HULL_SECTIONS = {
         isDue: false,
         isFrom: false,
         repeatPerCylinder: false,
+        isTankRow: true,
       },
     ],
   },
@@ -657,6 +666,7 @@ export const HULL_SECTIONS = {
         isDue: false,
         isFrom: false,
         repeatPerCylinder: false,
+        isTankRow: true,
       },
       {
         id: "02",
@@ -665,6 +675,7 @@ export const HULL_SECTIONS = {
         isDue: false,
         isFrom: false,
         repeatPerCylinder: false,
+        isTankRow: true,
       },
       {
         id: "03",
@@ -673,6 +684,7 @@ export const HULL_SECTIONS = {
         isDue: false,
         isFrom: false,
         repeatPerCylinder: false,
+        isTankRow: true,
       },
     ],
   },
@@ -709,6 +721,7 @@ export const HULL_SECTIONS = {
         isDue: false,
         isFrom: true,
         repeatPerCylinder: false,
+        isTankRow: true,
       },
       {
         id: "03",
@@ -717,6 +730,7 @@ export const HULL_SECTIONS = {
         isDue: false,
         isFrom: true,
         repeatPerCylinder: false,
+        isTankRow: true,
       },
     ],
   },
