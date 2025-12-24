@@ -744,6 +744,8 @@ export const HULL_SECTIONS = {
         hasPosition: false,
         isDue: false,
         isFrom: false,
+        repeatPerCylinder: false,
+        isTankRow: true,
       },
     ],
   },
