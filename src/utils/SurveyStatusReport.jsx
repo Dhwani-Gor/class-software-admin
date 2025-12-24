@@ -574,8 +574,8 @@ const TextEditor = ({ id }) => {
 
       const formData = new FormData();
       formData.append("clientId", id);
-      formData.append("generatedDoc", file);
       formData.append("type", "survey-status");
+      formData.append("generatedDoc", file);
 
       const res = await uploadSurveyReport(formData);
       if (res) {

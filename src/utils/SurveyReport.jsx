@@ -651,8 +651,8 @@ of Class recommended now or previously, being dealt with as recommended.</p>
       formData.append("clientId", id);
       formData.append("reportNumber", reportDetails[0]?.activity?.journal?.journalTypeId);
       formData.append("surveyType", reportDetails[0]?.activity?.surveyTypes?.name);
-      formData.append("generatedDoc", file);
       formData.append("type", "survey-report");
+      formData.append("generatedDoc", file);
 
 
       const res = await uploadSurveyReport(formData);
