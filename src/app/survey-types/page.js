@@ -1,21 +1,11 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import CircularProgress from "@mui/material/CircularProgress";
-import Pagination from "@mui/material/Pagination";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogTitle from "@mui/material/DialogTitle";
-import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
-import Snackbar from "@mui/material/Snackbar";
-import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import { DataGrid } from "@mui/x-data-grid";
+import { Box, Stack, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Tooltip, CircularProgress, Pagination } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import Layout from "@/Layout";
 import CommonCard from "@/components/CommonCard";
 import CommonButton from "@/components/CommonButton";
@@ -26,211 +16,167 @@ import { toast } from "react-toastify";
 const SurveyTypes = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [snackBar, setSnackBar] = useState({ open: false, message: "" });
   const [surveyTypes, setSurveyTypes] = useState([]);
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [selectedClient, setSelectedClientId] = useState(null);
+  const [showAll, setShowAll] = useState(false);
 
-  const snackbarClose = () => {
-    setSnackBar({ open: false, message: "" });
-  };
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: "asc",
+  });
 
+  /* -------------------- SEARCH DEBOUNCE -------------------- */
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
       setPage(1);
     }, 300);
-
     return () => clearTimeout(handler);
   }, [search]);
 
-  const fetchAllSurveyTypes = async (search, page, limit) => {
+  /* -------------------- FETCH DATA -------------------- */
+  const fetchSurveyTypes = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const result = await getSurveyTypes(search, page, limit);
-      if (result?.status === 200) {
-        const formatted = result.data.data.map((item) => {
+      const res = showAll ? await getSurveyTypes(debouncedSearch) : await getSurveyTypes(debouncedSearch, page, limit);
+
+      if (res?.status === 200) {
+        const formatted = res.data.data.map((item) => {
           let type = "-";
           if (item.statutorySurvey) type = "Statutory";
           else if (item.classificationSurvey) type = "Classification";
           else if (item.audit) type = "Audit";
           return { ...item, type };
         });
-        setSurveyTypes(formatted);
-        setTotalRows(result.data.results);
-      } else {
-        toast.error("Something went wrong ! Please try again after some time");
-      }
 
+        setSurveyTypes(formatted);
+        setTotalRows(res.data.results || formatted.length);
+      }
+    } catch {
+      toast.error("Failed to fetch survey types");
+    } finally {
       setLoading(false);
-    } catch (error) {
-      setLoading(false);
-      toast.error(error);
     }
   };
 
   useEffect(() => {
-    fetchAllSurveyTypes(debouncedSearch, page, limit);
-  }, [debouncedSearch, page, limit]);
+    fetchSurveyTypes();
+  }, [debouncedSearch, page, showAll]);
 
-  const handleSearchChange = (event) => {
-    setSearch(event.target.value);
+  /* -------------------- SORT -------------------- */
+  const handleSort = (key) => {
+    setSortConfig((prev) => ({
+      key,
+      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
+    }));
   };
 
-  const handleDeleteClick = (clientId) => {
-    setSelectedClientId(clientId);
-    setOpenDialog(true);
-  };
+  const sortedData = [...surveyTypes].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+    const aVal = a[sortConfig.key] || "";
+    const bVal = b[sortConfig.key] || "";
+    return sortConfig.direction === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+  });
 
-  const handleConfirmDelete = async () => {
-    setOpenDialog(false);
-    if (!selectedClient) return;
+  /* -------------------- DELETE -------------------- */
+  const handleDelete = async (id) => {
     try {
-      const res = await deleteSurveyType({ id: selectedClient });
-      if (res) {
-        toast.success("Survey type deleted successfully");
-      }
-      fetchAllSurveyTypes(debouncedSearch, page, limit);
-    } catch (e) {
-      console.error("Error deleting Survey Type:", e.response?.data || e.message);
-      toast.error("Failed to delete Survey Type.");
+      await deleteSurveyType({ id });
+      toast.success("Survey type deleted successfully");
+      fetchSurveyTypes();
+    } catch {
+      toast.error("Failed to delete survey type");
     }
   };
 
-  const handleCancelDelete = () => {
-    setSelectedClientId(null);
-    setOpenDialog(false);
-  };
-
-  const handlePageChange = (event, value) => {
-    setPage(value);
-    router.push(`/survey-types?page=${value}&limit=${limit}`);
-  };
-
-  const columns = [
-    {
-      field: "index",
-      headerName: "No.",
-      flex: 0.5,
-      sortable: false,
-      renderCell: (params) => {
-        return (page - 1) * limit + params.api.getAllRowIds().indexOf(params.id) + 1;
-      },
-    },
-    { field: "name", headerName: "Survey Type", flex: 1.5 },
-    { field: "abbreviation", headerName: "Abbreviation", flex: 1 },
-    { field: "type", headerName: "Type", flex: 1 },
-    {
-      field: "actions",
-      headerName: "Actions",
-      width: 100,
-      renderCell: (params) => (
-        <Stack direction="row" spacing={1}>
-          <Tooltip title="Edit Client">
-            <IconButton color="primary" onClick={() => router.push(`/survey-types/${params?.id}`)}>
-              <EditIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete Client">
-            <IconButton color="error" onClick={() => handleDeleteClick(params?.id)}>
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      ),
-    },
-  ];
-
   return (
     <Layout>
-      <CommonCard sx={{ mt: 0 }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
+      <CommonCard>
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Typography variant="h4" fontWeight={700}>
             Survey Types
           </Typography>
-          <CommonButton
-            sx={{ textTransform: "capitalize" }}
-            text="Add Survey Type"
-            variant="contained"
-            onClick={() => {
-              router.push("/survey-types/create");
-            }}
-          />
+          <CommonButton text="Add Survey Type" variant="contained" onClick={() => router.push("/survey-types/create")} />
         </Stack>
       </CommonCard>
 
       <CommonCard>
-        <CommonInput placeholder="Search Survey Types" fullWidth value={search} onChange={handleSearchChange} sx={{ marginBottom: 2 }} />
-        <Box sx={{ width: "100%", mt: 4 }}>
-          {loading ? (
-            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
-              <CircularProgress />
-            </Box>
-          ) : surveyTypes.length > 0 ? (
-            <DataGrid
-              rows={surveyTypes}
-              columns={columns}
-              loading={loading}
-              pagination={false}
-              disableColumnFilter
-              disableColumnMenu
-              disableColumnSelector
-              disableDensitySelector
-              disableRowSelectionOnClick
-              hideFooter
-              sx={{
-                backgroundColor: "#fff",
-                border: "none",
+        <CommonInput placeholder="Search Survey Types" value={search} onChange={(e) => setSearch(e.target.value)} sx={{ mb: 2 }} />
+
+        {loading ? (
+          <Box display="flex" justifyContent="center" height={300}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <TableContainer>
+            <Table sx={{ marginTop: 3 }}>
+              <TableHead>
+                <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                  {[{ label: "No." }, { label: "Survey Type", key: "name" }, { label: "Abbreviation", key: "abbreviation" }, { label: "Type", key: "type" }, { label: "Actions" }].map((col) => (
+                    <TableCell key={col.label} sx={{ fontWeight: 600, cursor: col.key ? "pointer" : "default" }} onClick={() => col.key && handleSort(col.key)}>
+                      <Stack direction="row" alignItems="center" spacing={0.5}>
+                        <Typography>{col.label}</Typography>
+                        {sortConfig.key === col.key && (sortConfig.direction === "asc" ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}
+                      </Stack>
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+
+              <TableBody>
+                {sortedData.map((row, idx) => (
+                  <TableRow key={row.id}>
+                    <TableCell>{(page - 1) * limit + idx + 1}</TableCell>
+                    <TableCell>{row.name}</TableCell>
+                    <TableCell>{row.abbreviation}</TableCell>
+                    <TableCell>{row.type}</TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={1}>
+                        <Tooltip title="Edit">
+                          <IconButton color="primary" onClick={() => router.push(`/survey-types/${row.id}`)}>
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                          <IconButton color="error" onClick={() => handleDelete(row.id)}>
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+
+        {/* -------- FOOTER -------- */}
+        <Stack direction="row" justifyContent="space-between" alignItems="center" mt={2}>
+          <Typography fontWeight="bold">Total Count: {totalRows}</Typography>
+
+          <Stack direction="row" spacing={2} alignItems="center">
+            <CommonButton
+              text={showAll ? "Show Paginated" : "Show All"}
+              variant="outlined"
+              size="small"
+              sx={{ textTransform: "uppercase", padding: "6px 6px", fontSize: "14px" }}
+              onClick={() => {
+                setShowAll((prev) => !prev);
+                setPage(1);
               }}
             />
-          ) : (
-            <Typography variant="h6" align="center" sx={{ color: "gray", padding: 3 }}>
-              No Data Found
-            </Typography>
-          )}
-        </Box>
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-          <Pagination count={Math.ceil(totalRows / limit)} page={page} onChange={handlePageChange} color="primary" variant="outlined" shape="rounded" sx={{ marginTop: "10px" }} />
-        </Box>
+
+            {!showAll && <Pagination count={Math.ceil(totalRows / limit)} page={page} onChange={(e, val) => setPage(val)} color="primary" variant="outlined" shape="rounded" sx={{ marginTop: "10px" }} />}
+          </Stack>
+        </Stack>
       </CommonCard>
-
-      <Dialog open={openDialog} onClose={handleCancelDelete}>
-        <DialogTitle>Are you sure you want to delete this Survey Type?</DialogTitle>
-        <DialogActions>
-          <Button onClick={handleCancelDelete} color="primary">
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirmDelete}
-            sx={{
-              backgroundColor: "#ed2b1c",
-              color: "white",
-              fontWeight: "500",
-            }}
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Snackbar
-        open={snackBar.open}
-        autoHideDuration={2000}
-        message={snackBar.message}
-        anchorOrigin={{
-          vertical: "top",
-          horizontal: "center",
-        }}
-        onClose={snackbarClose}
-        className="snackBarColor"
-        key="snackbar"
-      />
     </Layout>
   );
 };

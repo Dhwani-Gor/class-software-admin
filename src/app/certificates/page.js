@@ -1086,18 +1086,16 @@ const Certificates = () => {
         <Stack direction="row" justifyContent="space-between" alignItems="center" mt={2}>
           <Typography sx={{ fontWeight: "bold" }}>Total Count: {count}</Typography>
           <Stack direction="row" spacing={2} alignItems="center">
-            {showAll && (
-              <CommonButton
-                text={showAll ? "Show Paginated" : "Show All"}
-                variant="outlined"
-                size="small"
-                sx={{ textTransform: "uppercase", padding: "6px 6px", fontSize: "14px" }}
-                onClick={() => {
-                  setShowAll((prev) => !prev);
-                  setPage(1);
-                }}
-              />
-            )}
+            <CommonButton
+              text={showAll ? "Show Paginated" : "Show All"}
+              variant="outlined"
+              size="small"
+              sx={{ textTransform: "uppercase", padding: "6px 6px", fontSize: "14px" }}
+              onClick={() => {
+                setShowAll((prev) => !prev);
+                setPage(1);
+              }}
+            />
             {!showAll && <Pagination count={Math.ceil(totalRows / limit)} page={page} onChange={handlePageChange} color="primary" variant="outlined" shape="rounded" sx={{ marginTop: "10px" }} />}{" "}
           </Stack>
         </Stack>
