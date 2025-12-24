@@ -26,7 +26,7 @@ import SendEmailDialog from "@/components/Dialogs/DownloadAllEmailDialog";
 import EmailIcon from "@mui/icons-material/Email";
 import { DownloadOutlined } from "@mui/icons-material";
 import BlockIcon from "@mui/icons-material/Block";
-import ChecklistPreviewModal, { generateChecklistHTML } from "@/components/Dialogs/CheckListPreviewDialog";
+import ChecklistPreviewModal, { generateUnifiedHTML } from "@/components/Dialogs/CheckListPreviewDialog";
 
 const Certificates = () => {
   const { data } = useAuth();
@@ -68,6 +68,7 @@ const Certificates = () => {
   const [checkListPreview, setCheckListPreview] = useState(false);
   const [checkListPreviewFile, setChecklistPreviewFile] = useState();
   const [systemVariables, setSystemVariables] = useState();
+  const [title, setTitle] = useState("");
   const prefix = systemVariables?.find((item) => item.name === "report_no_prefix")?.information || "-";
   const isSearchMode = debouncedSearch.trim().length > 0;
 
@@ -282,14 +283,17 @@ const Certificates = () => {
     if (!selectedDocument) return;
     try {
       if (selectedDocument.type === "document") {
+        setTitle("Document");
         const res = await deleteSurveyStatusReport(selectedDocument.id);
         toast.success("Document deleted successfully");
         fetchReportsData();
       } else if (selectedDocument.type === "report") {
+        setTitle("Report");
         await deleteSurveyReport(selectedDocument.id);
         toast.success("Report deleted successfully");
         fetchReportsData();
       } else if (selectedDocument.type === "checklist") {
+        setTitle("Checklist");
         await deleteCheckList(selectedDocument.id);
         toast.success("Checklist deleted successfully");
         getCheckList();
@@ -301,7 +305,7 @@ const Certificates = () => {
 
   const handleCancelDelete = () => {
     setSelectedDocument(null);
-    setSelectedCheckList(nulll);
+    setSelectedCheckList(null);
     setOpenDialog(false);
   };
 
@@ -793,21 +797,13 @@ const Certificates = () => {
 
                           <TableCell>{item?.journal?.journalTypeId || "N/A"}</TableCell>
 
-                          {/* Checklist title */}
-
-                          {/* Checklist description */}
-
                           <TableCell>
                             <Tooltip title="Preview Checklist">
                               <IconButton
                                 color="info"
                                 onClick={() => {
                                   setSelectedCheckList(item);
-                                  const html = generateChecklistHTML(item);
-                                  const blob = new Blob([html], { type: "text/html" });
-                                  const url = URL.createObjectURL(blob);
-                                  console.log(url, "url");
-                                  setChecklistPreviewFile(url);
+
                                   setCheckListPreview(true);
                                 }}
                               >
@@ -1101,7 +1097,7 @@ const Certificates = () => {
         </Stack>
       </CommonCard>
       <DocumentPreview open={openPreviewModal} fileUrl={previewFile} onClose={() => setOpenPreviewModal(false)} />
-      <CommonConfirmationDialog open={openDialog} onCancel={handleCancelDelete} onConfirm={handleConfirmDelete} title="Are you sure you want to delete this survey status report?" description="This action cannot be undone." />
+      <CommonConfirmationDialog open={openDialog} onCancel={handleCancelDelete} onConfirm={handleConfirmDelete} title={`Are you sure you want to delete this ${title}?`} description="This action cannot be undone." />
       <ShowAmdRemarksDialog open={openAmdRemarks} onClose={() => setOpenAmdRemarks(false)} reportDetailId={selectedReportId} hasArchivePermission={hasArchivePermission} selectedFilter={selectedFilter} />
       <SendEmailDialog open={openEmailDialog} onClose={() => setOpenEmailDialog(false)} selectedItems={resolveSelectedRows()} zipType={zipType} allItems={selectedFilter === "Certificates" ? certificatesList : selectedFilter === "Archive Documents" ? certificatesList : selectedFilter === "Reports" ? reportsList : []} createdUserEmail={createdUserEmail} prefix={prefix} />
       <ChecklistPreviewModal
