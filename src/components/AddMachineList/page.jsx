@@ -37,6 +37,12 @@ const SIMPLE_TANK_ROWS = [
     "Condition of Coating",
 ];
 
+const OTHER_THAN_TANK = [
+    "Examination",
+    "Test"
+]
+
+
 const MachineryHullManager = ({ mode, shipId }) => {
     const [tabValue, setTabValue] = useState(0);
     const [formData, setFormData] = useState({});
@@ -138,9 +144,21 @@ const MachineryHullManager = ({ mode, shipId }) => {
 
         if (isMachineryList) {
             const positions = data.position?.length ? data.position : ["-"];
-            const repetitions = row.hasFromTo
-                ? Math.max(1, (parseInt(data.to) || 1) - (parseInt(data.from) || 1) + 1)
-                : 1;
+            let repetitions = 1;
+
+            // From–To logic (unchanged)
+            if (row.hasFromTo) {
+                repetitions = Math.max(
+                    1,
+                    (parseInt(data.to) || 1) - (parseInt(data.from) || 1) + 1
+                );
+            }
+            else if (
+                isMachineryList &&
+                ["01", "02", "03"].includes(String(row.id).padStart(2, "0"))
+            ) {
+                repetitions = Number(noOfCylinders || 1);
+            }
 
             positions.forEach((pos) => {
                 for (let i = 1; i <= repetitions; i++) {
@@ -154,7 +172,9 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             pos,
                         occurrence: occ,
                         positionCode: pos,
-                        content: row.label,
+                        content: row.content
+                            ? row.content.replace("{cyl}", occ)
+                            : row.label,
                         assignmentDate: data.assignmentDate || today,
                         dueDate: data.dueDate || "",
                         isTank: false,
@@ -194,7 +214,6 @@ const MachineryHullManager = ({ mode, shipId }) => {
                     isTank: row.isTankRow === true,
                 });
 
-                // 🔥 ADD 5 ROWS **RIGHT AFTER BASE ROW**
                 if (row.isTankRow === true) {
                     SIMPLE_TANK_ROWS.forEach((label, index) => {
                         instances.push({

@@ -652,6 +652,8 @@ of Class recommended now or previously, being dealt with as recommended.</p>
       formData.append("reportNumber", reportDetails[0]?.activity?.journal?.journalTypeId);
       formData.append("surveyType", reportDetails[0]?.activity?.surveyTypes?.name);
       formData.append("generatedDoc", file);
+      formData.append("type", "survey-report");
+
 
       const res = await uploadSurveyReport(formData);
       if (res) {
@@ -673,21 +675,6 @@ of Class recommended now or previously, being dealt with as recommended.</p>
     }
   };
 
-  const getClassRangeIcon = (currentDateParam, rangeFrom, rangeTo) => {
-    const today = moment(currentDateParam, "YYYY-MM-DD");
-    if (!rangeFrom || !rangeTo) return "";
-
-    const from = moment(rangeFrom, "YYYY-MM-DD");
-    const to = moment(rangeTo, "YYYY-MM-DD");
-    if (!from.isValid() || !to.isValid()) return "";
-
-    if (today.isAfter(to, "day")) return "status-icon expired";
-
-    const daysToRangeTo = to.diff(today, "days");
-    if (daysToRangeTo >= 0 && daysToRangeTo < 30) return "status-icon expiring1m";
-    if (today.isBetween(from, to, "day", "[]") && daysToRangeTo >= 30) return "status-icon expiring3m";
-    return "";
-  };
 
   const handleEditorChange = (content) => {
     setEditorContent(content);
