@@ -12,18 +12,14 @@ import { getAllClients, fetchJournalList, getAllActivities, getSpecificClient, a
 import CommonButton from "@/components/CommonButton";
 import CommonCard from "@/components/CommonCard";
 
-/* =======================
-   LABEL → FIELD MAPPING
-======================= */
-
 const LABEL_FIELD_MAP = {
   shipName: ["name of ship", "ship name", "vessel name"],
   classNumber: ["class number", "class no", "class no."],
   imoNumber: ["imo number", "imo no", "imo no."],
   portOfSurvey: ["port of survey", "survey port"],
-
   grossTonnage: ["gross tonnage", "g.t.", "gt"],
-  keelLaidDate: ["date keel laid", "keel laid date"],
+  keelLaidDate: ["date keel laid", "keel laid date", "Date Keel Laid"],
+  callSign: ["call sign", "call sign no", "call sign no."],
   officialNumber: ["official number", "official no"],
   portOfRegistry: ["port of registery"],
   surveyType: ["type of survey", "survey type"],
@@ -35,10 +31,6 @@ const LABEL_FIELD_MAP = {
   companyName: ["company name", "class name"],
   logo: ["logo"],
 };
-
-/* =======================
-   COMPANY HEADER
-======================= */
 
 const injectCompanyHeader = (html, systemVariables) => {
   if (!systemVariables?.company_name && !systemVariables?.company_logo) return html;
@@ -86,14 +78,8 @@ const injectCompanyHeader = (html, systemVariables) => {
   return container.innerHTML;
 };
 
-
-/* =======================
-   CLIENT VALUE
-======================= */
-
-
-
-const getClientValue = (field, client, extra = {}) => {
+const getClientValue = (field, client, extra = {}, selectedSurvey) => {
+  console.log("selectedSurvey", selectedSurvey);
   switch (field) {
     case "shipName":
       return client?.shipName || "";
@@ -110,6 +96,9 @@ const getClientValue = (field, client, extra = {}) => {
     case "grossTonnage":
       return client?.grossTonnage || "";
 
+    case "callSign":
+      return client?.callSign || "";
+
     case "keelLaidDate":
       return client?.keelLaidDate || "";
 
@@ -117,7 +106,7 @@ const getClientValue = (field, client, extra = {}) => {
       return client?.officialNo || "";
 
     case "surveyType":
-      return extra?.surveyTypeName || "";
+      return selectedSurvey || "";
 
     case "shipType":
       return client?.shipType || "";
@@ -145,11 +134,7 @@ const getClientValue = (field, client, extra = {}) => {
   }
 };
 
-/* =======================
-   AUTO-FILL TEXT
-======================= */
-
-const prepopulateFields = (html, clientData, extraData = {}) => {
+const prepopulateFields = (html, clientData, extraData = {}, selectedSurvey) => {
   if (!clientData && !extraData) return html;
 
   const container = document.createElement("div");
@@ -162,7 +147,7 @@ const prepopulateFields = (html, clientData, extraData = {}) => {
     let text = node.textContent;
 
     Object.entries(LABEL_FIELD_MAP).forEach(([field, labels]) => {
-      const value = getClientValue(field, clientData, extraData);
+      const value = getClientValue(field, clientData, extraData, selectedSurvey);
       if (!value) return;
 
       labels.forEach((label) => {
@@ -226,14 +211,21 @@ const CheckListCreate = () => {
         if (matchingChecklist) {
           setExistingChecklist(matchingChecklist);
 
-          // ✅ ALWAYS Update if checklist exists
           setButtonText("Update");
 
-          if (matchingChecklist.checkListData?.checkList) {
-            setHtmlContent(matchingChecklist.checkListData.checkList);
+          let parsedChecklist = {};
+
+          try {
+            parsedChecklist = typeof matchingChecklist.checkListData === "string" ? JSON.parse(matchingChecklist.checkListData) : matchingChecklist.checkListData || {};
+          } catch (e) {
+            console.error("Invalid checklist JSON", e);
+          }
+
+          if (parsedChecklist.checkList) {
+            setHtmlContent(parsedChecklist.checkList);
 
             setTimeout(() => {
-              editorRef.current?.setContent(matchingChecklist.checkListData.checkList);
+              editorRef.current?.setContent(parsedChecklist.checkList);
             }, 0);
           }
 
@@ -318,6 +310,7 @@ const CheckListCreate = () => {
   };
 
   const loadChecklistDoc = async (docUrl) => {
+    console.log(docUrl, "doc url");
     if (!docUrl) {
       setHtmlContent("");
       setNoChecklist(true);
@@ -339,7 +332,7 @@ const CheckListCreate = () => {
       const company_logo = systemVariables.find((v) => v.name === "company_logo")?.information;
 
       html = injectCompanyHeader(html, { company_name, company_logo });
-      html = prepopulateFields(html, clientData);
+      html = prepopulateFields(html, clientData, selectedSurvey);
       html = replaceLogoPlaceholder(html, company_logo);
       html = normalizeEmptyTableCells(html);
 
@@ -351,10 +344,6 @@ const CheckListCreate = () => {
       setLoading(false);
     }
   };
-
-  /* =======================
-     SUBMIT
-  ======================= */
 
   const onSubmit = async () => {
     const payload = {
@@ -378,10 +367,6 @@ const CheckListCreate = () => {
       toast.error("Save failed");
     }
   };
-
-  /* =======================
-     UI
-  ======================= */
 
   return (
     <CommonCard>

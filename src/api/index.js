@@ -1214,13 +1214,29 @@ export const updateCheckList = async (id, payload) => {
   return result;
 };
 
-export const getAllChecklist = async () => {
+export const getAllChecklist = async (page, limit, search) => {
   let result;
+
   try {
-    result = await axiosInstance.get(`/checkList`);
+    const params = {};
+
+    if (page !== undefined && page !== null) {
+      params.page = page;
+    }
+
+    if (limit !== undefined && limit !== null) {
+      params.limit = limit;
+    }
+
+    if (search) {
+      params.search = search;
+    }
+
+    result = await axiosInstance.get("/checkList", { params });
   } catch (e) {
     result = e;
   }
+
   return result;
 };
 
