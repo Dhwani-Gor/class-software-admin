@@ -5,12 +5,10 @@ import CommonButton from "../CommonButton";
 import CommonInput from "../CommonInput";
 
 const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsementList = [], reportDetailsId, surveyorOptions = [] }) => {
-  // Changed from single selection to array for multiple selections
   const [selectedEndorsements, setSelectedEndorsements] = useState([]);
   const [reportDetails, setReportDetails] = useState({});
   const [radioValues, setRadioValues] = useState({});
   const [endorsementInputs, setEndorsementInputs] = useState({});
-  // Changed to store values per endorsement
   const [issuedByValues, setIssuedByValues] = useState({});
   const [remarksValues, setRemarksValues] = useState({});
 
@@ -35,7 +33,6 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
     }
   }, [open, reportDetailsId]);
 
-  // Check if an endorsement is already done (has data filled in reportDetails)
   const isEndorsementDone = (item) => {
     if (!reportDetails?.data || !item?.title) return false;
 
@@ -348,7 +345,17 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
 
       // Endorsement stamp
       if (endorsementStamp) {
-        flattenedData[`endorsement_stamp_${num}`] = endorsementStamp;
+        const issuedBy = issuedByValues[selectedEndorsement.title] || "";
+        const issuanceDateKey = `${selectedEndorsement.title}_issuance_date`;
+        const issuanceDate = endorsementInputs[issuanceDateKey] || "";
+
+        if (!issuedBy && !issuanceDate) {
+          // BOTH empty → send empty stamp
+          flattenedData[`endorsement_stamp_${num}`] = "";
+        } else {
+          // At least one filled → send stamp
+          flattenedData[`endorsement_stamp_${num}`] = endorsementStamp || "";
+        }
       }
 
       Object.assign(allData, flattenedData);
