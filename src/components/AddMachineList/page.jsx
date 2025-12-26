@@ -80,12 +80,9 @@ const MachineryHullManager = ({ mode, shipId }) => {
 
 
     const SPECIAL_TANK_ROWS = [
-        { id: "01", label: "Overall", hasPosition: false, isDue: true, isFrom: false },
-        { id: "02", label: "Close-up", hasPosition: false, isDue: true, isFrom: false },
-        { id: "03", label: "TM", hasPosition: false, isDue: true, isFrom: false },
-        { id: "04", label: "Protective Coating", hasPosition: false, isDue: true, isFrom: false },
-        { id: "05", label: "Condition of Coating", hasPosition: false, isDue: true, isFrom: false },
-        { id: "06", label: "Test", hasPosition: false, isDue: true, isFrom: false },
+        { id: "01", label: "Examination", hasPosition: false, isDue: true, isFrom: false },
+        { id: "02", label: "Test", hasPosition: false, isDue: true, isFrom: false },
+
     ];
 
     const OTHER_TANK_ROWS = [
@@ -100,17 +97,14 @@ const MachineryHullManager = ({ mode, shipId }) => {
         return matches.map((m) => parseInt(m.replace(/\D/g, ""), 10));
     };
 
-    // Helper function to detect tank type from section name or label
     const detectTankType = (section) => {
         if (!section?.sectionName) return null;
 
         const name = section.sectionName.toLowerCase();
 
-        // MUST contain explicit tank numbering
         const hasTankNumber = /no\.?\s*\d+/.test(name);
         if (!hasTankNumber) return null;
 
-        // STRICT tank categories
         if (name.includes("cargo tank")) return "cargo";
         if (name.includes("ballast tank")) return "ballast";
         if (name.includes("forepeak tank")) return "forepeak";

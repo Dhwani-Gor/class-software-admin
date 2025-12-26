@@ -80,87 +80,78 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
     try {
       setDownloading(true);
 
-      // Wait for any pending renders
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Get the actual content dimensions
       const element = contentRef.current;
 
-      // Capture with high quality settings
+      await waitForImages(element);
+      await new Promise(res => setTimeout(res, 300));
+
       const canvas = await html2canvas(element, {
-        scale: 3, // High quality - 3x resolution
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
-        width: element.scrollWidth,
-        height: element.scrollHeight,
         windowWidth: element.scrollWidth,
         windowHeight: element.scrollHeight,
       });
 
-      // A4 dimensions
-      const pdfWidth = 210; // mm
-      const pdfHeight = 297; // mm
-      const margin = 15; // mm margins
+      // ✅ USE JPEG (stable)
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
 
-      // Available space for content
-      const contentWidth = pdfWidth - (2 * margin);
-      const contentHeight = pdfHeight - (2 * margin);
-
-      // Calculate image dimensions to fit page width
-      const imgWidth = contentWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      // Create PDF
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
-        compress: false // Don't compress to maintain quality
       });
 
-      const imgData = canvas.toDataURL('image/png', 1.0); // Use PNG for better quality
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 15;
+
+      const imgWidth = pageWidth - margin * 2;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
       let heightLeft = imgHeight;
-      let position = 0;
-      let pageCount = 0;
+      let position = margin;
 
-      // Add pages as needed
+      pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
+
+      heightLeft -= pageHeight - margin * 2;
+
       while (heightLeft > 0) {
-        if (pageCount > 0) {
-          pdf.addPage();
-        }
-
-        const yPosition = margin - (position * contentHeight);
-
-        pdf.addImage(
-          imgData,
-          'PNG',
-          margin,
-          yPosition,
-          imgWidth,
-          imgHeight,
-          undefined,
-          'FAST' // Use FAST compression for better quality
-        );
-
-        heightLeft -= contentHeight;
-        position++;
-        pageCount++;
+        pdf.addPage();
+        position = margin - (imgHeight - heightLeft);
+        pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight - margin * 2;
       }
 
       pdf.save('Survey_Checklist.pdf');
 
-    } catch (e) {
-      console.error('PDF generation error:', e);
+    } catch (err) {
+      console.error('PDF generation error:', err);
       alert('PDF generation failed. Please try again.');
     } finally {
       setDownloading(false);
     }
   };
 
+
   /* -------------------- UI -------------------- */
+
+  const waitForImages = async (container) => {
+    const images = Array.from(container.querySelectorAll('img'));
+    await Promise.all(
+      images.map(
+        img =>
+          img.complete
+            ? Promise.resolve()
+            : new Promise(resolve => {
+              img.onload = resolve;
+              img.onerror = resolve; // ignore broken images
+            })
+      )
+    );
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
