@@ -5,12 +5,10 @@ import CommonButton from "../CommonButton";
 import CommonInput from "../CommonInput";
 
 const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsementList = [], reportDetailsId, surveyorOptions = [] }) => {
-  // Changed from single selection to array for multiple selections
   const [selectedEndorsements, setSelectedEndorsements] = useState([]);
   const [reportDetails, setReportDetails] = useState({});
   const [radioValues, setRadioValues] = useState({});
   const [endorsementInputs, setEndorsementInputs] = useState({});
-  // Changed to store values per endorsement
   const [issuedByValues, setIssuedByValues] = useState({});
   const [remarksValues, setRemarksValues] = useState({});
 
@@ -149,7 +147,6 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
     }
   }, [open, reportDetails, endorsementList, surveyorOptions]);
 
-  // CHANGED: Handle checkbox selection (multiple selections)
   const handleCheckboxChange = (item) => {
     setSelectedEndorsements((prev) => {
       const isSelected = prev.some((e) => e.title === item.title);
@@ -161,7 +158,6 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
     });
   };
 
-  // CHANGED: Store radio values with endorsement title prefix
   const handleRadioChange = (endorsementTitle, fieldValue, selectedOption) => {
     setRadioValues((prev) => ({
       ...prev,
@@ -185,7 +181,6 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
         {fieldKeys.map((key) => {
           const label = key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
           const isDateField = key.toLowerCase().includes("date");
-          // Add endorsement title to key for unique identification
           const inputKey = `${endorsement.title}_${key}`;
 
           return (
@@ -215,6 +210,7 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
           </Typography>
           <Select
             value={issuedByValues[endorsement.title] || ""}
+            displayEmpty
             onChange={(e) =>
               setIssuedByValues((prev) => ({
                 ...prev,
@@ -223,6 +219,10 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
             }
             sx={{ width: "100%" }}
           >
+            <MenuItem value="">
+              <em>&nbsp;</em>
+            </MenuItem>
+
             {surveyorOptions.map((option) => (
               <MenuItem key={option.value} value={option.value}>
                 {option.label}
@@ -334,12 +334,20 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
       });
 
       // Issued By dropdown
-      const issuedBy = issuedByValues[selectedEndorsement.title];
-      if (issuedBy) {
-        const selectedSurveyor = surveyorOptions.find((s) => s.value === issuedBy);
-        flattenedData[`endorsed_by_${num}`] = selectedSurveyor?.label || "";
+      const issuedBy = issuedByValues[selectedEndorsement.title] || "";
+
+      // check ALL possible date fields
+      const issuanceDate = endorsementInputs[`${selectedEndorsement.title}_issuance_date`] || "";
+      const validityDate = endorsementInputs[`${selectedEndorsement.title}_validity_date`] || "";
+
+      const hasAnyDate = issuanceDate || validityDate;
+
+      if (!issuedBy && !hasAnyDate) {
+        // BOTH empty → do NOT send stamp
+        flattenedData[`endorsement_stamp_${num}`] = "";
       } else {
-        flattenedData[`endorsed_by_${num}`] = ""; // send empty string if not selected
+        // at least one filled → send stamp
+        flattenedData[`endorsement_stamp_${num}`] = endorsementStamp || "";
       }
 
       // Remarks
@@ -348,7 +356,17 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
 
       // Endorsement stamp
       if (endorsementStamp) {
-        flattenedData[`endorsement_stamp_${num}`] = endorsementStamp;
+        const issuedBy = issuedByValues[selectedEndorsement.title] || "";
+        const issuanceDateKey = `${selectedEndorsement.title}_issuance_date`;
+        const issuanceDate = endorsementInputs[issuanceDateKey] || "";
+
+        if (!issuedBy && !issuanceDate) {
+          // BOTH empty → send empty stamp
+          flattenedData[`endorsement_stamp_${num}`] = "";
+        } else {
+          // At least one filled → send stamp
+          flattenedData[`endorsement_stamp_${num}`] = endorsementStamp || "";
+        }
       }
 
       Object.assign(allData, flattenedData);

@@ -42,6 +42,10 @@ const OTHER_THAN_TANK = [
     "Test"
 ]
 
+const getRowKey = (row) => {
+    return row.label?.trim() || `__id__${row.id}`;
+};
+
 
 const MachineryHullManager = ({ mode, shipId }) => {
     const [tabValue, setTabValue] = useState(0);
@@ -76,12 +80,9 @@ const MachineryHullManager = ({ mode, shipId }) => {
 
 
     const SPECIAL_TANK_ROWS = [
-        { id: "01", label: "Overall", hasPosition: false, isDue: true, isFrom: false },
-        { id: "02", label: "Close-up", hasPosition: false, isDue: true, isFrom: false },
-        { id: "03", label: "TM", hasPosition: false, isDue: true, isFrom: false },
-        { id: "04", label: "Protective Coating", hasPosition: false, isDue: true, isFrom: false },
-        { id: "05", label: "Condition of Coating", hasPosition: false, isDue: true, isFrom: false },
-        { id: "06", label: "Test", hasPosition: false, isDue: true, isFrom: false },
+        { id: "01", label: "Examination", hasPosition: false, isDue: true, isFrom: false },
+        { id: "02", label: "Test", hasPosition: false, isDue: true, isFrom: false },
+
     ];
 
     const OTHER_TANK_ROWS = [
@@ -96,17 +97,14 @@ const MachineryHullManager = ({ mode, shipId }) => {
         return matches.map((m) => parseInt(m.replace(/\D/g, ""), 10));
     };
 
-    // Helper function to detect tank type from section name or label
     const detectTankType = (section) => {
         if (!section?.sectionName) return null;
 
         const name = section.sectionName.toLowerCase();
 
-        // MUST contain explicit tank numbering
         const hasTankNumber = /no\.?\s*\d+/.test(name);
         if (!hasTankNumber) return null;
 
-        // STRICT tank categories
         if (name.includes("cargo tank")) return "cargo";
         if (name.includes("ballast tank")) return "ballast";
         if (name.includes("forepeak tank")) return "forepeak";
@@ -115,6 +113,48 @@ const MachineryHullManager = ({ mode, shipId }) => {
 
         return "other";
     };
+
+    const rebuildUserAddedRowsFromMachineData = (machineData = []) => {
+        const rebuilt = { machinery: {}, hull: {} };
+
+        machineData.forEach((block) => {
+            const type = block.sectionType;
+            const sectionNum = String(block.sectionNumber);
+
+            const staticRows =
+                type === "machinery"
+                    ? MACHINERY_SECTIONS[sectionNum]?.rows || []
+                    : HULL_SECTIONS[sectionNum]?.rows || [];
+
+            block.items.forEach((item) => {
+                const label = item.label?.trim();
+                if (!label) return;
+
+                const existsInStatic = staticRows.some(
+                    (r) => r.label === label
+                );
+
+                if (existsInStatic) return; // 🚫 skip system rows
+
+                rebuilt[type][sectionNum] ||= [];
+
+                if (!rebuilt[type][sectionNum].some((r) => r.label === label)) {
+                    rebuilt[type][sectionNum].push({
+                        id: item.generatedCode, // stable UI key
+                        label,
+                        hasPosition: true,
+                        isDue: true,
+                        isFrom: false,
+                        isUserAdded: true,
+                    });
+                }
+            });
+        });
+
+        return rebuilt;
+    };
+
+
 
 
     // Modified function to get appropriate rows based on tank type
@@ -141,28 +181,42 @@ const MachineryHullManager = ({ mode, shipId }) => {
     ) => {
         const instances = [];
         const today = new Date().toISOString().split("T")[0];
-
         if (isMachineryList) {
             const positions = data.position?.length ? data.position : ["-"];
             let repetitions = 1;
 
-            // From–To logic (unchanged)
+            // 1️⃣ From–To rows (Main journal, injection pump, etc.)
             if (row.hasFromTo) {
                 repetitions = Math.max(
                     1,
                     (parseInt(data.to) || 1) - (parseInt(data.from) || 1) + 1
                 );
             }
-            else if (
-                isMachineryList &&
-                ["01", "02", "03"].includes(String(row.id).padStart(2, "0"))
-            ) {
+            // 2️⃣ Cylinder-based rows (ONLY 01–03)
+            else if (["01", "02", "03"].includes(String(row.id).padStart(2, "0"))) {
                 repetitions = Number(noOfCylinders || 1);
             }
 
             positions.forEach((pos) => {
                 for (let i = 1; i <= repetitions; i++) {
-                    const occ = row.hasFromTo ? (parseInt(data.from) || 1) + i - 1 : i;
+                    const occ = row.hasFromTo
+                        ? (parseInt(data.from) || 1) + i - 1
+                        : i;
+
+                    // ✅ CORRECT CONTENT RULE
+                    let contentText = "";
+
+                    if (["01", "02", "03"].includes(String(row.id).padStart(2, "0"))) {
+                        // Cyl-based rows ONLY
+                        contentText = row.content.replace("{cyl}", occ);
+                    }
+                    else if (row.hasFromTo) {
+                        // Main journal, pumps, etc.
+                        contentText = `No ${occ} ${row.label}`;
+                    }
+                    else {
+                        contentText = row.label;
+                    }
 
                     instances.push({
                         generatedCode:
@@ -172,11 +226,14 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             pos,
                         occurrence: occ,
                         positionCode: pos,
-                        content: row.content
-                            ? row.content.replace("{cyl}", occ)
-                            : row.label,
+                        content: contentText,
+                        label: row.label,
                         assignmentDate: data.assignmentDate || today,
                         dueDate: data.dueDate || "",
+                        from: row.hasFromTo ? data.from : undefined,
+                        to: row.hasFromTo ? data.to : undefined,
+                        fromFrameNo: row.hasFromTo ? data.fromFrameNo : undefined,
+                        toFrameNo: row.hasFromTo ? data.toFrameNo : undefined,
                         isTank: false,
                     });
                 }
@@ -203,26 +260,38 @@ const MachineryHullManager = ({ mode, shipId }) => {
                     `${String(occ).padStart(2, "0")}` +
                     pos;
 
-                // 🔹 Base row (THIS IS WHAT YOU ALREADY HAD)
+                const finalLabel = data?.label?.trim() || row.label?.trim();
+
                 instances.push({
                     generatedCode: baseCode,
+                    label: finalLabel,
+                    content: row.hasFromTo
+                        ? `No ${occ} ${finalLabel}`
+                        : finalLabel,
                     occurrence: occ,
                     positionCode: pos,
-                    content: row.label,
                     assignmentDate: data.assignmentDate || today,
                     dueDate: data.dueDate || "",
+                    from: data.from,
+                    to: data.to,
+                    fromFrameNo: data.fromFrameNo,
+                    toFrameNo: data.toFrameNo,
                     isTank: row.isTankRow === true,
                 });
+
+
 
                 if (row.isTankRow === true) {
                     SIMPLE_TANK_ROWS.forEach((label, index) => {
                         instances.push({
                             generatedCode: `${baseCode}${index + 1}`,
                             occurrence: index + 1,
-                            positionCode: "-", // ❌ no position
+                            positionCode: "-",
                             content: label,
                             assignmentDate: data.assignmentDate || today,
                             dueDate: data.dueDate || "",
+                            from: data.from,
+                            to: data.to,
                             isTank: true,
                         });
                     });
@@ -234,39 +303,58 @@ const MachineryHullManager = ({ mode, shipId }) => {
     };
 
 
-
-    const hydrateFormDataFromMachineData = (machineData = []) => {
+    const hydrateFormDataFromMachineData = (blocks = []) => {
         const hydrated = {};
 
-        machineData.forEach((block) => {
+        const normalizeRowKey = (item, sectionType) => {
+            // 1️⃣ User-added rows
+            if (item.label?.trim()) return item.label.trim();
+
+            // 2️⃣ Machinery static rows → remove "No X"
+            if (sectionType === "machinery" && item.content) {
+                return item.content.replace(/^No\s+\d+\s*/i, "").trim();
+            }
+
+            return item.content?.trim();
+        };
+
+        blocks.forEach((block) => {
             const sectionType = block.sectionType;
             const sectionNum = String(block.sectionNumber);
 
             block.items.forEach((item) => {
-                const rowId = item.generatedCode.slice(
-                    sectionType === "machinery" ? 2 : 2,
-                    sectionType === "machinery" ? 4 : 4
-                );
+                const rowKey = normalizeRowKey(item, sectionType);
+                if (!rowKey) return;
 
-                const fieldKey = `${sectionType}-${sectionNum}-${rowId}`;
+                const fieldKey = `${sectionType}-${sectionNum}-${rowKey}`;
 
-                hydrated[fieldKey] = {
-                    xMark: "X",
-                    label: item.label || "",
-                    assignmentDate: item.assignmentDate || "",
-                    dueDate: item.dueDate || "",
-                    postponedDate: item.postponedDate || "",
-                    position: item.positionCode && item.positionCode !== "-" ? [item.positionCode] : [],
-                    from: item.from || "",
-                    to: item.to || "",
-                    fromFrameNo: item.fromFrameNo || "",
-                    uptoFrameNo: item.uptoFrameNo || "",
-                };
+                if (!hydrated[fieldKey]) {
+                    hydrated[fieldKey] = {
+                        xMark: "X",
+                        label: item.label || rowKey,
+                        content: item.content || "",
+                        assignmentDate: item.assignmentDate || "",
+                        dueDate: item.dueDate || "",
+                        postponedDate: item.postponedDate || "",
+                        position:
+                            item.globalPositionCode
+                                ? [item.globalPositionCode]
+                                : item.positionCode && item.positionCode !== "-"
+                                    ? [item.positionCode]
+                                    : [],
+                        from: item.from || "",
+                        to: item.to || "",
+                        fromFrameNo: item.fromFrameNo || "",
+                        uptoFrameNo: item.uptoFrameNo || "",
+                    };
+                }
             });
         });
 
         return hydrated;
     };
+
+
 
     const mergeBlocks = (oldBlocks = [], newBlocks = []) => {
         const merged = [];
@@ -326,20 +414,22 @@ const MachineryHullManager = ({ mode, shipId }) => {
                 const section = sections[sectionNum];
                 const dynamicRowsForSection = dynamicRows[type][sectionNum] || [];
 
-                // Check if this is a tank section and get appropriate rows
                 const tankRows = getTankRowsForSection(section, type);
                 const isTankSection = tankRows.length > 0;
                 const tankNumbers = isTankSection ? extractTankNumbers(section.sectionName) : [];
 
-                // Combine original rows, tank rows (if applicable), and dynamic rows
                 const allRows = isTankSection
                     ? [...section.rows, ...tankRows, ...dynamicRowsForSection]
                     : [...section.rows, ...dynamicRowsForSection];
 
+                // if (editingId && originalBlocks.length) {
+                //     payload.blocks = originalBlocks;
+                //     return payload;
+                // }
+
                 let finalItems = [];
                 const isMachineryList = section.sectionId === "machinery_list";
 
-                // Static rows (only for machinery section 01)
                 if (sectionNum === "01" && isMachineryList) {
                     STATIC_ROWS_SECTION_01.forEach((staticRow) => {
                         finalItems.push(
@@ -348,11 +438,10 @@ const MachineryHullManager = ({ mode, shipId }) => {
                     });
                 }
 
-                // Process all rows (including tank rows)
                 allRows.forEach((row, rowIndex) => {
-                    const fieldKey = `${type}-${sectionNum}-${row.id}`;
+                    const rowKey = getRowKey(row);
+                    const fieldKey = `${type}-${sectionNum}-${rowKey}`;
                     const data = formData[fieldKey];
-
                     const isTankRow =
                         isTankSection &&
                         SPECIAL_TANK_ROWS.some((r) => r.id === row.id);
@@ -393,7 +482,10 @@ const MachineryHullManager = ({ mode, shipId }) => {
         console.log(payload);
 
         if (editingId) {
-            payload.blocks = mergeBlocks(originalBlocks, payload.blocks);
+            return {
+                ...payload,
+                blocks: mergeBlocks(originalBlocks, payload.blocks)
+            };
         }
 
         return payload;
@@ -407,7 +499,11 @@ const MachineryHullManager = ({ mode, shipId }) => {
     };
 
     const updateField = (sectionType, sectionNum, rowId, key, value) => {
-        const fieldKey = `${sectionType}-${sectionNum}-${rowId}`;
+        const rowKey =
+            typeof rowId === "string" ? rowId : `__id__${rowId}`;
+
+        const fieldKey = `${sectionType}-${sectionNum}-${rowKey}`;
+
         setFormData((prev) => {
             const updated = {
                 ...prev,
@@ -449,6 +545,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         hasPosition: false,
                         isFrom: true,
                         isDue: false,
+                        isUserAdded: true,
                     }
                     : {
                         id: nextId,
@@ -456,6 +553,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         hasPosition: true,
                         isDue: true,
                         isFrom: false,
+                        isUserAdded: true,
                     };
 
             return {
@@ -514,10 +612,10 @@ const MachineryHullManager = ({ mode, shipId }) => {
                     setNoOfCylinders(data.numberOfCylinders);
                     setPosition(data.globalPosition || []);
                     setEngineUnitsCountedFrom(data.engineUnitsCountedFrom || "flywheel_end");
+                    setFormData(hydrateFormDataFromMachineData(data.machineData));
+                    setDynamicRows(rebuildUserAddedRowsFromMachineData(data.machineData));
+                    setOriginalBlocks(data.machineData);
 
-                    setFormData(hydrateFormDataFromMachineData(data.machineData || []));
-
-                    setOriginalBlocks(data.machineData || []);
                 }
             })();
         }
@@ -569,7 +667,11 @@ const MachineryHullManager = ({ mode, shipId }) => {
     };
 
     const renderRow = (row, sectionType, sectionNum) => {
-        const fieldKey = `${sectionType}-${sectionNum}-${row.id}`;
+        const rowKey = getRowKey(row);
+        const fieldKey = `${sectionType}-${sectionNum}-${rowKey}`;
+
+
+
         const isChecked = formData[fieldKey]?.xMark === "X";
 
         return (
@@ -579,8 +681,15 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         <Checkbox
                             checked={isChecked}
                             onChange={(e) =>
-                                updateField(sectionType, sectionNum, row.id, "xMark", e.target.checked ? "X" : "-")
+                                updateField(
+                                    sectionType,
+                                    sectionNum,
+                                    getRowKey(row),
+                                    "xMark",
+                                    e.target.checked ? "X" : "-"
+                                )
                             }
+
                         />
                     </Grid2>
 
@@ -594,7 +703,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 fullWidth
                                 disabled={!isChecked}
                                 value={formData[fieldKey]?.label || ""}
-                                onChange={(e) => updateField(sectionType, sectionNum, row.id, "label", e.target.value)}
+                                onChange={(e) => updateField(sectionType, sectionNum, getRowKey(row), "label", e.target.value)}
                                 placeholder="Enter label"
                             />
                         )}
@@ -610,7 +719,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 displayEmpty
                                 disabled={!isChecked}
                                 value={formData[fieldKey]?.position || []}
-                                onChange={(e) => updateField(sectionType, sectionNum, row.id, "position", e.target.value)}
+                                onChange={(e) => updateField(sectionType, sectionNum, getRowKey(row), "position", e.target.value)}
                                 renderValue={(selected) => selected?.join("")}
                             >
                                 {POSITION_OPTIONS.map((opt) => (
@@ -630,7 +739,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                         fullWidth
                                         disabled={!isChecked}
                                         value={formData[fieldKey]?.from || ""}
-                                        onChange={(e) => updateField(sectionType, sectionNum, row.id, "from", e.target.value)}
+                                        onChange={(e) => updateField(sectionType, sectionNum, getRowKey(row), "from", e.target.value)}
                                     />
                                 </Grid2>
                                 <Grid2 size={{ xs: 12, md: 2 }}>
@@ -644,7 +753,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                         fullWidth
                                         disabled={!isChecked}
                                         value={formData[fieldKey]?.to || ""}
-                                        onChange={(e) => updateField(sectionType, sectionNum, row.id, "to", e.target.value)}
+                                        onChange={(e) => updateField(sectionType, sectionNum, getRowKey(row), "to", e.target.value)}
                                     />
                                 </Grid2>
                             </Grid2>
@@ -663,7 +772,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             disabled={!isChecked}
                             InputLabelProps={{ shrink: true }}
                             value={formData[fieldKey]?.assignmentDate || ""}
-                            onChange={(e) => updateField(sectionType, sectionNum, row.id, "assignmentDate", e.target.value)}
+                            onChange={(e) => updateField(sectionType, sectionNum, getRowKey(row), "assignmentDate", e.target.value)}
                         />
                     </Grid2>
 
@@ -678,7 +787,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 disabled={!isChecked}
                                 InputLabelProps={{ shrink: true }}
                                 value={formData[fieldKey]?.dueDate || ""}
-                                onChange={(e) => updateField(sectionType, sectionNum, row.id, "dueDate", e.target.value)}
+                                onChange={(e) => updateField(sectionType, sectionNum, getRowKey(row), "dueDate", e.target.value)}
                             />
                         ) : row.isFrom ? (
                             <TextField
@@ -690,7 +799,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 disabled={!isChecked}
                                 InputLabelProps={{ shrink: true }}
                                 value={formData[fieldKey]?.fromFrameNo || ""}
-                                onChange={(e) => updateField(sectionType, sectionNum, row.id, "fromFrameNo", e.target.value)}
+                                onChange={(e) => updateField(sectionType, sectionNum, getRowKey(row), "fromFrameNo", e.target.value)}
                             />
                         ) : (
                             <Box sx={{ height: "40px" }} />
@@ -709,7 +818,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 InputLabelProps={{ shrink: true }}
                                 value={formData[fieldKey]?.postponedDate || ""}
                                 onChange={(e) =>
-                                    updateField(sectionType, sectionNum, row.id, "postponedDate", e.target.value)
+                                    updateField(sectionType, sectionNum, getRowKey(row), "postponedDate", e.target.value)
                                 }
                             />
                         ) : row.isFrom ? (
@@ -723,7 +832,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 InputLabelProps={{ shrink: true }}
                                 value={formData[fieldKey]?.uptoFrameNo || ""}
                                 onChange={(e) =>
-                                    updateField(sectionType, sectionNum, row.id, "uptoFrameNo", e.target.value)
+                                    updateField(sectionType, sectionNum, getRowKey(row), "uptoFrameNo", e.target.value)
                                 }
                             />
                         ) : (
