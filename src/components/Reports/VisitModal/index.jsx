@@ -21,6 +21,8 @@ import CommonInput from "@/components/CommonInput";
 import CommonButton from "@/components/CommonButton";
 import { getAllUsers, searchUnloCodes } from "@/api";
 
+/* ------------------ VALIDATION ------------------ */
+
 const visitSchema = yup.object().shape({
   date: yup.string().required("Date is required"),
   timeFrom: yup.string().required("Start time is required"),
@@ -32,20 +34,22 @@ const visitSchema = yup.object().shape({
     .required("Initial Of Surveyors is required"),
 });
 
+/* ------------------ COMPONENT ------------------ */
+
 const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
   const [surveyors, setSurveyors] = useState([]);
   const [loadingSurveyors, setLoadingSurveyors] = useState(false);
+
   const [locationOptions, setLocationOptions] = useState([]);
   const [loadingLocations, setLoadingLocations] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
-  const isEdit = Boolean(defaultValues);
 
   const {
     control,
     handleSubmit,
-    formState: { errors },
     reset,
     setValue,
+    formState: { errors },
   } = useForm({
     resolver: yupResolver(visitSchema),
     defaultValues: {
@@ -57,74 +61,28 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
     },
   });
 
-  useEffect(() => {
-    if (defaultValues) {
-      reset({
-        date: defaultValues.date || "",
-        timeFrom: defaultValues.timeFrom || "",
-        timeTo: defaultValues.timeTo || "",
-        location: defaultValues.location || "",
-        initialOfSurveyors: defaultValues.surveyors
-          ? defaultValues.surveyors.map((s) => parseInt(s.id, 10))
-          : [],
-      });
-
-      if (defaultValues.location) {
-        setSelectedLocation(null);
-        setValue("location", defaultValues.location);
-      }
-    }
-  }, [defaultValues, reset, isEdit]);
-
-  const onCloseModal = () => {
-    reset();
-    setSelectedLocation(null);
-    onClose();
-  };
-
-  const onSubmit = (data) => {
-    const submitData = {
-      ...data,
-      location: typeof data.location === 'string' ? data.location :
-        (selectedLocation ? `${selectedLocation.nameOfDiacritics} (${selectedLocation.name}, ${selectedLocation.country})` : data.location)
-    };
-
-    onSave(submitData);
-    reset();
-    setSelectedLocation(null);
-    onCloseModal();
-  };
+  /* ------------------ FETCH SURVEYORS ------------------ */
 
   const fetchSurveyors = async () => {
     try {
       setLoadingSurveyors(true);
       const res = await getAllUsers();
+
       if (res?.data?.data) {
-        const flattenedData = res?.data?.data?.filter(
-          (item) => item?.role.name === "inspector"
-        );
-        const sortedData = flattenedData?.sort((a, b) => a?.id - b?.id);
-        setSurveyors(sortedData);
+        const inspectors = res.data.data
+          .filter((u) => u?.role?.name === "inspector")
+          .map((u) => ({
+            ...u,
+            id: Number(u.id), // 🔑 normalize ID
+          }))
+          .sort((a, b) => a.id - b.id);
+
+        setSurveyors(inspectors);
       }
-    } catch (error) {
-      console.error("Error fetching Surveyors:", error);
+    } catch (err) {
+      console.error("Surveyor fetch error:", err);
     } finally {
       setLoadingSurveyors(false);
-    }
-  };
-
-  const fetchLocations = async (query) => {
-    if (!query) return;
-    try {
-      setLoadingLocations(true);
-      const res = await searchUnloCodes(query);
-      if (res?.data?.data?.unloCodes) {
-        setLocationOptions(res.data.data.unloCodes);
-      }
-    } catch (error) {
-      console.error("Error fetching Locations:", error);
-    } finally {
-      setLoadingLocations(false);
     }
   };
 
@@ -132,21 +90,77 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
     fetchSurveyors();
   }, []);
 
-  const getReportById = (id) => {
-    const numericId = typeof id === "string" ? parseInt(id, 10) : id;
-    return (
-      surveyors.find((surveyor) => surveyor.id == numericId) || {
-        id: numericId,
-        name: `Unknown (ID: ${numericId})`,
+  /* ------------------ EDIT MODE PREFILL ------------------ */
+
+  useEffect(() => {
+    if (!defaultValues) return;
+
+    reset({
+      date: defaultValues.date || "",
+      timeFrom: defaultValues.timeFrom || "",
+      timeTo: defaultValues.timeTo || "",
+      location: defaultValues.location || "",
+      initialOfSurveyors: defaultValues.surveyors
+        ? defaultValues.surveyors.map((s) => Number(s.id))
+        : [],
+    });
+
+    setSelectedLocation(null);
+  }, [defaultValues, reset]);
+
+  /* ------------------ FETCH LOCATIONS ------------------ */
+
+  const fetchLocations = async (query) => {
+    if (!query) return;
+
+    try {
+      setLoadingLocations(true);
+      const res = await searchUnloCodes(query);
+      if (res?.data?.data?.unloCodes) {
+        setLocationOptions(res.data.data.unloCodes);
       }
-    );
+    } catch (err) {
+      console.error("Location fetch error:", err);
+    } finally {
+      setLoadingLocations(false);
+    }
   };
 
+  /* ------------------ SUBMIT ------------------ */
+
+  const onSubmit = (data) => {
+    onSave({
+      ...data,
+      location: data.location,
+    });
+
+    handleClose();
+  };
+
+  /* ------------------ CLOSE ------------------ */
+
+  const handleClose = () => {
+    reset({
+      date: "",
+      timeFrom: "",
+      timeTo: "",
+      location: "",
+      initialOfSurveyors: [],
+    });
+    setSelectedLocation(null);
+    onClose();
+  };
+
+  /* ------------------ RENDER ------------------ */
+
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog open={open} onClose={handleClose}>
       <DialogTitle>{defaultValues ? "Edit Visit" : "Add Visit"}</DialogTitle>
+
       <DialogContent sx={{ minWidth: "50vw" }}>
         <Grid2 container spacing={2} sx={{ mt: 1 }}>
+
+          {/* DATE */}
           <Grid2 size={{ xs: 12 }}>
             <Controller
               name="date"
@@ -155,13 +169,15 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
                 <CommonInput
                   {...field}
                   type="date"
-                  label={<>Date <span style={{ color: 'red' }}>*</span></>}
+                  label={<>Date <span style={{ color: "red" }}>*</span></>}
                   error={!!errors.date}
                   helperText={errors.date?.message}
                 />
               )}
             />
           </Grid2>
+
+          {/* TIME FROM */}
           <Grid2 size={{ xs: 12 }}>
             <Controller
               name="timeFrom"
@@ -170,13 +186,15 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
                 <CommonInput
                   {...field}
                   type="time"
-                  label={<>Time From <span style={{ color: 'red' }}>*</span></>}
+                  label={<>Time From <span style={{ color: "red" }}>*</span></>}
                   error={!!errors.timeFrom}
                   helperText={errors.timeFrom?.message}
                 />
               )}
             />
           </Grid2>
+
+          {/* TIME TO */}
           <Grid2 size={{ xs: 12 }}>
             <Controller
               name="timeTo"
@@ -185,24 +203,23 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
                 <CommonInput
                   {...field}
                   type="time"
-                  label={<>Time To <span style={{ color: 'red' }}>*</span></>}
+                  label={<>Time To <span style={{ color: "red" }}>*</span></>}
                   error={!!errors.timeTo}
                   helperText={errors.timeTo?.message}
                 />
               )}
             />
           </Grid2>
+
+          {/* LOCATION */}
           <Grid2 size={{ xs: 12 }}>
-            <FormControl
-              fullWidth
-              variant="standard"
-              error={Boolean(errors.location)}
-            >
-              <FormLabel component="legend" sx={{ mb: 1 }}>
-                <Typography component="span" color="#000000d6" fontWeight={'500'}>
-                  Location <Typography component="span" color="error">*</Typography>
+            <FormControl fullWidth error={!!errors.location}>
+              <FormLabel>
+                <Typography fontWeight={500}>
+                  Location <span style={{ color: "red" }}>*</span>
                 </Typography>
               </FormLabel>
+
               <Controller
                 name="location"
                 control={control}
@@ -268,15 +285,12 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
             </FormControl>
           </Grid2>
 
+          {/* SURVEYORS */}
           <Grid2 size={{ xs: 12 }}>
-            <FormControl
-              fullWidth
-              variant="standard"
-              error={Boolean(errors.initialOfSurveyors)}
-            >
-              <FormLabel component="legend" sx={{ mb: 1 }}>
-                <Typography component="span" color="#000000d6" fontWeight={'500'}>
-                  Initial Of Surveyors <Typography component="span" color="error">*</Typography>
+            <FormControl fullWidth error={!!errors.initialOfSurveyors}>
+              <FormLabel>
+                <Typography fontWeight={500}>
+                  Initial Of Surveyors <span style={{ color: "red" }}>*</span>
                 </Typography>
               </FormLabel>
 
@@ -286,69 +300,49 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
                 render={({ field }) => (
                   <Autocomplete
                     multiple
-                    id="surveyors-autocomplete"
                     options={surveyors}
                     loading={loadingSurveyors}
-                    getOptionLabel={(option) => {
-                      return typeof option === "object"
-                        ? option.name
-                        : getReportById(option).name;
-                    }}
-                    isOptionEqualToValue={(option, value) => {
-                      if (typeof value === "object") {
-                        return option.id === value.id;
-                      }
-                      return (
-                        option.id === value || option.id === parseInt(value, 10)
-                      );
-                    }}
-                    value={field?.value?.map((id) => getReportById(id))}
-                    onChange={(event, newValue) => {
-                      const initialOfSurveyors = newValue.map(
-                        (item) => item.id
-                      );
-                      field.onChange(initialOfSurveyors);
-                    }}
+                    disabled={loadingSurveyors}
+                    getOptionLabel={(o) => o.name}
+                    isOptionEqualToValue={(o, v) => o.id === v.id}
+                    value={
+                      loadingSurveyors
+                        ? []
+                        : surveyors.filter((s) =>
+                          field.value?.includes(s.id)
+                        )
+                    }
+                    onChange={(_, newValue) =>
+                      field.onChange(newValue.map((v) => v.id))
+                    }
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        variant="outlined"
                         placeholder="Search and select Surveyors"
-                        error={Boolean(errors.initialOfSurveyors)}
+                        error={!!errors.initialOfSurveyors}
                         helperText={errors.initialOfSurveyors?.message}
-                        InputProps={{
-                          ...params.InputProps,
-                          endAdornment: (
-                            <>
-                              {loadingSurveyors ? (
-                                <CircularProgress color="inherit" size={20} />
-                              ) : null}
-                              {params.InputProps.endAdornment}
-                            </>
-                          ),
-                        }}
                       />
                     )}
-                    renderTags={(tagValue, getTagProps) =>
-                      tagValue.map((option, index) => (
+                    renderTags={(value, getTagProps) =>
+                      value.map((option, index) => (
                         <Chip
                           key={option.id}
-                          variant="outlined"
                           label={option.name}
                           {...getTagProps({ index })}
                         />
                       ))
                     }
-                    filterSelectedOptions
                   />
                 )}
               />
             </FormControl>
           </Grid2>
+
         </Grid2>
       </DialogContent>
+
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <CommonButton text="Cancel" onClick={onCloseModal} variant="outlined" />
+        <CommonButton text="Cancel" variant="outlined" onClick={handleClose} />
         <CommonButton
           text={defaultValues ? "Update" : "Add"}
           onClick={handleSubmit(onSubmit)}
@@ -357,4 +351,5 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
     </Dialog>
   );
 };
+
 export default VisitModal;

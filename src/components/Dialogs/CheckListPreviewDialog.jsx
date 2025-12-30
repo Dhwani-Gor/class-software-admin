@@ -71,6 +71,22 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
 
   /* -------------------- NEW APPROACH: Direct Canvas to PDF -------------------- */
 
+  const getSafeFilePart = (value, fallback) => {
+    if (!value) return fallback;
+    return String(value)
+      .trim()
+      .replace(/\s+/g, '_')
+      .replace(/[^\w\-]/g, '');
+  };
+
+  const reportNo = getSafeFilePart(
+    checklistData?.journal?.journalTypeId
+  );
+
+  const surveyName = getSafeFilePart(
+    checklistData?.surveyType?.name
+  );
+
   const handleDownloadPDF = async () => {
     if (!contentRef.current) {
       alert('Content not ready');
@@ -125,7 +141,7 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
         heightLeft -= pageHeight - margin * 2;
       }
 
-      pdf.save('Survey_Checklist.pdf');
+      pdf.save(`Survey_Checklist_${reportNo}_${surveyName}.pdf`);
 
     } catch (err) {
       console.error('PDF generation error:', err);
