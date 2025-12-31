@@ -64,12 +64,34 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
   const buildPreview = async () => {
     setLoading(true);
     const parsed = parseChecklistData(checklistData?.checkListData);
-    const rawHTML = sanitizeHTML(parsed?.checkList || '');
+    let rawHTML = sanitizeHTML(parsed?.checkList || '');
+
+    // 👉 Force page break before section headings (Weather Deck & Hull, etc.)
+    rawHTML = rawHTML.replace(
+      /<p><strong>(.*?)<\/strong><\/p>/gi,
+      `<div class="page-break-before"><strong>$1</strong></div>`
+    );
+
     setHtmlContent(rawHTML);
     setLoading(false);
   };
 
-  /* -------------------- NEW APPROACH: Direct Canvas to PDF -------------------- */
+
+  const getSafeFilePart = (value, fallback) => {
+    if (!value) return fallback;
+    return String(value)
+      .trim()
+      .replace(/\s+/g, '_')
+      .replace(/[^\w\-]/g, '');
+  };
+
+  const reportNo = getSafeFilePart(
+    checklistData?.journal?.journalTypeId
+  );
+
+  const surveyName = getSafeFilePart(
+    checklistData?.surveyType?.name
+  );
 
   const handleDownloadPDF = async () => {
     if (!contentRef.current) {
@@ -104,28 +126,66 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
         format: 'a4',
       });
 
+
+
       const pageWidth = 210;
       const pageHeight = 297;
       const margin = 15;
 
+      const usableHeight = pageHeight - margin * 2;
       const imgWidth = pageWidth - margin * 2;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      let heightLeft = imgHeight;
-      let position = margin;
+      let remainingHeight = imgHeight;
+      let pageIndex = 0;
 
-      pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
+      while (remainingHeight > 0) {
+        if (pageIndex > 0) {
+          pdf.addPage();
+        }
 
-      heightLeft -= pageHeight - margin * 2;
+        const sourceY = (pageIndex * usableHeight * canvas.height) / imgHeight;
+        const sourceHeight = Math.min(
+          canvas.height - sourceY,
+          (usableHeight * canvas.height) / imgHeight
+        );
 
-      while (heightLeft > 0) {
-        pdf.addPage();
-        position = margin - (imgHeight - heightLeft);
-        pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight - margin * 2;
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = sourceHeight;
+
+        const ctx = pageCanvas.getContext('2d');
+        ctx.drawImage(
+          canvas,
+          0,
+          sourceY,
+          canvas.width,
+          sourceHeight,
+          0,
+          0,
+          canvas.width,
+          sourceHeight
+        );
+
+        const pageImgData = pageCanvas.toDataURL('image/jpeg', 0.95);
+
+        const pageImgHeight = (sourceHeight * imgWidth) / canvas.width;
+
+        pdf.addImage(
+          pageImgData,
+          'JPEG',
+          margin,
+          margin,
+          imgWidth,
+          pageImgHeight
+        );
+
+        remainingHeight -= usableHeight;
+        pageIndex++;
       }
 
-      pdf.save('Survey_Checklist.pdf');
+
+      pdf.save(`Survey_Checklist_${reportNo}_${surveyName}.pdf`);
 
     } catch (err) {
       console.error('PDF generation error:', err);
@@ -177,24 +237,41 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
               fontFamily: 'Arial, sans-serif',
               fontSize: '14px',
               lineHeight: 1.6,
+
               '& table': {
                 width: '100%',
                 borderCollapse: 'collapse',
-                margin: '10px 0'
+                margin: '10px 0',
+                pageBreakInside: 'avoid',
+                breakInside: 'avoid',
               },
+
+              '& tr': {
+                pageBreakInside: 'avoid',
+                breakInside: 'avoid',
+              },
+
               '& td, & th': {
                 border: '1px solid #ccc',
                 padding: '6px',
                 verticalAlign: 'top'
               },
+
               '& img': {
                 maxWidth: '100%',
                 height: 'auto'
               },
+
               '& p': {
                 margin: '0 0 8px 0'
-              }
+              },
+
+              '& .page-break-before': {
+                pageBreakBefore: 'always',
+                breakBefore: 'page',
+              },
             }}
+
             dangerouslySetInnerHTML={{ __html: htmlContent }}
           />
         )}
