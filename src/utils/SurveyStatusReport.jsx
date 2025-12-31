@@ -1178,8 +1178,16 @@ ${classificationRows}
         ${(section.items || []).map(item => `
           <tr>
             <td style="padding:6px;">${item.generatedCode || "-"}</td>
-            <td style="padding:6px;">${item.status || "-"}</td>
-                <td style="padding:6px;">
+  <td style="padding:6px;">
+              ${item.status === "credited"
+          ? "Credited"
+          : item.status === "waived off"
+            ? "Waived Off"
+            : item.status === "postponed"
+              ? "Postponed"
+              : "-"
+        }
+            </td>                <td style="padding:6px;">
               ${item.postponedDate ? moment(item.postponedDate).format("DD/MM/YYYY") : "-"}
             </td>
                         <td style="padding:6px;">5</td>
@@ -1224,8 +1232,16 @@ ${classificationRows}
         ${(section.items || []).map(item => `
           <tr>
             <td style="padding:6px;">${item.generatedCode || "-"}</td>
-            <td style="padding:6px;">${item.status || "-"}</td>
-            <td style="padding:6px;">5</td>
+  <td style="padding:6px;">
+              ${item.status === "credited"
+          ? "Credited"
+          : item.status === "waived off"
+            ? "Waived Off"
+            : item.status === "postponed"
+              ? "Postponed"
+              : "-"
+        }
+            </td>            <td style="padding:6px;">5</td>
 
             <td style="padding:6px;">
               ${item.assignmentDate ? moment(item.assignmentDate).format("DD/MM/YYYY") : "-"}
