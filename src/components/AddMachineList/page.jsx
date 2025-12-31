@@ -495,7 +495,6 @@ const MachineryHullManager = ({ mode, shipId }) => {
             });
         });
 
-        console.log(payload);
 
         if (editingId) {
             return {

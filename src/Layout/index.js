@@ -53,7 +53,6 @@ const Layout = ({ children }) => {
 
   const loadNotifications = async () => {
     const res = await getNotificationList();
-    console.log(res, "res");
 
     if (res?.data?.success) {
       setNotifications(res.data.data);

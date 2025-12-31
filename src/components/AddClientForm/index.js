@@ -97,7 +97,6 @@ const AddSurveyType = ({ mode = "create", clientId = null, defaultValues = {}, e
   const [managerInputValue, setManagerInputValue] = useState("");
   const [classId, setClassId] = useState();
 
-  console.log(classId, "class id");
   const [isSearching, setIsSearching] = useState({
     owner: false,
     manager: false,

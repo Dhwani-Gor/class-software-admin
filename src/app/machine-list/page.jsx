@@ -65,7 +65,6 @@ const MachineList = () => {
         toFrameNo: "",
     });
 
-    console.log(editForm, "editForm");
     /* ---------------- FETCH CLIENTS ---------------- */
     useEffect(() => {
         getAllClients()
@@ -241,7 +240,7 @@ const MachineList = () => {
                                     Machinery
                                 </Typography>
 
-                                {machinerySections.map(([sectionKey, section], i) => (console.log(section, "section"),
+                                {machinerySections.map(([sectionKey, section], i) => (
                                     <Accordion key={`mach-${i}`} defaultExpanded>
                                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                                             <Typography fontWeight={600}>
@@ -264,7 +263,6 @@ const MachineList = () => {
                                                 </TableHead>
                                                 <TableBody>
                                                     {section.items.map((item, idx) => (
-                                                        console.log(section, "item"),
                                                         <>
                                                             <TableRow key={idx}>
                                                                 <TableCell>{item.generatedCode}</TableCell>

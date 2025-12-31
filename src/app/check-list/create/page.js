@@ -79,7 +79,6 @@ const injectCompanyHeader = (html, systemVariables) => {
 };
 
 const getClientValue = (field, client, extra = {}, selectedSurvey) => {
-  console.log("selectedSurvey", selectedSurvey);
   switch (field) {
     case "shipName":
       return client?.shipName || "";

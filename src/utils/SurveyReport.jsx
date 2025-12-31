@@ -81,7 +81,6 @@ const SurveyReport = ({ id, reportNumber }) => {
       const companyLogo = systemVariables?.data?.find((i) => i.name === "company_logo")?.information || "-";
       const stamp = systemVariables?.data?.find((i) => i.name === "company_stamp")?.information || "-";
       const issuer = reportDetailsInput?.map((i) => i?.issuer?.name);
-      console.log(reportDetailsInput, "reportDetailsInput")
       const portOfSurvey = reportDetailsInput?.map((i) => i?.place?.toLowerCase());
 
       const uniquePorts = [...new Set(portOfSurvey)].join(",").toUpperCase();
@@ -96,7 +95,6 @@ const SurveyReport = ({ id, reportNumber }) => {
   `;
 
         const validCerts = reportDetailsInput.filter((cert) => cert?.activity?.surveyTypes?.classificationSurvey === true);
-        console.log(validCerts, "valid certs")
         if (!validCerts.length) {
           return `
 
