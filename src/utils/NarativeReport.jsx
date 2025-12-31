@@ -50,7 +50,6 @@ const NarrativeReport = ({ id, reportNumber }) => {
           fetchAdditionalDetails(id),
           fetchJournalList(id)
         ]);
-        console.log(additionalResult, "addresult")
         if (additionalResult?.status === 200) setAdditionalDetails(additionalResult.data.data);
         if (clientResult?.status === 200) setClientData(clientResult.data.data);
         if (reportResult?.status === 200) setReportDetails(reportResult.data.data || []);

@@ -1160,10 +1160,10 @@ ${classificationRows}
     <tr style="background-color:#f2f2f2;">
       <th style="padding:6px;">Code</th>
       <th style="padding:6px;">Status</th>
-      <th style="padding:6px;">Assignment Date</th>
-      <th style="padding:6px;">Cycle</th>
-      <th style="padding:6px;">Due Date</th>
       <th style="padding:6px;">Postponed Date</th>
+      <th style="padding:6px;">Cycle</th>
+      <th style="padding:6px;">Assignment Date</th>
+      <th style="padding:6px;">Due Date</th>
       <th style="padding:6px;">Description</th>
     </tr>
   </thead>
@@ -1179,16 +1179,18 @@ ${classificationRows}
           <tr>
             <td style="padding:6px;">${item.generatedCode || "-"}</td>
             <td style="padding:6px;">${item.status || "-"}</td>
+                <td style="padding:6px;">
+              ${item.postponedDate ? moment(item.postponedDate).format("DD/MM/YYYY") : "-"}
+            </td>
+                        <td style="padding:6px;">5</td>
+
             <td style="padding:6px;">
               ${item.assignmentDate ? moment(item.assignmentDate).format("DD/MM/YYYY") : "-"}
             </td>
-            <td style="padding:6px;">5</td>
              <td style="padding:6px;">
               ${item.dueDate ? moment(item.dueDate).format("DD/MM/YYYY") : "-"}
             </td>
-            <td style="padding:6px;">
-              ${item.postponedDate ? moment(item.postponedDate).format("DD/MM/YYYY") : "-"}
-            </td>
+        
            
             <td style="padding:6px;">${item.content || "-"}</td>
           </tr>
@@ -1206,10 +1208,8 @@ ${classificationRows}
     <tr style="background-color:#f2f2f2;">
       <th style="padding:6px;">Code</th>
       <th style="padding:6px;">Status</th>
-      <th style="padding:6px;">Assignment Date</th>
       <th style="padding:6px;">Cycle</th>
-      <th style="padding:6px;">From Frame No</th>
-      <th style="padding:6px;">Upto Frame No</th>
+      <th style="padding:6px;">Assignment Date</th>
       <th style="padding:6px;">Description</th>
     </tr>
   </thead>
@@ -1225,13 +1225,19 @@ ${classificationRows}
           <tr>
             <td style="padding:6px;">${item.generatedCode || "-"}</td>
             <td style="padding:6px;">${item.status || "-"}</td>
+            <td style="padding:6px;">5</td>
+
             <td style="padding:6px;">
               ${item.assignmentDate ? moment(item.assignmentDate).format("DD/MM/YYYY") : "-"}
             </td>
-            <td style="padding:6px;">5</td>
-            <td style="padding:6px;">${item.fromFrameNo || "-"}</td>
-            <td style="padding:6px;">${item.toFrameNo || "-"}</td>
-            <td style="padding:6px;">${item.content || "-"}</td>
+          <td style="padding:6px;">
+  ${item.content || "-"}
+  ${item.fromFrameNo && item.toFrameNo
+          ? ` (${item.fromFrameNo} - ${item.toFrameNo})`
+          : ""
+        }
+</td>
+
           </tr>
         `).join("")}
       `).join("")}
