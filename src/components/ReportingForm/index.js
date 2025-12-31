@@ -354,7 +354,7 @@ const ReportingForm = () => {
       return due.format("YYYY-MM-DD");
     }
 
-    if (!isFiveYearSpecial && (surveyType.includes("special") || surveyType.includes("continuous") || surveyType.includes("renewal") || surveyType.includes("intermediate"))) {
+    if (!isFiveYearSpecial) {
       yearsToAdd = 1;
     }
 
