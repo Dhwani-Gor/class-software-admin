@@ -135,7 +135,7 @@ const JournalEntryForm = ({ journalId = null }) => {
 
   const handleOpenModal = () => {
     if (isDisabled) return;
-    setEditVisit(null);
+    setEditVisit(undefined);
     setOpenModal(true);
   };
 
@@ -149,7 +149,10 @@ const JournalEntryForm = ({ journalId = null }) => {
     }
   };
 
-  const handleCloseModal = () => setOpenModal(false);
+  const handleCloseModal = () => {
+    setOpenModal(false);
+
+  };
 
   const getAllVisitData = async (journalId) => {
     try {
@@ -268,9 +271,12 @@ const JournalEntryForm = ({ journalId = null }) => {
           location: visitData.location,
           initialOfSurveyors: visitData.initialOfSurveyors,
           surveyors: visitData.initialOfSurveyors.map((id) => {
-            const match = surveyors.find((s) => s.id === id);
-            return match ? { name: match.name } : { name: id };
+            const match = surveyors.find((s) => Number(s.id) === Number(id));
+            return match
+              ? { id: match.id, name: match.name }
+              : { id, name: String(id) };
           }),
+
         };
         setVisitList([...visitList, { id: Date.now(), ...formattedVisitData }]);
       }
@@ -561,6 +567,8 @@ const JournalEntryForm = ({ journalId = null }) => {
       getAllActivity(journalId);
     }
   }, [journalId]);
+
+
 
   const showForm = () => {
     setIsShowForm(true);
@@ -910,6 +918,7 @@ const JournalEntryForm = ({ journalId = null }) => {
                           <TableCell align="right">
                             {visit?.surveyors?.map(s => s.name).join(", ")}
                           </TableCell>
+
                           <TableCell align="right">
                             <IconButton onClick={() => handleEdit(visit)} disabled={isDisabled}>
                               <EditIcon />

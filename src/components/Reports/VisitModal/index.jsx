@@ -139,19 +139,32 @@ const VisitModal = ({ open, onClose, onSave, defaultValues }) => {
 
   /* ------------------ CLOSE ------------------ */
 
+  useEffect(() => {
+    if (!defaultValues) {
+      reset({
+        date: "",
+        timeFrom: "",
+        timeTo: "",
+        location: "",
+        initialOfSurveyors: [],
+      });
+      setSelectedLocation(null);
+    }
+  }, [defaultValues, reset]);
+
   const handleClose = () => {
-    reset({
-      date: "",
-      timeFrom: "",
-      timeTo: "",
-      location: "",
-      initialOfSurveyors: [],
-    });
-    setSelectedLocation(null);
+    if (!defaultValues) {
+      reset({
+        date: "",
+        timeFrom: "",
+        timeTo: "",
+        location: "",
+        initialOfSurveyors: [],
+      });
+      setSelectedLocation(null);
+    }
     onClose();
   };
-
-  /* ------------------ RENDER ------------------ */
 
   return (
     <Dialog open={open} onClose={handleClose}>
