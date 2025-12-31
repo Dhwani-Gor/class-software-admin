@@ -1151,73 +1151,96 @@ ${classificationRows}
       (section.items || []).forEach(item => rows.push(item));
     });
   }
+  const hasHullItems = hullSections && hullSections.length > 0;
 
-  const machineListHtml = `
-<table style="width:100%; border-collapse:collapse; font-size:14px;">
+  const machineryTableHtml = machineSections.length
+    ? `
+<table style="width:100%; border-collapse:collapse; font-size:14px; margin-bottom:20px;">
   <thead>
-    <tr style="background-color:#f2f2f2; text-align:left;">
+    <tr style="background-color:#f2f2f2;">
       <th style="padding:6px;">Code</th>
       <th style="padding:6px;">Status</th>
-      <th style="padding:6px;">Postponed Date</th>
-      <th style="padding:6px;">Cycle</th>
       <th style="padding:6px;">Assignment Date</th>
-      <th style="padding:6px;">Next Due Date</th>
+      <th style="padding:6px;">Cycle</th>
+      <th style="padding:6px;">Due Date</th>
+      <th style="padding:6px;">Postponed Date</th>
       <th style="padding:6px;">Description</th>
     </tr>
   </thead>
   <tbody>
-    ${rows
-      .map(item => {
-        if (item.isSectionHeader) {
-          return `
-            <tr>
-              <td colspan="7"
-                  style="padding:8px; font-weight:bold; font-size:15px;">
-                ${item.sectionName}
-              </td>
-            </tr>`;
-        }
-
-        if (item.isSubSectionHeader) {
-          return `
-              <tr>
-                <td colspan="7"
-                    style="padding:8px; background-color:#f6f6f6; font-weight:bold;">
-                  ${item.sectionName}
-                </td>
-              </tr>`;
-        }
-
-        return `
+    ${machineSections
+      .map(section => `
+        <tr>
+          <td colspan="7" style="padding:8px; font-weight:bold;">
+            ${section.sectionName}
+          </td>
+        </tr>
+        ${(section.items || []).map(item => `
           <tr>
             <td style="padding:6px;">${item.generatedCode || "-"}</td>
+            <td style="padding:6px;">${item.status || "-"}</td>
             <td style="padding:6px;">
-              ${item.status === "credited"
-            ? "Credited"
-            : item.status === "waived off"
-              ? "Waived Off"
-              : item.status === "postponed"
-                ? "Postponed"
-                : "-"
-          }
+              ${item.assignmentDate ? moment(item.assignmentDate).format("DD/MM/YYYY") : "-"}
+            </td>
+            <td style="padding:6px;">5</td>
+             <td style="padding:6px;">
+              ${item.dueDate ? moment(item.dueDate).format("DD/MM/YYYY") : "-"}
             </td>
             <td style="padding:6px;">
               ${item.postponedDate ? moment(item.postponedDate).format("DD/MM/YYYY") : "-"}
             </td>
-            <td style="padding:6px;">5</td>
+           
+            <td style="padding:6px;">${item.content || "-"}</td>
+          </tr>
+        `).join("")}
+      `).join("")}
+  </tbody>
+</table>`
+    : "";
+
+
+  const hullTableHtml = hullSections.length
+    ? `
+<table style="width:100%; border-collapse:collapse; font-size:14px;">
+  <thead>
+    <tr style="background-color:#f2f2f2;">
+      <th style="padding:6px;">Code</th>
+      <th style="padding:6px;">Status</th>
+      <th style="padding:6px;">Assignment Date</th>
+      <th style="padding:6px;">Cycle</th>
+      <th style="padding:6px;">From Frame No</th>
+      <th style="padding:6px;">Upto Frame No</th>
+      <th style="padding:6px;">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${hullSections
+      .map(section => `
+        <tr>
+          <td colspan="7" style="padding:8px; font-weight:bold;">
+            ${section.sectionNumber} - ${section.sectionName}
+          </td>
+        </tr>
+        ${(section.items || []).map(item => `
+          <tr>
+            <td style="padding:6px;">${item.generatedCode || "-"}</td>
+            <td style="padding:6px;">${item.status || "-"}</td>
             <td style="padding:6px;">
               ${item.assignmentDate ? moment(item.assignmentDate).format("DD/MM/YYYY") : "-"}
             </td>
-            <td style="padding:6px;">
-              ${item.dueDate ? moment(item.dueDate).format("DD/MM/YYYY") : "-"}
-            </td>
+            <td style="padding:6px;">5</td>
+            <td style="padding:6px;">${item.fromFrameNo || "-"}</td>
+            <td style="padding:6px;">${item.toFrameNo || "-"}</td>
             <td style="padding:6px;">${item.content || "-"}</td>
-          </tr>`;
-      })
-      .join("")}
+          </tr>
+        `).join("")}
+      `).join("")}
   </tbody>
-</table>
-`;
+</table>`
+    : "";
+
+  { machineryTableHtml }
+  { hullTableHtml }
 
   // Final HTML
   const finalHtml = `
@@ -1230,7 +1253,8 @@ ${classificationRows}
     </div>
 
     ${additionalFieldsHtml}
-    ${machineListHtml}
+    ${machineryTableHtml}
+    ${hullTableHtml}
   `;
 
   const calculateDueDate = (cert) => {
@@ -1853,7 +1877,8 @@ ${auditSurveyTableHtml}
 ${additionalFieldsHtml}
 </div>
 <h2 style="margin-top: 10px; color:black">Machine List</h2>
-${machineListHtml}
+${machineryTableHtml}
+${hullTableHtml}
 </div>
 `;
   }, [clientData, reportDetails, classificationData, statutoryData]);

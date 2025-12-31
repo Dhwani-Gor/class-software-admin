@@ -338,10 +338,11 @@ const MachineList = () => {
                                                             <TableCell>{item.content || item.label}</TableCell>
                                                             <TableCell>{item.fromFrameNo || "-"}</TableCell>
                                                             <TableCell>{item.toFrameNo || "-"}</TableCell>
+
+                                                            <TableCell>{item.occurrence}</TableCell>
                                                             <TableCell>
                                                                 {item.status}
                                                             </TableCell>
-                                                            <TableCell>{item.occurrence}</TableCell>
                                                             <TableCell>
                                                                 <IconButton
                                                                     onClick={() =>

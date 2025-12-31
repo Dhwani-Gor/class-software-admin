@@ -282,7 +282,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
 
 
                 if (row.isTankRow === true) {
-                    SIMPLE_TANK_ROWS.forEach((label, index) => {
+                    OTHER_THAN_TANK.forEach((label, index) => {
                         instances.push({
                             generatedCode: `${baseCode}${index + 1}`,
                             occurrence: index + 1,
@@ -345,7 +345,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         from: item.from || "",
                         to: item.to || "",
                         fromFrameNo: item.fromFrameNo || "",
-                        uptoFrameNo: item.uptoFrameNo || "",
+                        toFrameNo: item.toFrameNo || "",
                     };
                 }
             });
@@ -455,10 +455,26 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             isTankSection,
                             tankNumbers,
                             section.sectionName
-                        ).map((item, itemIndex) => ({
-                            ...item,
-                            sequence: `${sectionNum}-${rowIndex}-${itemIndex}`,
-                        }));
+                        ).map((item, itemIndex) => {
+                            const baseItem = {
+                                ...item,
+                                sequence: `${sectionNum}-${rowIndex}-${itemIndex}`,
+                            };
+
+                            // HULL → only frame numbers
+                            if (type === "hull") {
+                                delete baseItem.dueDate;
+                                delete baseItem.postponedDate;
+                            }
+
+                            // MACHINERY → only due & postponed
+                            if (type === "machinery") {
+                                delete baseItem.fromFrameNo;
+                                delete baseItem.toFrameNo;
+                            }
+
+                            return baseItem;
+                        });
 
                         finalItems.push(...repeated);
                     }
@@ -830,9 +846,9 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 label="Upto"
                                 disabled={!isChecked}
                                 InputLabelProps={{ shrink: true }}
-                                value={formData[fieldKey]?.uptoFrameNo || ""}
+                                value={formData[fieldKey]?.toFrameNo || ""}
                                 onChange={(e) =>
-                                    updateField(sectionType, sectionNum, getRowKey(row), "uptoFrameNo", e.target.value)
+                                    updateField(sectionType, sectionNum, getRowKey(row), "toFrameNo", e.target.value)
                                 }
                             />
                         ) : (
