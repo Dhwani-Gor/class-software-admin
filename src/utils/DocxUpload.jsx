@@ -1,14 +1,21 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Box, FormControl, Typography, IconButton } from "@mui/material";
+import {
+    Box,
+    FormControl,
+    Typography,
+    IconButton,
+    Stack,
+} from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { Controller, useController } from "react-hook-form";
 import CommonButton from "@/components/CommonButton";
 
 const DocxUpload = ({ control }) => {
-    const inputRef = useRef();
+    const inputRef = useRef(null);
+    const [fileName, setFileName] = useState("");
 
-    // This retrieves existing file URL from API
+    // Existing file URL from API (edit mode)
     const { field: existingField } = useController({
         name: "checkListDocument",
         control,
@@ -16,19 +23,20 @@ const DocxUpload = ({ control }) => {
 
     const existingDocument = existingField.value;
 
-    const [fileName, setFileName] = useState("");
-
-    // Extract file name from existing file URL
+    // Extract filename from existing URL
     useEffect(() => {
         if (existingDocument && typeof existingDocument === "string") {
-            const last = existingDocument.split("/").pop();
-            setFileName(last);
+            const name = existingDocument.split("/").pop();
+            setFileName(name);
         }
     }, [existingDocument]);
 
     return (
         <>
-            <Typography>Upload Checklist</Typography>
+            <Typography fontWeight={500} mb={1}>
+                Upload Checklist
+            </Typography>
+
             <Controller
                 name="checklistFile"
                 control={control}
@@ -39,50 +47,46 @@ const DocxUpload = ({ control }) => {
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "space-between",
-                                border: "1px solid",
+                                border: "1px dashed",
                                 borderColor: "grey.600",
                                 borderRadius: "8px",
                                 p: 2,
                                 cursor: "pointer",
-                                mt: 1,
                             }}
+                            onClick={() => inputRef.current?.click()}
                             onDragOver={(e) => e.preventDefault()}
                             onDrop={(e) => {
                                 e.preventDefault();
-                                const file = e.dataTransfer.files[0];
+                                const file = e.dataTransfer.files?.[0];
                                 if (file) {
-                                    setFileName(file.name);
                                     field.onChange(file);
+                                    setFileName(file.name);
                                 }
                             }}
-                            onClick={() => inputRef.current.click()}
                         >
                             {/* Left Section */}
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                            <Stack direction="row" spacing={2} alignItems="center">
                                 <CloudUploadIcon />
                                 <Typography variant="body2">
                                     {field.value instanceof File
                                         ? field.value.name
                                         : existingDocument
-                                            ? `Existing: ${fileName}`
-                                            : "Drag file or browse to upload"}
+                                            ? fileName
+                                            : "Drag file here or click to upload"}
                                 </Typography>
-                            </Box>
+                            </Stack>
 
                             {/* Right Section */}
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <Stack direction="row" spacing={1} alignItems="center">
                                 {(field.value || existingDocument) && (
                                     <IconButton
-                                        color="primary"
                                         size="small"
                                         onClick={(e) => {
                                             e.stopPropagation();
-
                                             const url =
                                                 field.value instanceof File
                                                     ? URL.createObjectURL(field.value)
                                                     : existingDocument;
-
                                             window.open(url, "_blank");
                                         }}
                                     >
@@ -95,22 +99,23 @@ const DocxUpload = ({ control }) => {
                                     variant="contained"
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        inputRef.current.click();
+                                        inputRef.current?.click();
                                     }}
-                                    sx={{ borderRadius: "20px", px: 2, py: 1 }}
+                                    sx={{ borderRadius: "20px", px: 2 }}
                                 />
-                            </Box>
+                            </Stack>
 
+                            {/* Hidden Input */}
                             <input
                                 ref={inputRef}
                                 type="file"
                                 hidden
                                 accept=".doc,.docx,.pdf"
                                 onChange={(e) => {
-                                    const file = e.target.files[0];
+                                    const file = e.target.files?.[0];
                                     if (file) {
-                                        setFileName(file.name);
                                         field.onChange(file);
+                                        setFileName(file.name);
                                     }
                                     e.target.value = "";
                                 }}
