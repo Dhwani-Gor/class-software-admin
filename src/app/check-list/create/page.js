@@ -185,6 +185,7 @@ const CheckListCreate = () => {
   const isLoadingNewDocument = useRef(false);
   const [existingChecklist, setExistingChecklist] = useState(null);
   const [buttonText, setButtonText] = useState("Submit");
+  const [checkListDocumentName, setCheckListDocumentName] = useState(null);
 
   const FIELD_WIDTH = 400;
   const LABEL_PROPS = {
@@ -273,6 +274,7 @@ const CheckListCreate = () => {
       if (res?.data?.status === "success") {
         setJournals(res.data.data);
       }
+      console.log(res.data.data, "journal list");
     });
 
     getSpecificClient(selectedShip.id).then((res) => {
@@ -289,6 +291,7 @@ const CheckListCreate = () => {
       if (res?.data?.status === "success") {
         setSurveyTypes(res.data.data);
       }
+      console.log(res.data.data, "survey types");
     });
   }, [selectedJournal]);
 
@@ -349,6 +352,7 @@ const CheckListCreate = () => {
       clientId: selectedShip.id,
       reportNo: selectedJournal.id,
       typeOfSurvey: [String(selectedSurvey)],
+      checkListDocumentName, // ✅ PASS HERE
       checkListData: {
         checkList: editorRef.current.getContent(),
       },
@@ -450,6 +454,7 @@ const CheckListCreate = () => {
                       label: s.surveyTypes.name,
                       value: s.surveyTypes.id,
                       doc: s.surveyTypes.checkListDocument,
+                      docName: s.surveyTypes.checkListDocumentName, // ✅ ADD THIS
                     }))}
                     value={
                       surveyTypes
@@ -457,13 +462,16 @@ const CheckListCreate = () => {
                           label: s.surveyTypes.name,
                           value: s.surveyTypes.id,
                           doc: s.surveyTypes.checkListDocument,
+                          docName: s.surveyTypes.checkListDocumentName,
                         }))
                         .find((opt) => opt.value === selectedSurvey) || null
                     }
                     onChange={async (_, val) => {
                       const surveyId = val?.value || null;
+
                       setButtonText("Submit");
                       setSelectedSurvey(surveyId);
+                      setCheckListDocumentName(val?.docName || null); // ✅ STORE IT
                       setExistingChecklist(null);
                       setHtmlContent("");
                       editorRef.current?.setContent("");
@@ -473,10 +481,11 @@ const CheckListCreate = () => {
                         setNoChecklist(true);
                         return;
                       }
-                      isLoadingNewDocument.current = true;
 
+                      isLoadingNewDocument.current = true;
                       await loadChecklistDoc(val.doc);
                       isLoadingNewDocument.current = false;
+
                       fetchExistingChecklist();
                     }}
                     renderInput={(params) => <TextField {...params} size="small" />}

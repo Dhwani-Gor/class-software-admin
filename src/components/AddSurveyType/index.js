@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import { createSurveyType, updateSurveyType, getSurveyTypeDetails, getReports } from "@/api";
-import { CircularProgress, FormControl, FormLabel, Grid2, Paper, Stack, Typography, Chip, TextField, Autocomplete, FormControlLabel, Checkbox } from "@mui/material";
+import { CircularProgress, FormControl, FormLabel, Grid2, Paper, Stack, Typography, Chip, TextField, Autocomplete, FormControlLabel, Checkbox, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import CommonInput from "../CommonInput";
 import CommonButton from "../CommonButton";
@@ -24,6 +24,8 @@ const SurveyTypeForm = ({ mode = "create", surveyTypeId = null, defaultValues = 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reports, setReports] = useState([]);
   const [loadingReports, setLoadingReports] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState("");
   const router = useRouter();
   const isUpdate = mode === "update";
 
@@ -83,7 +85,6 @@ const SurveyTypeForm = ({ mode = "create", surveyTypeId = null, defaultValues = 
       setValue("abbreviation", data.abbreviation || "");
       setValue("reportId", data.reportId || null);
       setValue("checkListDocument", data.checkListDocument || "");
-
       // Convert boolean fields to single category selection
       let category = "";
       if (data.statutorySurvey) category = "statutory";
@@ -93,7 +94,6 @@ const SurveyTypeForm = ({ mode = "create", surveyTypeId = null, defaultValues = 
       setValue("surveyCategory", category);
     } catch (error) {
       console.error("Error fetching survey type details:", error);
-      toast.error("Failed to fetch survey type details");
     } finally {
       setIsDataLoading(false);
     }
@@ -288,7 +288,13 @@ const SurveyTypeForm = ({ mode = "create", surveyTypeId = null, defaultValues = 
                         )}
                       />
                       <Grid2 xs={12} mt={2}>
-                        <DocxUpload control={control} />
+                        <DocxUpload
+                          control={control}
+                          onPreview={(url) => {
+                            setPreviewUrl(url);
+                            setPreviewOpen(true);
+                          }}
+                        />
                       </Grid2>
                     </FormControl>
                   </Grid2>
@@ -374,6 +380,17 @@ const SurveyTypeForm = ({ mode = "create", surveyTypeId = null, defaultValues = 
           </Stack>
         </>
       )}
+      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="lg" fullWidth>
+        <DialogTitle>Checklist Preview</DialogTitle>
+
+        <DialogContent dividers sx={{ height: "80vh", p: 0 }}>
+          {previewUrl && <iframe src={previewUrl.endsWith(".docx") ? `https://docs.google.com/gview?url=${encodeURIComponent(previewUrl)}&embedded=true` : previewUrl} width="100%" height="100%" style={{ border: "none" }} title="Checklist Preview" />}
+        </DialogContent>
+
+        <DialogActions>
+          <CommonButton text="Close" variant="outlined" onClick={() => setPreviewOpen(false)} />
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
