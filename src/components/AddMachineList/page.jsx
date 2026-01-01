@@ -354,6 +354,21 @@ const MachineryHullManager = ({ mode, shipId }) => {
         return hydrated;
     };
 
+    const isTankSectionFromData = (sectionType, sectionNum) => {
+        if (sectionType !== "hull") return false;
+
+        const originalSection = originalBlocks.find(
+            (b) => String(b.sectionNumber) === String(sectionNum)
+        );
+
+        return (
+            originalSection?.items?.some((i) => i.isTank === true) ||
+            getTankRowsForSection(
+                HULL_SECTIONS[sectionNum],
+                "hull"
+            ).length > 0
+        );
+    };
 
 
     const mergeBlocks = (oldBlocks = [], newBlocks = []) => {
@@ -557,10 +572,11 @@ const MachineryHullManager = ({ mode, shipId }) => {
                     ? {
                         id: nextId,
                         label: "",
-                        hasPosition: false,
+                        hasPosition: true,
                         isFrom: true,
                         isDue: false,
                         isUserAdded: true,
+
                     }
                     : {
                         id: nextId,
@@ -682,6 +698,8 @@ const MachineryHullManager = ({ mode, shipId }) => {
     };
 
     const renderRow = (row, sectionType, sectionNum) => {
+        const isTankHull = isTankSectionFromData(sectionType, sectionNum);
+
         const rowKey = getRowKey(row);
         const fieldKey = `${sectionType}-${sectionNum}-${rowKey}`;
 
@@ -792,68 +810,70 @@ const MachineryHullManager = ({ mode, shipId }) => {
                     </Grid2>
 
                     <Grid2 size={{ xs: 12, md: 2 }}>
-                        {row.isDue && !row.isFrom ? (
-                            <TextField
-                                type="date"
-                                size="small"
-                                variant="standard"
-                                fullWidth
-                                label="Due Date"
-                                disabled={!isChecked}
-                                InputLabelProps={{ shrink: true }}
-                                value={formData[fieldKey]?.dueDate || ""}
-                                onChange={(e) => updateField(sectionType, sectionNum, getRowKey(row), "dueDate", e.target.value)}
-                            />
-                        ) : row.isFrom ? (
+                        {isTankHull ? (
                             <TextField
                                 type="text"
-                                size="small"
                                 variant="standard"
                                 fullWidth
                                 label="From"
                                 disabled={!isChecked}
                                 InputLabelProps={{ shrink: true }}
                                 value={formData[fieldKey]?.fromFrameNo || ""}
-                                onChange={(e) => updateField(sectionType, sectionNum, getRowKey(row), "fromFrameNo", e.target.value)}
+                                onChange={(e) =>
+                                    updateField(sectionType, sectionNum, rowKey, "fromFrameNo", e.target.value)
+                                }
+                            />
+                        ) : row.isDue && !row.isFrom ? (
+                            <TextField
+                                type="date"
+                                variant="standard"
+                                fullWidth
+                                label="Due Date"
+                                disabled={!isChecked}
+                                InputLabelProps={{ shrink: true }}
+                                value={formData[fieldKey]?.dueDate || ""}
+                                onChange={(e) =>
+                                    updateField(sectionType, sectionNum, rowKey, "dueDate", e.target.value)
+                                }
                             />
                         ) : (
                             <Box sx={{ height: "40px" }} />
                         )}
                     </Grid2>
 
+
                     <Grid2 size={{ xs: 12, md: 2 }}>
-                        {row.isDue && !row.isFrom ? (
+                        {isTankHull ? (
                             <TextField
-                                variant="standard"
-                                type="date"
-                                size="small"
-                                fullWidth
-                                label="Postponed Date"
-                                disabled={!isChecked}
-                                InputLabelProps={{ shrink: true }}
-                                value={formData[fieldKey]?.postponedDate || ""}
-                                onChange={(e) =>
-                                    updateField(sectionType, sectionNum, getRowKey(row), "postponedDate", e.target.value)
-                                }
-                            />
-                        ) : row.isFrom ? (
-                            <TextField
-                                variant="standard"
                                 type="text"
-                                size="small"
+                                variant="standard"
                                 fullWidth
                                 label="Upto"
                                 disabled={!isChecked}
                                 InputLabelProps={{ shrink: true }}
                                 value={formData[fieldKey]?.toFrameNo || ""}
                                 onChange={(e) =>
-                                    updateField(sectionType, sectionNum, getRowKey(row), "toFrameNo", e.target.value)
+                                    updateField(sectionType, sectionNum, rowKey, "toFrameNo", e.target.value)
+                                }
+                            />
+                        ) : row.isDue && !row.isFrom ? (
+                            <TextField
+                                type="date"
+                                variant="standard"
+                                fullWidth
+                                label="Postponed Date"
+                                disabled={!isChecked}
+                                InputLabelProps={{ shrink: true }}
+                                value={formData[fieldKey]?.postponedDate || ""}
+                                onChange={(e) =>
+                                    updateField(sectionType, sectionNum, rowKey, "postponedDate", e.target.value)
                                 }
                             />
                         ) : (
                             <Box sx={{ height: "40px" }} />
                         )}
                     </Grid2>
+
                 </Grid2>
             </Grid2>
         );
@@ -872,6 +892,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
 
         const showDueDate = allRows.some((r) => r.isDue);
         const showFrom = allRows.some((r) => r.isFrom);
+        const isTankHull = isTankSectionFromData(sectionType, sectionNum);
 
         return (
             <Accordion
@@ -958,10 +979,22 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 <Grid2 size={{ xs: 12, md: 3.3 }}>Description</Grid2>
                                 <Grid2 size={{ xs: 12, md: 2 }}>Position / No.</Grid2>
                                 <Grid2 size={{ xs: 12, md: 2 }}>Assignment Date</Grid2>
-                                {showDueDate && <Grid2 size={{ xs: 12, md: 2 }}>Due Date</Grid2>}
-                                {showFrom && !showDueDate && <Grid2 size={{ xs: 12, md: 2 }}>From Frame No.</Grid2>}
-                                {showDueDate && <Grid2 size={{ xs: 12, md: 2 }}>Postponed Date</Grid2>}
-                                {showFrom && !showDueDate && <Grid2 size={{ xs: 12, md: 2 }}>Upto Frame No.</Grid2>}
+                                {!isTankHull && showDueDate && (
+                                    <Grid2 size={{ xs: 12, md: 2 }}>Due Date</Grid2>
+                                )}
+
+                                {isTankHull && (
+                                    <Grid2 size={{ xs: 12, md: 2 }}>From Frame No.</Grid2>
+                                )}
+
+                                {!isTankHull && showDueDate && (
+                                    <Grid2 size={{ xs: 12, md: 2 }}>Postponed Date</Grid2>
+                                )}
+
+                                {isTankHull && (
+                                    <Grid2 size={{ xs: 12, md: 2 }}>Upto Frame No.</Grid2>
+                                )}
+
                             </Grid2>
 
                             {allRows.map((row) => renderRow(row, sectionType, sectionNum))}
