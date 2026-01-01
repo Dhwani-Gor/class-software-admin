@@ -97,10 +97,7 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
             const issuedByKey = `endorsed_by_${num}`;
             const issuedByValue = reportDetails.data[issuedByKey];
             if (issuedByValue) {
-              const matchingSurveyor = surveyorOptions.find((s) => s.label === issuedByValue);
-              if (matchingSurveyor) {
-                newIssuedBy[endorsement.title] = matchingSurveyor.value;
-              }
+              newIssuedBy[endorsement.title] = Number(issuedByValue);
             }
 
             // Pre-fill remarks
@@ -336,7 +333,6 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
       // Issued By dropdown
       const issuedBy = issuedByValues[selectedEndorsement.title] || "";
       flattenedData[`endorsed_by_${num}`] = issuedBy;
-      // check ALL possible date fields
       const issuanceDate = endorsementInputs[`${selectedEndorsement.title}_issuance_date`] || "";
       const validityDate = endorsementInputs[`${selectedEndorsement.title}_validity_date`] || "";
 
