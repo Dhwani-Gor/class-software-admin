@@ -109,25 +109,65 @@ const SurveyTypeForm = ({ mode = "create", surveyTypeId = null, defaultValues = 
     router.push("/survey-types");
   };
 
+  // const onSubmit = async (data) => {
+  //   try {
+  //     setIsSubmitting(true);
+  //     const formData = new FormData();
+  //     formData.append("name", data.name);
+  //     formData.append("abbreviation", data.abbreviation);
+  //     formData.append("statutorySurvey", data.surveyCategory === "statutory");
+  //     formData.append("classificationSurvey", data.surveyCategory === "classification");
+  //     formData.append("audit", data.surveyCategory === "audit");
+  //     if (data.reportId) formData.append("reportId", data.reportId);
+  //     if (data.checklistFile) formData.append("checkListDocument", data.checklistFile);
+  //     const res = isUpdate ? await updateSurveyType(surveyTypeId, formData) : await createSurveyType(formData);
+
+  //     if (res?.data?.status === "success") {
+  //       toast.success(`Survey type ${isUpdate ? "updated" : "created"} successfully`);
+  //       router.push("/survey-types");
+  //     } else throw new Error(res?.data?.message || "Failed to save survey type");
+  //   } catch (error) {
+  //     console.error("Error:", error);
+  //     toast.error(error.message || "An error occurred");
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
+
   const onSubmit = async (data) => {
     try {
       setIsSubmitting(true);
+
       const formData = new FormData();
       formData.append("name", data.name);
       formData.append("abbreviation", data.abbreviation);
       formData.append("statutorySurvey", data.surveyCategory === "statutory");
       formData.append("classificationSurvey", data.surveyCategory === "classification");
       formData.append("audit", data.surveyCategory === "audit");
-      if (data.reportId) formData.append("reportId", data.reportId);
-      if (data.checklistFile) formData.append("checkListDocument", data.checklistFile);
+
+      if (data.reportId) {
+        formData.append("reportId", data.reportId);
+      }
+
+      if (data.checklistFile) {
+        // New file upload
+        formData.append("checkListDocument", data.checklistFile);
+        formData.append("checkListDocumentName", data.checklistFile.name);
+      } else if (data.checkListDocument) {
+        // Existing file (edit mode)
+        const existingName = data.checkListDocument.split("/").pop();
+        formData.append("checkListDocumentName", existingName);
+      }
+
       const res = isUpdate ? await updateSurveyType(surveyTypeId, formData) : await createSurveyType(formData);
 
       if (res?.data?.status === "success") {
         toast.success(`Survey type ${isUpdate ? "updated" : "created"} successfully`);
         router.push("/survey-types");
-      } else throw new Error(res?.data?.message || "Failed to save survey type");
+      } else {
+        throw new Error(res?.data?.message || "Failed to save survey type");
+      }
     } catch (error) {
-      console.error("Error:", error);
       toast.error(error.message || "An error occurred");
     } finally {
       setIsSubmitting(false);

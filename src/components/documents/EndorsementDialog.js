@@ -335,7 +335,7 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
 
       // Issued By dropdown
       const issuedBy = issuedByValues[selectedEndorsement.title] || "";
-
+      flattenedData[`endorsed_by_${num}`] = issuedBy;
       // check ALL possible date fields
       const issuanceDate = endorsementInputs[`${selectedEndorsement.title}_issuance_date`] || "";
       const validityDate = endorsementInputs[`${selectedEndorsement.title}_validity_date`] || "";
