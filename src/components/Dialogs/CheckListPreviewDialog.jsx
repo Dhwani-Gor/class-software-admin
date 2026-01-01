@@ -66,7 +66,6 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
     const parsed = parseChecklistData(checklistData?.checkListData);
     let rawHTML = sanitizeHTML(parsed?.checkList || '');
 
-    // 👉 Force page break before section headings (Weather Deck & Hull, etc.)
     rawHTML = rawHTML.replace(
       /<p><strong>(.*?)<\/strong><\/p>/gi,
       `<div class="page-break-before"><strong>$1</strong></div>`
@@ -98,41 +97,40 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
   ).replace(/\.docx$/i, "");
 
   const addFooter = (pdf, formName) => {
-    const pageCount = pdf.getNumberOfPages();
+    const totalPages = Number(pdf.getNumberOfPages());
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
 
     pdf.setFontSize(9);
     pdf.setTextColor(90);
 
-    for (let i = 1; i <= pageCount; i++) {
+    for (let i = 1; i <= totalPages; i++) {
       pdf.setPage(i);
 
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
+      // ✅ CLEAR FOOTER AREA ON EVERY PAGE (KEY FIX)
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(0, pageHeight - 20, pageWidth, 20, "F");
+
       const footerY = pageHeight - 8;
 
-      // Left: Form No
-      pdf.text(
-        `Form No.: ${formName}`,
-        15,
-        footerY,
-        { align: "left" }
-      );
+      // Left
+      pdf.text(`Form No.: ${formName}`, 15, footerY, {
+        maxWidth: 60,
+      });
 
-      // Center: Page X of Y
+      // Center
       pdf.text(
-        `Page ${i} of ${pageCount}`,
+        `Page ${i} of ${totalPages}`,
         pageWidth / 2,
         footerY,
         { align: "center" }
       );
 
-      // Right: Static text
-      pdf.text(
-        `*Delete as applicable`,
-        pageWidth - 15,
-        footerY,
-        { align: "right" }
-      );
+      // Right
+      pdf.text(`*Delete as applicable`, pageWidth - 15, footerY, {
+        align: "right",
+        maxWidth: 55,
+      });
     }
   };
 
@@ -177,8 +175,8 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
       const pageHeight = 297;
       const margin = 15;
 
-      const usableHeight = pageHeight - margin * 2;
-      const imgWidth = pageWidth - margin * 2;
+      const footerHeight = 15; // reserve space for footer
+      const usableHeight = pageHeight - margin * 2 - footerHeight; const imgWidth = pageWidth - margin * 2;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
       let remainingHeight = imgHeight;
@@ -230,16 +228,24 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
           imgWidth,
           pageImgHeight
         );
+        // ✅ CLEAR FOOTER AREA (CRITICAL FIX)
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(
+          0,
+          pageHeight - 20,   // footer zone
+          pdf.internal.pageSize.getWidth(),
+          20,
+          'F'
+        );
 
         remainingHeight -= usableHeight;
         pageIndex++;
       }
-      if (checklistDocName) {
-        addFooter(
-          pdf,
-          `${checklistDocName}`
-        );
-      }
+
+
+      addFooter(pdf, checklistDocName);
+
 
       pdf.save(`Survey_Checklist_${reportNo}_${surveyName}.pdf`);
 
@@ -252,8 +258,6 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
   };
 
 
-  /* -------------------- UI -------------------- */
-
   const waitForImages = async (container) => {
     const images = Array.from(container.querySelectorAll('img'));
     await Promise.all(
@@ -263,7 +267,7 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
             ? Promise.resolve()
             : new Promise(resolve => {
               img.onload = resolve;
-              img.onerror = resolve; // ignore broken images
+              img.onerror = resolve;
             })
       )
     );
