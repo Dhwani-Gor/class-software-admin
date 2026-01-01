@@ -11,7 +11,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import { Controller, useController } from "react-hook-form";
 import CommonButton from "@/components/CommonButton";
 
-const DocxUpload = ({ control }) => {
+const DocxUpload = ({ control, onPreview }) => {
     const inputRef = useRef(null);
     const [fileName, setFileName] = useState("");
 
@@ -53,7 +53,11 @@ const DocxUpload = ({ control }) => {
                                 p: 2,
                                 cursor: "pointer",
                             }}
-                            onClick={() => inputRef.current?.click()}
+                            onClick={(e) => {
+                                // do NOT open upload when clicking buttons/icons
+                                if (e.target.closest("button")) return;
+                                inputRef.current?.click();
+                            }}
                             onDragOver={(e) => e.preventDefault()}
                             onDrop={(e) => {
                                 e.preventDefault();
@@ -83,15 +87,18 @@ const DocxUpload = ({ control }) => {
                                         size="small"
                                         onClick={(e) => {
                                             e.stopPropagation();
+
                                             const url =
                                                 field.value instanceof File
                                                     ? URL.createObjectURL(field.value)
                                                     : existingDocument;
-                                            window.open(url, "_blank");
+
+                                            onPreview?.(url);
                                         }}
                                     >
                                         <VisibilityIcon />
                                     </IconButton>
+
                                 )}
 
                                 <CommonButton

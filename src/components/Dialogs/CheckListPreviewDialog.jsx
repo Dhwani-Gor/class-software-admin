@@ -93,6 +93,51 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
     checklistData?.surveyType?.name
   );
 
+  const checklistDocName = (
+    checklistData?.surveyType?.checkListDocumentName || "—"
+  ).replace(/\.docx$/i, "");
+
+  const addFooter = (pdf, formName) => {
+    const pageCount = pdf.getNumberOfPages();
+
+    pdf.setFontSize(9);
+    pdf.setTextColor(90);
+
+    for (let i = 1; i <= pageCount; i++) {
+      pdf.setPage(i);
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const footerY = pageHeight - 8;
+
+      // Left: Form No
+      pdf.text(
+        `Form No.: ${formName}`,
+        15,
+        footerY,
+        { align: "left" }
+      );
+
+      // Center: Page X of Y
+      pdf.text(
+        `Page ${i} of ${pageCount}`,
+        pageWidth / 2,
+        footerY,
+        { align: "center" }
+      );
+
+      // Right: Static text
+      pdf.text(
+        `*Delete as applicable`,
+        pageWidth - 15,
+        footerY,
+        { align: "right" }
+      );
+    }
+  };
+
+
+
   const handleDownloadPDF = async () => {
     if (!contentRef.current) {
       alert('Content not ready');
@@ -143,6 +188,12 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
         if (pageIndex > 0) {
           pdf.addPage();
         }
+        if (checklistDocName) {
+          addFooter(
+            pdf,
+            `${checklistDocName}`
+          );
+        }
 
         const sourceY = (pageIndex * usableHeight * canvas.height) / imgHeight;
         const sourceHeight = Math.min(
@@ -183,7 +234,12 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
         remainingHeight -= usableHeight;
         pageIndex++;
       }
-
+      if (checklistDocName) {
+        addFooter(
+          pdf,
+          `${checklistDocName}`
+        );
+      }
 
       pdf.save(`Survey_Checklist_${reportNo}_${surveyName}.pdf`);
 
