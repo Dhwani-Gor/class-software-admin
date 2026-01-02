@@ -1155,6 +1155,7 @@ ${classificationRows}
 
   const machineryTableHtml = machineSections.length
     ? `
+<p style=" font-weight:bold;font-size:16px;">List of machine items</p>
 <table style="width:100%; border-collapse:collapse; font-size:14px; margin-bottom:20px;">
   <thead>
     <tr style="background-color:#f2f2f2;">
@@ -1211,6 +1212,8 @@ ${classificationRows}
 
   const hullTableHtml = hullSections.length
     ? `
+    <p style="font-weight:bold;font-size:16px;">List of hull items</p>
+
 <table style="width:100%; border-collapse:collapse; font-size:14px;">
   <thead>
     <tr style="background-color:#f2f2f2;">

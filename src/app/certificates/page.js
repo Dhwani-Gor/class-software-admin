@@ -511,7 +511,7 @@ const Certificates = () => {
       const fullRow = masterList.find((item) => item.id === id);
       return {
         ...fullRow,
-        shipName: fullRow?.shipName || fullRow?.vesselName || "", // adjust your field
+        shipName: fullRow?.shipName || fullRow?.vesselName || "",
       };
     });
   };
