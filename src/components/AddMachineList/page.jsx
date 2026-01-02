@@ -46,6 +46,14 @@ const getRowKey = (row) => {
     return row.label?.trim() || `__id__${row.id}`;
 };
 
+const TANK_SECTION_IDS = [
+    "slop_tanks",
+    "dry_tanks_void_spaces",
+    "peak_tanks",
+    "W.B & Storage tank/s",
+    "cargo_tank_for_tankers_only"
+];
+
 
 const MachineryHullManager = ({ mode, shipId }) => {
     const [tabValue, setTabValue] = useState(0);
@@ -134,7 +142,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                     (r) => r.label === label
                 );
 
-                if (existsInStatic) return; // 🚫 skip system rows
+                if (existsInStatic) return;
 
                 rebuilt[type][sectionNum] ||= [];
 
@@ -510,13 +518,44 @@ const MachineryHullManager = ({ mode, shipId }) => {
             });
         });
 
+        const checkedRowPrefixes = new Set();
+
+        Object.entries(formData).forEach(([key, value]) => {
+            if (value?.xMark === "X") {
+                const [, sectionNum, rowKey] = key.split("-");
+                const rowIdMatch = rowKey.match(/\d+/); // extracts row id
+                if (rowIdMatch) {
+                    const rowId = rowIdMatch[0].padStart(2, "0");
+                    checkedRowPrefixes.add(`${sectionNum.padStart(2, "0")}${rowId}`);
+                }
+            }
+        });
 
         if (editingId) {
+            const cleanedOldBlocks = originalBlocks.map((oldBlock) => {
+                const sectionNum = String(oldBlock.sectionNumber).padStart(2, "0");
+
+                const cleanedItems = oldBlock.items.filter((item) => {
+                    if (!item.generatedCode) return false;
+
+                    // ✅ Keep ONLY if its parent row is still checked
+                    return Array.from(checkedRowPrefixes).some((prefix) =>
+                        item.generatedCode.startsWith(prefix)
+                    );
+                });
+
+                return {
+                    ...oldBlock,
+                    items: cleanedItems,
+                };
+            });
+
             return {
                 ...payload,
-                blocks: mergeBlocks(originalBlocks, payload.blocks)
+                blocks: mergeBlocks(cleanedOldBlocks, payload.blocks),
             };
         }
+
 
         return payload;
     };
@@ -558,6 +597,9 @@ const MachineryHullManager = ({ mode, shipId }) => {
             const currentDynamicRows = prev[sectionType][sectionNum] || [];
 
             const tankRows = getTankRowsForSection(section, sectionType);
+            const isTankSection =
+                sectionType === "hull" &&
+                TANK_SECTION_IDS.includes(section.sectionId);
 
             const existingIds = [
                 ...section.rows.map((r) => r.id),
@@ -576,6 +618,8 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         isFrom: true,
                         isDue: false,
                         isUserAdded: true,
+                        isTankRow: isTankSection,
+
 
                     }
                     : {

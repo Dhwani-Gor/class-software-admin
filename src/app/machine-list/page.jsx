@@ -241,6 +241,7 @@ const MachineList = () => {
                                 </Typography>
 
                                 {machinerySections.map(([sectionKey, section], i) => (
+                                    section.items.length > 0 &&
                                     <Accordion key={`mach-${i}`} defaultExpanded>
                                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                                             <Typography fontWeight={600}>
@@ -268,10 +269,10 @@ const MachineList = () => {
                                                                 <TableCell>{item.generatedCode}</TableCell>
                                                                 <TableCell>{item.content || item.label}</TableCell>
                                                                 <TableCell>
-                                                                    {moment(item.assignmentDate).format("DD/MM/YYYY")}
+                                                                    {item.assignmentDate ? moment(item.assignmentDate).format("DD/MM/YYYY") : "-"}
                                                                 </TableCell>
                                                                 <TableCell>
-                                                                    {moment(item.dueDate).format("DD/MM/YYYY")}
+                                                                    {item.dueDate ? moment(item.dueDate).format("DD/MM/YYYY") : "-"}
                                                                 </TableCell>
                                                                 <TableCell>
                                                                     {item.postponedDate
@@ -309,6 +310,7 @@ const MachineList = () => {
                                 </Typography>
 
                                 {hullSections.map(([sectionKey, section], i) => (
+                                    section.items.length > 0 &&
                                     <Accordion key={`hull-${i}`} defaultExpanded>
                                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                                             <Typography fontWeight={600}>

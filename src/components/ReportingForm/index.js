@@ -11,7 +11,7 @@ import CommonButton from "@/components/CommonButton";
 import CommonCard from "@/components/CommonCard";
 import Grid2 from "@mui/material/Grid2";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
-import { createReportDetail, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument, addUnArchiveDocument, updateActivityDetails, getSystemVariableDetails, getAllSystemVariables } from "@/api";
+import { createReportDetail, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument, addUnArchiveDocument, updateActivityDetails, getSystemVariableDetails, getAllSystemVariables, getSurveyTypes } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { getAllActivities } from "@/api";
@@ -82,6 +82,7 @@ const ReportingForm = () => {
   const [stampId, setStampId] = useState(null);
   const [companyLogoId, setCompanyLogoId] = useState(null);
   const [endorsementStamp, setEndorsementStamp] = useState(null);
+  const [surveyTypes, setSurveyTypes] = useState([]);
 
   useEffect(() => {
     if (reportDetails) {
@@ -728,14 +729,27 @@ const ReportingForm = () => {
     }
   };
 
+  const fetchSurveyTypes = async () => {
+    try {
+      setLoading(true);
+      const result = await getSurveyTypes();
+      setSurveyTypes(result.data.data);
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error(error);
+    }
+  };
+
   useEffect(() => {
+    fetchSurveyTypes();
     if (selectedShip.id) {
       fetchAllJournals();
     }
   }, [selectedShip.id]);
 
   const getSurveyTitle = (val) => {
-    return TYPE_OF_SURVEYS.find((ele) => ele.value === val)?.label || val;
+    return surveyTypes.find((ele) => ele.value === val)?.label || val;
   };
 
   const getAllActivity = async (id) => {
