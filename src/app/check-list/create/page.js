@@ -352,19 +352,23 @@ const CheckListCreate = () => {
       clientId: selectedShip.id,
       reportNo: selectedJournal.id,
       typeOfSurvey: [String(selectedSurvey)],
-      checkListDocumentName, // ✅ PASS HERE
-      checkListData: {
+      checkListDocumentName,
+      checkListData: JSON.stringify({
         checkList: editorRef.current.getContent(),
-      },
+      }),
     };
 
     try {
       if (existingChecklist?.id) {
-        await updateCheckList(existingChecklist.id, payload);
-        toast.success("Checklist updated successfully");
+        const response = await updateCheckList(existingChecklist.id, payload);
+        if (response?.data?.status === "success") {
+          toast.success("Checklist updated successfully");
+        }
       } else {
-        await addCheckList(payload);
-        toast.success("Checklist saved successfully");
+        const response = await addCheckList(payload);
+        if (response?.data?.status === "success") {
+          toast.success("Checklist saved successfully");
+        }
       }
     } catch {
       toast.error("Save failed");
