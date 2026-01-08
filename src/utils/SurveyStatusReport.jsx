@@ -485,7 +485,7 @@ const TextEditor = ({ id }) => {
           const rightValueX = pageWidth - margin - 55;
 
           page.drawText("IMO Number", { x: rightLabelX, y: statusY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
-          page.drawText(":", { x: rightColonX, y: statusY, size: 9, color: rgb(1, 1, 1), font: fontRegular });
+          page.drawText(":", { x: rightColonX, y: statusY, size: 9, color: rgb(0, 0, 0), font: fontRegular });
           page.drawText(`${clientData?.imoNumber || "N/A"}`, { x: rightValueX, y: statusY, size: 9, color: rgb(0.9, 0.9, 0.9), font: fontBold });
         }
 
@@ -495,13 +495,16 @@ const TextEditor = ({ id }) => {
         if (pageIndex > 0) {
           page.drawRectangle({ x: margin, y: 0, width: usableWidth, height: footerHeight + 8, color: rgb(0.6, 0.6, 0.6) });
           const footerStartY = footerHeight - 5;
-          const generatedText = ` Generated on: ${moment().format("DD MMM YYYY")}`;
+          const generatedText = ` Generated on: ${moment().format("DD/MM/YYYY hh:mm A")}`;
           const totalPages = Math.ceil(imgHeight / baseSliceHeight);
           const pageText = `Page ${pageIndex + 1} of ${totalPages}`;
+          const note = ` Note: Format of date is DD/MM/YYYY`;
 
-          page.drawText(generatedText, { x: margin + 7, y: footerStartY, size: 8, color: rgb(0.2, 0.2, 0.2), font: fontRegular });
+
+          page.drawText(generatedText, { x: margin + 7, y: footerStartY, size: 8, color: rgb(1, 1, 1), font: fontRegular });
           const pageTextWidth = pageText.length * 4.5;
-          page.drawText(pageText, { x: pageWidth - margin - pageTextWidth, y: footerStartY, size: 8, color: rgb(0.2, 0.2, 0.2), font: fontRegular });
+          page.drawText(pageText, { x: pageWidth - margin - pageTextWidth, y: footerStartY, size: 8, color: rgb(1, 1, 1), font: fontRegular });
+          page.drawText(note, { x: margin + 7, y: footerStartY - 15, size: 8, color: rgb(1, 1, 1), font: fontRegular });
         }
 
         currentY += sliceHeight;
@@ -1889,9 +1892,7 @@ ${auditSurveyTableHtml}
 <span class="status-icon expiring3m">S</span> Within the range
 </span>
 </div>
-<div style="font-size: 16px; margin-top: 16px;">
-<strong>Note:</strong> Format of date is DD/MM/YYYY
-</div>
+
 </td>
 </tr>
 </tbody>

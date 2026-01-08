@@ -270,7 +270,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
           <Accordion expanded={expandedSection === "images"} onChange={() => setExpandedSection(expandedSection === "images" ? null : "images")} sx={{ mb: 2 }}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography variant="h6">
-                Timber Images
+                Loadline Images
                 <Typography component="span" variant="body2" color="primary" sx={{ ml: 1 }}>
                   ({selectedImage ? 1 : 0}/{timberImages.length})
                 </Typography>
