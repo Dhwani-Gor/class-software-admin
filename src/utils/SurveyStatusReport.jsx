@@ -513,7 +513,7 @@ const TextEditor = ({ id }) => {
 
         const disclaimerTitle = "Disclaimer :-";
         const disclaimerText =
-          `Information provided in ship survey status by ${prefix} Class is solely provided for the convenience of Owners or Managers as a guide to their ship's survey status and in no way substitute for advice from ${prefix} Class. Neither ${prefix} Class, nor any of its employees, assures any responsibility for the accuracy or legal liability for any loss or damage that may be sustained as a result of using their services.`;
+          `Information provided in ship survey status by ${companyName} is solely provided for the convenience of Owners or Managers as a guide to their ship's survey status and in no way substitute for advice from ${companyName}. Neither ${companyName}, nor any of its employees, assures any responsibility for the accuracy or legal liability for any loss or damage that may be sustained as a result of using their services.`;
 
         const textX = 50;
         const footerGap = 60;

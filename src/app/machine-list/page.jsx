@@ -404,33 +404,30 @@ const MachineList = () => {
                         }
                     />
 
-                    {!isHullEdit && (
-                        <>
-                            <Typography mt={2}>Assignment Date</Typography>
-                            <CommonInput
-                                type="date"
-                                value={editForm.assignmentDate}
-                                onChange={(e) =>
-                                    setEditForm({
-                                        ...editForm,
-                                        assignmentDate: e.target.value,
-                                    })
-                                }
-                            />
+                    <>
+                        <Typography mt={2}>Assignment Date</Typography>
+                        <CommonInput
+                            type="date"
+                            value={editForm.assignmentDate}
+                            onChange={(e) =>
+                                setEditForm({
+                                    ...editForm,
+                                    assignmentDate: e.target.value,
+                                })
+                            }
+                        />
+                        {!isHullEdit && (
 
-                            <Typography mt={2}>Postponed Date</Typography>
-                            <CommonInput
+                            <><Typography mt={2}>Postponed Date</Typography><CommonInput
                                 type="date"
                                 value={editForm.postponedDate}
-                                onChange={(e) =>
-                                    setEditForm({
-                                        ...editForm,
-                                        postponedDate: e.target.value,
-                                    })
-                                }
-                            />
-                        </>
-                    )}
+                                onChange={(e) => setEditForm({
+                                    ...editForm,
+                                    postponedDate: e.target.value,
+                                })} /></>
+                        )}
+                    </>
+
 
                     {/* ===== From / Upto Frame (ONLY HULL) ===== */}
                     {isHullEdit && (
