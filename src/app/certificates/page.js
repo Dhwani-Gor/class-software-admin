@@ -69,7 +69,8 @@ const Certificates = () => {
   const [checkListPreviewFile, setChecklistPreviewFile] = useState();
   const [systemVariables, setSystemVariables] = useState();
   const [title, setTitle] = useState("");
-  const prefix = systemVariables?.find((item) => item.name === "report_no_prefix")?.information || "-";
+
+  const prefix = systemVariables?.find((item) => item.name === "report_no_prefix")?.information ?? "-";
   const isSearchMode = debouncedSearch.trim().length > 0;
 
   const handleSort = (key) => {
@@ -107,7 +108,6 @@ const Certificates = () => {
     setSelectedCertificates((prev) => (prev.includes(id) ? prev.filter((cid) => cid !== id) : [...prev, id]));
   };
 
-  // === Handlers for Archive Documents ===
   const handleSelectAllArchives = (rows) => {
     if (selectedArchives.length === rows.length) {
       setSelectedArchives([]);
@@ -162,8 +162,8 @@ const Certificates = () => {
   const getSystemVariables = async () => {
     try {
       const response = await getAllSystemVariables();
-      if (response?.status === "success") {
-        setSystemVariables(response?.data);
+      if (response?.data?.status === "success") {
+        setSystemVariables(response?.data?.data);
       }
     } catch (error) {
       console.log(error);
@@ -415,6 +415,16 @@ const Certificates = () => {
     }
   };
 
+  const resolveFileUrl = (doc) => {
+    if (!doc) return null;
+
+    // Already absolute URL
+    if (doc.startsWith("http")) return doc;
+
+    // Relative filename → prepend backend file base URL
+    return `${process.env.NEXT_PUBLIC_FILE_BASE_URL}/${doc}`;
+  };
+
   const handleBulkDownloadSelected = async (selectedIds) => {
     if (selectedIds.length === 0) return;
 
@@ -424,13 +434,15 @@ const Certificates = () => {
     setLoading(true);
 
     try {
-      // Filter to get only selected certificates
       const selectedCerts = certificatesList.filter((cert) => selectedIds.includes(cert.id));
 
       await Promise.all(
         selectedCerts.map(async (cert) => {
           if (!cert.generatedDoc) return;
-          const res = await fetch(cert.generatedDoc);
+          const fileUrl = resolveFileUrl(cert.generatedDoc);
+          if (!fileUrl) return;
+
+          const res = await fetch(fileUrl);
           const blob = await res.blob();
           const fileName = `${cert.generatedDoc.split("/").pop()}`;
           folder.file(fileName, blob);
