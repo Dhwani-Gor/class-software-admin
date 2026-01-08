@@ -21,6 +21,7 @@ import {
     TableRow,
     TableCell,
     TableBody,
+    Grid2,
 } from "@mui/material";
 
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -48,7 +49,6 @@ const MachineList = () => {
     const [clientsList, setClientsList] = useState([]);
     const [selectedShipId, setSelectedShipId] = useState("");
     const [loading, setLoading] = useState(false);
-
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [openEditDialog, setOpenEditDialog] = useState(false);
 
@@ -108,7 +108,7 @@ const MachineList = () => {
             positionCode: item.positionCode || "",
             status: item.status || "",
             machineSection: String(sectionId),
-            fromFrameNo: item.fromFrameNo || "",  // ✅ ADD
+            fromFrameNo: item.fromFrameNo || "",
             toFrameNo: item.toFrameNo || "",
         });
         setOpenEditDialog(true);
@@ -176,7 +176,9 @@ const MachineList = () => {
     return (
         <Layout>
             <CommonCard>
+
                 <Stack direction="row" justifyContent="space-between">
+
                     <Typography variant="h4" fontWeight={700}>
                         Machinery / Hull List
                     </Typography>
@@ -199,6 +201,7 @@ const MachineList = () => {
 
             <CommonCard sx={{ mt: 2 }}>
                 <Box display="flex" gap={2} justifyContent="space-between">
+
                     <FormControl fullWidth sx={{ maxWidth: 300 }}>
                         <Typography fontWeight={700} fontSize={17}>Select Ship</Typography>
                         <Select
@@ -233,6 +236,45 @@ const MachineList = () => {
                     </Typography>
                 ) : (
                     <>
+                        {machineList && (
+                            <CommonCard sx={{ mt: 2 }}>
+                                <Typography variant="h6" fontWeight={700} mb={2}>
+                                    Ship & Engine Details
+                                </Typography>
+
+                                <Grid2 container spacing={3}>
+                                    <Grid2 size={{ xs: 12, sm: 6, md: 4 }}>
+                                        <Typography fontWeight={600}>Ship Name</Typography>
+                                        <Typography color="text.secondary">
+                                            {machineList.shipName || "-"}
+                                        </Typography>
+                                    </Grid2>
+
+                                    <Grid2 size={{ xs: 12, sm: 6, md: 4 }}>
+                                        <Typography fontWeight={600}>Engine Type</Typography>
+                                        <Typography color="text.secondary">
+                                            {machineList.engineType || "-"}
+                                        </Typography>
+                                    </Grid2>
+
+                                    <Grid2 size={{ xs: 12, sm: 6, md: 4 }}>
+                                        <Typography fontWeight={600}>No. of Cylinders</Typography>
+                                        <Typography color="text.secondary">
+                                            {machineList.numberOfCylinders || "-"}
+                                        </Typography>
+                                    </Grid2>
+
+                                    <Grid2 size={{ xs: 12, sm: 6, md: 4 }}>
+                                        <Typography fontWeight={600}>Engine Units Counted From</Typography>
+                                        <Typography color="text.secondary">
+                                            {machineList.engineUnitsCountedFrom || "-"}
+                                        </Typography>
+                                    </Grid2>
+
+                                </Grid2>
+                            </CommonCard>
+                        )}
+
                         {/* ================= MACHINERY FIRST ================= */}
                         {machinerySections.length > 0 && (
                             <>
@@ -258,6 +300,8 @@ const MachineList = () => {
                                                         <TableCell>Assignment Date</TableCell>
                                                         <TableCell>Due Date</TableCell>
                                                         <TableCell>Postponed Date</TableCell>
+                                                        <TableCell>Position</TableCell>
+                                                        <TableCell>Occurance</TableCell>
                                                         <TableCell>Status</TableCell>
                                                         <TableCell>Action</TableCell>
                                                     </TableRow>
@@ -278,6 +322,12 @@ const MachineList = () => {
                                                                     {item.postponedDate
                                                                         ? moment(item.postponedDate).format("DD/MM/YYYY")
                                                                         : "-"}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    {item.positionCode}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    {item.occurrence}
                                                                 </TableCell>
                                                                 <TableCell>
                                                                     {item.status}
@@ -327,6 +377,7 @@ const MachineList = () => {
                                                         <TableCell>Assignment Date</TableCell>
                                                         <TableCell>From Frame No</TableCell>
                                                         <TableCell>Upto Frame No</TableCell>
+                                                        <TableCell>Position</TableCell>
                                                         <TableCell>Occurrence</TableCell>
                                                         <TableCell>Status</TableCell>
                                                         <TableCell>Action</TableCell>
@@ -342,7 +393,7 @@ const MachineList = () => {
                                                             </TableCell>
                                                             <TableCell>{item.fromFrameNo || "-"}</TableCell>
                                                             <TableCell>{item.toFrameNo || "-"}</TableCell>
-
+                                                            <TableCell>{item.positionCode}</TableCell>
                                                             <TableCell>{item.occurrence}</TableCell>
                                                             <TableCell>
                                                                 {item.status}
@@ -394,15 +445,11 @@ const MachineList = () => {
                 <Box p={3} width={400}>
                     <Typography>Label</Typography>
                     <CommonInput disabled value={editForm.label} />
-
-                    <Typography mt={2}>Due Date</Typography>
-                    <CommonInput
-                        type="date"
-                        value={editForm.dueDate}
-                        onChange={(e) =>
-                            setEditForm({ ...editForm, dueDate: e.target.value })
-                        }
-                    />
+                    {!isHullEdit && (
+                        <><Typography mt={2}>Due Date</Typography><CommonInput
+                            type="date"
+                            value={editForm.dueDate}
+                            onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })} /></>)}
 
                     <>
                         <Typography mt={2}>Assignment Date</Typography>

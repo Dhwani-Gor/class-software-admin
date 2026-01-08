@@ -198,11 +198,9 @@ const MachineryHullManager = ({ mode, shipId }) => {
                     let contentText = "";
 
                     if (["01", "02", "03"].includes(String(row.id).padStart(2, "0"))) {
-                        // Cyl-based rows ONLY
                         contentText = row.content.replace("{cyl}", occ);
                     }
                     else if (row.hasFromTo) {
-                        // Main journal, pumps, etc.
                         contentText = `No ${occ} ${row.label}`;
                     }
                     else {
@@ -210,8 +208,12 @@ const MachineryHullManager = ({ mode, shipId }) => {
                     }
 
                     instances.push({
-                        generatedCode:
-                            `${String(sectionNum).padStart(2, "0")}` +
+                        generatedCode: isMachineryList
+                            ? `${String(sectionNum).padStart(2, "0")}` +
+                            pos +
+                            `${String(row.id).padStart(2, "0")}` +
+                            `${String(occ).padStart(2, "0")}`
+                            : `${String(sectionNum).padStart(2, "0")}` +
                             `${String(row.id).padStart(2, "0")}` +
                             `${String(occ).padStart(2, "0")}` +
                             pos,

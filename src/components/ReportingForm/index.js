@@ -362,7 +362,7 @@ const ReportingForm = () => {
     if (surveyType.includes("annual")) yearsToAdd = 1;
 
     if (surveyType === "docking survey" || surveyType === "main boiler survey" || surveyType === "auxiliary boiler survey" || surveyType === "thermal oil heating systems survey" || surveyType === "exhaust gas steam generators and economisers survey") {
-      yearsToAdd = 2;
+      yearsToAdd = 3;
     }
 
     if (surveyType === "in water survey") yearsToAdd = 3;
@@ -435,7 +435,7 @@ const ReportingForm = () => {
       setValue("assignmentDate", value);
 
       const baseDue = calculateDueDateBase(value, surveyType);
-      const dueDate = applyAnniversaryDayMonth(baseDue);
+      const dueDate = baseDue;
 
       setValue("dueDate", dueDate);
       applyRangeFromDueDate(dueDate, surveyType);
@@ -445,7 +445,7 @@ const ReportingForm = () => {
 
     if (fieldName === "assignmentDate") {
       const baseDue = calculateDueDateBase(value, surveyType);
-      const dueDate = applyAnniversaryDayMonth(baseDue);
+      const dueDate = baseDue;
 
       setValue("dueDate", dueDate);
       applyRangeFromDueDate(dueDate, surveyType);
