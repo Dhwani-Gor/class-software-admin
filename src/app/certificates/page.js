@@ -26,7 +26,7 @@ import SendEmailDialog from "@/components/Dialogs/DownloadAllEmailDialog";
 import EmailIcon from "@mui/icons-material/Email";
 import { DownloadOutlined } from "@mui/icons-material";
 import BlockIcon from "@mui/icons-material/Block";
-import ChecklistPreviewModal, { generateUnifiedHTML } from "@/components/Dialogs/CheckListPreviewDialog";
+import ChecklistPreviewModal from "@/components/Dialogs/CheckListPreviewDialog";
 
 const Certificates = () => {
   const { data } = useAuth();
@@ -81,15 +81,6 @@ const Certificates = () => {
         return { key, direction: "asc" };
       }
     });
-  };
-
-  const getSelectedCheckList = async (id) => {
-    try {
-      const res = await getSingleChecklist(id);
-      setSelectedCheckList(res?.data?.data);
-    } catch (error) {
-      console.error("Error fetching single checklist:", error);
-    }
   };
 
   const handleSelectAllCertificates = (rows) => {
@@ -418,10 +409,8 @@ const Certificates = () => {
   const resolveFileUrl = (doc) => {
     if (!doc) return null;
 
-    // Already absolute URL
     if (doc.startsWith("http")) return doc;
 
-    // Relative filename → prepend backend file base URL
     return `${process.env.NEXT_PUBLIC_FILE_BASE_URL}/${doc}`;
   };
 

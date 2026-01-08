@@ -1151,7 +1151,6 @@ ${classificationRows}
       (section.items || []).forEach(item => rows.push(item));
     });
   }
-  const hasHullItems = hullSections && hullSections.length > 0;
 
   const machineryTableHtml = machineSections.length
     ? `
@@ -1229,7 +1228,7 @@ ${classificationRows}
       .map(section => `
         <tr>
           <td colspan="7" style="padding:8px; font-weight:bold;">
-            ${section.sectionNumber} - ${section.sectionName}
+          ${section.sectionName}
           </td>
         </tr>
         ${(section.items || []).map(item => `

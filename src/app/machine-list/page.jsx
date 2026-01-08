@@ -324,6 +324,7 @@ const MachineList = () => {
                                                     <TableRow>
                                                         <TableCell>Code</TableCell>
                                                         <TableCell>Label</TableCell>
+                                                        <TableCell>Assignment Date</TableCell>
                                                         <TableCell>From Frame No</TableCell>
                                                         <TableCell>Upto Frame No</TableCell>
                                                         <TableCell>Occurrence</TableCell>
@@ -336,6 +337,9 @@ const MachineList = () => {
                                                         <TableRow key={idx}>
                                                             <TableCell>{item.generatedCode}</TableCell>
                                                             <TableCell>{item.content || item.label}</TableCell>
+                                                            <TableCell>
+                                                                {item.assignmentDate ? moment(item.assignmentDate).format("DD/MM/YYYY") : "-"}
+                                                            </TableCell>
                                                             <TableCell>{item.fromFrameNo || "-"}</TableCell>
                                                             <TableCell>{item.toFrameNo || "-"}</TableCell>
 

@@ -6,9 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 import mammoth from "mammoth";
 import { toast } from "react-toastify";
 import { Editor } from "@tinymce/tinymce-react";
-
 import { getAllClients, fetchJournalList, getAllActivities, getSpecificClient, addCheckList, updateCheckList, getAllSystemVariables, getSingleChecklist, getAllChecklist, getVisitDetails } from "@/api";
-
 import CommonButton from "@/components/CommonButton";
 import CommonCard from "@/components/CommonCard";
 
@@ -46,7 +44,7 @@ const injectCompanyHeader = (html, systemVariables) => {
   header.style.alignItems = "center";
   header.style.marginBottom = "24px";
   header.style.borderBottom = "1px solid #ccc";
-  header.style.paddingBottom = "12px";
+  header.style.paddingBottom = "10px";
 
   const left = document.createElement("div");
   left.style.flex = "1";
@@ -54,7 +52,8 @@ const injectCompanyHeader = (html, systemVariables) => {
   if (systemVariables.company_logo) {
     const logo = document.createElement("img");
     logo.src = systemVariables.company_logo;
-    logo.style.height = "80px";
+    logo.style.width = "140px";
+    logo.style.height = "auto";
     left.appendChild(logo);
   }
 
@@ -62,14 +61,14 @@ const injectCompanyHeader = (html, systemVariables) => {
   center.style.flex = "1";
   center.style.textAlign = "center";
   center.style.fontWeight = "700";
-  center.style.fontSize = "20px";
+  center.style.fontSize = "28px";
   center.textContent = "Survey Checklist Report";
 
   const right = document.createElement("div");
   right.style.flex = "1";
   right.style.textAlign = "right";
   right.style.fontWeight = "700";
-  right.style.fontSize = "18px";
+  right.style.fontSize = "28px";
   right.textContent = systemVariables.company_name || "";
 
   header.append(left, center, right);
@@ -312,8 +311,7 @@ const CheckListCreate = () => {
   };
 
   const loadChecklistDoc = async (docUrl) => {
-    console.log(docUrl, "doc url");
-    if (!docUrl) {
+    if (!docUrl.docName) {
       setHtmlContent("");
       setNoChecklist(true);
       return;
@@ -323,7 +321,7 @@ const CheckListCreate = () => {
       setLoading(true);
       setNoChecklist(false);
 
-      const response = await fetch(docUrl);
+      const response = await fetch(docUrl.doc);
       const blob = await response.blob();
       const buffer = await blob.arrayBuffer();
       const result = await mammoth.convertToHtml({ arrayBuffer: buffer });
@@ -458,7 +456,7 @@ const CheckListCreate = () => {
                       label: s.surveyTypes.name,
                       value: s.surveyTypes.id,
                       doc: s.surveyTypes.checkListDocument,
-                      docName: s.surveyTypes.checkListDocumentName, // ✅ ADD THIS
+                      docName: s.surveyTypes.checkListDocumentName,
                     }))}
                     value={
                       surveyTypes
@@ -481,16 +479,14 @@ const CheckListCreate = () => {
                       editorRef.current?.setContent("");
                       setNoChecklist(false);
 
-                      if (!val?.doc) {
+                      if (!val?.docName) {
                         setNoChecklist(true);
                         return;
                       }
 
                       isLoadingNewDocument.current = true;
-                      await loadChecklistDoc(val.doc);
+                      await loadChecklistDoc(val);
                       isLoadingNewDocument.current = false;
-
-                      fetchExistingChecklist();
                     }}
                     renderInput={(params) => <TextField {...params} size="small" />}
                   />

@@ -301,12 +301,6 @@ const SurveyTypeForm = ({ mode = "create", surveyTypeId = null, defaultValues = 
 
                   <Grid2 size={{ xs: 12 }}>
                     <FormControl component="fieldset" error={Boolean(errors.surveyCategory)}>
-                      {/* <FormLabel component="legend" sx={{ mb: 1 }}>
-                        <Typography color="#000000DE" fontWeight={"500"}>
-                          Survey Category{" "}
-                          <span style={{ color: "red" }}>*</span>
-                        </Typography>
-                      </FormLabel> */}
                       <Box sx={{ display: "flex", marginTop: "6px" }}>
                         <Controller
                           name="surveyCategory"

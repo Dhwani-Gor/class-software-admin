@@ -29,14 +29,6 @@ import CommonButton from "../CommonButton";
 import { MACHINERY_SECTIONS, HULL_SECTIONS, POSITION_OPTIONS } from "@/utils/MachineList";
 import { useRouter } from "next/navigation";
 
-const SIMPLE_TANK_ROWS = [
-    "Overall",
-    "Close-up",
-    "TM",
-    "Protective Coating",
-    "Condition of Coating",
-];
-
 const OTHER_THAN_TANK = [
     "Examination",
     "Test"
@@ -66,17 +58,10 @@ const MachineryHullManager = ({ mode, shipId }) => {
     const [dynamicRows, setDynamicRows] = useState({ machinery: {}, hull: {} });
     const [editingId, setEditingId] = useState(null);
     const [originalBlocks, setOriginalBlocks] = useState([]);
-
     const [engineUnitsCountedFrom, setEngineUnitsCountedFrom] = useState("flywheel_end");
-    const router = useRouter();
-
     const [expandedAccordions, setExpandedAccordions] = useState({});
     const [renderedSections, setRenderedSections] = useState({});
-
-    const sectionGroups = [
-        { type: "machinery", sections: MACHINERY_SECTIONS },
-        { type: "hull", sections: HULL_SECTIONS },
-    ];
+    const router = useRouter();
 
     const STATIC_ROWS_SECTION_01 = [
         { id: "01", content: "No {cyl} Cyl, Cvr, Pstn, Rod, Vlvs & gears", hasPosition: true, hasFromTo: false },
@@ -98,9 +83,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
         { id: "02", label: "Test", hasPosition: false, isDue: true, isFrom: false },
     ];
 
-    // Helper function to extract tank numbers from section name
     const extractTankNumbers = (sectionName = "") => {
-        // Matches: No.1 Cargo Tank, No.2 Slop Tank, etc.
         const matches = sectionName.match(/No\.(\d+)/gi) || [];
         return matches.map((m) => parseInt(m.replace(/\D/g, ""), 10));
     };
@@ -162,10 +145,6 @@ const MachineryHullManager = ({ mode, shipId }) => {
         return rebuilt;
     };
 
-
-
-
-    // Modified function to get appropriate rows based on tank type
     const getTankRowsForSection = (section, sectionType) => {
         if (sectionType !== "hull") return [];
 
@@ -190,10 +169,14 @@ const MachineryHullManager = ({ mode, shipId }) => {
         const instances = [];
         const today = new Date().toISOString().split("T")[0];
         if (isMachineryList) {
-            const positions = data.position?.length ? data.position : ["-"];
+            const positions =
+                data.position?.length
+                    ? data.position
+                    : position?.length
+                        ? position
+                        : ["-"];
             let repetitions = 1;
 
-            // 1️⃣ From–To rows (Main journal, injection pump, etc.)
             if (row.hasFromTo) {
                 repetitions = Math.max(
                     1,
@@ -236,7 +219,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         positionCode: pos,
                         content: contentText,
                         label: row.label,
-                        assignmentDate: data.assignmentDate || today,
+                        assignmentDate: data.assignmentDate || "",
                         dueDate: data.dueDate || "",
                         from: row.hasFromTo ? data.from : undefined,
                         to: row.hasFromTo ? data.to : undefined,
@@ -278,7 +261,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         : finalLabel,
                     occurrence: occ,
                     positionCode: pos,
-                    assignmentDate: data.assignmentDate || today,
+                    assignmentDate: data.assignmentDate || "",
                     dueDate: data.dueDate || "",
                     from: data.from,
                     to: data.to,
@@ -296,7 +279,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             occurrence: index + 1,
                             positionCode: "-",
                             content: label,
-                            assignmentDate: data.assignmentDate || today,
+                            assignmentDate: data.assignmentDate || "",
                             dueDate: data.dueDate || "",
                             from: data.from,
                             to: data.to,
