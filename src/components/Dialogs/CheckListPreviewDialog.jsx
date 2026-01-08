@@ -101,7 +101,7 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
 
-    pdf.setFontSize(9);
+    pdf.setFontSize(7);
     pdf.setTextColor(90);
 
     for (let i = 1; i <= totalPages; i++) {

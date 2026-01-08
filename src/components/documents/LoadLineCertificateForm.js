@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogActions, TextField, Box, Typography, IconButton, Divider, Button, Accordion, AccordionSummary, AccordionDetails, TextareaAutosize } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import { Close as CloseIcon, ExpandMore as ExpandMoreIcon, CheckCircle as CheckIcon, Waves as WavesIcon } from "@mui/icons-material";
-import { formattedDate, formatDate } from "@/utils/date";
+import { formatDate } from "@/utils/date";
 import { getAllSystemVariables } from "@/api";
 import CommonConfirmationDialog from "../Dialogs/CommonConfirmationDialog";
 import { useCommonSubmit, useFormInitialization } from "./useSubmit";
@@ -18,7 +18,7 @@ const LoadLineCertificateForm = ({ open, onClose, onSubmit, fields, reportDetail
   const { formData, setFormData } = useFormInitialization(fields, reportDetails, open);
   const { handleSubmit } = useCommonSubmit(onSubmit, onClose, setFormData, saveData);
 
-  const timberImages = systemVariables?.data?.filter((item) => item.name.startsWith("timber_image")) || [];
+  const timberImages = systemVariables?.data?.filter((item) => item.name.startsWith("loadline_image")) || [];
 
   const handleImageSelect = (id) => {
     setSelectedImage(id);
