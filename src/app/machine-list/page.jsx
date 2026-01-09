@@ -253,8 +253,15 @@ const MachineList = () => {
                                     <Grid2 size={{ xs: 12, sm: 6, md: 4 }}>
                                         <Typography fontWeight={600}>Engine Type</Typography>
                                         <Typography color="text.secondary">
-                                            {machineList.engineType || "-"}
+                                            {machineList.engineType
+                                                ? (() => {
+                                                    const text = machineList.engineType.replace(/_/g, " ").toLowerCase();
+                                                    return text.charAt(0).toUpperCase() + text.slice(1);
+                                                })()
+                                                : "-"}
                                         </Typography>
+
+
                                     </Grid2>
 
                                     <Grid2 size={{ xs: 12, sm: 6, md: 4 }}>
@@ -267,7 +274,14 @@ const MachineList = () => {
                                     <Grid2 size={{ xs: 12, sm: 6, md: 4 }}>
                                         <Typography fontWeight={600}>Engine Units Counted From</Typography>
                                         <Typography color="text.secondary">
-                                            {machineList.engineUnitsCountedFrom || "-"}
+                                            {machineList.engineUnitsCountedFrom?.replace('_', ' ') || "-"}
+                                        </Typography>
+                                    </Grid2>
+
+                                    <Grid2 size={{ xs: 12, sm: 6, md: 4 }}>
+                                        <Typography fontWeight={600}>Global Position</Typography>
+                                        <Typography color="text.secondary">
+                                            {machineList.globalPosition || "-"}
                                         </Typography>
                                     </Grid2>
 
