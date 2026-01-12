@@ -293,8 +293,6 @@ const ReportingForm = () => {
     clearErrors();
   };
 
-  const watchedFields = watch(["dueDate", "rangeFrom", "rangeTo", "anniversaryDate"]);
-
   const handleCertificate = (event) => {
     const value = event.target.value;
     setSelectCertificate(value);
@@ -324,35 +322,50 @@ const ReportingForm = () => {
       .replace(/\s*\)\s*/g, ")");
 
   const fiveYearSpecials = ["special survey hull", "special survey machinery", "special survey ig system", "special survey (fi-fi)", "special survey (ums)", "continuous survey hull", "continuous survey machinery"];
+  const ANNIVERSARY_KEYWORDS = ["annual", "intermediate", "docking"];
 
-  const enforceAnniversaryLimit = (date) => {
-    const annivDate = getValues("anniversaryDate");
-    if (!annivDate || !date) return date;
+  const usesAnniversaryRule = (surveyType = "") => ANNIVERSARY_KEYWORDS.some((k) => surveyType.includes(k));
 
-    return moment(date).isAfter(moment(annivDate)) ? moment(annivDate).format("YYYY-MM-DD") : date;
-  };
-
-  const applyAnniversaryDayMonth = (baseDate) => {
+  const clampToAnniversary = (date, surveyType) => {
     const anniv = getValues("anniversaryDate");
-    if (!anniv) return baseDate;
+    if (!anniv || !date) return date;
+
+    if (!usesAnniversaryRule(surveyType)) return date;
 
     const annivMoment = moment(anniv);
-    const base = moment(baseDate);
+    const d = moment(date);
 
-    return base.month(annivMoment.month()).date(annivMoment.date()).format("YYYY-MM-DD");
+    if (d.isAfter(annivMoment)) {
+      return annivMoment.format("YYYY-MM-DD");
+    }
+
+    return d.format("YYYY-MM-DD");
+  };
+
+  const applyAnniversaryDayMonthIfNeeded = (date, surveyType) => {
+    const anniv = getValues("anniversaryDate");
+    if (!anniv || !date) return date;
+
+    if (!usesAnniversaryRule(surveyType)) return date;
+
+    const annivMoment = moment(anniv);
+    const d = moment(date);
+
+    return d.month(annivMoment.month()).date(annivMoment.date()).format("YYYY-MM-DD");
   };
 
   const normalize = (str) => str.replace(/\(\s*/g, "(").replace(/\s*\)/g, ")");
 
   const calculateDueDateBase = (value, surveyType) => {
+    if (isFiveYearCertificateReport(reportName)) {
+      return moment(value).add(5, "years").format("YYYY-MM-DD");
+    }
+
     let yearsToAdd = 0;
     const isFiveYearSpecial = fiveYearSpecials.includes(normalize(surveyType));
+
     if (isFiveYearSpecial) {
-      // Add 5 years first
-      let due = moment(value).add(5, "years");
-      // Then subtract 1 day
-      due = due.subtract(1, "day");
-      return due.format("YYYY-MM-DD");
+      return moment(value).add(5, "years").subtract(1, "day").format("YYYY-MM-DD");
     }
 
     if (!isFiveYearSpecial) {
@@ -412,7 +425,9 @@ const ReportingForm = () => {
       rangeTo = moment(due).add(3, "months").format("YYYY-MM-DD");
     }
 
-    rangeTo = enforceAnniversaryLimit(rangeTo);
+    // rangeTo = enforceAnniversaryLimit(rangeTo);
+    rangeFrom = clampToAnniversary(rangeFrom, surveyType);
+    rangeTo = clampToAnniversary(rangeTo, surveyType);
 
     setValue("rangeFrom", rangeFrom);
     setValue("rangeTo", rangeTo);
@@ -434,27 +449,26 @@ const ReportingForm = () => {
     if (fieldName === "surveydate") {
       setValue("assignmentDate", value);
 
-      const baseDue = calculateDueDateBase(value, surveyType);
-      const dueDate = baseDue;
+      const baseDue = calculateDueDateBase(value, surveyType, reportName);
+      const withAnnivDM = applyAnniversaryDayMonthIfNeeded(baseDue, surveyType);
+      const dueDate = clampToAnniversary(withAnnivDM, surveyType);
 
       setValue("dueDate", dueDate);
       applyRangeFromDueDate(dueDate, surveyType);
-
-      trigger(["dueDate", "rangeFrom", "rangeTo", "anniversaryDate"]);
     }
 
     if (fieldName === "assignmentDate") {
-      const baseDue = calculateDueDateBase(value, surveyType);
-      const dueDate = baseDue;
+      const baseDue = calculateDueDateBase(value, surveyType, reportName);
+      const withAnnivDM = applyAnniversaryDayMonthIfNeeded(baseDue, surveyType);
+      const dueDate = clampToAnniversary(withAnnivDM, surveyType);
 
       setValue("dueDate", dueDate);
       applyRangeFromDueDate(dueDate, surveyType);
-
-      trigger(["dueDate", "rangeFrom", "rangeTo", "anniversaryDate"]);
     }
-
     if (fieldName === "dueDate") {
-      applyRangeFromDueDate(value, surveyType);
+      const fixedDue = clampToAnniversary(value, surveyType);
+      setValue("dueDate", fixedDue);
+      applyRangeFromDueDate(fixedDue, surveyType);
     }
 
     if (fieldName === "rangeFrom") {
@@ -468,6 +482,10 @@ const ReportingForm = () => {
       }
     }
   };
+
+  const FIVE_YEAR_CERTIFICATE_REPORTS = ["international sewage pollution prevention certificate", "international energy efficiency certificate (ieec)", "international tonnage certificate", "international air pollution prevention certificate (iapp)", "international certification of fitness for the carriage of liquified gases in bulk", "international certification of fitness for the carriage of dangerous chemicals in bulk", "imdg", "imsbc"];
+
+  const isFiveYearCertificateReport = (reportName = "") => FIVE_YEAR_CERTIFICATE_REPORTS.some((r) => reportName.toLowerCase().includes(r));
 
   const formatToDayMonth = (value) => {
     if (!value) return "";
