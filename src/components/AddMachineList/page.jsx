@@ -282,6 +282,9 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             occurrence: index + 1,
                             positionCode: "-",
                             content: label,
+                            label: label,
+                            postponeDate: data.postponeDate || "",
+                            status: data.status || "",
                             assignmentDate: data.assignmentDate || "",
                             dueDate: data.dueDate || "",
                             from: data.from,
@@ -325,6 +328,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         xMark: "X",
                         label: item.label || rowKey,
                         content: item.content || "",
+                        status: item.status || "",
                         assignmentDate: item.assignmentDate || "",
                         dueDate: item.dueDate || "",
                         postponeDate: item.postponeDate || "",
@@ -728,8 +732,10 @@ const MachineryHullManager = ({ mode, shipId }) => {
 
 
     const renderRow = (row, sectionType, sectionNum) => {
+        console.log("sectionType", sectionType);
+        console.log("sectionNum", sectionNum);
         const isTankHull = isTankSectionFromData(sectionType, sectionNum);
-        const hullFrameSections = [40, 41, 44];
+        const hullFrameSections = [40, 41, 42, 43, 44];
 
         const isHullFrameSection =
             sectionType === "hull" && hullFrameSections.includes(Number(sectionNum));
@@ -924,10 +930,11 @@ const MachineryHullManager = ({ mode, shipId }) => {
         const showDueDate = allRows.some((r) => r.isDue);
         const showFrom = allRows.some((r) => r.isFrom);
         const isTankHull = isTankSectionFromData(sectionType, sectionNum);
+        const hullFrameSections = [40, 41, 42, 43, 44];
+
+
         const isHullFrameSection =
-            sectionType === "hull" && Number(sectionNum) >= 31;
-
-
+            sectionType === "hull" && hullFrameSections.includes(Number(sectionNum));
         return (
             <Accordion
                 key={sectionNum}
@@ -1017,15 +1024,15 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                     <Grid2 size={{ xs: 12, md: 2 }}>Due Date</Grid2>
                                 )}
 
-                                {isTankHull && (
+                                {isHullFrameSection && (
                                     <Grid2 size={{ xs: 12, md: 2 }}>From Frame No.</Grid2>
                                 )}
 
-                                {!isTankHull && showDueDate && (
+                                {!isHullFrameSection && showDueDate && (
                                     <Grid2 size={{ xs: 12, md: 2 }}>Postponed Date</Grid2>
                                 )}
 
-                                {isTankHull && (
+                                {isHullFrameSection && (
                                     <Grid2 size={{ xs: 12, md: 2 }}>Upto Frame No.</Grid2>
                                 )}
 
