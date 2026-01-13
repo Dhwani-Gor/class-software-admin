@@ -57,7 +57,7 @@ const MachineList = () => {
         label: "",
         dueDate: "",
         assignmentDate: "",
-        postponedDate: "",
+        postponeDate: "",
         positionCode: "",
         status: "",
         machineSection: "",
@@ -102,8 +102,8 @@ const MachineList = () => {
             assignmentDate: item.assignmentDate
                 ? moment(item.assignmentDate).format("YYYY-MM-DD")
                 : "",
-            postponedDate: item.postponedDate
-                ? moment(item.postponedDate).format("YYYY-MM-DD")
+            postponeDate: item.postponeDate
+                ? moment(item.postponeDate).format("YYYY-MM-DD")
                 : "",
             positionCode: item.positionCode || "",
             status: item.status || "",
@@ -124,7 +124,7 @@ const MachineList = () => {
                 dueDate: editForm.dueDate,
                 label: editForm.label,
                 assignmentDate: editForm.assignmentDate,
-                postponedDate: editForm.postponedDate,
+                postponeDate: editForm.postponeDate,
                 status: editForm.status,
                 positionCode: editForm.positionCode,
                 fromFrameNo: editForm.fromFrameNo || null,
@@ -160,7 +160,6 @@ const MachineList = () => {
     };
 
 
-    /* ---------------- GROUPING & ORDER ---------------- */
     const machinerySections = Object.entries(machineList?.machineData || {})
         .filter(([_, section]) => section.sectionType === "machinery");
 
@@ -169,6 +168,7 @@ const MachineList = () => {
     const hullSections = Object.entries(machineList?.machineData || {})
         .filter(([_, section]) => section.sectionType === "hull");
 
+    console.log("hull sections", hullSections);
     const isHullEdit = hullSections.some(
         ([key]) => key === editForm.machineSection
     );
@@ -333,8 +333,8 @@ const MachineList = () => {
                                                                     {item.dueDate ? moment(item.dueDate).format("DD/MM/YYYY") : "-"}
                                                                 </TableCell>
                                                                 <TableCell>
-                                                                    {item.postponedDate
-                                                                        ? moment(item.postponedDate).format("DD/MM/YYYY")
+                                                                    {item.postponeDate
+                                                                        ? moment(item.postponeDate).format("DD/MM/YYYY")
                                                                         : "-"}
                                                                 </TableCell>
                                                                 <TableCell>
@@ -481,10 +481,10 @@ const MachineList = () => {
 
                             <><Typography mt={2}>Postponed Date</Typography><CommonInput
                                 type="date"
-                                value={editForm.postponedDate}
+                                value={editForm.postponeDate}
                                 onChange={(e) => setEditForm({
                                     ...editForm,
-                                    postponedDate: e.target.value,
+                                    postponeDate: e.target.value,
                                 })} /></>
                         )}
                     </>

@@ -167,7 +167,6 @@ const MachineryHullManager = ({ mode, shipId }) => {
         isMachineryList = false
     ) => {
         const instances = [];
-        const today = new Date().toISOString().split("T")[0];
         if (isMachineryList) {
             const positions =
                 data.position?.length
@@ -183,7 +182,6 @@ const MachineryHullManager = ({ mode, shipId }) => {
                     (parseInt(data.to) || 1) - (parseInt(data.from) || 1) + 1
                 );
             }
-            // 2️⃣ Cylinder-based rows (ONLY 01–03)
             else if (["01", "02", "03"].includes(String(row.id).padStart(2, "0"))) {
                 repetitions = Number(noOfCylinders || 1);
             }
@@ -194,7 +192,6 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         ? (parseInt(data.from) || 1) + i - 1
                         : i;
 
-                    // ✅ CORRECT CONTENT RULE
                     let contentText = "";
 
                     if (["01", "02", "03"].includes(String(row.id).padStart(2, "0"))) {
@@ -223,10 +220,12 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         label: row.label,
                         assignmentDate: data.assignmentDate || "",
                         dueDate: data.dueDate || "",
-                        from: row.hasFromTo ? data.from : undefined,
-                        to: row.hasFromTo ? data.to : undefined,
-                        fromFrameNo: row.hasFromTo ? data.fromFrameNo : undefined,
-                        toFrameNo: row.hasFromTo ? data.toFrameNo : undefined,
+                        postponeDate: data.postponeDate || "",
+                        status: data.status || "",
+                        from: row.hasFromTo ? data.from : "",
+                        to: row.hasFromTo ? data.to : "",
+                        fromFrameNo: row.hasFromTo ? data.fromFrameNo : "",
+                        toFrameNo: row.hasFromTo ? data.toFrameNo : "",
                         isTank: false,
                     });
                 }
@@ -265,6 +264,8 @@ const MachineryHullManager = ({ mode, shipId }) => {
                     positionCode: pos,
                     assignmentDate: data.assignmentDate || "",
                     dueDate: data.dueDate || "",
+                    postponeDate: data.postponeDate || "",
+                    status: data.status || "",
                     from: data.from,
                     to: data.to,
                     fromFrameNo: data.fromFrameNo,
@@ -300,10 +301,8 @@ const MachineryHullManager = ({ mode, shipId }) => {
         const hydrated = {};
 
         const normalizeRowKey = (item, sectionType) => {
-            // 1️⃣ User-added rows
             if (item.label?.trim()) return item.label.trim();
 
-            // 2️⃣ Machinery static rows → remove "No X"
             if (sectionType === "machinery" && item.content) {
                 return item.content.replace(/^No\s+\d+\s*/i, "").trim();
             }
@@ -328,7 +327,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         content: item.content || "",
                         assignmentDate: item.assignmentDate || "",
                         dueDate: item.dueDate || "",
-                        postponedDate: item.postponedDate || "",
+                        postponeDate: item.postponeDate || "",
                         position:
                             item.globalPositionCode
                                 ? [item.globalPositionCode]
@@ -472,7 +471,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             // HULL → only frame numbers
                             if (type === "hull") {
                                 delete baseItem.dueDate;
-                                delete baseItem.postponedDate;
+                                delete baseItem.postponeDate;
                             }
 
                             // MACHINERY → only due & postponed
@@ -726,13 +725,16 @@ const MachineryHullManager = ({ mode, shipId }) => {
         setEngineUnitsCountedFrom(e.target.value);
     };
 
+
+
     const renderRow = (row, sectionType, sectionNum) => {
         const isTankHull = isTankSectionFromData(sectionType, sectionNum);
+        const hullFrameSections = [40, 41, 44];
 
+        const isHullFrameSection =
+            sectionType === "hull" && hullFrameSections.includes(Number(sectionNum));
         const rowKey = getRowKey(row);
         const fieldKey = `${sectionType}-${sectionNum}-${rowKey}`;
-
-
 
         const isChecked = formData[fieldKey]?.xMark === "X";
 
@@ -839,7 +841,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                     </Grid2>
 
                     <Grid2 size={{ xs: 12, md: 2 }}>
-                        {isTankHull ? (
+                        {isHullFrameSection ? (
                             <TextField
                                 type="text"
                                 variant="standard"
@@ -872,7 +874,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
 
 
                     <Grid2 size={{ xs: 12, md: 2 }}>
-                        {isTankHull ? (
+                        {isHullFrameSection ? (
                             <TextField
                                 type="text"
                                 variant="standard"
@@ -893,9 +895,9 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 label="Postponed Date"
                                 disabled={!isChecked}
                                 InputLabelProps={{ shrink: true }}
-                                value={formData[fieldKey]?.postponedDate || ""}
+                                value={formData[fieldKey]?.postponeDate || ""}
                                 onChange={(e) =>
-                                    updateField(sectionType, sectionNum, rowKey, "postponedDate", e.target.value)
+                                    updateField(sectionType, sectionNum, rowKey, "postponeDate", e.target.value)
                                 }
                             />
                         ) : (
@@ -922,6 +924,9 @@ const MachineryHullManager = ({ mode, shipId }) => {
         const showDueDate = allRows.some((r) => r.isDue);
         const showFrom = allRows.some((r) => r.isFrom);
         const isTankHull = isTankSectionFromData(sectionType, sectionNum);
+        const isHullFrameSection =
+            sectionType === "hull" && Number(sectionNum) >= 31;
+
 
         return (
             <Accordion
