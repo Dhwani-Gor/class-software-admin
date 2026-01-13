@@ -745,7 +745,7 @@ export const HULL_SECTIONS = {
         label: "W.B & Storage tank/s in the following order: side tanks; topside tanks; deep tanks; double bottom tanks; other engine room tanks (excluding independent tanks); other tanks not intended for carriage of cargo",
         hasPosition: false,
         isDue: false,
-        isFrom: false,
+        isFrom: true,
         repeatPerCylinder: false,
         isTankRow: true,
       },
