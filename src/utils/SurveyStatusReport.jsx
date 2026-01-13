@@ -1901,7 +1901,7 @@ ${auditSurveyTableHtml}
 
 ${additionalFieldsHtml}
 </div>
-<h2 style="margin-top: 10px; color:black">Machine List</h2>
+<h2 style="margin-top: 10px; color:black">Machinery List</h2>
 ${machineryTableHtml}
 ${hullTableHtml}
 </div>
