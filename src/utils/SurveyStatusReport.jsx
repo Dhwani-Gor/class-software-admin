@@ -749,7 +749,7 @@ const TextEditor = ({ id }) => {
         rangeTo: latestRangeTo
           ? format(new Date(latestRangeTo), "yyyy-MM-dd")
           : "",
-        postponedDate: survey.postponedDate || "",
+        postponeDate: survey.postponeDate || "",
         typeOfCertificate: survey.typeOfCertificate || "",
       };
 
@@ -1191,7 +1191,7 @@ ${classificationRows}
               : "-"
         }
             </td>                <td style="padding:6px;">
-              ${item.postponedDate ? moment(item.postponedDate).format("DD/MM/YYYY") : "-"}
+              ${item.postponeDate ? moment(item.postponeDate).format("DD/MM/YYYY") : "-"}
             </td>
                         <td style="padding:6px;">5</td>
 
@@ -1534,7 +1534,7 @@ ${classificationRows}
               ? `${rangeFrom ? moment(rangeFrom).format("DD/MM/YYYY") : ""} - ${rangeTo ? moment(rangeTo).format("DD/MM/YYYY") : ""}`
               : ""
             }</td>
-        <td>${row.postponedDate || ""}</td>
+        <td>${row.postponeDate || ""}</td>
       </tr>`;
         })
         .join("");
@@ -1901,7 +1901,7 @@ ${auditSurveyTableHtml}
 
 ${additionalFieldsHtml}
 </div>
-<h2 style="margin-top: 10px; color:black">Machine List</h2>
+<h2 style="margin-top: 10px; color:black">Machinery List</h2>
 ${machineryTableHtml}
 ${hullTableHtml}
 </div>

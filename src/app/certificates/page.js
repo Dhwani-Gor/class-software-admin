@@ -922,7 +922,7 @@ const Certificates = () => {
                                 {{
                                   full_term: "FT",
                                   short_term: "ST",
-                                  intrim: "Interim",
+                                  interim: "Interim",
                                 }[row.typeOfCertificate] || "N/A"}
                               </TableCell>
                               <TableCell>{row.activity?.surveyTypes?.name || "N/A"}</TableCell>
@@ -1048,7 +1048,7 @@ const Certificates = () => {
                               {{
                                 full_term: "FT",
                                 short_term: "ST",
-                                intrim: "Interim",
+                                interim: "Interim",
                               }[row.typeOfCertificate] || "N/A"}
                             </TableCell>
                             <TableCell>{row.activity?.surveyTypes?.name || "N/A"}</TableCell>
