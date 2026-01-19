@@ -738,6 +738,7 @@ const TextEditor = ({ id }) => {
       const latestDue = survey.dueDate || "";
       const latestRangeFrom = survey.rangeFrom || "";
       const latestRangeTo = survey.rangeTo || "";
+      const postponed = survey.postponed || "";
 
       const newRow = {
         surveyName: certificateName,
@@ -749,7 +750,7 @@ const TextEditor = ({ id }) => {
         rangeTo: latestRangeTo
           ? format(new Date(latestRangeTo), "yyyy-MM-dd")
           : "",
-        postponeDate: survey.postponeDate || "",
+        postponed: postponed || "",
         typeOfCertificate: survey.typeOfCertificate || "",
       };
 
@@ -1514,6 +1515,7 @@ ${classificationRows}
           const surveyDate = getLatestEndorsementDate(row);
           const currentDate = new Date().toISOString().split("T")[0];
           const dueDate = row.dueDate;
+          const postponeDate = row.postponed;
           const rangeFrom = row.rangeFrom;
           const rangeTo = row.rangeTo;
 
@@ -1534,7 +1536,7 @@ ${classificationRows}
               ? `${rangeFrom ? moment(rangeFrom).format("DD/MM/YYYY") : ""} - ${rangeTo ? moment(rangeTo).format("DD/MM/YYYY") : ""}`
               : ""
             }</td>
-        <td>${row.postponeDate || ""}</td>
+        <td>${postponeDate ? moment(postponeDate).format("DD/MM/YYYY") : ""}</td>
       </tr>`;
         })
         .join("");
