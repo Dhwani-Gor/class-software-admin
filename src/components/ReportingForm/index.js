@@ -91,11 +91,14 @@ const ReportingForm = () => {
   }, [reportDetails]);
 
   const reportSchema = yup.object().shape({
-    typesOfSurvey: yup.string().required("Type of survey is required"),
-    typeOfCertificate: yup.string(),
+    typesOfSurvey: yup.string(),
+    typeOfCertificate: yup.string().when([], {
+      is: () => !surveyType,
+      then: (schema) => schema.required("Type of certificate is required"),
+    }),
     issuancedate: yup.string().optional(),
     validitydate: yup.string().when([], {
-      is: () => !surveyType && !hiddenReports.includes(reportName),
+      is: () => !surveyType && !hiddenReports.includes(reportName) && shouldHideValidity,
       then: (schema) => schema.required("Validity date is required"),
       otherwise: (schema) => schema.optional(),
     }),
@@ -557,6 +560,7 @@ const ReportingForm = () => {
 
   const handleGenerateReport = async () => {
     const isValid = await trigger();
+    console.log("isValid", isValid);
     if (!isValid) {
       toast.error("Please fill in all required fields correctly.");
       return;
@@ -576,7 +580,7 @@ const ReportingForm = () => {
       issuedBy: Number(values.issuedBy) || null,
       place: values.place || "",
       isEndorsement: doingEndorsement ? true : false,
-      validityDate: hiddenReports?.includes(reportName) ? "" : values.validitydate ? formatDate(values.validitydate) : "",
+      validityDate: shouldHideValidity ? "" : values.validitydate ? formatDate(values.validitydate) : "",
       ...((selectCertificate === "full_term" || selectCertificate === "extended") && {
         endorsementDate: values.endorsementdate ? formatDate(values.endorsementdate) : null,
       }),
@@ -879,6 +883,10 @@ const ReportingForm = () => {
     manageArchive();
   };
 
+  const normalizeReport = (str) => str?.toLowerCase().replace(/[-_]+/g, " ").replace(/\s+/g, " ");
+
+  const shouldHideValidity = normalizeReport(reportName)?.includes(normalizeReport("ENGINE INTERNATIONAL AIR POLLUTION PREVENTION"));
+
   const handleRemarksChange = async (id, value) => {
     const row = tableData.find((item) => item.id === id);
     if (row && row.maxLength && value?.length > row.maxLength) {
@@ -1033,32 +1041,33 @@ const ReportingForm = () => {
                 />
               </Grid2>
               {/* )} */}
-              {!hiddenReports.map((r) => r?.toLowerCase()).includes(reportName?.toLowerCase()) && (
-                <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Controller
-                    name="validitydate"
-                    control={control}
-                    render={({ field }) => (
-                      <CommonInput
-                        {...field}
-                        type="date"
-                        label={<>Validity Date {!surveyType && <span style={{ color: "red" }}>*</span>}</>}
-                        error={!!errors.validitydate}
-                        helperText={errors.validitydate?.message}
-                        onChange={(e) => {
-                          field.onChange(e);
-                          handleFieldChange("validitydate", e.target.value);
-                        }}
-                      />
-                    )}
-                  />
-                  {/* {!hiddenReports.includes(reportName) && !surveyType && errors.validitydate && (
+              {!hiddenReports.map((r) => r?.toLowerCase()).includes(reportName?.toLowerCase()) ||
+                (shouldHideValidity && (
+                  <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Controller
+                      name="validitydate"
+                      control={control}
+                      render={({ field }) => (
+                        <CommonInput
+                          {...field}
+                          type="date"
+                          label={<>Validity Date {!surveyType && <span style={{ color: "red" }}>*</span>}</>}
+                          error={!!errors.validitydate}
+                          helperText={errors.validitydate?.message}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            handleFieldChange("validitydate", e.target.value);
+                          }}
+                        />
+                      )}
+                    />
+                    {/* {!hiddenReports.includes(reportName) && !surveyType && errors.validitydate && (
                     <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
                       {errors.validitydate.message}
                     </Typography>
                   )} */}
-                </Grid2>
-              )}
+                  </Grid2>
+                ))}
 
               <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
                 <Controller
