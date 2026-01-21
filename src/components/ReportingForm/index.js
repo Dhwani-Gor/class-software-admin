@@ -98,7 +98,7 @@ const ReportingForm = () => {
     }),
     issuancedate: yup.string().optional(),
     validitydate: yup.string().when([], {
-      is: () => !surveyType && !hiddenReports.includes(reportName) && shouldHideValidity,
+      is: () => !surveyType && !isHiddenReport && !shouldHideValidity,
       then: (schema) => schema.required("Validity date is required"),
       otherwise: (schema) => schema.optional(),
     }),
@@ -314,6 +314,18 @@ const ReportingForm = () => {
     }
   };
 
+  const NO_AUTO_DATE_REPORTS = ["international load line certificate", "cargo ship safety construction", "cargo ship safety equipment", "cargo ship safety radio", "international oil pollution prevention", "international anti-fouling system", "international ballast water management", "international tonnage certificate", "international air pollution prevention", "international certification of fitness for the carriage"];
+
+  const shouldSkipAutoDates = (reportName = "") => NO_AUTO_DATE_REPORTS.some((r) => reportName.toLowerCase().includes(r));
+
+  const isFullTermWithoutValidity = (reportName = "", certType = "") => {
+    const name = reportName.toLowerCase();
+
+    if (certType !== "full_term") return false;
+
+    return name.includes("international anti-fouling") || name.includes("international energy efficiency");
+  };
+
   const normalizeName = (name) =>
     name
       ?.toLowerCase()
@@ -392,6 +404,7 @@ const ReportingForm = () => {
 
     return moment(value).add(yearsToAdd, "years").format("YYYY-MM-DD");
   };
+  const normalizeReport = (str) => str?.toLowerCase().replace(/[-_]+/g, " ").replace(/\s+/g, " ");
 
   const isWithinExistingRange = (value) => {
     const rangeFrom = getValues("rangeFrom");
@@ -402,16 +415,34 @@ const ReportingForm = () => {
     const v = moment(value, "YYYY-MM-DD");
     return v.isSameOrAfter(moment(rangeFrom, "YYYY-MM-DD")) && v.isSameOrBefore(moment(rangeTo, "YYYY-MM-DD"));
   };
+  const shouldHideValidity = isFullTermWithoutValidity(reportName, selectCertificate) || normalizeReport(reportName)?.includes(normalizeReport("ENGINE INTERNATIONAL AIR POLLUTION PREVENTION"));
+
+  const isHiddenReport = hiddenReports.map((r) => r.toLowerCase()).includes(reportName?.toLowerCase());
+
+  const showValidityDate = !isHiddenReport && !shouldHideValidity;
 
   const applyRangeFromDueDate = (dueDate, surveyType) => {
     if (!dueDate) return;
 
+    if (shouldSkipAutoDates(reportName)) {
+      const baseDate = getValues("certificateBaseDate") || getValues("surveydate") || dueDate;
+
+      let from = moment(dueDate).subtract(3, "months").format("YYYY-MM-DD");
+      let to = moment(dueDate).add(3, "months").format("YYYY-MM-DD");
+
+      from = capToFiveYearValidity(from, baseDate);
+      to = capToFiveYearValidity(to, baseDate);
+
+      setValue("rangeFrom", from);
+      setValue("rangeTo", to);
+      return;
+    }
     const due = moment(dueDate);
     let rangeFrom = "";
     let rangeTo = "";
 
     const isFiveYearSpecial = fiveYearSpecials.includes(normalize(surveyType));
-    const noRangeSurveys = ["docking survey", "tailshaft initial survey", "tailshaft renewal survey", "tailshaft periodical survey", "main boiler survey", "auxiliary boiler survey", "thermal oil heating systems survey", "exhaust gas steam generators and economisers survey"];
+    const noRangeSurveys = ["docking survey", "tailshaft initial survey", "tailshaft renewal survey", "tailshaft periodical survey", "main boiler survey", "auxiliary boiler survey", "thermal oil heating systems survey", "exhaust gas steam generators and economisers survey", "in water survey"];
 
     if (noRangeSurveys.includes(normalize(surveyType))) {
       rangeFrom = "";
@@ -443,6 +474,10 @@ const ReportingForm = () => {
 
     const surveyType = normalizeName(getValues("typesOfSurvey"));
 
+    if (["surveydate", "assignmentDate", "dueDate"].includes(fieldName) && shouldSkipAutoDates(reportName)) {
+      setValue(fieldName, value);
+      return;
+    }
     const skipAutoCalc = fieldName === "surveydate" || fieldName === "assignmentDate" ? isWithinExistingRange(value) : false;
 
     if (skipAutoCalc) {
@@ -883,10 +918,16 @@ const ReportingForm = () => {
     manageArchive();
   };
 
-  const normalizeReport = (str) => str?.toLowerCase().replace(/[-_]+/g, " ").replace(/\s+/g, " ");
+  const capToFiveYearValidity = (date, baseDate) => {
+    if (!baseDate || !date) return date;
 
-  const shouldHideValidity = normalizeReport(reportName)?.includes(normalizeReport("ENGINE INTERNATIONAL AIR POLLUTION PREVENTION"));
+    const max = moment(baseDate).add(5, "years");
+    const d = moment(date);
 
+    return d.isAfter(max) ? max.format("YYYY-MM-DD") : d.format("YYYY-MM-DD");
+  };
+
+  console.log(shouldHideValidity, "should validity");
   const handleRemarksChange = async (id, value) => {
     const row = tableData.find((item) => item.id === id);
     if (row && row.maxLength && value?.length > row.maxLength) {
@@ -1041,33 +1082,32 @@ const ReportingForm = () => {
                 />
               </Grid2>
               {/* )} */}
-              {!hiddenReports.map((r) => r?.toLowerCase()).includes(reportName?.toLowerCase()) ||
-                (shouldHideValidity && (
-                  <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
-                    <Controller
-                      name="validitydate"
-                      control={control}
-                      render={({ field }) => (
-                        <CommonInput
-                          {...field}
-                          type="date"
-                          label={<>Validity Date {!surveyType && <span style={{ color: "red" }}>*</span>}</>}
-                          error={!!errors.validitydate}
-                          helperText={errors.validitydate?.message}
-                          onChange={(e) => {
-                            field.onChange(e);
-                            handleFieldChange("validitydate", e.target.value);
-                          }}
-                        />
-                      )}
-                    />
-                    {/* {!hiddenReports.includes(reportName) && !surveyType && errors.validitydate && (
+              {showValidityDate && (
+                <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Controller
+                    name="validitydate"
+                    control={control}
+                    render={({ field }) => (
+                      <CommonInput
+                        {...field}
+                        type="date"
+                        label={<>Validity Date {!surveyType && <span style={{ color: "red" }}>*</span>}</>}
+                        error={!!errors.validitydate}
+                        helperText={errors.validitydate?.message}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          handleFieldChange("validitydate", e.target.value);
+                        }}
+                      />
+                    )}
+                  />
+                  {/* {!hiddenReports.includes(reportName) && !surveyType && errors.validitydate && (
                     <Typography variant="caption" color="error" sx={{ mt: 1, ml: 1.75 }}>
                       {errors.validitydate.message}
                     </Typography>
                   )} */}
-                  </Grid2>
-                ))}
+                </Grid2>
+              )}
 
               <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
                 <Controller
