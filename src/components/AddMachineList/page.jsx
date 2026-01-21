@@ -71,16 +71,10 @@ const MachineryHullManager = ({ mode, shipId }) => {
         { id: "05", label: "O.F. injection pump, h.p .o.f. pipes & shielding", hasFromTo: true, isDue: true, isFrom: false, repeatPerCylinder: false },
     ];
 
-
     const SPECIAL_TANK_ROWS = [
         { id: "01", label: "Examination", hasPosition: false, isDue: true, isFrom: false },
         { id: "02", label: "Test", hasPosition: false, isDue: true, isFrom: false },
 
-    ];
-
-    const OTHER_TANK_ROWS = [
-        { id: "01", label: "Examination", hasPosition: false, isDue: true, isFrom: false },
-        { id: "02", label: "Test", hasPosition: false, isDue: true, isFrom: false },
     ];
 
     const extractTankNumbers = (sectionName = "") => {
@@ -118,7 +112,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                     : HULL_SECTIONS[sectionNum]?.rows || [];
 
             block.items.forEach((item) => {
-                const label = item.label?.trim();
+                const label = item.label?.trim() || item.content?.trim();
                 if (!label) return;
 
                 const existsInStatic = staticRows.some(
@@ -131,7 +125,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
 
                 if (!rebuilt[type][sectionNum].some((r) => r.label === label)) {
                     rebuilt[type][sectionNum].push({
-                        id: item.generatedCode, // stable UI key
+                        id: Number(item.sequence?.split("-")[1]) || index + 1,
                         label,
                         hasPosition: true,
                         isDue: true,
@@ -156,7 +150,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
             return SPECIAL_TANK_ROWS;
         }
 
-        return OTHER_TANK_ROWS;
+        return SPECIAL_TANK_ROWS;
     };
 
 
@@ -167,13 +161,20 @@ const MachineryHullManager = ({ mode, shipId }) => {
         isMachineryList = false
     ) => {
         const instances = [];
+
+        const rowPositions =
+            data.position?.length ? data.position : ["-"];
+
+        const finalLabel =
+            data?.label?.trim() ||
+            row.label?.trim() ||
+            row.content?.trim() ||
+            "";
+        /* =========================
+           MACHINERY (GLOBAL + ROW)
+        ========================== */
         if (isMachineryList) {
-            const positions =
-                data.position?.length
-                    ? data.position
-                    : position?.length
-                        ? position
-                        : ["-"];
+            const globalPositions = position?.length ? position : ["-"];
             let repetitions = 1;
 
             if (row.hasFromTo) {
@@ -181,100 +182,96 @@ const MachineryHullManager = ({ mode, shipId }) => {
                     1,
                     (parseInt(data.to) || 1) - (parseInt(data.from) || 1) + 1
                 );
-            }
-            else if (["01", "02", "03"].includes(String(row.id).padStart(2, "0"))) {
+            } else if (["01", "02", "03"].includes(String(row.id).padStart(2, "0"))) {
                 repetitions = Number(noOfCylinders || 1);
             }
 
-            positions.forEach((pos) => {
-                for (let i = 1; i <= repetitions; i++) {
-                    const occ = row.hasFromTo
-                        ? (parseInt(data.from) || 1) + i - 1
-                        : i;
+            globalPositions.forEach((gp) => {
+                rowPositions.forEach((rp) => {
+                    for (let i = 1; i <= repetitions; i++) {
+                        const occ = row.hasFromTo
+                            ? (parseInt(data.from) || 1) + i - 1
+                            : i;
 
-                    let contentText = "";
+                        let contentText = row.label;
 
-                    if (["01", "02", "03"].includes(String(row.id).padStart(2, "0"))) {
-                        contentText = row.content.replace("{cyl}", occ);
-                    }
-                    else if (row.hasFromTo) {
-                        contentText = `No ${occ} ${row.label}`;
-                    }
-                    else {
-                        contentText = row.label;
-                    }
+                        if (["01", "02", "03"].includes(String(row.id).padStart(2, "0"))) {
+                            contentText = row.content.replace("{cyl}", occ);
+                        } else if (row.hasFromTo) {
+                            contentText = `No ${occ} ${row.label}`;
+                        }
 
-                    instances.push({
-                        generatedCode: isMachineryList
-                            ? `${String(sectionNum).padStart(2, "0")}` +
-                            pos +
-                            `${String(row.id).padStart(2, "0")}` +
-                            `${String(occ).padStart(2, "0")}`
-                            : `${String(sectionNum).padStart(2, "0")}` +
-                            `${String(row.id).padStart(2, "0")}` +
-                            `${String(occ).padStart(2, "0")}` +
-                            pos,
-                        occurrence: occ,
-                        positionCode: pos,
-                        content: contentText,
-                        label: row.label,
-                        assignmentDate: data.assignmentDate || "",
-                        dueDate: data.dueDate || "",
-                        postponeDate: data.postponeDate || "",
-                        status: data.status || "",
-                        from: row.hasFromTo ? data.from : "",
-                        to: row.hasFromTo ? data.to : "",
-                        fromFrameNo: row.hasFromTo ? data.fromFrameNo : "",
-                        toFrameNo: row.hasFromTo ? data.toFrameNo : "",
-                        isTank: false,
-                    });
-                }
+                        instances.push({
+                            generatedCode:
+                                `${String(sectionNum).padStart(2, "0")}` +
+                                gp +
+                                `${String(row.id).padStart(2, "0")}` +
+                                `${String(occ).padStart(2, "0")}` +
+                                rp,
+
+                            occurrence: occ,
+                            positionCode: data.position?.[0] ?? "-",
+                            content: contentText || finalLabel,
+                            label: finalLabel,
+                            assignmentDate: data.assignmentDate || "",
+                            dueDate: data.dueDate || "",
+                            postponeDate: data.postponeDate || "",
+                            fromFrameNo: data.fromFrameNo || "",
+                            toFrameNo: data.toFrameNo || "",
+                            status: data.status || "",
+                            from: row.hasFromTo ? data.from : "",
+                            to: row.hasFromTo ? data.to : "",
+                            isTank: false,
+                        });
+                    }
+                });
             });
 
             return instances;
         }
 
         /* =========================
-           NORMAL HULL ROWS (FIXED)
+           HULL (ROW POSITION ONLY)
         ========================== */
-        const positions = data.position?.length ? data.position : ["-"];
         const repetitions = row.hasFromTo
-            ? Math.max(1, (parseInt(data.to) || 1) - (parseInt(data.from) || 1) + 1)
+            ? Math.max(
+                1,
+                (parseInt(data.to) || 1) - (parseInt(data.from) || 1) + 1
+            )
             : 1;
 
-        positions.forEach((pos) => {
+        rowPositions.forEach((rp) => {
             for (let i = 1; i <= repetitions; i++) {
-                const occ = row.hasFromTo ? (parseInt(data.from) || 1) + i - 1 : i;
+                const occ = row.hasFromTo
+                    ? (parseInt(data.from) || 1) + i - 1
+                    : i;
 
                 const baseCode =
                     `${String(sectionNum).padStart(2, "0")}` +
                     `${String(row.id).padStart(2, "0")}` +
                     `${String(occ).padStart(2, "0")}` +
-                    pos;
-
-                const finalLabel = data?.label?.trim() || row.label?.trim();
+                    rp;
 
                 instances.push({
                     generatedCode: baseCode,
-                    label: finalLabel,
-                    content: row.hasFromTo
-                        ? `No ${occ} ${finalLabel}`
-                        : finalLabel,
                     occurrence: occ,
-                    positionCode: pos,
+                    positionCode: rp,
+                    content: row.label || finalLabel,
+                    label: finalLabel,
                     assignmentDate: data.assignmentDate || "",
                     dueDate: data.dueDate || "",
                     postponeDate: data.postponeDate || "",
+                    fromFrameNo: data.fromFrameNo || "",
+                    toFrameNo: data.toFrameNo || "",
                     status: data.status || "",
-                    from: data.from,
-                    to: data.to,
-                    fromFrameNo: data.fromFrameNo,
-                    toFrameNo: data.toFrameNo,
+                    from: row.hasFromTo ? data.from : "",
+                    to: row.hasFromTo ? data.to : "",
                     isTank: row.isTankRow === true,
                 });
 
-
-
+                /* =========================
+                   OTHER THAN TANK (RESTORED)
+                ========================== */
                 if (row.isTankRow === true) {
                     OTHER_THAN_TANK.forEach((label, index) => {
                         instances.push({
@@ -282,13 +279,13 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             occurrence: index + 1,
                             positionCode: "-",
                             content: label,
-                            label: label,
-                            postponeDate: data.postponeDate || "",
-                            status: data.status || "",
+                            label,
                             assignmentDate: data.assignmentDate || "",
                             dueDate: data.dueDate || "",
-                            from: data.from,
-                            to: data.to,
+                            postponeDate: data.postponeDate || "",
+                            fromFrameNo: data.fromFrameNo || "",
+                            toFrameNo: data.toFrameNo || "",
+                            status: data.status || "",
                             isTank: true,
                         });
                     });
@@ -298,7 +295,6 @@ const MachineryHullManager = ({ mode, shipId }) => {
 
         return instances;
     };
-
 
     const hydrateFormDataFromMachineData = (blocks = []) => {
         const hydrated = {};
@@ -316,7 +312,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
         blocks.forEach((block) => {
             const sectionType = block.sectionType;
             const sectionNum = String(block.sectionNumber);
-
+            ``
             block.items.forEach((item) => {
                 const rowKey = normalizeRowKey(item, sectionType);
                 if (!rowKey) return;
@@ -332,12 +328,10 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         assignmentDate: item.assignmentDate || "",
                         dueDate: item.dueDate || "",
                         postponeDate: item.postponeDate || "",
-                        position:
-                            item.globalPositionCode
-                                ? [item.globalPositionCode]
-                                : item.positionCode && item.positionCode !== "-"
-                                    ? [item.positionCode]
-                                    : [],
+                        position: (() => {
+                            if (!item.positionCode || item.positionCode === "-") return [];
+                            return [item.positionCode];
+                        })(),
                         from: item.from || "",
                         to: item.to || "",
                         fromFrameNo: item.fromFrameNo || "",
@@ -433,11 +427,6 @@ const MachineryHullManager = ({ mode, shipId }) => {
                     ? [...section.rows, ...tankRows, ...dynamicRowsForSection]
                     : [...section.rows, ...dynamicRowsForSection];
 
-                // if (editingId && originalBlocks.length) {
-                //     payload.blocks = originalBlocks;
-                //     return payload;
-                // }
-
                 let finalItems = [];
                 const isMachineryList = section.sectionId === "machinery_list";
 
@@ -521,12 +510,10 @@ const MachineryHullManager = ({ mode, shipId }) => {
 
         if (editingId) {
             const cleanedOldBlocks = originalBlocks.map((oldBlock) => {
-                const sectionNum = String(oldBlock.sectionNumber).padStart(2, "0");
 
                 const cleanedItems = oldBlock.items.filter((item) => {
                     if (!item.generatedCode) return false;
 
-                    // ✅ Keep ONLY if its parent row is still checked
                     return Array.from(checkedRowPrefixes).some((prefix) =>
                         item.generatedCode.startsWith(prefix)
                     );
