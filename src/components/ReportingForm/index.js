@@ -468,6 +468,12 @@ const ReportingForm = () => {
   };
 
   const handleFieldChange = (fieldName, value) => {
+    if (fieldName === "dueDate" && !value) {
+      setValue("dueDate", "");
+      setValue("rangeFrom", "");
+      setValue("rangeTo", "");
+      return;
+    }
     if (!value) return;
 
     if (errors[fieldName]) clearErrors(fieldName);
