@@ -83,6 +83,8 @@ const ReportingForm = () => {
   const [companyLogoId, setCompanyLogoId] = useState(null);
   const [endorsementStamp, setEndorsementStamp] = useState(null);
   const [surveyTypes, setSurveyTypes] = useState([]);
+  const [surveyTypeCategory, setSurveyTypeCategory] = useState();
+  console.log("surveyTypeCategory", surveyTypeCategory);
 
   useEffect(() => {
     if (reportDetails) {
@@ -372,6 +374,9 @@ const ReportingForm = () => {
   const normalize = (str) => str.replace(/\(\s*/g, "(").replace(/\s*\)/g, ")");
 
   const calculateDueDateBase = (value, surveyType) => {
+    if (surveyTypeCategory === true && surveyType.includes("intermediate")) {
+      return moment(value).add(2, "years").format("YYYY-MM-DD");
+    }
     if (isFiveYearCertificateReport(reportName)) {
       return moment(value).add(5, "years").format("YYYY-MM-DD");
     }
@@ -424,6 +429,12 @@ const ReportingForm = () => {
   const applyRangeFromDueDate = (dueDate, surveyType) => {
     if (!dueDate) return;
 
+    if (surveyType.includes("intermediate")) {
+      setValue("rangeFrom", moment(dueDate).subtract(3, "months").format("YYYY-MM-DD"));
+      setValue("rangeTo", moment(dueDate).format("YYYY-MM-DD"));
+      return;
+    }
+
     if (shouldSkipAutoDates(reportName)) {
       const baseDate = getValues("certificateBaseDate") || getValues("surveydate") || dueDate;
 
@@ -452,7 +463,7 @@ const ReportingForm = () => {
       rangeTo = dueDate;
       setValue("validitydate", dueDate);
     } else if (surveyType?.toLowerCase().includes("annual")) {
-      rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
+      rangeFrom = moment(due).subtract(3, "months").format("YYYY-MM-DD");
       rangeTo = moment(due).add(3, "months").format("YYYY-MM-DD");
     } else {
       rangeFrom = moment(due).add(-3, "months").format("YYYY-MM-DD");
@@ -484,7 +495,9 @@ const ReportingForm = () => {
       setValue(fieldName, value);
       return;
     }
-    const skipAutoCalc = fieldName === "surveydate" || fieldName === "assignmentDate" ? isWithinExistingRange(value) : false;
+    const isAnnual = surveyType.includes("annual");
+
+    const skipAutoCalc = (fieldName === "surveydate" || fieldName === "assignmentDate") && isWithinExistingRange(value) && !isAnnual;
 
     if (skipAutoCalc) {
       setValue(fieldName, value);
@@ -520,14 +533,15 @@ const ReportingForm = () => {
       if (!dueDate) return;
 
       if (surveyType.includes("annual")) {
+        setValue("rangeFrom", moment(dueDate).subtract(3, "months").format("YYYY-MM-DD"));
         setValue("rangeTo", moment(dueDate).add(3, "months").format("YYYY-MM-DD"));
-      } else if (surveyType.includes("special") || surveyType.includes("continuous") || surveyType.includes("renewal") || surveyType.includes("intermediate")) {
+      } else if (surveyType.includes("special") || surveyType.includes("continuous") || surveyType.includes("renewal")) {
         setValue("rangeTo", dueDate);
       }
     }
   };
 
-  const FIVE_YEAR_CERTIFICATE_REPORTS = ["international sewage pollution prevention certificate", "international energy efficiency certificate (ieec)", "international tonnage certificate", "international air pollution prevention certificate (iapp)", "international certification of fitness for the carriage of liquified gases in bulk", "international certification of fitness for the carriage of dangerous chemicals in bulk", "imdg", "imsbc"];
+  const FIVE_YEAR_CERTIFICATE_REPORTS = ["international sewage pollution prevention", "international energy efficiency"];
 
   const isFiveYearCertificateReport = (reportName = "") => FIVE_YEAR_CERTIFICATE_REPORTS.some((r) => reportName.toLowerCase().includes(r));
 
@@ -894,6 +908,7 @@ const ReportingForm = () => {
       setValue("typesOfSurvey", getSurveyTitle(row.surveyTypes?.name));
       setValue("typeOfCertificate", reportData?.typeOfCertificate || "");
       setSelectCertificate(reportData?.typeOfCertificate || "");
+      setSurveyTypeCategory(row?.surveyTypes?.classificationSurvey === true);
       setValue("issuancedate", reportData?.issuanceDate ? moment(reportData.issuanceDate).format("YYYY-MM-DD") : "");
       setValue("validitydate", reportData?.validityDate ? moment(reportData.validityDate).format("YYYY-MM-DD") : "");
       setValue("surveydate", reportData?.surveyDate ? moment(reportData.surveyDate).format("YYYY-MM-DD") : "");
