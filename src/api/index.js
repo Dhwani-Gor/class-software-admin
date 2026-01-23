@@ -30,7 +30,7 @@ axiosInstance.interceptors.request.use(
   },
   function (error) {
     return Promise.reject(error);
-  }
+  },
 );
 
 export const addCountry = async (payload) => {
@@ -563,7 +563,6 @@ export const getReports = async () => {
   return result;
 };
 
-// Document API functions
 export const getAllDocuments = async (params) => {
   let result;
   try {
