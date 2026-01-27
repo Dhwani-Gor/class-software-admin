@@ -340,15 +340,16 @@ const ReportingForm = () => {
 
   const fiveYearSpecials = ["special survey hull", "special survey machinery", "special survey ig system", "special survey (fi-fi)", "special survey (ums)", "continuous survey hull", "continuous survey machinery"];
   const ANNIVERSARY_KEYWORDS = ["annual", "intermediate", "docking"];
-
+  const SpecialSurveyTypes = ["IMDG", "IMSBC", "ISPP"];
   const usesAnniversaryRule = (surveyType = "") => ANNIVERSARY_KEYWORDS.some((k) => surveyType.includes(k));
 
   const clampToAnniversary = (date, surveyType) => {
     const anniv = getValues("anniversaryDate");
     if (!anniv || !date) return date;
 
-    if (!usesAnniversaryRule(surveyType)) return date;
-
+    if (!usesAnniversaryRule(surveyType) && !usesSpecialSurveyAnniversary(surveyType)) {
+      return date;
+    }
     const annivMoment = moment(anniv);
     const d = moment(date);
 
@@ -374,6 +375,9 @@ const ReportingForm = () => {
   const normalize = (str) => str.replace(/\(\s*/g, "(").replace(/\s*\)/g, ")");
 
   const calculateDueDateBase = (value, surveyType) => {
+    if (usesSpecialSurveyAnniversary(surveyType)) {
+      return moment(value).add(5, "years").format("YYYY-MM-DD");
+    }
     if (surveyTypeCategory === true && surveyType.includes("intermediate")) {
       return moment(value).add(2, "years").format("YYYY-MM-DD");
     }
@@ -544,6 +548,8 @@ const ReportingForm = () => {
   const FIVE_YEAR_CERTIFICATE_REPORTS = ["international sewage pollution prevention", "international energy efficiency"];
 
   const isFiveYearCertificateReport = (reportName = "") => FIVE_YEAR_CERTIFICATE_REPORTS.some((r) => reportName.toLowerCase().includes(r));
+
+  const usesSpecialSurveyAnniversary = (surveyType = "") => SpecialSurveyTypes.some((k) => surveyType.toUpperCase().includes(k));
 
   const formatToDayMonth = (value) => {
     if (!value) return "";
