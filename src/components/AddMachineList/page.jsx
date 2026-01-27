@@ -210,7 +210,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 rp,
 
                             occurrence: occ,
-                            positionCode: data.position?.[0] ?? "-",
+                            positionCode: rp,
                             content: contentText || finalLabel,
                             label: finalLabel,
                             assignmentDate: data.assignmentDate || "",
