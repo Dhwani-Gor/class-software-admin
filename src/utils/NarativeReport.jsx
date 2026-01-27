@@ -34,6 +34,8 @@ const NarrativeReport = ({ id, reportNumber }) => {
   const [isLastVisit, setIsLastVisit] = useState(false);
   const [additionalDetails, setAdditionalDetails] = useState([]);
   const [journalList, setJournalList] = useState([]);
+  const [isInitialized, setIsInitialized] = useState(false);
+
 
   const currentDate = new Date();
   const stamp = systemVariables?.data?.find((i) => i.name === "company_stamp")?.information || "-";
@@ -303,14 +305,15 @@ const NarrativeReport = ({ id, reportNumber }) => {
     `;
   }, [clientData, reportDetails, systemVariables, firstVisit, lastVisit, numOfVisit, places, currentDate, reportNumber]);
 
+
   useEffect(() => {
-    if (!loading && clientData && reportDetails && systemVariables) {
+    if (!loading && clientData && reportDetails && systemVariables && !isInitialized) {
       const html = generateHtml();
       setEditorContent(html);
+      setIsInitialized(true);
     }
-  }, [loading, clientData, reportDetails, systemVariables, generateHtml]);
+  }, [loading, clientData, reportDetails, systemVariables, generateHtml, isInitialized]);
 
-  // Download as PDF
   const downloadEditorContentAsPdf = async () => {
     try {
       const element = document.createElement("div");

@@ -296,6 +296,55 @@ const MachineryHullManager = ({ mode, shipId }) => {
         return instances;
     };
 
+    // const hydrateFormDataFromMachineData = (blocks = []) => {
+    //     const hydrated = {};
+
+    //     const normalizeRowKey = (item, sectionType) => {
+    //         if (item.label?.trim()) return item.label.trim();
+
+    //         if (sectionType === "machinery" && item.content) {
+    //             return item.content.replace(/^No\s+\d+\s*/i, "").trim();
+    //         }
+
+    //         return item.content?.trim();
+    //     };
+
+    //     blocks.forEach((block) => {
+    //         const sectionType = block.sectionType;
+    //         const sectionNum = String(block.sectionNumber);
+    //         ``
+    //         block.items.forEach((item) => {
+    //             const rowKey = normalizeRowKey(item, sectionType);
+    //             if (!rowKey) return;
+
+    //             const fieldKey = `${sectionType}-${sectionNum}-${rowKey}`;
+
+    //             if (!hydrated[fieldKey]) {
+    //                 hydrated[fieldKey] = {
+    //                     xMark: "X",
+    //                     label: item.label || rowKey,
+    //                     content: item.content || "",
+    //                     status: item.status || "",
+    //                     assignmentDate: item.assignmentDate || "",
+    //                     dueDate: item.dueDate || "",
+    //                     postponeDate: item.postponeDate || "",
+    //                     position: (() => {
+    //                         if (!item.positionCode || item.positionCode === "-") return [];
+    //                         return [item.positionCode];
+    //                     })(),
+    //                     from: item.from || "",
+    //                     to: item.to || "",
+    //                     fromFrameNo: item.fromFrameNo || "",
+    //                     toFrameNo: item.toFrameNo || "",
+    //                 };
+    //             }
+    //         });
+    //     });
+
+    //     return hydrated;
+    // };
+
+
     const hydrateFormDataFromMachineData = (blocks = []) => {
         const hydrated = {};
 
@@ -312,7 +361,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
         blocks.forEach((block) => {
             const sectionType = block.sectionType;
             const sectionNum = String(block.sectionNumber);
-            ``
+
             block.items.forEach((item) => {
                 const rowKey = normalizeRowKey(item, sectionType);
                 if (!rowKey) return;
@@ -337,13 +386,18 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         fromFrameNo: item.fromFrameNo || "",
                         toFrameNo: item.toFrameNo || "",
                     };
+                } else {
+                    if (item.positionCode && item.positionCode !== "-") {
+                        if (!hydrated[fieldKey].position.includes(item.positionCode)) {
+                            hydrated[fieldKey].position.push(item.positionCode);
+                        }
+                    }
                 }
             });
         });
 
         return hydrated;
     };
-
     const isTankSectionFromData = (sectionType, sectionNum) => {
         if (sectionType !== "hull") return false;
 
