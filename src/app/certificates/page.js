@@ -226,7 +226,7 @@ const Certificates = () => {
     try {
       let data;
       if (isSearchMode) {
-        const res = showAll ? await issuedDocumentSearch(debouncedSearch) : await issuedDocumentSearch(debouncedSearch, page, limit);
+        const res = showAll ? await issuedDocumentSearch(debouncedSearch, undefined, undefined, markAsArchive) : await issuedDocumentSearch(debouncedSearch, page, limit, markAsArchive);
         data = res?.data;
         setCertificatesList(data?.data);
         setTotalCount(data?.results);
@@ -393,7 +393,7 @@ const Certificates = () => {
           const blob = await res.blob();
           const fileName = `${cert.generatedDoc.split("/").pop()}`;
           folder.file(fileName, blob);
-        })
+        }),
       );
       const content = await zip.generateAsync({ type: "blob" });
       saveAs(content, `${folderName}.zip`);
@@ -435,7 +435,7 @@ const Certificates = () => {
           const blob = await res.blob();
           const fileName = `${cert.generatedDoc.split("/").pop()}`;
           folder.file(fileName, blob);
-        })
+        }),
       );
 
       const content = await zip.generateAsync({ type: "blob" });
@@ -485,7 +485,7 @@ const Certificates = () => {
           })();
 
           folder.file(fileName, blob);
-        })
+        }),
       );
       const content = await zip.generateAsync({ type: "blob" });
       saveAs(content, `${prefix} Reports.zip`);

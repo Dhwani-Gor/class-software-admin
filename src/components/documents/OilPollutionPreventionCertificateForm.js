@@ -2,15 +2,13 @@
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogActions, TextField, Box, Typography, IconButton, Accordion, AccordionSummary, AccordionDetails, Grid, Divider, Button, Grid2, TextareaAutosize } from "@mui/material";
 import { Close as CloseIcon, Description as ReportIcon, CheckCircle as CheckIcon, ExpandMore as ExpandMoreIcon } from "@mui/icons-material";
-import { formattedDate, formatDate } from "@/utils/date";
+import { formatDate } from "@/utils/date";
 import { useCommonSubmit, useFormInitialization } from "./useSubmit";
 import CommonConfirmationDialog from "../Dialogs/CommonConfirmationDialog";
 
 const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const [expandedSection, setExpandedSection] = useState("basicInfo");
-
   const { formData, setFormData } = useFormInitialization(fields, reportDetails, open);
-
   const [saveData, setSaveData] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
 
@@ -32,103 +30,6 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
   const handleInputChange = (fieldName, value) => {
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
   };
-
-  const onSubmitForm = () => {
-    handleSubmit(formData);
-  };
-
-  const isStrikethroughText = (text) => text?.split("").some((c) => c === "\u0336");
-
-  //   useEffect(() => {
-  //     if (fields && fields.length > 0) {
-  //       const initialValues = {};
-  //       fields.forEach((field) => {
-  //         if (field.attribute.startsWith("_checkbox")) {
-  //           if (reportDetails && reportDetails[field.attribute] === "\u2611") {
-  //             initialValues[field.attribute] = true;
-  //           } else {
-  //             initialValues[field.attribute] = false;
-  //           }
-  //         } else if (field.attribute.startsWith("_st_")) {
-  //           if (reportDetails && reportDetails[field.attribute]) {
-  //             const parts = reportDetails[field.attribute]
-  //               .split(" / ")
-  //               .map((s) => s.trim());
-
-  //             const selectedOptions = parts.filter(
-  //               (part) => !isStrikethroughText(part)
-  //             );
-
-  //             initialValues[field.attribute] = selectedOptions;
-  //           } else {
-  //             initialValues[field.attribute] = [];
-  //           }
-  //         } else {
-  //           if (reportDetails && reportDetails[field.attribute]) {
-  //             if (field.attribute?.includes("date")) {
-  //               initialValues[field.attribute] = formattedDate(
-  //                 reportDetails[field.attribute]
-  //               );
-  //             } else {
-  //               initialValues[field.attribute] = reportDetails[field.attribute];
-  //             }
-  //           } else {
-  //             initialValues[field.attribute] = "";
-  //           }
-  //         }
-  //       });
-  //       setFormData(initialValues);
-  //     }
-  //   }, [fields, open]);
-
-  //   const handleClose = () => {
-  //     onClose();
-  //     setFormData({});
-  //   };
-
-  // const handleInputChange = (fieldName, value) => {
-  //     setFormData(prev => ({ ...prev, [fieldName]: value }));
-  // };
-
-  const applyStrikethrough = (text) =>
-    text
-      ?.split("")
-      .map((c) => c + "\u0336")
-      .join("");
-
-  // const handleSubmit = () => {
-  //     const finalPayload = {};
-
-  //     fields.forEach(({ attribute }) => {
-  //         let value = formData[attribute];
-  //         if (typeof value === "string" && (value?.includes("undefined") || value.trim() === "")) {
-  //             value = undefined;
-  //         }
-  //         if (attribute?.startsWith("_st_")) {
-  //             const [, raw] = attribute?.split("_st_");
-  //             const optionsRaw = raw.split("_");
-  //             const options = optionsRaw.map(opt => opt.replace(/-/g, " "));
-
-  //             // `value` is the array of selected options
-  //             const selected = Array.isArray(value) ? value : [];
-
-  //             finalPayload[attribute] = options
-  //                 .map(opt => selected.includes(opt) ? opt : applyStrikethrough(opt))
-  //                 .join(" / ");
-  //         }
-  //         else if (attribute.startsWith("_checkbox")) {
-  //             finalPayload[attribute] = value === true ? "\u2611" : "\u2612";
-  //         } else if (attribute?.includes("date") && value) {
-  //             finalPayload[attribute] = formattedDate(value);
-  //         } else if (typeof value === "string" && value.trim()) {
-  //             finalPayload[attribute] = value;
-  //         } else {
-  //             finalPayload[attribute] = "-";
-  //         }
-  //     });
-
-  //     onSubmit(finalPayload);
-  // };
 
   useEffect(() => {
     if (saveData) {
@@ -228,7 +129,7 @@ const SuppForm = ({ open, onClose, onSubmit, fields, reportDetails }) => {
                       } else {
                         handleInputChange(
                           attr,
-                          selected?.filter((item) => item !== opt)
+                          selected?.filter((item) => item !== opt),
                         );
                       }
                     }}

@@ -25,6 +25,8 @@ const SurveyReport = ({ id, reportNumber }) => {
   const [places, setPlaces] = useState([]);
   const [isLastVisit, setIsLastVisit] = useState(false);
   const [journalList, setJournalList] = useState([]);
+  const [isInitialized, setIsInitialized] = useState(false);
+
   const currentDate = new Date();
 
   const formatSurveyName = (name) => {
@@ -421,14 +423,19 @@ of Class recommended now or previously, being dealt with as recommended.</p>
     };
     loadAllData();
   }, [id, reportNumber]);
-
   useEffect(() => {
-    // when data and additionalFieldData are available, set editor content
-    if (clientData && reportDetails && systemVariables && !loading) {
+    if (
+      !isInitialized &&
+      clientData &&
+      reportDetails &&
+      systemVariables &&
+      !loading
+    ) {
       const html = generateHtmlContent(reportDetails, additionalFieldData);
       setEditorContent(html);
+      setIsInitialized(true);
     }
-  }, [clientData, reportDetails, systemVariables, loading, generateHtmlContent, additionalFieldData]);
+  }, [clientData, reportDetails, systemVariables, loading, generateHtmlContent, additionalFieldData, isInitialized]);
 
   const downloadEditorContentAsPdf = async () => {
     const iframe = document.querySelector("iframe.tox-edit-area__iframe");

@@ -1289,13 +1289,14 @@ export const readAllNotification = async () => {
   }
 };
 
-export const issuedDocumentSearch = async (search, page, limit) => {
+export const issuedDocumentSearch = async (search, page, limit, markAsArchive) => {
   try {
     return await axiosInstance.get("reportDetails/search", {
       params: {
         search,
         page,
         limit,
+        markAsArchive,
       },
     });
   } catch (error) {
