@@ -220,6 +220,8 @@ const Certificates = () => {
       console.error("Error fetching journals:", error);
     }
   };
+  const markAsArchive = selectedFilter === "Archive Documents";
+  const issuedDocument = selectedFilter === "Certificates" || selectedFilter === "Archive Documents" ? true : false;
 
   const fetchCertificatesData = async () => {
     setLoading(true);
@@ -247,8 +249,6 @@ const Certificates = () => {
           filterValues.push(statusFilter);
         }
         const searchQuery = debouncedSearch.trim();
-        const markAsArchive = selectedFilter === "Archive Documents";
-        const issuedDocument = selectedFilter === "Certificates" || selectedFilter === "Archive Documents" ? true : false;
         const res = showAll ? await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, undefined, undefined, startDate, endDate, markAsArchive, issuedDocument) : await getAllIssuedDocuments(filterKeys, filterValues, searchQuery, page, limit, startDate, endDate, markAsArchive, issuedDocument);
         const data = res?.data;
         if (data?.status === "success" && Array.isArray(data?.data)) {
