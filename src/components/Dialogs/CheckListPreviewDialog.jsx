@@ -151,7 +151,7 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
       await new Promise(res => setTimeout(res, 300));
 
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 1,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
@@ -295,7 +295,7 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
               backgroundColor: '#ffffff',
               minHeight: '100%',
               fontFamily: 'Arial, sans-serif',
-              fontSize: '14px',
+              fontSize: '16px',
               lineHeight: 1.6,
 
               '& table': {
