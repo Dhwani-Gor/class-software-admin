@@ -345,7 +345,7 @@ const ReportingForm = () => {
     const anniv = getValues("anniversaryDate");
     if (!anniv || !date) return date;
 
-    if (!usesAnniversaryRule(surveyType) && !usesSpecialSurveyAnniversary(surveyType)) {
+    if (!usesAnniversaryRule(surveyType)) {
       return date;
     }
     const annivMoment = moment(anniv);
