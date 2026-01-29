@@ -50,6 +50,7 @@ const sanitizeHTML = (html) => {
 /* -------------------- COMPONENT -------------------- */
 
 const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, checklistData }) => {
+  console.log(checklistData, "checklistData in previe");
   const [downloading, setDownloading] = useState(false);
   const [loading, setLoading] = useState(true);
   const contentRef = useRef(null);
@@ -85,15 +86,15 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
   };
 
   const reportNo = getSafeFilePart(
-    checklistData?.journal?.journalTypeId
+    checklistData?.journalData?.journalTypeId
   );
 
   const surveyName = getSafeFilePart(
-    checklistData?.surveyType?.name
+    checklistData?.surveyTypes?.name
   );
 
   const checklistDocName = (
-    checklistData?.surveyType?.checkListDocumentName || "—"
+    checklistData?.surveyTypes?.checkListDocumentName || "—"
   ).replace(/\.docx$/i, "");
 
   const addFooter = (pdf, formName) => {
@@ -107,7 +108,6 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
     for (let i = 1; i <= totalPages; i++) {
       pdf.setPage(i);
 
-      // ✅ CLEAR FOOTER AREA ON EVERY PAGE (KEY FIX)
       pdf.setFillColor(255, 255, 255);
       pdf.rect(0, pageHeight - 20, pageWidth, 20, "F");
 
@@ -151,7 +151,7 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
       await new Promise(res => setTimeout(res, 300));
 
       const canvas = await html2canvas(element, {
-        scale: 1,
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
@@ -295,7 +295,7 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
               backgroundColor: '#ffffff',
               minHeight: '100%',
               fontFamily: 'Arial, sans-serif',
-              fontSize: '16px',
+              fontSize: '14px',
               lineHeight: 1.6,
 
               '& table': {
