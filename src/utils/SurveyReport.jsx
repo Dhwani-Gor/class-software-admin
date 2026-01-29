@@ -311,7 +311,7 @@ const SurveyReport = ({ id, reportNumber }) => {
       return `
         <div class="page" style="font-family: 'Times New Roman', serif; background:#fff; padding:30px;">
           <div class="certificate-header" style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px double #003366;padding-bottom:12px;margin-bottom:18px;">
-            <div class="header-left">${companyLogo ? `<img src="${companyLogo}" alt="Logo" style="max-width:140px;height:auto;" />` : ""}</div>
+            <div class="header-left">${companyLogo ? `<img src="${companyLogo}" alt="Logo" style="max-width:160px;height:auto;" />` : ""}</div>
             <div class="header-right" style="text-align:right;">
               <h2 style="margin:0;color:#003366;font-size:22px;text-transform:uppercase">${companyName}</h2>
               <p style="margin:6px 0 0 0;font-size:16px;font-weight:700">SURVEY REPORT</p>
@@ -359,7 +359,7 @@ of Class recommended now or previously, being dealt with as recommended.</p>
           ${renderAdditionalFields()}
 
           <div style="margin-top:12px;">
-            <div class="stamp">${stamp ? `<img src="${stamp}" width="100" height="100" alt="Stamp" />` : ""}</div>
+            <div class="stamp">${stamp ? `<img src="${stamp}" width="100" height="auto" alt="Stamp" />` : ""}</div>
             <h4 style="color:#003366;margin-top:18px;border-bottom:1px solid #999;padding-bottom:6px;">Surveyors and Authorization</h4>
             <table style="width:100%;border-collapse:collapse;margin-bottom:12px;">
               <tr>
@@ -539,8 +539,6 @@ of Class recommended now or previously, being dealt with as recommended.</p>
       const pageHeight = 841.89;
       const dpiRatio = 1.3333;
       const canvasWidth = pageWidth * dpiRatio;
-
-      const contentHeight = Math.max(contentBody.scrollHeight, contentBody.offsetHeight, contentBody.clientHeight, contentDocument.documentElement.scrollHeight, contentDocument.documentElement.offsetHeight);
 
       const canvas = await html2canvas(contentBody, {
         scale: 2,
