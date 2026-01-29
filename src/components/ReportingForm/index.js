@@ -320,12 +320,10 @@ const ReportingForm = () => {
 
   const shouldSkipAutoDates = (reportName = "") => NO_AUTO_DATE_REPORTS.some((r) => reportName.toLowerCase().includes(r));
 
-  const isFullTermWithoutValidity = (reportName = "", certType = "") => {
-    const name = reportName.toLowerCase();
-
+  const isFullTermWithoutValidity = (surveyTypeName = "", certType = "") => {
     if (certType !== "full_term") return false;
 
-    return name.includes("international anti-fouling") || name.includes("international energy efficiency");
+    return /afs/i.test(surveyTypeName);
   };
 
   const normalizeName = (name) =>
@@ -424,8 +422,7 @@ const ReportingForm = () => {
     const v = moment(value, "YYYY-MM-DD");
     return v.isSameOrAfter(moment(rangeFrom, "YYYY-MM-DD")) && v.isSameOrBefore(moment(rangeTo, "YYYY-MM-DD"));
   };
-  const shouldHideValidity = isFullTermWithoutValidity(reportName, selectCertificate) || normalizeReport(reportName)?.includes(normalizeReport("ENGINE INTERNATIONAL AIR POLLUTION PREVENTION"));
-
+  const shouldHideValidity = isFullTermWithoutValidity(getValues("typesOfSurvey"), selectCertificate) || normalizeReport(reportName)?.includes(normalizeReport("ENGINE INTERNATIONAL AIR POLLUTION PREVENTION"));
   const isHiddenReport = hiddenReports.map((r) => r.toLowerCase()).includes(reportName?.toLowerCase());
 
   const showValidityDate = !isHiddenReport && !shouldHideValidity;

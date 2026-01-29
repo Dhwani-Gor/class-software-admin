@@ -108,7 +108,6 @@ const NarrativeReport = ({ id, reportNumber }) => {
               item?.activity?.remarks ||
               item?.activity?.surveyRemarks ||
               item?.remarks;
-
             return remarks && remarks.trim() !== "";
           })
           .map((item, idx) => {
@@ -117,13 +116,11 @@ const NarrativeReport = ({ id, reportNumber }) => {
               item?.activity?.name ||
               item?.activity?.typeOfSurvey ||
               "-";
-
             const remarks =
               item?.activity?.remarks ||
               item?.activity?.surveyRemarks ||
               item?.remarks ||
               "-";
-
             return `
             <div style="margin-bottom:20px;page-break-inside:avoid;">
               <div style="font-weight:700;color:#1a5490;font-size:15px;margin-bottom:8px;border-bottom:2px solid #e0e0e0;padding-bottom:4px;">
@@ -227,7 +224,7 @@ const NarrativeReport = ({ id, reportNumber }) => {
     const signaturesHtml = `
       <div style="display:flex;justify-content:space-between;margin-top:80px;padding-top:30px;border-top:2px solid #1a5490;page-break-inside:avoid;">
         <div style="width:45%;">
-                    <div class="stamp">${stamp ? `<img src="${stamp}" width="100" height="100" alt="Stamp" />` : ""}</div>
+                    <div class="stamp">${stamp ? `<img src="${stamp}" width="180" height="auto" alt="Stamp" />` : ""}</div>
 
           <div style="font-weight:800;font-size:15px;color:#1a5490;margin-bottom:12px;text-decoration:underline;"><strong>Signatures</strong></div>
 
@@ -258,12 +255,12 @@ const NarrativeReport = ({ id, reportNumber }) => {
             ${companyLogo ? `<img src="${companyLogo}" alt="Company Logo" style="max-width:180px;height:auto;" />` : ""}
           </div>
           <div style="flex:2;text-align:center;">
-            <div style="font-weight:700;color:#1a5490;font-size:24px;text-transform:uppercase;letter-spacing:1px;">
+            <p style="font-weight:700;color:#1a5490;font-size:24px;text-transform:uppercase;letter-spacing:1px;">
               ${companyName}
-            </div>
-            <div style="font-weight:600;margin-top:8px;font-size:18px;color:#333;padding:8px 0;margin-top:12px;">
+            </p>
+            <p style="font-weight:600;margin-top:8px;font-size:18px;color:#333;padding:8px 0;margin-top:12px;">
               NARRATIVE REPORT
-            </div>
+            </p>
           </div>
           <div style="flex:1;"></div>
         </div>
@@ -295,7 +292,7 @@ const NarrativeReport = ({ id, reportNumber }) => {
             Additional Notes
           </div>
           ${renderAdditionalFields()}
-\        ${signaturesHtml}
+        ${signaturesHtml}
 
         <!-- Footer -->
         <div style="margin-top:50px;text-align:center;font-size:12px;color:#666;padding-top:20px;border-top:1px solid #ddd;">
@@ -314,32 +311,183 @@ const NarrativeReport = ({ id, reportNumber }) => {
     }
   }, [loading, clientData, reportDetails, systemVariables, generateHtml, isInitialized]);
 
+  // const downloadEditorContentAsPdf = async () => {
+  //   let element;
+
+  //   try {
+  //     element = document.createElement("div");
+  //     element.style.position = "fixed";
+  //     element.style.top = "-10000px";
+  //     element.style.left = "-10000px";
+  //     element.style.width = "1200px";
+  //     element.innerHTML = editorContent;
+
+  //     document.body.appendChild(element);
+
+  //     const canvas = await html2canvas(element, {
+  //       scale: 2,
+  //       useCORS: true,
+  //       backgroundColor: "#ffffff",
+  //     });
+
+  //     const imgData = canvas.toDataURL("image/png");
+  //     const pdf = await PDFDocument.create();
+  //     const page = pdf.addPage([canvas.width, canvas.height]);
+  //     const image = await pdf.embedPng(imgData);
+
+  //     page.drawImage(image, {
+  //       x: 0,
+  //       y: 0,
+  //       width: canvas.width,
+  //       height: canvas.height,
+  //     });
+
+  //     const pdfBytes = await pdf.save();
+  //     const blob = new Blob([pdfBytes], { type: "application/pdf" });
+
+  //     const file = new File(
+  //       [blob],
+  //       `Narrative_Report_${clientData?.shipName || "Report"}_${moment().format("DDMMYYYY")}.pdf`,
+  //       { type: "application/pdf" }
+  //     );
+
+  //     const formData = new FormData();
+  //     formData.append("clientId", id);
+  //     formData.append(
+  //       "reportNumber",
+  //       reportDetails[0]?.activity?.journal?.journalTypeId
+  //     );
+  //     formData.append("type", "narrative-report");
+  //     formData.append("generatedDoc", file);
+
+  //     await uploadSurveyReport(formData);
+  //     toast.success("Narrative Report uploaded successfully");
+
+  //     const url = URL.createObjectURL(blob);
+  //     const link = document.createElement("a");
+  //     link.href = url;
+  //     link.download = file.name;
+  //     link.click();
+  //     URL.revokeObjectURL(url);
+
+  //   } catch (err) {
+  //     toast.error("Failed to generate Narrative Report");
+  //     console.error(err);
+  //   } finally {
+  //     if (element) {
+  //       document.body.removeChild(element); // ✅ prevents UI duplication
+  //     }
+  //   }
+  // };
   const downloadEditorContentAsPdf = async () => {
+    const iframe = document.querySelector("iframe.tox-edit-area__iframe");
+    const contentDocument = iframe?.contentDocument;
+    const contentBody = contentDocument?.body;
+
+    if (!contentBody) {
+      console.error("Could not find editor content");
+      return;
+    }
+
+    const tempDiv = document.createElement("div");
+    tempDiv.style.position = "fixed";
+    tempDiv.style.top = "-10000px";
+    tempDiv.style.left = "0";
+    tempDiv.style.width = "1200px";
+    tempDiv.innerHTML = contentBody.innerHTML;
+
     try {
-      const element = document.createElement("div");
-      element.innerHTML = editorContent;
-      document.body.appendChild(element);
-      const canvas = await html2canvas(element, {
+      const style = document.createElement("style");
+      style.innerHTML = `
+      * {
+        font-family: 'Times New Roman', serif !important;
+        font-size: 20px !important;
+        line-height: 20px !important;
+        word-spacing: 0.05em !important;
+        box-sizing: border-box;
+        white-space: normal !important;
+      }
+      table {
+        border-collapse: collapse !important;
+        page-break-inside: auto !important;
+        width: 100% !important;
+      }
+      table tr, table td, table th {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        vertical-align: top !important;
+        padding: 4px !important;
+      }
+      .page {
+        margin: 0 !important;
+        padding: 20px !important;
+        background: white !important;
+      }
+      p {
+        font-size: 22px !important;
+      }
+    `;
+
+      tempDiv.appendChild(style);
+      document.body.appendChild(tempDiv);
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      const canvas = await html2canvas(tempDiv, {
         scale: 2,
         useCORS: true,
-        logging: false,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
       });
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = await PDFDocument.create();
-      const page = pdf.addPage([canvas.width, canvas.height]);
-      const image = await pdf.embedPng(imgData);
-      page.drawImage(image, { x: 0, y: 0, width: canvas.width, height: canvas.height });
-      const pdfBytes = await pdf.save();
+
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const pdfDoc = await PDFDocument.create();
+      const margin = 30;
+      const pageWidth = 595.28;
+      const pageHeight = 841.89;
+      const usableWidth = pageWidth - 2 * margin;
+      const usableHeight = pageHeight - 2 * margin;
+      const scaleFactor = usableWidth / imgWidth;
+      const baseSliceHeight = Math.floor((usableHeight - 10) / scaleFactor);
+
+      let currentY = 0;
+      const pages = [];
+
+      while (currentY < imgHeight) {
+        const sliceHeight = Math.min(baseSliceHeight, imgHeight - currentY);
+        const sliceCanvas = document.createElement("canvas");
+        sliceCanvas.width = imgWidth;
+        sliceCanvas.height = sliceHeight;
+        const ctx = sliceCanvas.getContext("2d");
+        ctx.drawImage(canvas, 0, currentY, imgWidth, sliceHeight, 0, 0, imgWidth, sliceHeight);
+        const pngUrl = sliceCanvas.toDataURL("image/png");
+        pages.push({ pngUrl, sliceHeight });
+        currentY += sliceHeight;
+      }
+
+      for (let i = 0; i < pages.length; i++) {
+        const { pngUrl, sliceHeight } = pages[i];
+        const pngImage = await pdfDoc.embedPng(pngUrl);
+        const scaledHeight = sliceHeight * scaleFactor;
+        const page = pdfDoc.addPage([pageWidth, pageHeight]);
+        page.drawImage(pngImage, {
+          x: margin,
+          y: pageHeight - margin - scaledHeight,
+          width: usableWidth,
+          height: scaledHeight,
+        });
+        page.drawText(`Page ${i + 1} of ${pages.length}`, {
+          x: pageWidth - margin - 50,
+          y: margin / 2,
+          size: 9,
+        });
+      }
+
+      const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      const file = new File([blob], "narrative-report.pdf", { type: "application/pdf" });
 
-      // Create file object
-      const file = new File(
-        [blob],
-        `Narrative_Report_${clientData?.shipName || "Report"}_${moment(currentDate).format("DDMMYYYY")}.pdf`,
-        { type: "application/pdf" }
-      );
-
-      // Prepare form data for API
       const formData = new FormData();
       formData.append("clientId", id);
       formData.append("reportNumber", reportDetails[0]?.activity?.journal?.journalTypeId);
@@ -347,9 +495,8 @@ const NarrativeReport = ({ id, reportNumber }) => {
       formData.append("generatedDoc", file);
 
       const res = await uploadSurveyReport(formData);
-      if (res) {
-        toast.success("Narrative Report uploaded successfully");
-      }
+      if (res) toast.success("Narrative Report Downloaded Successfully");
+
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -358,9 +505,14 @@ const NarrativeReport = ({ id, reportNumber }) => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-    } catch (err) {
+
+    } catch (error) {
+      console.error("PDF generation failed:", error);
       toast.error("Failed to generate Narrative Report");
-      console.error(err);
+    } finally {
+      if (tempDiv && tempDiv.parentNode) {
+        document.body.removeChild(tempDiv);
+      }
     }
   };
 
