@@ -4,7 +4,7 @@ import { Editor } from "@tinymce/tinymce-react";
 import { Box } from "@mui/material";
 import moment from "moment";
 import html2canvas from "html2canvas";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, rgb } from "pdf-lib";
 import { toast } from "react-toastify";
 import CommonButton from "@/components/CommonButton";
 import Loader from "@/components/Loader";
@@ -16,7 +16,6 @@ import {
   uploadSurveyReport,
   fetchAdditionalDetails,
   fetchJournalList,
-  uploadNarrativeReports
 } from "@/api";
 import { useRouter } from "next/navigation";
 
@@ -86,11 +85,12 @@ const NarrativeReport = ({ id, reportNumber }) => {
     loadAllData();
   }, [id, reportNumber]);
 
+  const companyName =
+    systemVariables?.data?.find((i) => i.name === "company_name")?.information || "";
+
   const generateHtml = useCallback(() => {
     if (!clientData || !reportDetails || !systemVariables) return "";
 
-    const companyName =
-      systemVariables?.data?.find((i) => i.name === "company_name")?.information || "";
     const companyLogo =
       systemVariables?.data?.find((i) => i.name === "company_logo")?.information || "";
 
@@ -188,7 +188,6 @@ const NarrativeReport = ({ id, reportNumber }) => {
             );
           });
 
-          // Skip section if no relevant entries with remarks
           if (relatedEntries.length === 0) return "";
 
           const rowsHtml = relatedEntries
@@ -295,9 +294,7 @@ const NarrativeReport = ({ id, reportNumber }) => {
         ${signaturesHtml}
 
         <!-- Footer -->
-        <div style="margin-top:50px;text-align:center;font-size:12px;color:#666;padding-top:20px;border-top:1px solid #ddd;">
-          © ${companyName} | Generated on ${moment(currentDate).format("DD-MM-YYYY")}
-        </div>
+      
       </div>
     `;
   }, [clientData, reportDetails, systemVariables, firstVisit, lastVisit, numOfVisit, places, currentDate, reportNumber]);
@@ -379,6 +376,9 @@ const NarrativeReport = ({ id, reportNumber }) => {
   //     }
   //   }
   // };
+  const footerText = `© ${companyName} | Generated on ${moment().format("DD-MM-YYYY")} `;
+
+
   const downloadEditorContentAsPdf = async () => {
     const iframe = document.querySelector("iframe.tox-edit-area__iframe");
     const contentDocument = iframe?.contentDocument;
@@ -394,39 +394,47 @@ const NarrativeReport = ({ id, reportNumber }) => {
     tempDiv.style.top = "-10000px";
     tempDiv.style.left = "0";
     tempDiv.style.width = "1200px";
-    tempDiv.innerHTML = contentBody.innerHTML;
-
+    tempDiv.innerHTML = `
+  <div class="pdf-root">
+    ${contentBody.innerHTML}
+  </div>
+`;
     try {
       const style = document.createElement("style");
       style.innerHTML = `
-      * {
-        font-family: 'Times New Roman', serif !important;
-        font-size: 20px !important;
-        line-height: 20px !important;
-        word-spacing: 0.05em !important;
-        box-sizing: border-box;
-        white-space: normal !important;
-      }
-      table {
-        border-collapse: collapse !important;
-        page-break-inside: auto !important;
-        width: 100% !important;
-      }
-      table tr, table td, table th {
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-        vertical-align: top !important;
-        padding: 4px !important;
-      }
-      .page {
-        margin: 0 !important;
-        padding: 20px !important;
-        background: white !important;
-      }
-      p {
-        font-size: 22px !important;
-      }
-    `;
+  .pdf-root, 
+  .pdf-root * {
+    font-family: 'Times New Roman', serif !important;
+    font-size: 20px !important;
+    line-height: 1.4 !important;
+    word-spacing: 0.05em !important;
+    box-sizing: border-box;
+    white-space: normal !important;
+  }
+
+  .pdf-root table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  .pdf-root tr,
+  .pdf-root td,
+  .pdf-root th {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    padding: 4px !important;
+    vertical-align: top !important;
+  }
+
+  .pdf-root .page {
+    margin: 0 !important;
+    padding: 20px !important;
+    background: white !important;
+  }
+    p{
+    font-size:28px !important;
+    }
+`;
 
       tempDiv.appendChild(style);
       document.body.appendChild(tempDiv);
@@ -471,6 +479,7 @@ const NarrativeReport = ({ id, reportNumber }) => {
         const pngImage = await pdfDoc.embedPng(pngUrl);
         const scaledHeight = sliceHeight * scaleFactor;
         const page = pdfDoc.addPage([pageWidth, pageHeight]);
+
         page.drawImage(pngImage, {
           x: margin,
           y: pageHeight - margin - scaledHeight,
@@ -481,6 +490,15 @@ const NarrativeReport = ({ id, reportNumber }) => {
           x: pageWidth - margin - 50,
           y: margin / 2,
           size: 9,
+        });
+        const footerFontSize = 9;
+        const footerWidth = footerText.length * (footerFontSize * 0.5);
+
+        page.drawText(footerText, {
+          color: rgb(0.6, 0.6, 0.6),
+          x: (pageWidth - footerWidth) / 2,
+          y: 20,
+          size: footerFontSize,
         });
       }
 
