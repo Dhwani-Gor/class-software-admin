@@ -64,7 +64,9 @@ const Certificates = () => {
   const [selectedReports, setSelectedReports] = useState([]);
   const [createdUserEmail, setCreatedUserEmail] = useState("");
   const [checkList, setCheckList] = useState([]);
+  console.log(checkList, "checkList");
   const [selectedCheckList, setSelectedCheckList] = useState(null);
+  console.log(selectedCheckList, "selectedCheckList");
   const [checkListPreview, setCheckListPreview] = useState(false);
   const [checkListPreviewFile, setChecklistPreviewFile] = useState();
   const [systemVariables, setSystemVariables] = useState();
@@ -791,12 +793,12 @@ const Certificates = () => {
                           {/* Ship Name */}
                           <TableCell>{(page - 1) * limit + idx + 1}</TableCell>
 
-                          <TableCell>{item?.client?.shipName || "N/A"}</TableCell>
+                          <TableCell>{item?.clients?.shipName || "N/A"}</TableCell>
 
                           {/* Report Number */}
-                          <TableCell>{item?.surveyType?.name || "N/A"}</TableCell>
+                          <TableCell>{item?.surveyTypes?.name || "N/A"}</TableCell>
 
-                          <TableCell>{item?.journal?.journalTypeId || "N/A"}</TableCell>
+                          <TableCell>{item?.journalData?.journalTypeId || "N/A"}</TableCell>
 
                           <TableCell>
                             <Tooltip title="Preview Checklist">
