@@ -131,6 +131,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         isDue: true,
                         isFrom: false,
                         isUserAdded: true,
+                        isNewlyAdded: false
                     });
                 }
             });
@@ -648,6 +649,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         isDue: false,
                         isUserAdded: true,
                         isTankRow: isTankSection,
+                        isNewlyAdded: true
 
 
                     }
@@ -658,6 +660,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         isDue: true,
                         isFrom: false,
                         isUserAdded: true,
+                        isNewlyAdded: true
                     };
 
             return {
@@ -770,11 +773,29 @@ const MachineryHullManager = ({ mode, shipId }) => {
         setEngineUnitsCountedFrom(e.target.value);
     };
 
+    const persistedRowKeysRef = useRef(new Set());
+
+    useEffect(() => {
+        if (!originalBlocks?.length) return;
+
+        const set = new Set();
+
+        originalBlocks.forEach(block => {
+            block.items.forEach(item => {
+                const key =
+                    item.label?.trim() ||
+                    item.content?.replace(/^No\s+\d+\s*/i, "").trim();
+
+                if (key) set.add(key);
+            });
+        });
+
+        persistedRowKeysRef.current = set;
+    }, [originalBlocks]);
+
 
 
     const renderRow = (row, sectionType, sectionNum) => {
-        console.log("sectionType", sectionType);
-        console.log("sectionNum", sectionNum);
         const isTankHull = isTankSectionFromData(sectionType, sectionNum);
         const hullFrameSections = [40, 41, 42, 43, 44];
 
@@ -784,6 +805,9 @@ const MachineryHullManager = ({ mode, shipId }) => {
         const fieldKey = `${sectionType}-${sectionNum}-${rowKey}`;
 
         const isChecked = formData[fieldKey]?.xMark === "X";
+        const isPersistedRow =
+            editingId &&
+            persistedRowKeysRef.current.has(rowKey);
 
         return (
             <Grid2 key={`${fieldKey}`} xs={12} mt={2}>
@@ -880,7 +904,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             fullWidth
                             variant="standard"
                             label="Assignment Date"
-                            disabled={!isChecked}
+                            disabled={!isChecked || (editingId && isPersistedRow)}
                             InputLabelProps={{ shrink: true }}
                             value={formData[fieldKey]?.assignmentDate || ""}
                             onChange={(e) => updateField(sectionType, sectionNum, getRowKey(row), "assignmentDate", e.target.value)}
@@ -894,7 +918,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 variant="standard"
                                 fullWidth
                                 label="From"
-                                disabled={!isChecked}
+                                disabled={!isChecked || (editingId && isPersistedRow)}
                                 InputLabelProps={{ shrink: true }}
                                 value={formData[fieldKey]?.fromFrameNo || ""}
                                 onChange={(e) =>
@@ -907,7 +931,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 variant="standard"
                                 fullWidth
                                 label="Due Date"
-                                disabled={!isChecked}
+                                disabled={!isChecked || (editingId && isPersistedRow)}
                                 InputLabelProps={{ shrink: true }}
                                 value={formData[fieldKey]?.dueDate || ""}
                                 onChange={(e) =>
@@ -927,7 +951,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 variant="standard"
                                 fullWidth
                                 label="Upto"
-                                disabled={!isChecked}
+                                disabled={!isChecked || (editingId && isPersistedRow)}
                                 InputLabelProps={{ shrink: true }}
                                 value={formData[fieldKey]?.toFrameNo || ""}
                                 onChange={(e) =>
@@ -940,7 +964,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 variant="standard"
                                 fullWidth
                                 label="Postponed Date"
-                                disabled={!isChecked}
+                                disabled={!isChecked || (editingId && isPersistedRow)}
                                 InputLabelProps={{ shrink: true }}
                                 value={formData[fieldKey]?.postponeDate || ""}
                                 onChange={(e) =>

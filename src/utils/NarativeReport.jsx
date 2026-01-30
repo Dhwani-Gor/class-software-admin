@@ -497,7 +497,7 @@ const NarrativeReport = ({ id, reportNumber }) => {
         page.drawText(footerText, {
           color: rgb(0.6, 0.6, 0.6),
           x: (pageWidth - footerWidth) / 2,
-          y: 20,
+          y: margin / 2,
           size: footerFontSize,
         });
       }
