@@ -432,7 +432,7 @@ const ReportingForm = () => {
 
     if (surveyType.includes("intermediate")) {
       setValue("rangeFrom", moment(dueDate).subtract(3, "months").format("YYYY-MM-DD"));
-      setValue("rangeTo", moment(dueDate).format("YYYY-MM-DD"));
+      setValue("rangeTo", moment(dueDate).add(3, "months").format("YYYY-MM-DD"));
       return;
     }
 
