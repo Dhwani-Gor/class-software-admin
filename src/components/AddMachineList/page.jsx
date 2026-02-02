@@ -62,6 +62,8 @@ const MachineryHullManager = ({ mode, shipId }) => {
     const [expandedAccordions, setExpandedAccordions] = useState({});
     const [renderedSections, setRenderedSections] = useState({});
     const router = useRouter();
+    const persistedItemsRef = useRef(new Map());
+
 
     const STATIC_ROWS_SECTION_01 = [
         { id: "01", content: "No {cyl} Cyl, Cvr, Pstn, Rod, Vlvs & gears", hasPosition: true, hasFromTo: false },
@@ -297,55 +299,6 @@ const MachineryHullManager = ({ mode, shipId }) => {
         return instances;
     };
 
-    // const hydrateFormDataFromMachineData = (blocks = []) => {
-    //     const hydrated = {};
-
-    //     const normalizeRowKey = (item, sectionType) => {
-    //         if (item.label?.trim()) return item.label.trim();
-
-    //         if (sectionType === "machinery" && item.content) {
-    //             return item.content.replace(/^No\s+\d+\s*/i, "").trim();
-    //         }
-
-    //         return item.content?.trim();
-    //     };
-
-    //     blocks.forEach((block) => {
-    //         const sectionType = block.sectionType;
-    //         const sectionNum = String(block.sectionNumber);
-    //         ``
-    //         block.items.forEach((item) => {
-    //             const rowKey = normalizeRowKey(item, sectionType);
-    //             if (!rowKey) return;
-
-    //             const fieldKey = `${sectionType}-${sectionNum}-${rowKey}`;
-
-    //             if (!hydrated[fieldKey]) {
-    //                 hydrated[fieldKey] = {
-    //                     xMark: "X",
-    //                     label: item.label || rowKey,
-    //                     content: item.content || "",
-    //                     status: item.status || "",
-    //                     assignmentDate: item.assignmentDate || "",
-    //                     dueDate: item.dueDate || "",
-    //                     postponeDate: item.postponeDate || "",
-    //                     position: (() => {
-    //                         if (!item.positionCode || item.positionCode === "-") return [];
-    //                         return [item.positionCode];
-    //                     })(),
-    //                     from: item.from || "",
-    //                     to: item.to || "",
-    //                     fromFrameNo: item.fromFrameNo || "",
-    //                     toFrameNo: item.toFrameNo || "",
-    //                 };
-    //             }
-    //         });
-    //     });
-
-    //     return hydrated;
-    // };
-
-
     const hydrateFormDataFromMachineData = (blocks = []) => {
         const hydrated = {};
 
@@ -511,18 +464,21 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             tankNumbers,
                             section.sectionName
                         ).map((item, itemIndex) => {
+                            const persisted = persistedItemsRef.current.get(item.generatedCode);
+                            if (persisted) {
+                                return persisted;
+                            }
+
                             const baseItem = {
                                 ...item,
                                 sequence: `${sectionNum}-${rowIndex}-${itemIndex}`,
                             };
 
-                            // HULL → only frame numbers
                             if (type === "hull") {
                                 delete baseItem.dueDate;
                                 delete baseItem.postponeDate;
                             }
 
-                            // MACHINERY → only due & postponed
                             if (type === "machinery") {
                                 delete baseItem.fromFrameNo;
                                 delete baseItem.toFrameNo;
@@ -532,6 +488,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         });
 
                         finalItems.push(...repeated);
+
                     }
                 });
 
@@ -775,25 +732,37 @@ const MachineryHullManager = ({ mode, shipId }) => {
 
     const persistedRowKeysRef = useRef(new Set());
 
+    // useEffect(() => {
+    //     if (!originalBlocks?.length) return;
+
+    //     const set = new Set();
+
+    //     originalBlocks.forEach(block => {
+    //         block.items.forEach(item => {
+    //             const key =
+    //                 item.label?.trim() ||
+    //                 item.content?.replace(/^No\s+\d+\s*/i, "").trim();
+
+    //             if (key) set.add(key);
+    //         });
+    //     });
+
+    //     persistedRowKeysRef.current = set;
+    // }, [originalBlocks]);
+
+
     useEffect(() => {
         if (!originalBlocks?.length) return;
 
-        const set = new Set();
-
+        const map = new Map();
         originalBlocks.forEach(block => {
             block.items.forEach(item => {
-                const key =
-                    item.label?.trim() ||
-                    item.content?.replace(/^No\s+\d+\s*/i, "").trim();
-
-                if (key) set.add(key);
+                map.set(item.generatedCode, item);
             });
         });
 
-        persistedRowKeysRef.current = set;
+        persistedItemsRef.current = map;
     }, [originalBlocks]);
-
-
 
     const renderRow = (row, sectionType, sectionNum) => {
         const isTankHull = isTankSectionFromData(sectionType, sectionNum);
