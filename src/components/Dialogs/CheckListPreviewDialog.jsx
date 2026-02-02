@@ -17,6 +17,19 @@ import html2canvas from 'html2canvas';
 
 /* -------------------- HELPERS -------------------- */
 
+const applyPdfScale = (element, scale) => {
+  element.style.transformOrigin = 'top left';
+  element.style.transform = `scale(${scale})`;
+  element.style.width = `${100 / scale}%`;
+};
+
+const resetPdfScale = (element) => {
+  element.style.transform = '';
+  element.style.transformOrigin = '';
+  element.style.width = '';
+};
+
+
 const parseChecklistData = (data) => {
   try {
     return typeof data === 'string' ? JSON.parse(data) : data;
@@ -97,6 +110,21 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
     checklistData?.surveyTypes?.checkListDocumentName || "—"
   ).replace(/\.docx$/i, "");
 
+  const addHeader = (pdf, reportNo) => {
+    const pageWidth = pdf.internal.pageSize.getWidth();
+
+    pdf.setFontSize(9);
+    pdf.setTextColor(40);
+
+    pdf.text(
+      `Report No.: ${reportNo}`,
+      pageWidth - 15,
+      12,
+      { align: "right" }
+    );
+  };
+
+
   const addFooter = (pdf, formName) => {
     const totalPages = Number(pdf.getNumberOfPages());
     const pageWidth = pdf.internal.pageSize.getWidth();
@@ -146,7 +174,7 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
       setDownloading(true);
 
       const element = contentRef.current;
-
+      applyPdfScale(element, 1.25); // 1.2–1.35 works well
       await waitForImages(element);
       await new Promise(res => setTimeout(res, 300));
 
@@ -159,6 +187,7 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
         windowWidth: element.scrollWidth,
         windowHeight: element.scrollHeight,
       });
+      resetPdfScale(element);
 
       // ✅ USE JPEG (stable)
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
@@ -186,6 +215,8 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
         if (pageIndex > 0) {
           pdf.addPage();
         }
+        addHeader(pdf, reportNo);
+
         if (checklistDocName) {
           addFooter(
             pdf,
@@ -253,6 +284,8 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
       console.error('PDF generation error:', err);
       alert('PDF generation failed. Please try again.');
     } finally {
+      resetPdfScale(contentRef.current); // safety reset
+
       setDownloading(false);
     }
   };
@@ -278,7 +311,9 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h6">Survey Checklist Preview</Typography>
         <IconButton onClick={onClose} size="small">
+          <Typography variant="body2" sx={{ mr: 2 }}>Report No.: {checklistData?.journalData?.journalTypeId}</Typography>
           <CloseIcon />
+
         </IconButton>
       </DialogTitle>
 
