@@ -221,7 +221,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             postponeDate: data.postponeDate || "",
                             fromFrameNo: data.fromFrameNo || "",
                             toFrameNo: data.toFrameNo || "",
-                            status: data.status || "",
+                            // status removed - will be set in mapping function based on persisted data
                             from: row.hasFromTo ? data.from : "",
                             to: row.hasFromTo ? data.to : "",
                             isTank: false,
@@ -266,7 +266,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                     postponeDate: data.postponeDate || "",
                     fromFrameNo: data.fromFrameNo || "",
                     toFrameNo: data.toFrameNo || "",
-                    status: data.status || "",
+                    // status removed - will be set in mapping function based on persisted data
                     from: row.hasFromTo ? data.from : "",
                     to: row.hasFromTo ? data.to : "",
                     isTank: row.isTankRow === true,
@@ -288,7 +288,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             postponeDate: data.postponeDate || "",
                             fromFrameNo: data.fromFrameNo || "",
                             toFrameNo: data.toFrameNo || "",
-                            status: data.status || "",
+                            // status removed - will be set in mapping function based on persisted data
                             isTank: true,
                         });
                     });
@@ -449,7 +449,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                 allRows.forEach((row, rowIndex) => {
                     const rowKey = getRowKey(row);
                     const fieldKey = `${type}-${sectionNum}-${rowKey}`;
-                    const data = formData[fieldKey];
+                    const data = formData[fieldKey] || {};
                     const isTankRow =
                         isTankSection &&
                         SPECIAL_TANK_ROWS.some((r) => r.id === row.id);
@@ -465,14 +465,26 @@ const MachineryHullManager = ({ mode, shipId }) => {
                             section.sectionName
                         ).map((item, itemIndex) => {
                             const persisted = persistedItemsRef.current.get(item.generatedCode);
-                            if (persisted) {
-                                return persisted;
-                            }
 
                             const baseItem = {
                                 ...item,
                                 sequence: `${sectionNum}-${rowIndex}-${itemIndex}`,
                             };
+
+                            // FIX ISSUE 1: Preserve data for persisted items, clear status for new items
+                            if (persisted) {
+                                // This exact item existed before - preserve all its data including status
+                                baseItem.status = persisted.status || "";
+                                baseItem.assignmentDate = persisted.assignmentDate || item.assignmentDate;
+                                baseItem.dueDate = persisted.dueDate || item.dueDate;
+                                baseItem.postponeDate = persisted.postponeDate || item.postponeDate;
+                                baseItem.fromFrameNo = persisted.fromFrameNo || item.fromFrameNo;
+                                baseItem.toFrameNo = persisted.toFrameNo || item.toFrameNo;
+                            } else {
+                                // This is a new item (new position added)
+                                // Keep dates from formData but clear status to prevent copying
+                                baseItem.status = "";
+                            }
 
                             if (type === "hull") {
                                 delete baseItem.dueDate;
@@ -774,9 +786,14 @@ const MachineryHullManager = ({ mode, shipId }) => {
         const fieldKey = `${sectionType}-${sectionNum}-${rowKey}`;
 
         const isChecked = formData[fieldKey]?.xMark === "X";
-        const isPersistedRow =
-            editingId &&
-            persistedRowKeysRef.current.has(rowKey);
+
+        // Check if this row has any persisted items in the database
+        const hasPersistedItems = editingId && Array.from(persistedItemsRef.current.values()).some(item => {
+            const itemRowKey = item.label?.trim() || item.content?.replace(/^No\s+\d+\s*/i, "").trim();
+            return itemRowKey === rowKey;
+        });
+
+        const isPersistedRow = hasPersistedItems;
 
         return (
             <Grid2 key={`${fieldKey}`} xs={12} mt={2}>
@@ -866,6 +883,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                         )}
                     </Grid2>
 
+                    {/* FIX ISSUE 2: Disable assignment date only for persisted rows in edit mode */}
                     <Grid2 size={{ xs: 12, md: 2 }}>
                         <TextField
                             type="date"
@@ -887,7 +905,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 variant="standard"
                                 fullWidth
                                 label="From"
-                                disabled={!isChecked || (editingId && isPersistedRow)}
+                                disabled={!isChecked}
                                 InputLabelProps={{ shrink: true }}
                                 value={formData[fieldKey]?.fromFrameNo || ""}
                                 onChange={(e) =>
@@ -895,6 +913,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 }
                             />
                         ) : row.isDue && !row.isFrom ? (
+                            /* FIX ISSUE 2: Disable due date only for persisted rows in edit mode */
                             <TextField
                                 type="date"
                                 variant="standard"
@@ -920,7 +939,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 variant="standard"
                                 fullWidth
                                 label="Upto"
-                                disabled={!isChecked || (editingId && isPersistedRow)}
+                                disabled={!isChecked}
                                 InputLabelProps={{ shrink: true }}
                                 value={formData[fieldKey]?.toFrameNo || ""}
                                 onChange={(e) =>
@@ -928,6 +947,7 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 }
                             />
                         ) : row.isDue && !row.isFrom ? (
+                            /* FIX ISSUE 2: Disable postponed date only for persisted rows in edit mode */
                             <TextField
                                 type="date"
                                 variant="standard"
