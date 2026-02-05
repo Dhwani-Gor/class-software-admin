@@ -50,7 +50,7 @@ const TANK_SECTION_IDS = [
 const MachineryHullManager = ({ mode, shipId }) => {
     const [tabValue, setTabValue] = useState(0);
     const [formData, setFormData] = useState({});
-    const [shipType, setShipType] = useState();
+    const [shipType, setShipType] = useState("");
     const [noOfCylinders, setNoOfCylinders] = useState();
     const [selectedShip, setSelectedShip] = useState({ id: "", shipName: "" });
     const [position, setPosition] = useState([]);
@@ -684,7 +684,9 @@ const MachineryHullManager = ({ mode, shipId }) => {
                 if (res?.data?.status === "success") {
                     const data = res.data.data;
 
-                    setShipType(data.engineType);
+                    setShipType(
+                        data.engineType?.trim() || ""
+                    );
                     setNoOfCylinders(data.numberOfCylinders);
                     setPosition(data.globalPosition || []);
                     setEngineUnitsCountedFrom(data.engineUnitsCountedFrom || "flywheel_end");
@@ -737,31 +739,6 @@ const MachineryHullManager = ({ mode, shipId }) => {
         setExpandedAccordions({});
         setRenderedSections({});
     };
-
-    const handleEngineUnitsCountedFromChange = (e) => {
-        setEngineUnitsCountedFrom(e.target.value);
-    };
-
-    const persistedRowKeysRef = useRef(new Set());
-
-    // useEffect(() => {
-    //     if (!originalBlocks?.length) return;
-
-    //     const set = new Set();
-
-    //     originalBlocks.forEach(block => {
-    //         block.items.forEach(item => {
-    //             const key =
-    //                 item.label?.trim() ||
-    //                 item.content?.replace(/^No\s+\d+\s*/i, "").trim();
-
-    //             if (key) set.add(key);
-    //         });
-    //     });
-
-    //     persistedRowKeysRef.current = set;
-    // }, [originalBlocks]);
-
 
     useEffect(() => {
         if (!originalBlocks?.length) return;
@@ -1014,11 +991,29 @@ const MachineryHullManager = ({ mode, shipId }) => {
                                 <>
                                     <FormControl sx={{ pl: 2 }}>
                                         <Typography fontWeight={700} mb={1}>Engine Type</Typography>
-                                        <RadioGroup row value={shipType} onChange={(e) => setShipType(e.target.value)}>
-                                            <FormControlLabel value="crosshead_type_engine" control={<Radio />} label="Crosshead Type Engine" />
-                                            <FormControlLabel value="inline_trunk_piston_engine" control={<Radio />} label="Inline Trunk Piston Engine" />
-                                            <FormControlLabel value="vee_type_trunk_piston_engine" control={<Radio />} label="Vee-Type Trunk Piston Engine" />
+                                        <RadioGroup
+                                            key={shipType || "engine-type"}
+                                            row
+                                            value={shipType || ""}
+                                            onChange={(e) => setShipType(e.target.value)}
+                                        >
+                                            <FormControlLabel
+                                                value="crosshead_type_engine"
+                                                control={<Radio />}
+                                                label="Crosshead Type Engine"
+                                            />
+                                            <FormControlLabel
+                                                value="inline_trunk_piston_engine"
+                                                control={<Radio />}
+                                                label="Inline Trunk Piston Engine"
+                                            />
+                                            <FormControlLabel
+                                                value="vee_type_trunk_piston_engine"
+                                                control={<Radio />}
+                                                label="Vee-Type Trunk Piston Engine"
+                                            />
                                         </RadioGroup>
+
                                     </FormControl>
 
                                     <Grid2 container spacing={2} sx={{ mb: 3, mt: 2 }}>
