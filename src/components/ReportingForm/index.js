@@ -333,9 +333,9 @@ const ReportingForm = () => {
     }
   };
 
-  const NO_AUTO_DATE_REPORTS = ["international load line certificate", "cargo ship safety construction", "cargo ship safety equipment", "cargo ship safety radio", "international oil pollution prevention", "international anti-fouling system", "international ballast water management", "international tonnage certificate", "international air pollution prevention", "international certification of fitness for the carriage"];
+  // const NO_AUTO_DATE_REPORTS = ["international load line certificate", "cargo ship safety construction", "cargo ship safety equipment", "cargo ship safety radio", "international oil pollution prevention", "international anti-fouling system", "international ballast water management", "international tonnage certificate", "international air pollution prevention", "international certification of fitness for the carriage"];
 
-  const shouldSkipAutoDates = (reportName = "") => NO_AUTO_DATE_REPORTS.some((r) => reportName.toLowerCase().includes(r));
+  // const shouldSkipAutoDates = (reportName = "") => NO_AUTO_DATE_REPORTS.some((r) => reportName.toLowerCase().includes(r));
 
   const isFullTermWithoutValidity = (surveyTypeName = "", certType = "") => {
     if (certType !== "full_term") return false;
@@ -453,19 +453,19 @@ const ReportingForm = () => {
       return;
     }
 
-    if (shouldSkipAutoDates(reportName)) {
-      const baseDate = getValues("certificateBaseDate") || getValues("surveydate") || dueDate;
+    // if (shouldSkipAutoDates(reportName)) {
+    //   const baseDate = getValues("certificateBaseDate") || getValues("surveydate") || dueDate;
 
-      let from = moment(dueDate).subtract(3, "months").format("YYYY-MM-DD");
-      let to = moment(dueDate).add(3, "months").format("YYYY-MM-DD");
+    //   let from = moment(dueDate).subtract(3, "months").format("YYYY-MM-DD");
+    //   let to = moment(dueDate).add(3, "months").format("YYYY-MM-DD");
 
-      from = capToFiveYearValidity(from, baseDate);
-      to = capToFiveYearValidity(to, baseDate);
+    //   from = capToFiveYearValidity(from, baseDate);
+    //   to = capToFiveYearValidity(to, baseDate);
 
-      setValue("rangeFrom", from);
-      setValue("rangeTo", to);
-      return;
-    }
+    //   setValue("rangeFrom", from);
+    //   setValue("rangeTo", to);
+    //   return;
+    // }
     const due = moment(dueDate);
     let rangeFrom = "";
     let rangeTo = "";
@@ -489,8 +489,8 @@ const ReportingForm = () => {
     }
 
     // rangeTo = enforceAnniversaryLimit(rangeTo);
-    rangeFrom = clampToAnniversary(rangeFrom, surveyType);
-    rangeTo = clampToAnniversary(rangeTo, surveyType);
+    // rangeFrom = clampToAnniversary(rangeFrom, surveyType);
+    // rangeTo = clampToAnniversary(rangeTo, surveyType);
 
     setValue("rangeFrom", rangeFrom);
     setValue("rangeTo", rangeTo);
@@ -509,36 +509,36 @@ const ReportingForm = () => {
 
     const surveyType = normalizeName(getValues("typesOfSurvey"));
 
-    if (["surveydate", "assignmentDate", "dueDate"].includes(fieldName) && shouldSkipAutoDates(reportName)) {
-      setValue(fieldName, value);
-      return;
-    }
+    // if (["surveydate", "assignmentDate", "dueDate"].includes(fieldName) && shouldSkipAutoDates(reportName)) {
+    //   setValue(fieldName, value);
+    //   return;
+    // }
     const isAnnual = surveyType.includes("annual");
 
-    const skipAutoCalc = (fieldName === "surveydate" || fieldName === "assignmentDate") && isWithinExistingRange(value) && !isAnnual;
+    // const skipAutoCalc = (fieldName === "surveydate" || fieldName === "assignmentDate") && isWithinExistingRange(value) && !isAnnual;
 
-    if (skipAutoCalc) {
-      setValue(fieldName, value);
-      return;
-    }
+    // if (skipAutoCalc) {
+    //   setValue(fieldName, value);
+    //   return;
+    // }
     if (fieldName === "surveydate") {
       setValue("assignmentDate", value);
 
       const baseDue = calculateDueDateBase(value, surveyType, reportName);
       const withAnnivDM = applyAnniversaryDayMonthIfNeeded(baseDue, surveyType);
-      const dueDate = clampToAnniversary(withAnnivDM, surveyType);
+      // const dueDate = clampToAnniversary(withAnnivDM, surveyType);
 
-      setValue("dueDate", dueDate);
-      applyRangeFromDueDate(dueDate, surveyType);
+      setValue("dueDate", withAnnivDM);
+      applyRangeFromDueDate(withAnnivDM, surveyType);
     }
 
     if (fieldName === "assignmentDate") {
       const baseDue = calculateDueDateBase(value, surveyType, reportName);
       const withAnnivDM = applyAnniversaryDayMonthIfNeeded(baseDue, surveyType);
-      const dueDate = clampToAnniversary(withAnnivDM, surveyType);
+      // const dueDate = clampToAnniversary(withAnnivDM, surveyType);
 
-      setValue("dueDate", dueDate);
-      applyRangeFromDueDate(dueDate, surveyType);
+      setValue("dueDate", withAnnivDM);
+      applyRangeFromDueDate(withAnnivDM, surveyType);
     }
     if (fieldName === "dueDate") {
       const fixedDue = clampToAnniversary(value, surveyType);
