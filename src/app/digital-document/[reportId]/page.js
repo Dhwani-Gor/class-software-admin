@@ -218,19 +218,14 @@ const DigitalDocument = ({ params }) => {
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
 
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return "Invalid Date";
+    const date = new Date(dateString);
+    if (isNaN(date)) return "Invalid Date";
 
-      return date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      });
-    } catch (error) {
-      console.error("Date formatting error:", error);
-      return "Invalid Date";
-    }
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
   };
 
   // Show loading state

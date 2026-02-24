@@ -11,12 +11,12 @@ import CommonButton from "@/components/CommonButton";
 import CommonCard from "@/components/CommonCard";
 import Grid2 from "@mui/material/Grid2";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
-import { createReportDetail, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument, addUnArchiveDocument, updateActivityDetails, getSystemVariableDetails, getAllSystemVariables, getSurveyTypes } from "@/api";
+import { createReportDetail, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument, addUnArchiveDocument, updateActivityDetails, getSystemVariableDetails, getAllSystemVariables, getSurveyTypes, updateAnniversaryByClient } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { getAllActivities } from "@/api";
 import moment from "moment";
-import { Checkbox, FormControlLabel, Stack } from "@mui/material";
+import { Checkbox, FormControlLabel, Stack, TextField } from "@mui/material";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { DialogForm } from "../documents/CommonDocumentForm";
@@ -84,6 +84,23 @@ const ReportingForm = () => {
   const [endorsementStamp, setEndorsementStamp] = useState(null);
   const [surveyTypes, setSurveyTypes] = useState([]);
   const [surveyTypeCategory, setSurveyTypeCategory] = useState();
+  const [anniversaryDate, setAnniversaryDate] = useState("");
+
+  const handleAnniversaryChange = async (e) => {
+    const selectedDate = e.target.value;
+
+    setAnniversaryDate(selectedDate);
+
+    if (!selectedShip?.id) return;
+
+    const payload = {
+      clientId: selectedShip.id,
+      anniversaryDate: selectedDate,
+    };
+
+    await updateAnniversaryByClient(payload);
+  };
+
   console.log("surveyTypeCategory", surveyTypeCategory);
 
   useEffect(() => {
@@ -1031,8 +1048,18 @@ const ReportingForm = () => {
                     </Select>
                   </FormControl>
                 </Box>
+                <Box mt={2}>
+                  <FormControl fullWidth sx={{ maxWidth: 300 }}>
+                    <Typography variant="body1" mb={1}>
+                      Choose Anniversary Date
+                    </Typography>
+
+                    <TextField type="date" value={anniversaryDate} onChange={handleAnniversaryChange} InputLabelProps={{ shrink: true }} fullWidth />
+                  </FormControl>
+                </Box>
               </Box>
             )}
+
             {selectedShip.id && selectedReportNumber.journalTypeId && (
               <>
                 <CommonButton onClick={handleShowTable} sx={{ marginTop: 3 }} text="Continue" />
