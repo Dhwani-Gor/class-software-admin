@@ -1355,6 +1355,12 @@ ${classificationRows}
         ? moment(surveyDate).format("DD/MM/YYYY")
         : "";
 
+      const issuanceDate = fullCert.issuanceDate;
+
+      const issuanceDateFormatted = issuanceDate
+        ? moment(issuanceDate).format("DD/MM/YYYY")
+        : "";
+
       const expiry = fullCert.validityDate;
       const expiryFormatted = expiry ? moment(expiry).format("YYYY-MM-DD") : null;
 
@@ -1373,7 +1379,7 @@ ${classificationRows}
 <tr>
   <td>${reportName}</td>
   <td>${getClassName(expiryFormatted, currentDate) ? `<span style="align-content: center; text-align: center;" class="${getClassName(expiryFormatted, currentDate)}">c</span>` : ""}</td>
-  <td>${surveyDateFormatted}</td>
+  <td>${issuanceDateFormatted}</td>
   <td>${expiry ? moment(expiry).format("DD/MM/YYYY") : ""}</td>
   <td></td>
   <td>${type}</td>
