@@ -1249,6 +1249,16 @@ export const getSingleChecklist = async (id) => {
   return result;
 };
 
+export const updateAnniversaryByClient = async (payload) => {
+  let result;
+  try {
+    result = await axiosInstance.put("/activities/update-anniversary-by-client", payload);
+  } catch (e) {
+    result = e;
+  }
+  return result;
+};
+
 export const getNotificationList = async () => {
   try {
     return await axiosInstance.get("/notification");

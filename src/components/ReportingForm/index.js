@@ -11,12 +11,12 @@ import CommonButton from "@/components/CommonButton";
 import CommonCard from "@/components/CommonCard";
 import Grid2 from "@mui/material/Grid2";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
-import { createReportDetail, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument, addUnArchiveDocument, updateActivityDetails, getSystemVariableDetails, getAllSystemVariables, getSurveyTypes } from "@/api";
+import { createReportDetail, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument, addUnArchiveDocument, updateActivityDetails, getSystemVariableDetails, getAllSystemVariables, getSurveyTypes, updateAnniversaryByClient } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { getAllActivities } from "@/api";
 import moment from "moment";
-import { Checkbox, FormControlLabel, Stack } from "@mui/material";
+import { Checkbox, FormControlLabel, Stack, TextField } from "@mui/material";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { DialogForm } from "../documents/CommonDocumentForm";
@@ -84,6 +84,24 @@ const ReportingForm = () => {
   const [endorsementStamp, setEndorsementStamp] = useState(null);
   const [surveyTypes, setSurveyTypes] = useState([]);
   const [surveyTypeCategory, setSurveyTypeCategory] = useState();
+  const [anniversaryDate, setAnniversaryDate] = useState("");
+
+  const handleAnniversaryChange = async (e) => {
+    const selectedDate = e.target.value;
+
+    setAnniversaryDate(selectedDate);
+
+    if (!selectedShip?.id) return;
+
+    const payload = {
+      clientId: selectedShip.id,
+      anniversaryDate: selectedDate,
+      journalId: selectedReportNumber.journalTypeId,
+    };
+
+    await updateAnniversaryByClient(payload);
+  };
+
   console.log("surveyTypeCategory", surveyTypeCategory);
 
   useEffect(() => {
@@ -316,9 +334,9 @@ const ReportingForm = () => {
     }
   };
 
-  const NO_AUTO_DATE_REPORTS = ["international load line certificate", "cargo ship safety construction", "cargo ship safety equipment", "cargo ship safety radio", "international oil pollution prevention", "international anti-fouling system", "international ballast water management", "international tonnage certificate", "international air pollution prevention", "international certification of fitness for the carriage"];
+  // const NO_AUTO_DATE_REPORTS = ["international load line certificate", "cargo ship safety construction", "cargo ship safety equipment", "cargo ship safety radio", "international oil pollution prevention", "international anti-fouling system", "international ballast water management", "international tonnage certificate", "international air pollution prevention", "international certification of fitness for the carriage"];
 
-  const shouldSkipAutoDates = (reportName = "") => NO_AUTO_DATE_REPORTS.some((r) => reportName.toLowerCase().includes(r));
+  // const shouldSkipAutoDates = (reportName = "") => NO_AUTO_DATE_REPORTS.some((r) => reportName.toLowerCase().includes(r));
 
   const isFullTermWithoutValidity = (surveyTypeName = "", certType = "") => {
     if (certType !== "full_term") return false;
@@ -436,19 +454,19 @@ const ReportingForm = () => {
       return;
     }
 
-    if (shouldSkipAutoDates(reportName)) {
-      const baseDate = getValues("certificateBaseDate") || getValues("surveydate") || dueDate;
+    // if (shouldSkipAutoDates(reportName)) {
+    //   const baseDate = getValues("certificateBaseDate") || getValues("surveydate") || dueDate;
 
-      let from = moment(dueDate).subtract(3, "months").format("YYYY-MM-DD");
-      let to = moment(dueDate).add(3, "months").format("YYYY-MM-DD");
+    //   let from = moment(dueDate).subtract(3, "months").format("YYYY-MM-DD");
+    //   let to = moment(dueDate).add(3, "months").format("YYYY-MM-DD");
 
-      from = capToFiveYearValidity(from, baseDate);
-      to = capToFiveYearValidity(to, baseDate);
+    //   from = capToFiveYearValidity(from, baseDate);
+    //   to = capToFiveYearValidity(to, baseDate);
 
-      setValue("rangeFrom", from);
-      setValue("rangeTo", to);
-      return;
-    }
+    //   setValue("rangeFrom", from);
+    //   setValue("rangeTo", to);
+    //   return;
+    // }
     const due = moment(dueDate);
     let rangeFrom = "";
     let rangeTo = "";
@@ -472,8 +490,8 @@ const ReportingForm = () => {
     }
 
     // rangeTo = enforceAnniversaryLimit(rangeTo);
-    rangeFrom = clampToAnniversary(rangeFrom, surveyType);
-    rangeTo = clampToAnniversary(rangeTo, surveyType);
+    // rangeFrom = clampToAnniversary(rangeFrom, surveyType);
+    // rangeTo = clampToAnniversary(rangeTo, surveyType);
 
     setValue("rangeFrom", rangeFrom);
     setValue("rangeTo", rangeTo);
@@ -492,36 +510,36 @@ const ReportingForm = () => {
 
     const surveyType = normalizeName(getValues("typesOfSurvey"));
 
-    if (["surveydate", "assignmentDate", "dueDate"].includes(fieldName) && shouldSkipAutoDates(reportName)) {
-      setValue(fieldName, value);
-      return;
-    }
+    // if (["surveydate", "assignmentDate", "dueDate"].includes(fieldName) && shouldSkipAutoDates(reportName)) {
+    //   setValue(fieldName, value);
+    //   return;
+    // }
     const isAnnual = surveyType.includes("annual");
 
-    const skipAutoCalc = (fieldName === "surveydate" || fieldName === "assignmentDate") && isWithinExistingRange(value) && !isAnnual;
+    // const skipAutoCalc = (fieldName === "surveydate" || fieldName === "assignmentDate") && isWithinExistingRange(value) && !isAnnual;
 
-    if (skipAutoCalc) {
-      setValue(fieldName, value);
-      return;
-    }
+    // if (skipAutoCalc) {
+    //   setValue(fieldName, value);
+    //   return;
+    // }
     if (fieldName === "surveydate") {
       setValue("assignmentDate", value);
 
       const baseDue = calculateDueDateBase(value, surveyType, reportName);
       const withAnnivDM = applyAnniversaryDayMonthIfNeeded(baseDue, surveyType);
-      const dueDate = clampToAnniversary(withAnnivDM, surveyType);
+      // const dueDate = clampToAnniversary(withAnnivDM, surveyType);
 
-      setValue("dueDate", dueDate);
-      applyRangeFromDueDate(dueDate, surveyType);
+      setValue("dueDate", withAnnivDM);
+      applyRangeFromDueDate(withAnnivDM, surveyType);
     }
 
     if (fieldName === "assignmentDate") {
       const baseDue = calculateDueDateBase(value, surveyType, reportName);
       const withAnnivDM = applyAnniversaryDayMonthIfNeeded(baseDue, surveyType);
-      const dueDate = clampToAnniversary(withAnnivDM, surveyType);
+      // const dueDate = clampToAnniversary(withAnnivDM, surveyType);
 
-      setValue("dueDate", dueDate);
-      applyRangeFromDueDate(dueDate, surveyType);
+      setValue("dueDate", withAnnivDM);
+      applyRangeFromDueDate(withAnnivDM, surveyType);
     }
     if (fieldName === "dueDate") {
       const fixedDue = clampToAnniversary(value, surveyType);
@@ -1031,8 +1049,18 @@ const ReportingForm = () => {
                     </Select>
                   </FormControl>
                 </Box>
+                <Box mt={2}>
+                  <FormControl fullWidth sx={{ maxWidth: 300 }}>
+                    <Typography variant="body1" mb={1}>
+                      Choose Anniversary Date
+                    </Typography>
+
+                    <TextField type="date" value={anniversaryDate} onChange={handleAnniversaryChange} InputLabelProps={{ shrink: true }} fullWidth />
+                  </FormControl>
+                </Box>
               </Box>
             )}
+
             {selectedShip.id && selectedReportNumber.journalTypeId && (
               <>
                 <CommonButton onClick={handleShowTable} sx={{ marginTop: 3 }} text="Continue" />

@@ -924,9 +924,13 @@ const TextEditor = ({ id }) => {
   };
   function mergeClassificationSurveys(classificationData, reportDetailsList) {
     const combined = [];
+    const EXCLUDED_KEYWORD = "issuance of class";
 
     if (classificationData?.length) {
       classificationData.forEach((row) => {
+        if (
+          row?.surveyName?.toLowerCase().includes("issuance of class")
+        ) return;
         combined.push({
           name: row.surveyName,
           type: "classification",
@@ -946,6 +950,7 @@ const TextEditor = ({ id }) => {
         const isClassification = surveyType?.classificationSurvey === true;
 
         if (isClassification) {
+          if (surveyType?.name?.toLowerCase().includes("issunace of class certificate")) return;
           combined.push({
             name: surveyType.name,
             type: "classification",
@@ -1304,13 +1309,13 @@ ${classificationRows}
     const validReportDetails = reportDetails?.filter(
       (cert) => cert?.reportStatus !== "revoked"
     );
-    const certificateOfClassRow = validReportDetails
-      ?.filter((cert) => cert?.activity?.surveyTypes?.report?.name?.toLowerCase() === "certificate of class")
-      ?.sort((a, b) => new Date(b.issuanceDate || b.validityDate) - new Date(a.issuanceDate || a.validityDate))?.[0];
+
+
     const otherCertificatesRaw = validReportDetails?.filter(
-      (cert) =>
-        cert?.activity?.surveyTypes?.report?.name &&
-        cert?.activity?.surveyTypes?.report?.name?.toLowerCase() !== "certificate of class"
+      (cert) => {
+        const name = cert?.activity?.surveyTypes?.report?.name?.toLowerCase();
+        return name && name !== "certificate of class";
+      }
     );
 
     const uniqueCertificatesMap = new Map();
@@ -1376,10 +1381,8 @@ ${classificationRows}
 </tr>`;
     };
 
-    const certificateRows = [
-      certificateOfClassRow ? formatCertificateRow(certificateOfClassRow) : "",
-      ...otherCertificates.map(formatCertificateRow),
-    ]
+    const certificateRows = otherCertificates
+      .map(formatCertificateRow)
       .filter((row) => row && row.trim() !== "")
       .join("");
 
