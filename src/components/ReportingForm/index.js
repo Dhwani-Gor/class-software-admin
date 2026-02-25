@@ -96,6 +96,7 @@ const ReportingForm = () => {
     const payload = {
       clientId: selectedShip.id,
       anniversaryDate: selectedDate,
+      journalId: journalId,
     };
 
     await updateAnniversaryByClient(payload);
