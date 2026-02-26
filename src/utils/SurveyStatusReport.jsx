@@ -455,7 +455,7 @@ background-color: linear-gradient(to right, #1c1720ff, #e6e9edff);
             y: headerStartY - headerRectHeight,
             width: usableWidth,
             height: headerRectHeight,
-            color: rgb(11 / 255, 61 / 255, 92 / 255),
+            color: rgb(0.6, 0.6, 0.6),
           });
 
           page.drawText("Survey Status Report", {
@@ -493,7 +493,7 @@ background-color: linear-gradient(to right, #1c1720ff, #e6e9edff);
         page.drawImage(pngImage, { x: margin, y: contentStartY - scaledHeight, width: usableWidth, height: scaledHeight });
 
         if (pageIndex > 0) {
-          page.drawRectangle({ x: margin, y: 0, width: usableWidth, height: footerHeight + 8, color: rgb(63 / 255, 143 / 255, 216 / 255), });
+          page.drawRectangle({ x: margin, y: 0, width: usableWidth, height: footerHeight + 8, color: rgb(0.6, 0.6, 0.6), });
           const footerStartY = footerHeight - 5;
           const generatedText = ` Generated on: ${moment().format("DD/MM/YYYY hh:mm A")}`;
           const totalPages = Math.ceil(imgHeight / baseSliceHeight);
@@ -1035,8 +1035,8 @@ ${classificationRows}
           color: white;
           padding: 8px;
           border-radius: 4px;
-background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
-;        ">
+          background: linear-gradient(90deg, #0B3D5C, #4DA3E6);
+        ">
           ${title}
         </h4>
         <p style="margin: 10px 0; font-style: italic; color: #555;">
@@ -1054,7 +1054,7 @@ background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
           color: white;
           padding: 8px;
           border-radius: 4px;
-          background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);">
+          background: linear-gradient(90deg, #0B3D5C, #4DA3E6);">
           ${title}
         </h4>
         <p style="margin: 10px 0; font-style: italic; color: #555;">
@@ -1095,7 +1095,7 @@ background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
         color: white;
         padding: 8px;
         border-radius: 4px;
-background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+background: linear-gradient(90deg, #0B3D5C, #4DA3E6);
 ;" class="no-break">
         ${title}
       </h4>
@@ -1393,7 +1393,7 @@ background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
 
     const certificatesTableHtml = `
 <h4 class="no-break" style="margin-top: -10px; color:white; 
-background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+background: linear-gradient(90deg, #0B3D5C, #4DA3E6);
 ">
   Certificates
 </h4>
@@ -1618,7 +1618,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   Ship Survey Status Report
 </div>
 
-  <div class="ship-name" style="color: #3F8FD8FF">
+  <div class="ship-name" style="color: #0B3D5C">
   ${clientData?.shipName || "-"}
 </div>
 
@@ -1632,7 +1632,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   font-size: 16px;
   padding: 18px 28px;
   color: black;
- border: 2px solid #3F8FD8FF;
+ border: 2px solid #E5533D;
   border-radius: 10px;
   width: 450px;
   margin-top: 30px;
@@ -1678,7 +1678,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 <thead>
 <tr>
 <th colspan="4" style="text-align: left;padding: 8px;">
-<h4 class="no-break" style="color:white;padding: 8px;margin-top:-10px; background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+<h4 class="no-break" style="color:white;padding: 8px;margin-top:-10px; background: linear-gradient(90deg, #0B3D5C, #4DA3E6);
 ; width:100%; margin-bottom: 5px;">Identification</h4>
 </th>
 </tr>
@@ -1709,7 +1709,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   <thead>
     <tr>
       <th style="text-align: left; padding: 8px;" colspan="2">
-        <h4 class="no-break" style="color:white; background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+        <h4 class="no-break" style="color:white; background: linear-gradient(90deg, #0B3D5C, #4DA3E6);
 ;">Classification</h4>
       </th>
     </tr>
@@ -1789,7 +1789,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 <table class="hull-section-table" style="width: 100%; border-collapse: collapse; border:none;">
 <thead>
 <tr>
-<th colspan="2" style="text-align: left; padding: 8px; border:none;"><h4 class="no-break" style="color:white;background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+<th colspan="2" style="text-align: left; padding: 8px; border:none;"><h4 class="no-break" style="color:white;background: linear-gradient(90deg, #0B3D5C, #4DA3E6);
 ">Hull</h4></th>
 </tr>
 </thead>
@@ -1828,7 +1828,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   <thead>
     <tr>
       <th colspan="2" style="text-align: left; padding: 8px; border:none;" >
-        <h4 class="no-break" style="color:white; background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+        <h4 class="no-break" style="color:white; background: linear-gradient(90deg, #0B3D5C, #4DA3E6);
 ;">Machinery Details</h4>
       </th>
     </tr>
@@ -1867,7 +1867,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 <div class="owner-section page">
 <h2 style="margin-top: -75px;">Owner / Manager Information</h2>
 
-<h4 class="no-break" style="color:white;background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+<h4 class="no-break" style="color:white;background: linear-gradient(90deg, #0B3D5C, #4DA3E6);
 ">Registered Owner</h4>
 <div class="owner-info">
 <div><em><strong>Company Name:</strong></em> ${clientData?.ownerDetails?.companyName || "-"}</div>
@@ -1875,7 +1875,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 <div><em><strong>Address:</strong></em> ${clientData?.ownerDetails?.companyAddress || "-"}</div>
 </div>
 
-<h4 class="no-break" style="color:white;background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+<h4 class="no-break" style="color:white;background: linear-gradient(90deg, #0B3D5C, #4DA3E6);
 ">Manager</h4>
 <div class="owner-info">
 <div><em><strong>Company Name:</strong></em> ${clientData?.managerDetails?.companyName || "-"}</div>
@@ -1887,7 +1887,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 ${htmlString}
 
 <div class="">
-<h4 class="no-break" style="color:white;background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+<h4 class="no-break" style="color:white;background: linear-gradient(90deg, #0B3D5C, #4DA3E6);
 ;margin-top:10">Surveys / Audits / Inspections</h4>
 
 ${classificationSurveyTableHtml}
@@ -2066,13 +2066,13 @@ margin: 0 0 30px 0;
 font-weight: 600;
 letter-spacing: 0.5px;
 text-transform: uppercase;
-border-bottom: 3px solid #4a90e2;
+border-bottom: 3px solid #E5533D;
 padding-bottom: 12px;
 }
 
 h4 {
 color: white;
-background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+background: linear-gradient(90deg, #0B3D5C, #4DA3E6);
 font-size: 15px;
 margin: 25px 0 15px 0;
 padding: 6px 8px;
@@ -2082,7 +2082,7 @@ letter-spacing: 0.3px;
 }
 
 .report-title {
-background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+background: linear-gradient(90deg, #0B3D5C, #4DA3E6);
 box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 color: white;
 padding: 20px;
@@ -2384,7 +2384,7 @@ break-before: always !important;
     font-weight: bold;
     margin-top: 20px;
     margin-bottom: 20px;
-    border-bottom: 4px solid #3F8FD8FF;
+    border-bottom: 4px solid #E5533D;
     display: inline-block;
 }
 

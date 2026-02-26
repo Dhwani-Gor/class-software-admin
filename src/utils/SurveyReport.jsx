@@ -190,6 +190,7 @@ const SurveyReport = ({ id, reportNumber }) => {
             <tr>
               <td>${cert?.activity?.surveyTypes?.report?.name || "-"}</td>
               <td style="text-align:center;">${type}</td>
+              <td style="text-align:center;">${cert?.activity?.status || "-"}</td>
               <td style="text-align:center;">${latestEndorsementDate}</td>
               <td>${cert?.activity?.surveyTypes?.name || "-"}</td>
               <td style="text-align:center;">${cert?.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : "-"}</td>
@@ -350,6 +351,7 @@ of Class recommended now or previously, being dealt with as recommended.</p>
               <tr>
                 <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;">Survey Name</th>
                 <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;">Cert. Term</th>
+                <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;">Status</th>
                 <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;">Endorsed</th>
                 <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;">Survey Type</th>
                 <th style="padding:8px;border:1px solid #ccc;background:#f3f3f3;">Issued / Extended</th>
