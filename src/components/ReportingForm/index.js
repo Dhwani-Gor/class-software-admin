@@ -363,19 +363,14 @@ const ReportingForm = () => {
     const anniv = getValues("anniversaryDate");
     if (!anniv || !date) return date;
 
-    if (!usesAnniversaryRule(surveyType)) {
-      return date;
-    }
+    if (!usesAnniversaryRule(surveyType)) return date;
+
     const annivMoment = moment(anniv);
     const d = moment(date);
 
-    if (d.isAfter(annivMoment)) {
-      return annivMoment.format("YYYY-MM-DD");
-    }
-
-    return d.format("YYYY-MM-DD");
+    // ✅ Keep the year from the calculated date, only apply month+day from anniversary
+    return d.month(annivMoment.month()).date(annivMoment.date()).format("YYYY-MM-DD");
   };
-
   const applyAnniversaryDayMonthIfNeeded = (date, surveyType) => {
     const anniv = getValues("anniversaryDate");
     if (!anniv || !date) return date;
@@ -414,7 +409,7 @@ const ReportingForm = () => {
 
     if (surveyType.includes("annual")) yearsToAdd = 1;
 
-    if (surveyType === "docking survey" || surveyType === "main boiler survey" || surveyType === "auxiliary boiler survey" || surveyType === "thermal oil heating systems survey" || surveyType === "exhaust gas steam generators and economisers survey") {
+    if (surveyType === "docking survey" || surveyType === "main boiler survey" || surveyType === "auxiliary boiler survey" || surveyType === "Auxiliary boiler survey (Exhaust gas)" || surveyType === "Auxiliary boiler survey (oil fired) stbd" || surveyType === "Auxiliary boiler survey (oil fired) port" || surveyType === "Auxiliary boiler survey (oil fired) port" || surveyType === "thermal oil heating systems survey" || surveyType === "exhaust gas steam generators and economisers survey") {
       yearsToAdd = 3;
     }
 
@@ -542,9 +537,9 @@ const ReportingForm = () => {
       applyRangeFromDueDate(withAnnivDM, surveyType);
     }
     if (fieldName === "dueDate") {
-      const fixedDue = clampToAnniversary(value, surveyType);
-      setValue("dueDate", fixedDue);
-      applyRangeFromDueDate(fixedDue, surveyType);
+      // const fixedDue = clampToAnniversary(value, surveyType);
+      setValue("dueDate", value);
+      applyRangeFromDueDate(value, surveyType);
     }
 
     if (fieldName === "rangeFrom") {
@@ -933,7 +928,7 @@ const ReportingForm = () => {
       setValue("issuancedate", reportData?.issuanceDate ? moment(reportData.issuanceDate).format("YYYY-MM-DD") : "");
       setValue("validitydate", reportData?.validityDate ? moment(reportData.validityDate).format("YYYY-MM-DD") : "");
       setValue("surveydate", reportData?.surveyDate ? moment(reportData.surveyDate).format("YYYY-MM-DD") : "");
-      setValue("assignmentDate", reportData?.assignmentDate ? moment(reportData.assignmentDate).format("YYYY-MM-DD") : reportData?.surveyDate ? moment(reportData.surveyDate).format("YYYY-MM-DD") : "");
+      setValue("assignmentDate", reportData?.assignmentDate ? moment(reportData.assignmentDate).format("YYYY-MM-DD") : "");
       setValue("dueDate", reportData?.dueDate ? moment(reportData.dueDate).format("YYYY-MM-DD") : "");
       setValue("rangeFrom", reportData?.rangeFrom ? moment(reportData.rangeFrom).format("YYYY-MM-DD") : "");
       setValue("rangeTo", reportData?.rangeTo ? moment(reportData.rangeTo).format("YYYY-MM-DD") : "");
