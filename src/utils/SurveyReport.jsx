@@ -165,13 +165,32 @@ const SurveyReport = ({ id, reportNumber }) => {
         latestReports && latestReports.length > 0
           ? latestReports
             .map((cert) => {
+              console.log(cert, "xwer")
               const type = cert?.typeOfCertificate === "short_term" ? "ST" : cert?.typeOfCertificate === "full_term" ? "FT" : cert?.typeOfCertificate === "intrim" ? "IT" : cert?.typeOfCertificate === "extended" ? "ET" : cert?.typeOfCertificate || "-";
+              const endorsementKeys = [
+                "issuance_date_1",
+                "issuance_date_2",
+                "issuance_date_3",
+                "issuance_date_4",
+              ];
 
+              // Get latest non-empty issuance date
+              let latestEndorsementDate = "-";
+
+              if (cert?.data) {
+                for (let i = endorsementKeys.length - 1; i >= 0; i--) {
+                  const key = endorsementKeys[i];
+                  if (cert.data[key]) {
+                    latestEndorsementDate = moment(cert.data[key], "DD/MM/YYYY").format("DD/MM/YYYY");
+                    break;
+                  }
+                }
+              }
               return `
             <tr>
               <td>${cert?.activity?.surveyTypes?.report?.name || "-"}</td>
               <td style="text-align:center;">${type}</td>
-              <td style="text-align:center;">${cert?.endorsementDate ? moment(cert.endorsementDate).format("DD/MM/YYYY") : "-"}</td>
+              <td style="text-align:center;">${latestEndorsementDate}</td>
               <td>${cert?.activity?.surveyTypes?.name || "-"}</td>
               <td style="text-align:center;">${cert?.issuanceDate ? moment(cert.issuanceDate).format("DD/MM/YYYY") : "-"}</td>
               <td style="text-align:center;">${cert?.validityDate ? moment(cert.validityDate).format("DD/MM/YYYY") : "-"}</td>
