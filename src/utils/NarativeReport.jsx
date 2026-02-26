@@ -223,6 +223,12 @@ const NarrativeReport = ({ id, reportNumber }) => {
     const signaturesHtml = `
       <div style="display:flex;justify-content:space-between;margin-top:80px;padding-top:30px;border-top:2px solid #1a5490;page-break-inside:avoid;">
         <div style="width:45%;">
+        <div style="width:65%;text-align:left;">
+          <div style="font-weight:700;font-size:15px;color:#1a5490;margin-bottom:12px;text-decoration:underline;">
+            This Report is Reviewed and Authorized by:
+          </div>
+       
+        </div>
                     <div class="stamp">${stamp ? `<img src="${stamp}" width="180" height="auto" alt="Stamp" />` : ""}</div>
 
           <div style="font-weight:800;font-size:15px;color:#1a5490;margin-bottom:12px;text-decoration:underline;"><strong>Signatures</strong></div>
@@ -234,14 +240,7 @@ const NarrativeReport = ({ id, reportNumber }) => {
           </div>
         </div>
 
-        <div style="width:45%;text-align:right;">
-          <div style="font-weight:700;font-size:15px;color:#1a5490;margin-bottom:12px;text-decoration:underline;">
-            This Report is Reviewed and Authorized by:
-          </div>
-          <div style="margin-top:24px;line-height:1.8;">
-            <div><strong>Reviewed On:</strong> ${moment(currentDate).format("DD/MM/YYYY")}</div>
-          </div>
-        </div>
+        
       </div>
     `;
 
