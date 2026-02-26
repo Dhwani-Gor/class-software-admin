@@ -197,7 +197,7 @@ const TextEditor = ({ id }) => {
       .no-break-block, .no-break-block *, .hull-row { page-break-inside: avoid !important; break-inside: avoid !important; border:none; }
 
       .report-title {
-        background: linear-gradient(to right, #1c1720ff, #e6e9edff);
+background-color: linear-gradient(to right, #1c1720ff, #e6e9edff);
         box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         color: white;
         padding: 20px;
@@ -216,7 +216,7 @@ const TextEditor = ({ id }) => {
         margin-top: 20px;
         margin-bottom: 20px;
         color: #6659BF;
-        border-bottom: 4px solid #6659BF !important;
+        border-bottom: 4px solid #3F8FD8FF !important;
         display: inline-block;
       }
 
@@ -455,7 +455,7 @@ const TextEditor = ({ id }) => {
             y: headerStartY - headerRectHeight,
             width: usableWidth,
             height: headerRectHeight,
-            color: rgb(0.6, 0.6, 0.6)
+            color: rgb(11 / 255, 61 / 255, 92 / 255),
           });
 
           page.drawText("Survey Status Report", {
@@ -493,7 +493,7 @@ const TextEditor = ({ id }) => {
         page.drawImage(pngImage, { x: margin, y: contentStartY - scaledHeight, width: usableWidth, height: scaledHeight });
 
         if (pageIndex > 0) {
-          page.drawRectangle({ x: margin, y: 0, width: usableWidth, height: footerHeight + 8, color: rgb(0.6, 0.6, 0.6) });
+          page.drawRectangle({ x: margin, y: 0, width: usableWidth, height: footerHeight + 8, color: rgb(63 / 255, 143 / 255, 216 / 255), });
           const footerStartY = footerHeight - 5;
           const generatedText = ` Generated on: ${moment().format("DD/MM/YYYY hh:mm A")}`;
           const totalPages = Math.ceil(imgHeight / baseSliceHeight);
@@ -527,8 +527,7 @@ const TextEditor = ({ id }) => {
           x: textX,
           y: textY + 14,
           size: 10,
-          color: rgb(0.15, 0.15, 0.15),
-          font: fontBold,
+          color: rgb(63 / 255, 143 / 255, 216 / 255), font: fontBold,
         });
 
         // Word wrapping for disclaimer paragraph
@@ -1036,8 +1035,8 @@ ${classificationRows}
           color: white;
           padding: 8px;
           border-radius: 4px;
-          background: linear-gradient(to right, #211d24ff, #dadee2ff);
-        ">
+background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+;        ">
           ${title}
         </h4>
         <p style="margin: 10px 0; font-style: italic; color: #555;">
@@ -1055,8 +1054,7 @@ ${classificationRows}
           color: white;
           padding: 8px;
           border-radius: 4px;
-          background: linear-gradient(to right,  #1c1720ff, #e6e9edff);
-        ">
+          background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);">
           ${title}
         </h4>
         <p style="margin: 10px 0; font-style: italic; color: #555;">
@@ -1097,8 +1095,8 @@ ${classificationRows}
         color: white;
         padding: 8px;
         border-radius: 4px;
-        background: linear-gradient(to right,  #1c1720ff, #e6e9edff);
-      " class="no-break">
+background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+;" class="no-break">
         ${title}
       </h4>
       <table style="width:100%; border-collapse: collapse; margin-bottom: 10px;">
@@ -1314,7 +1312,7 @@ ${classificationRows}
     const otherCertificatesRaw = validReportDetails?.filter(
       (cert) => {
         const name = cert?.activity?.surveyTypes?.report?.name?.toLowerCase();
-        return name && name !== "certificate of class";
+        return name && name !== "";
       }
     );
 
@@ -1351,6 +1349,7 @@ ${classificationRows}
       const typeLabel = fullCert.activity.surveyTypes.name || "";
 
       const surveyDate = fullCert.surveyDate;
+
       const surveyDateFormatted = surveyDate
         ? moment(surveyDate).format("DD/MM/YYYY")
         : "";
@@ -1393,7 +1392,9 @@ ${classificationRows}
       .join("");
 
     const certificatesTableHtml = `
-<h4 class="no-break" style="margin-top: -10px; color:white; background: linear-gradient(to right, #1c1720ff, #e6e9edff);">
+<h4 class="no-break" style="margin-top: -10px; color:white; 
+background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+">
   Certificates
 </h4>
 <table>
@@ -1617,7 +1618,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   Ship Survey Status Report
 </div>
 
-  <div class="ship-title ship-name" style="color: #6659BF">
+  <div class="ship-name" style="color: #3F8FD8FF">
   ${clientData?.shipName || "-"}
 </div>
 
@@ -1631,7 +1632,7 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   font-size: 16px;
   padding: 18px 28px;
   color: black;
- border: 2px solid #6659BF;
+ border: 2px solid #3F8FD8FF;
   border-radius: 10px;
   width: 450px;
   margin-top: 30px;
@@ -1677,7 +1678,8 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 <thead>
 <tr>
 <th colspan="4" style="text-align: left;padding: 8px;">
-<h4 class="no-break" style="color:white;padding: 8px;margin-top:-10px;background: linear-gradient(to right, #1c1720ff, #e6e9edff); width:100%; margin-bottom: 5px;">Identification</h4>
+<h4 class="no-break" style="color:white;padding: 8px;margin-top:-10px; background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+; width:100%; margin-bottom: 5px;">Identification</h4>
 </th>
 </tr>
 </thead>
@@ -1707,7 +1709,8 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   <thead>
     <tr>
       <th style="text-align: left; padding: 8px;" colspan="2">
-        <h4 class="no-break" style="color:white; background: linear-gradient(to right,  #1c1720ff, #e6e9edff);">Classification</h4>
+        <h4 class="no-break" style="color:white; background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+;">Classification</h4>
       </th>
     </tr>
   </thead>
@@ -1786,7 +1789,8 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 <table class="hull-section-table" style="width: 100%; border-collapse: collapse; border:none;">
 <thead>
 <tr>
-<th colspan="2" style="text-align: left; padding: 8px; border:none;"><h4 class="no-break" style="color:white;background-color:linear-gradient(to right,  #1c1720ff, #e6e9edff)">Hull</h4></th>
+<th colspan="2" style="text-align: left; padding: 8px; border:none;"><h4 class="no-break" style="color:white;background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+">Hull</h4></th>
 </tr>
 </thead>
 <tbody>
@@ -1824,7 +1828,8 @@ This may not indicate certificates issued, surveys carried out or conditions of 
   <thead>
     <tr>
       <th colspan="2" style="text-align: left; padding: 8px; border:none;" >
-        <h4 class="no-break" style="color:white; background: linear-gradient(to right,  #1c1720ff, #e6e9edff);">Machinery Details</h4>
+        <h4 class="no-break" style="color:white; background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+;">Machinery Details</h4>
       </th>
     </tr>
   </thead>
@@ -1862,14 +1867,16 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 <div class="owner-section page">
 <h2 style="margin-top: -75px;">Owner / Manager Information</h2>
 
-<h4 class="no-break" style="color:white;background-color:linear-gradient(to right,  #1c1720ff, #e6e9edff)">Registered Owner</h4>
+<h4 class="no-break" style="color:white;background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+">Registered Owner</h4>
 <div class="owner-info">
 <div><em><strong>Company Name:</strong></em> ${clientData?.ownerDetails?.companyName || "-"}</div>
 <div><em><strong>IMO Number:</strong></em> ${clientData?.ownerDetails?.imoNumber || "-"}</div>
 <div><em><strong>Address:</strong></em> ${clientData?.ownerDetails?.companyAddress || "-"}</div>
 </div>
 
-<h4 class="no-break" style="color:white;background-color:linear-gradient(to right,  #1c1720ff, #e6e9edff)">Manager</h4>
+<h4 class="no-break" style="color:white;background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+">Manager</h4>
 <div class="owner-info">
 <div><em><strong>Company Name:</strong></em> ${clientData?.managerDetails?.companyName || "-"}</div>
 <div><em><strong>IMO Number:</strong></em> ${clientData?.managerDetails?.imoNumber || "-"}</div>
@@ -1880,7 +1887,8 @@ This may not indicate certificates issued, surveys carried out or conditions of 
 ${htmlString}
 
 <div class="">
-<h4 class="no-break" style="color:white;background-color:linear-gradient(to right,  #1c1720ff, #e6e9edff);margin-top:10">Surveys / Audits / Inspections</h4>
+<h4 class="no-break" style="color:white;background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
+;margin-top:10">Surveys / Audits / Inspections</h4>
 
 ${classificationSurveyTableHtml}
 
@@ -2064,7 +2072,7 @@ padding-bottom: 12px;
 
 h4 {
 color: white;
-background: linear-gradient(to right, #1c1720ff, #e6e9edff);
+background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
 font-size: 15px;
 margin: 25px 0 15px 0;
 padding: 6px 8px;
@@ -2074,7 +2082,7 @@ letter-spacing: 0.3px;
 }
 
 .report-title {
-background: linear-gradient(to right, #1c1720ff, #e6e9edff);
+background: linear-gradient(to right, #3F8FD8FF, #6BB3F219);
 box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 color: white;
 padding: 20px;
@@ -2376,7 +2384,7 @@ break-before: always !important;
     font-weight: bold;
     margin-top: 20px;
     margin-bottom: 20px;
-    border-bottom: 4px solid #6659BF;
+    border-bottom: 4px solid #3F8FD8FF;
     display: inline-block;
 }
 
