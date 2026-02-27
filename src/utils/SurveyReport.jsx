@@ -149,9 +149,12 @@ const SurveyReport = ({ id, reportNumber }) => {
       </tr>
     `;
       })();
+      const statutoryCerts = (reportDetailsInput || []).filter(
+        (cert) => cert?.activity?.surveyTypes?.statutorySurvey === true
+      );
 
       const latestReportsMap = {};
-      reportDetailsInput?.forEach((cert) => {
+      statutoryCerts?.forEach((cert) => {
         const reportName = cert?.activity?.surveyTypes?.report?.name;
         if (!reportName) return;
         if (!latestReportsMap[reportName] || new Date(cert?.issuanceDate || 0) > new Date(latestReportsMap[reportName]?.issuanceDate || 0)) {

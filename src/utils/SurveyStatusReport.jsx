@@ -751,6 +751,8 @@ background-color: linear-gradient(to right, #1c1720ff, #e6e9edff);
           : "",
         postponed: postponed || "",
         typeOfCertificate: survey.typeOfCertificate || "",
+        isStatutory: isStatutory,
+        isAudit: isAudit
       };
 
       if (!surveyMap.has(groupKey)) {
