@@ -36,7 +36,7 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, crea
     Please find the zip file attached/provided.
     
     For access to the certificate from the software, please use the following link:
-    https://gambiaclass.org/login
+    https://marineassure.clydeclass.org/login
     
     Kind regards,
     Marine Assure Team`;
