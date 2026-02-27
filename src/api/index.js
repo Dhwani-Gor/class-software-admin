@@ -1313,3 +1313,11 @@ export const issuedDocumentSearch = async (search, page, limit, markAsArchive) =
     return error;
   }
 };
+
+export const getAnniversaryByJournalType = async (journalId) => {
+  return await axiosInstance.get(`journals/get-anniversary?journalTypeId=${journalId}`, {
+    params: {
+      journalId,
+    },
+  });
+};

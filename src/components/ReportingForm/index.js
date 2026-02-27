@@ -11,7 +11,7 @@ import CommonButton from "@/components/CommonButton";
 import CommonCard from "@/components/CommonCard";
 import Grid2 from "@mui/material/Grid2";
 import FullScreenRemarksDialog from "./FullScreenRemarksDialog";
-import { createReportDetail, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument, addUnArchiveDocument, updateActivityDetails, getSystemVariableDetails, getAllSystemVariables, getSurveyTypes, updateAnniversaryByClient } from "@/api";
+import { createReportDetail, generateFullReport, getAllClients, getAllJournals, getEndorsedIssuedBy, getSelectedActivityReportDetails, getSelectedReportDetails, updateReportDetail, addArchiveDocument, addUnArchiveDocument, updateActivityDetails, getSystemVariableDetails, getAllSystemVariables, getSurveyTypes, updateAnniversaryByClient, getAnniversaryByJournalType } from "@/api";
 import { toast } from "react-toastify";
 import { TYPE_OF_SURVEYS } from "@/data";
 import { getAllActivities } from "@/api";
@@ -277,7 +277,7 @@ const ReportingForm = () => {
     setShipName(selectedClient?.shipName);
   };
 
-  const handleReportNumber = (event) => {
+  const handleReportNumber = async (event) => {
     setShowTable(false);
     const selectedJournalTypeId = event.target.value;
     const selectedIndex = filteredJournals.findIndex((j) => j.journalTypeId === selectedJournalTypeId);
@@ -289,7 +289,23 @@ const ReportingForm = () => {
     });
     setTableData(selectedJournal?.activities || []);
     setArchiveHistory(selectedJournal?.journalRemarks || []);
+    try {
+      const response = await getAnniversaryByJournalType(selectedJournalTypeId);
 
+      if (response?.data?.status === "success") {
+        const formatted = moment.utc(response.data.anniversaryDate).format("YYYY-MM-DD");
+
+        setAnniversaryDate(formatted);
+        setValue("anniversaryDate", formatted);
+      } else {
+        setAnniversaryDate("");
+        setValue("anniversaryDate", "");
+      }
+    } catch (err) {
+      console.error("Failed to fetch anniversary date:", err);
+      setAnniversaryDate("");
+      setValue("anniversaryDate", "");
+    }
     setShowForm(false);
     setSelectedRow(null);
     setReportDetails(undefined);
@@ -355,7 +371,7 @@ const ReportingForm = () => {
       .replace(/\s*\)\s*/g, ")");
 
   const fiveYearSpecials = ["special survey hull", "special survey machinery", "special survey ig system", "special survey (fi-fi)", "special survey (ums)", "continuous survey hull", "continuous survey machinery"];
-  const ANNIVERSARY_KEYWORDS = ["annual", "intermediate", "docking"];
+  const ANNIVERSARY_KEYWORDS = ["annual", "intermediate"];
   const SpecialSurveyTypes = ["IMDG", "IMSBC", "ISPP"];
   const usesAnniversaryRule = (surveyType = "") => ANNIVERSARY_KEYWORDS.some((k) => surveyType.includes(k));
 
@@ -383,9 +399,23 @@ const ReportingForm = () => {
     return d.month(annivMoment.month()).date(annivMoment.date()).format("YYYY-MM-DD");
   };
 
+  const CLASSIFICATION_3YEAR_PATTERNS = ["auxiliary boiler survey (oil fired) port", "auxiliary boiler survey (oil fired) stbd", "auxiliary boiler survey (exhaust gas)", "auxiliary boiler survey", "docking survey"];
+
+  const isClassification3YearSurvey = (surveyTypeName = "") => {
+    if (!surveyTypeCategory) return false;
+    const normalized = surveyTypeName.toLowerCase().trim();
+    return CLASSIFICATION_3YEAR_PATTERNS.some((pattern) => normalized.includes(pattern));
+  };
+
   const normalize = (str) => str.replace(/\(\s*/g, "(").replace(/\s*\)/g, ")");
 
   const calculateDueDateBase = (value, surveyType) => {
+    if (isClassification3YearSurvey(surveyType)) {
+      // Use the current assignmentDate field if already set, otherwise fall back to value
+      const assignmentDate = getValues("assignmentDate") || value;
+      return moment(assignmentDate).add(3, "years").format("YYYY-MM-DD");
+    }
+
     if (usesSpecialSurveyAnniversary(surveyType)) {
       return moment(value).add(5, "years").format("YYYY-MM-DD");
     }
@@ -469,7 +499,7 @@ const ReportingForm = () => {
     const isFiveYearSpecial = fiveYearSpecials.includes(normalize(surveyType));
     const noRangeSurveys = ["docking survey", "tailshaft initial survey", "tailshaft renewal survey", "tailshaft periodical survey", "main boiler survey", "auxiliary boiler survey", "thermal oil heating systems survey", "exhaust gas steam generators and economisers survey", "in water survey"];
 
-    if (noRangeSurveys.includes(normalize(surveyType))) {
+    if (noRangeSurveys.includes(normalize(surveyType)) || isClassification3YearSurvey(normalize(surveyType))) {
       rangeFrom = "";
       rangeTo = "";
     } else if (isFiveYearSpecial) {
@@ -529,8 +559,8 @@ const ReportingForm = () => {
     }
 
     if (fieldName === "assignmentDate") {
-      const baseDue = calculateDueDateBase(value, surveyType, reportName);
-      const withAnnivDM = applyAnniversaryDayMonthIfNeeded(baseDue, surveyType);
+      const baseDue = isClassification3YearSurvey(surveyType) ? moment(value).add(3, "years").format("YYYY-MM-DD") : calculateDueDateBase(value, surveyType, reportName);
+      const withAnnivDM = isClassification3YearSurvey(surveyType) ? baseDue : applyAnniversaryDayMonthIfNeeded(baseDue, surveyType);
       // const dueDate = clampToAnniversary(withAnnivDM, surveyType);
 
       setValue("dueDate", withAnnivDM);
