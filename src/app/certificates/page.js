@@ -366,21 +366,22 @@ const Certificates = () => {
 
   const handleDownloadDocument = async (url) => {
     if (!url) return;
+    const secureUrl = url.replace(/^http:\/\//i, "https://");
+
     try {
-      const res = await fetch(url);
+      const res = await fetch(secureUrl);
       const blob = await res.blob();
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = url.split("/").pop();
+      link.download = secureUrl.split("/").pop();
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } catch (error) {
       console.error(error);
-      window.open(url, "_blank");
+      window.open(secureUrl, "_blank");
     }
   };
-
   const handleBulkDownload = async () => {
     if (!certificatesList.length) return;
     const zip = new JSZip();
@@ -391,9 +392,13 @@ const Certificates = () => {
       await Promise.all(
         certificatesList.map(async (cert) => {
           if (!cert.generatedDoc) return;
-          const res = await fetch(cert.generatedDoc);
+
+          // Replace http with https
+          const secureUrl = cert.generatedDoc.replace(/^http:\/\//i, "https://");
+
+          const res = await fetch(secureUrl);
           const blob = await res.blob();
-          const fileName = `${cert.generatedDoc.split("/").pop()}`;
+          const fileName = `${secureUrl.split("/").pop()}`;
           folder.file(fileName, blob);
         }),
       );
@@ -411,7 +416,9 @@ const Certificates = () => {
   const resolveFileUrl = (doc) => {
     if (!doc) return null;
 
-    if (doc.startsWith("http")) return doc;
+    if (doc.startsWith("http")) {
+      return doc.replace(/^http:\/\//i, "https://");
+    }
 
     return `${process.env.NEXT_PUBLIC_FILE_BASE_URL}/${doc}`;
   };
@@ -463,16 +470,19 @@ const Certificates = () => {
       await Promise.all(
         reportsList.map(async (report) => {
           if (!report.generatedDoc) return;
-          const res = await fetch(report.generatedDoc);
+
+          // Replace http with https
+          const secureUrl = report.generatedDoc.replace(/^http:\/\//i, "https://");
+
+          const res = await fetch(secureUrl);
           const blob = await res.blob();
 
-          const file = report.generatedDoc.split("/").pop();
+          const file = secureUrl.split("/").pop(); // ✅ use secureUrl
           const regex = new RegExp(`${prefix}[A-Z0-9]+`, "gi");
           const matches = file.match(regex);
           const reportNo = matches ? matches[matches.length - 1] : null;
           const shipName = report.client?.shipName || report.ship?.name || "";
 
-          // Determine proper filename format (same as individual download)
           const fileName = (() => {
             if (/status[_ ]?report/i.test(file)) {
               return `${prefix} Survey Status - ${shipName}.pdf`;
