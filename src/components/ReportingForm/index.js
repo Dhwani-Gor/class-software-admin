@@ -267,8 +267,12 @@ const ReportingForm = () => {
   useEffect(() => {
     getSystemVariable();
   }, []);
+
   const handleClientChange = (event) => {
+    setAnniversaryDate("");
+
     const selectedId = event.target.value;
+
     const selectedClient = clientsList.find((client) => client.id === selectedId);
     setSelectedShip({
       id: selectedId,
@@ -962,7 +966,7 @@ const ReportingForm = () => {
       setValue("dueDate", reportData?.dueDate ? moment(reportData.dueDate).format("YYYY-MM-DD") : "");
       setValue("rangeFrom", reportData?.rangeFrom ? moment(reportData.rangeFrom).format("YYYY-MM-DD") : "");
       setValue("rangeTo", reportData?.rangeTo ? moment(reportData.rangeTo).format("YYYY-MM-DD") : "");
-      setValue("anniversaryDate", reportData?.anniversaryDate ? moment(reportData.anniversaryDate).format("YYYY-MM-DD") : "");
+      setValue("anniversaryDate", reportData?.anniversaryDate ? moment.utc(reportData.anniversaryDate).format("YYYY-MM-DD") : "");
       setValue("postponed", reportData?.postponed ? moment(reportData.postponed).format("YYYY-MM-DD") : "");
       setValue("certificateBaseDate", reportData?.certificateBaseDate ? moment(reportData.certificateBaseDate).format("YYYY-MM-DD") : "");
       setValue("endorsementdate", reportData?.endorsementDate ? moment(reportData.endorsementDate).format("YYYY-MM-DD") : "");
@@ -1080,7 +1084,7 @@ const ReportingForm = () => {
                       Choose Anniversary Date
                     </Typography>
 
-                    <TextField type="date" value={anniversaryDate} onChange={handleAnniversaryChange} InputLabelProps={{ shrink: true }} fullWidth />
+                    <TextField type="date" value={anniversaryDate || ""} onChange={handleAnniversaryChange} InputLabelProps={{ shrink: true }} fullWidth />
                   </FormControl>
                 </Box>
               </Box>
