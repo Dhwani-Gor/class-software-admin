@@ -176,7 +176,11 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
     return (
       <Stack direction="row" spacing={2} mt={2} alignItems="center" flexWrap="wrap">
         {fieldKeys.map((key) => {
-          const label = key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+          let label = key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+
+          if (key === "issuance_date") {
+            label = "Endorsement Date";
+          }
           const isDateField = key.toLowerCase().includes("date");
           const inputKey = `${endorsement.title}_${key}`;
 
@@ -203,7 +207,7 @@ const EndorsementDialog = ({ open, onClose, onSubmit, endorsementStamp, endorsem
         {/* Issued By Dropdown - now per endorsement */}
         <FormControl size="small" sx={{ flex: 1, minWidth: 150 }}>
           <Typography variant="body2" fontWeight={500} sx={{ mb: 2 }}>
-            Issued By
+            Endorsed By
           </Typography>
           <Select
             value={issuedByValues[endorsement.title] || ""}
