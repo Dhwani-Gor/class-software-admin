@@ -79,24 +79,30 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId, selectedFilter, h
     };
 
     const handleView = (documentUrl) => {
-        if (!documentUrl) return;
-        const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(documentUrl)}&embedded=true`;
+        const secureUrl = resolveFileUrl(documentUrl);
+        if (!secureUrl) return;
+
+        const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(secureUrl)}&embedded=true`;
         setPreviewFile(viewerUrl);
         setOpenPreviewModal(true);
     };
-
     const handleDownload = async (doc) => {
-        if (!doc) return;
+        const secureUrl = resolveFileUrl(doc);
+        if (!secureUrl) return;
+
         try {
-            const response = await fetch(doc, { mode: "cors" });
+            const response = await fetch(secureUrl, { mode: "cors" });
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
+
             const a = document.createElement("a");
             a.href = url;
-            a.download = doc.split("/").pop();
+            a.download = secureUrl.split("/").pop();
+
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+
             window.URL.revokeObjectURL(url);
         } catch (err) {
             console.error("Download failed:", err);
@@ -156,6 +162,16 @@ const ShowAmdRemarksDialog = ({ open, onClose, reportDetailId, selectedFilter, h
         if (!reportNo) return "-";
 
         return amdMatch ? `${reportNo}-(${amdMatch[1]})` : reportNo;
+    };
+
+    const resolveFileUrl = (doc) => {
+        if (!doc) return null;
+
+        if (doc.startsWith("http://")) {
+            return doc.replace(/^http:\/\//i, "https://");
+        }
+
+        return doc;
     };
 
 
