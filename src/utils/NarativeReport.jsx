@@ -543,7 +543,7 @@ const NarrativeReport = ({ id, reportNumber }) => {
   return (
     <>
       <Editor
-        apiKey="p9j94lg0okz82u9rr4v3zhap0pimbq1hob48rzesv3c5dylj"
+        apiKey="ui9zuowlon8fa7oc7k1pxppzdasljlojq3bcubjdvx6uhfw3"
         value={editorContent}
         onEditorChange={setEditorContent}
         init={{

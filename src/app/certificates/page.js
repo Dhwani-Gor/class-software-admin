@@ -351,12 +351,13 @@ const Certificates = () => {
   };
 
   const handleViewDocument = (url) => {
-    if (!url) return;
-    const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
+    const secureUrl = resolveFileUrl(url);
+    if (!secureUrl) return;
+
+    const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(secureUrl)}&embedded=true`;
     setPreviewFile(viewerUrl);
     setOpenPreviewModal(true);
   };
-
   useEffect(() => {
     if (selectedFilter === "Checklist") {
       setTotalRows(0);
@@ -471,9 +472,7 @@ const Certificates = () => {
         reportsList.map(async (report) => {
           if (!report.generatedDoc) return;
 
-          // Replace http with https
-          const secureUrl = report.generatedDoc.replace(/^http:\/\//i, "https://");
-
+          const secureUrl = resolveFileUrl(report.generatedDoc);
           const res = await fetch(secureUrl);
           const blob = await res.blob();
 
@@ -721,7 +720,7 @@ const Certificates = () => {
                           <TableCell>
                             <Stack direction="row" spacing={1}>
                               <Tooltip title="View Document">
-                                <IconButton color="info" onClick={() => handleViewDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
+                                <IconButton color="info" onClick={() => handleViewDocument(resolveFileUrl(row.generatedDoc))} disabled={!row.generatedDoc}>
                                   <VisibilityIcon />
                                 </IconButton>
                               </Tooltip>
@@ -731,13 +730,14 @@ const Certificates = () => {
                                   onClick={() => {
                                     if (!row.generatedDoc) return;
 
-                                    const file = row.generatedDoc.split("/").pop();
+                                    const secureUrl = row.generatedDoc.replace(/^http:\/\//i, "https://");
+
+                                    const file = secureUrl.split("/").pop();
                                     const regex = new RegExp(`${prefix}[A-Z0-9]+`, "gi");
                                     const matches = file.match(regex);
                                     const reportNo = matches ? matches[matches.length - 1] : null;
                                     const shipName = row.client?.shipName || row.ship?.name || "Unknown Ship";
 
-                                    // Determine proper filename format
                                     const fileName = (() => {
                                       if (/status[_ ]?report/i.test(file)) {
                                         return `${prefix} Survey Status - ${shipName}.pdf`;
@@ -748,12 +748,12 @@ const Certificates = () => {
                                       return file.replace(/_/g, " ").replace(/\.[^/.]+$/, "") + ".pdf";
                                     })();
 
-                                    fetch(row.generatedDoc)
+                                    fetch(secureUrl)
                                       .then((res) => res.blob())
                                       .then((blob) => saveAs(blob, fileName))
                                       .catch((err) => {
                                         console.error(err);
-                                        window.open(row.generatedDoc, "_blank");
+                                        window.open(secureUrl, "_blank");
                                       });
                                   }}
                                   disabled={!row.generatedDoc}
@@ -943,12 +943,12 @@ const Certificates = () => {
                               <TableCell>
                                 <Stack direction="row" spacing={1}>
                                   <Tooltip title="View Document">
-                                    <IconButton color="info" onClick={() => handleViewDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
+                                    <IconButton color="info" onClick={() => handleViewDocument(resolveFileUrl(row.generatedDoc))} disabled={!row.generatedDoc}>
                                       <VisibilityIcon />
                                     </IconButton>
                                   </Tooltip>
                                   <Tooltip title="Download Document">
-                                    <IconButton color="success" onClick={() => handleDownloadDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
+                                    <IconButton color="success" onClick={() => handleDownloadDocument(resolveFileUrl(row.generatedDoc))} disabled={!row.generatedDoc}>
                                       <GetAppIcon />
                                     </IconButton>
                                   </Tooltip>
@@ -1069,13 +1069,13 @@ const Certificates = () => {
                             <TableCell>
                               <Stack direction="row" spacing={1}>
                                 <Tooltip title="View Document">
-                                  <IconButton color="info" onClick={() => handleViewDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
+                                  <IconButton color="info" onClick={() => handleViewDocument(resolveFileUrl(row.generatedDoc))} disabled={!row.generatedDoc}>
                                     <VisibilityIcon />
                                   </IconButton>
                                 </Tooltip>
                                 {hasArchivePermission && (
                                   <Tooltip title="Download Document">
-                                    <IconButton color="success" onClick={() => handleDownloadDocument(row.generatedDoc)} disabled={!row.generatedDoc}>
+                                    <IconButton color="success" onClick={() => handleDownloadDocument(resolveFileUrl(row.generatedDoc))} disabled={!row.generatedDoc}>
                                       <GetAppIcon />
                                     </IconButton>
                                   </Tooltip>
