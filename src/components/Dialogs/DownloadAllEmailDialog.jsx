@@ -75,6 +75,10 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, crea
         setError("");
     };
 
+    const secureUrl = (url) => {
+        if (!url) return "";
+        return url.replace(/^http:\/\//i, "https://");
+    };
     const handleSendEmail = async () => {
         if (recipients.length === 0)
             return setError("Please add at least one recipient");
@@ -98,9 +102,9 @@ const SendEmailDialog = ({ open, onClose, selectedItems, allItems, zipType, crea
             await Promise.all(
                 itemsToZip?.map(async (item) => {
                     if (!item.generatedDoc) return;
-                    const res = await fetch(item.generatedDoc);
+                    const res = await fetch(secureUrl(item.generatedDoc));
                     const blob = await res.blob();
-                    const fileName = item.generatedDoc.split("/").pop();
+                    const fileName = secureUrl(item.generatedDoc).split("/").pop();
                     folder.file(fileName, blob);
                 })
             );
