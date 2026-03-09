@@ -321,9 +321,13 @@ const CheckListCreate = () => {
       setLoading(true);
       setNoChecklist(false);
 
-      const response = await fetch(docUrl.doc);
+      // convert http → https
+      const secureUrl = docUrl.doc.replace(/^http:\/\//i, "https://");
+
+      const response = await fetch(secureUrl);
       const blob = await response.blob();
       const buffer = await blob.arrayBuffer();
+
       const result = await mammoth.convertToHtml({ arrayBuffer: buffer });
 
       let html = result.value;
@@ -335,6 +339,8 @@ const CheckListCreate = () => {
       html = prepopulateFields(html, clientData, selectedSurvey);
       html = replaceLogoPlaceholder(html, company_logo);
       html = normalizeEmptyTableCells(html);
+      html = convertHttpToHttps(html);
+      console.log(html, "html");
 
       setHtmlContent(html);
       toast.success("Checklist loaded successfully");
@@ -371,6 +377,12 @@ const CheckListCreate = () => {
     } catch {
       toast.error("Save failed");
     }
+  };
+
+  const convertHttpToHttps = (html) => {
+    if (!html) return html;
+
+    return html.replace(/http:\/\//gi, "https://");
   };
 
   return (
@@ -455,7 +467,7 @@ const CheckListCreate = () => {
                     options={surveyTypes.map((s) => ({
                       label: s.surveyTypes.name,
                       value: s.surveyTypes.id,
-                      doc: s.surveyTypes.checkListDocument,
+                      doc: s.surveyTypes.checkListDocument?.replace(/^http:\/\//i, "https://"),
                       docName: s.surveyTypes.checkListDocumentName,
                     }))}
                     value={
