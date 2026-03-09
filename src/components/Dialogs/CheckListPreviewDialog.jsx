@@ -179,7 +179,7 @@ const ChecklistPreviewModal = ({ open, onClose, previewUrl: initialPreviewUrl, c
       await new Promise(res => setTimeout(res, 300));
 
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 1.8,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
