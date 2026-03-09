@@ -167,16 +167,22 @@ const DigitalDocument = ({ params }) => {
       }
 
       if (isMobile) {
-        window.open(reportDetails.generatedDoc, "_blank");
+        window.open(getSecureUrl(reportDetails.generatedDoc), "_blank");
       } else {
+        const response = await fetch(getSecureUrl(reportDetails.generatedDoc));
+        const blob = await response.blob();
+
+        const url = window.URL.createObjectURL(blob);
+
         const a = document.createElement("a");
-        a.href = reportDetails.generatedDoc;
+        a.href = url;
         a.download = reportDetails.generatedDoc.split("/").pop() || "certificate.pdf";
-        a.target = "_blank";
 
         document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
+        a.remove();
+
+        window.URL.revokeObjectURL(url);
       }
     } catch (error) {
       console.error("Download error:", error);
@@ -185,7 +191,10 @@ const DigitalDocument = ({ params }) => {
       toast.error(errorMessage);
     }
   };
-
+  const getSecureUrl = (url) => {
+    if (!url) return "";
+    return url.replace("http://", "https://");
+  };
   const handlePreview = () => {
     if (!reportDetails?.generatedDoc) {
       toast.error("No document available for preview");
@@ -193,7 +202,7 @@ const DigitalDocument = ({ params }) => {
     }
 
     try {
-      const testUrl = reportDetails.generatedDoc;
+      const testUrl = getSecureUrl(reportDetails.generatedDoc);
       if (typeof testUrl === "string" && (testUrl.startsWith("http://") || testUrl.startsWith("https://"))) {
         if (isIOS) {
           window.open(reportDetails.generatedDoc, "_blank");
@@ -487,7 +496,7 @@ const DigitalDocument = ({ params }) => {
                 <Box sx={{ height: isMobile ? "100vh" : "80vh", width: "100%" }}>
                   {/* For Android and desktop, use enhanced iframe */}
                   <iframe
-                    src={`${reportDetails.generatedDoc}${reportDetails.generatedDoc.includes("?") ? "&" : "#"}toolbar=1&navpanes=1&scrollbar=1&page=1&zoom=page-fit&view=FitH`}
+                    src={`${getSecureUrl(reportDetails.generatedDoc)}${getSecureUrl(reportDetails.generatedDoc).includes("?") ? "&" : "#"}toolbar=1&navpanes=1&scrollbar=1&page=1&zoom=page-fit&view=FitH`}
                     width="100%"
                     height="100%"
                     style={{
